@@ -16,7 +16,7 @@
         x-transition:leave="transition ease-in duration-100"
         x-transition:leave-start="opacity-100 scale-100"
         x-transition:leave-end="opacity-0 scale-95"
-        class="absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900 sm:w-96">
+        class="{{ $placement === 'header' ? 'fixed inset-x-4 top-full mt-2 sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto' : 'absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)]' }} z-50 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900 sm:w-96 sm:max-w-[calc(100vw-2rem)]">
 
         <div class="flex items-center justify-between border-b border-zinc-100 px-4 py-3 dark:border-zinc-800">
             <div class="flex items-center gap-2">

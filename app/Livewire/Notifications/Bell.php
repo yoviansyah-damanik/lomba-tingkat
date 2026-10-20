@@ -14,6 +14,9 @@ use Livewire\Component;
 #[Lazy]
 class Bell extends Component
 {
+    /** end: dropdown rata kanan tombol (dasbor); header: melebar penuh di mobile pada header publik */
+    public string $placement = 'end';
+
     public function placeholder(): string
     {
         return '<div class="size-8 animate-pulse rounded-lg bg-zinc-200 dark:bg-zinc-700"></div>';

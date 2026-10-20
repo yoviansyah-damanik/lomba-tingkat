@@ -104,4 +104,13 @@ class InAppNotificationTest extends TestCase
             ->assertOk()
             ->assertSee('notifications.bell', false);
     }
+
+    public function test_public_header_shows_bell_only_for_logged_in_users(): void
+    {
+        $this->get(route('schedules'))->assertOk()->assertDontSee('notifications.bell', false);
+
+        $this->actingAs($this->admin)->get(route('schedules'))
+            ->assertOk()
+            ->assertSee('notifications.bell', false);
+    }
 }

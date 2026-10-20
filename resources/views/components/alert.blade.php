@@ -5,11 +5,23 @@
     'items' => null, // array of bullet point items
     'dismissible' => true,
     'autoSession' => true,
+    'position' => 'top-right', // top-right, top-left, bottom-left, bottom-right, center
+    'duration' => 5000,
 ])
 
-{{-- Notifikasi mengambang (toast) saja, tanpa box inline. Prop $dismissible dipertahankan demi kompatibilitas. --}}
+{{-- Notifikasi mengambang (toast) saja, tanpa box inline. Posisi diatur lewat prop $position. --}}
 @php
     $toasts = [];
+
+    // Normalisasi posisi: "top right", "top_right", "TOP-RIGHT" -> "top-right"
+    $positionKey = str_replace([' ', '_'], '-', strtolower(trim((string) $position)));
+    $positionClasses = match ($positionKey) {
+        'top-left' => 'top-4 left-4 items-start',
+        'bottom-left' => 'bottom-4 left-4 items-start',
+        'bottom-right' => 'bottom-4 right-4 items-end',
+        'center' => 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 items-center',
+        default => 'top-4 right-4 items-end',
+    };
 
     // Notifikasi eksplisit via props / slot
     if ($type !== null || $message !== null || ! empty($slot->toHtml()) || $title !== null) {
@@ -71,20 +83,40 @@
 @endphp
 
 @if (! empty($toasts))
-    <div x-data x-init="
-        $nextTick(() => {
-            @foreach ($toasts as $t)
-                $dispatch('toast-show', {
-                    duration: {{ $t['duration'] ?? 5000 }},
-                    slots: {
-                        text: {{ Js::from($t['text']) }},
-                        heading: {{ Js::from($t['heading']) }}
-                    },
-                    dataset: {
-                        variant: {{ Js::from($t['variant']) }}
-                    }
-                });
-            @endforeach
-        });
-    " class="hidden" data-alert-toast></div>
+    <div data-alert-toast data-position="{{ $positionKey }}"
+        class="pointer-events-none fixed z-[100] flex w-[calc(100%-2rem)] max-w-sm flex-col gap-2 print:hidden {{ $positionClasses }}">
+        @foreach ($toasts as $t)
+            @php
+                $icon = match ($t['variant']) {
+                    'success' => ['check-circle', 'text-emerald-500'],
+                    'danger' => ['x-circle', 'text-rose-500'],
+                    'warning' => ['exclamation-triangle', 'text-amber-500'],
+                    default => ['information-circle', 'text-sky-500'],
+                };
+            @endphp
+
+            <div x-data="{ show: true }"
+                x-init="setTimeout(() => show = false, {{ (int) ($t['duration'] ?? $duration) }})"
+                x-show="show" x-cloak
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100 scale-100"
+                x-transition:leave-end="opacity-0 scale-95"
+                role="alert" data-variant="{{ $t['variant'] }}"
+                class="pointer-events-auto flex w-full items-start gap-3 rounded-xl border border-zinc-200 bg-white p-3 shadow-lg dark:border-zinc-600 dark:bg-zinc-700">
+                <flux:icon :name="$icon[0]" class="mt-0.5 size-5 shrink-0 {{ $icon[1] }}" />
+
+                <div class="min-w-0 flex-1">
+                    <div class="text-sm font-semibold text-zinc-800 dark:text-white">{{ $t['heading'] }}</div>
+                    <div class="mt-0.5 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">{{ $t['text'] }}</div>
+                </div>
+
+                @if ($dismissible)
+                    <flux:button size="xs" variant="subtle" icon="x-mark" x-on:click="show = false" aria-label="Tutup notifikasi" />
+                @endif
+            </div>
+        @endforeach
+    </div>
 @endif

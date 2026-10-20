@@ -15,7 +15,7 @@ class AlertComponentTest extends TestCase
 
         $this->assertStringContainsString('Operasi Sukses', $rendered);
         $this->assertStringContainsString('Data berhasil disimpan ke sistem.', $rendered);
-        $this->assertStringContainsString("variant: 'success'", $rendered);
+        $this->assertStringContainsString('data-variant="success"', $rendered);
         $this->assertStringContainsString('data-alert-toast', $rendered);
         $this->assertStringNotContainsString('data-alert-root', $rendered);
     }
@@ -26,7 +26,7 @@ class AlertComponentTest extends TestCase
 
         $this->assertStringContainsString('Peringatan Keras', $rendered);
         $this->assertStringContainsString('Terjadi galat tak terduga.', $rendered);
-        $this->assertStringContainsString("variant: 'danger'", $rendered);
+        $this->assertStringContainsString('data-variant="danger"', $rendered);
         $this->assertStringContainsString('data-alert-toast', $rendered);
         $this->assertStringNotContainsString('data-alert-root', $rendered);
     }
@@ -37,7 +37,7 @@ class AlertComponentTest extends TestCase
 
         $this->assertStringContainsString('Perhatian', $rendered);
         $this->assertStringContainsString('Batas waktu pendaftaran hampir berakhir.', $rendered);
-        $this->assertStringContainsString("variant: 'warning'", $rendered);
+        $this->assertStringContainsString('data-variant="warning"', $rendered);
         $this->assertStringContainsString('data-alert-toast', $rendered);
         $this->assertStringNotContainsString('data-alert-root', $rendered);
     }
@@ -50,7 +50,7 @@ class AlertComponentTest extends TestCase
 
         $this->assertStringContainsString('Berhasil Disimpan', $rendered);
         $this->assertStringContainsString('Pendaftaran kontingen berhasil diverifikasi.', $rendered);
-        $this->assertStringContainsString("variant: 'success'", $rendered);
+        $this->assertStringContainsString('data-variant="success"', $rendered);
         $this->assertStringContainsString('data-alert-toast', $rendered);
         $this->assertStringNotContainsString('data-alert-root', $rendered);
     }
@@ -63,7 +63,7 @@ class AlertComponentTest extends TestCase
 
         $this->assertStringContainsString('Terjadi Kesalahan', $rendered);
         $this->assertStringContainsString('Token QR tidak valid atau kedaluwarsa.', $rendered);
-        $this->assertStringContainsString("variant: 'danger'", $rendered);
+        $this->assertStringContainsString('data-variant="danger"', $rendered);
         $this->assertStringContainsString('data-alert-toast', $rendered);
         $this->assertStringNotContainsString('data-alert-root', $rendered);
     }
@@ -76,7 +76,7 @@ class AlertComponentTest extends TestCase
 
         $this->assertStringContainsString('Peringatan', $rendered);
         $this->assertStringContainsString('Berkas bindamping belum lengkap.', $rendered);
-        $this->assertStringContainsString("variant: 'warning'", $rendered);
+        $this->assertStringContainsString('data-variant="warning"', $rendered);
         $this->assertStringContainsString('data-alert-toast', $rendered);
         $this->assertStringNotContainsString('data-alert-root', $rendered);
     }
@@ -96,7 +96,7 @@ class AlertComponentTest extends TestCase
         $this->assertStringContainsString('Terdapat Kesalahan Pengisian Formulir', $rendered);
         $this->assertStringContainsString('Format email tidak valid.', $rendered);
         $this->assertStringContainsString('Kata sandi minimal 8 karakter.', $rendered);
-        $this->assertStringContainsString("variant: 'danger'", $rendered);
+        $this->assertStringContainsString('data-variant="danger"', $rendered);
         $this->assertStringContainsString('data-alert-toast', $rendered);
         $this->assertStringNotContainsString('data-alert-root', $rendered);
     }
@@ -105,6 +105,32 @@ class AlertComponentTest extends TestCase
     {
         $rendered = Blade::render('<x-alert />');
 
-        $this->assertStringNotContainsString('toast-show', $rendered);
+        $this->assertStringNotContainsString('data-alert-toast', $rendered);
+    }
+
+    public function test_default_position_is_top_right(): void
+    {
+        $rendered = Blade::render('<x-alert type="info" message="Halo" />');
+
+        $this->assertStringContainsString('data-position="top-right"', $rendered);
+        $this->assertStringContainsString('top-4 right-4', $rendered);
+    }
+
+    public function test_position_prop_moves_toast(): void
+    {
+        $cases = [
+            'top-left' => 'top-4 left-4',
+            'bottom-left' => 'bottom-4 left-4',
+            'bottom-right' => 'bottom-4 right-4',
+            'center' => 'top-1/2 left-1/2',
+            'bottom right' => 'bottom-4 right-4',
+            'tidak-valid' => 'top-4 right-4',
+        ];
+
+        foreach ($cases as $position => $classes) {
+            $rendered = Blade::render('<x-alert type="info" message="Halo" position="'.$position.'" />');
+
+            $this->assertStringContainsString($classes, $rendered, "Posisi {$position}");
+        }
     }
 }

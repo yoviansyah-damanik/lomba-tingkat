@@ -123,7 +123,10 @@
                 </a>
             @endauth
 
-            {{-- Tombol Dark Mode Switcher --}}
+            {{-- Tombol Notifikasi (akun login) & Dark Mode Switcher --}}
+            @auth
+                <livewire:notifications.bell placement="header" lazy />
+            @endauth
             <x-theme-toggle />
 
             {{-- Mobile Menu Button --}}
