@@ -1,5 +1,5 @@
 // Progressive Web App (PWA) Service Worker — LT III Kwarcab Padangsidimpuan 2026
-const CACHE_NAME = 'lt3-pwa-v2';
+const CACHE_NAME = 'lt3-pwa-v3';
 const PRECACHE_ASSETS = [
     '/offline.html',
     '/manifest.json',
@@ -35,17 +35,24 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const { request } = event;
 
-    // Abaikan permintaan non-GET dan Livewire internal updates
-    if (request.method !== 'GET' || request.url.includes('/livewire/update')) {
+    const url = new URL(request.url);
+
+    // Abaikan non-GET, lintas origin (mis. Vite dev server :5173), Livewire, dan modul dev Vite
+    if (
+        request.method !== 'GET' ||
+        url.origin !== self.location.origin ||
+        url.pathname.startsWith('/livewire') ||
+        url.pathname.startsWith('/@vite') ||
+        url.pathname.startsWith('/resources/') ||
+        url.pathname.startsWith('/node_modules/')
+    ) {
         return;
     }
 
     // Untuk navigasi halaman (HTML document)
     if (request.mode === 'navigate') {
         event.respondWith(
-            fetch(request).catch(() => {
-                return caches.match('/offline.html');
-            })
+            fetch(request).catch(() => caches.match('/offline.html').then((res) => res || Response.error()))
         );
         return;
     }
@@ -64,10 +71,7 @@ self.addEventListener('fetch', (event) => {
                     });
                 }
                 return networkResponse;
-            }).catch(() => {
-                // Fallback jika aset tidak tersedia saat offline
-                return cachedResponse;
-            });
+            }).catch(() => Response.error());
         })
     );
 });
