@@ -73,7 +73,7 @@ Create `/etc/supervisor/conf.d/lt3.conf`:
 ```ini
 [program:lt3-worker]
 process_name=%(program_name)s_%(process_num)02d
-command=php /var/www/lomba-tingkat/artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
+command=php /var/www/lomba-tingkat/artisan queue:work redis --queue=notifications,default --sleep=3 --tries=3 --max-time=3600
 autostart=true
 autorestart=true
 user=www-data
@@ -95,6 +95,8 @@ supervisorctl reread
 supervisorctl update
 supervisorctl start all
 ```
+
+> Worker WAJIB memproses queue `notifications` (pengingat push H-30 menit). Panduan lengkap untuk operator/AI server: [server-queue-and-scheduler-setup.md](server-queue-and-scheduler-setup.md).
 
 ## 5. Cron Job Scheduling
 Add to crontab (`crontab -e -u www-data`):

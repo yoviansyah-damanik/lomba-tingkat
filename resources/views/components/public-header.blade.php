@@ -1,8 +1,8 @@
 {{-- Header Navigasi Publik (dipakai di seluruh halaman depan: beranda, auth, register, dll.) --}}
 <header class="sticky top-0 z-50 border-b border-amber-200/50 bg-white/80 backdrop-blur-md dark:border-amber-500/20 dark:bg-zinc-900/80">
-    <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8 2xl:gap-8">
         {{-- Logo Brand --}}
-        <a href="{{ route('home') }}" wire:navigate class="flex items-center gap-3 transition-transform hover:scale-[1.01]">
+        <a href="{{ route('home') }}" wire:navigate class="flex shrink-0 items-center gap-3 transition-transform hover:scale-[1.01]">
             <img src="{{ asset('logo.png') }}" alt="Logo LT III" class="size-10 object-contain drop-shadow-sm">
             <div>
                 <span class="block text-sm font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-base">
@@ -15,26 +15,26 @@
         </a>
 
         {{-- Navigasi Desktop (Livewire 4 wire:navigate) --}}
-        <nav class="hidden md:flex items-center gap-1 text-sm font-medium">
-            <a href="{{ route('home') }}" wire:navigate class="rounded-lg px-3 py-1.5 transition-colors {{ request()->routeIs('home') ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300' : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800' }}">
+        <nav class="hidden xl:flex min-w-0 items-center gap-0.5 text-[13px] font-medium 2xl:gap-1 2xl:text-sm">
+            <a href="{{ route('home') }}" wire:navigate class="whitespace-nowrap rounded-lg px-2.5 py-1.5 transition-colors 2xl:px-3.5 {{ request()->routeIs('home') ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300' : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800' }}">
                 Beranda
             </a>
-            <a href="{{ route('announcements') }}" wire:navigate class="rounded-lg px-3 py-1.5 transition-colors {{ request()->routeIs('announcements*') ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300' : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800' }}">
+            <a href="{{ route('announcements') }}" wire:navigate class="whitespace-nowrap rounded-lg px-2.5 py-1.5 transition-colors 2xl:px-3.5 {{ request()->routeIs('announcements*') ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300' : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800' }}">
                 Pengumuman
             </a>
-            <a href="{{ route('competitions') }}" wire:navigate class="rounded-lg px-3 py-1.5 transition-colors {{ request()->routeIs('competitions') ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300' : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800' }}">
+            <a href="{{ route('competitions') }}" wire:navigate class="whitespace-nowrap rounded-lg px-2.5 py-1.5 transition-colors 2xl:px-3.5 {{ request()->routeIs('competitions') ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300' : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800' }}">
                 Mata Lomba & Juknis
             </a>
-            <a href="{{ route('schedules') }}" wire:navigate class="rounded-lg px-3 py-1.5 transition-colors {{ request()->routeIs('schedules') ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300' : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800' }}">
+            <a href="{{ route('schedules') }}" wire:navigate class="whitespace-nowrap rounded-lg px-2.5 py-1.5 transition-colors 2xl:px-3.5 {{ request()->routeIs('schedules') ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300' : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800' }}">
                 Jadwal
             </a>
-            <a href="{{ route('participants') }}" wire:navigate class="rounded-lg px-3 py-1.5 transition-colors {{ request()->routeIs('participants') ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300' : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800' }}">
+            <a href="{{ route('participants') }}" wire:navigate class="whitespace-nowrap rounded-lg px-2.5 py-1.5 transition-colors 2xl:px-3.5 {{ request()->routeIs('participants') ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300' : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800' }}">
                 Peserta
             </a>
-            <a href="{{ route('leaderboard') }}" wire:navigate class="rounded-lg px-3 py-1.5 transition-colors {{ request()->routeIs('leaderboard') ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300' : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800' }}">
+            <a href="{{ route('leaderboard') }}" wire:navigate class="whitespace-nowrap rounded-lg px-2.5 py-1.5 transition-colors 2xl:px-3.5 {{ request()->routeIs('leaderboard') ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300' : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800' }}">
                 Klasemen
             </a>
-            <a href="{{ route('guide') }}" wire:navigate class="rounded-lg px-3 py-1.5 transition-colors {{ request()->routeIs('guide') ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300' : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800' }}">
+            <a href="{{ route('guide') }}" wire:navigate class="whitespace-nowrap rounded-lg px-2.5 py-1.5 transition-colors 2xl:px-3.5 {{ request()->routeIs('guide') ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300' : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800' }}">
                 Panduan
             </a>
         </nav>
@@ -49,7 +49,7 @@
                 @endphp
 
                 {{-- Dropdown Data Akun Login (Desktop) --}}
-                <div class="relative hidden md:block" x-data="{ userMenuOpen: false }">
+                <div class="relative hidden xl:block" x-data="{ userMenuOpen: false }">
                     <button @click="userMenuOpen = !userMenuOpen"
                             type="button"
                             id="user-menu-button"
@@ -120,7 +120,7 @@
                 </div>
             @else
                 {{-- Belum login (Desktop): Hanya tampilkan tombol Masuk --}}
-                <a href="{{ route('login') }}" wire:navigate class="hidden md:inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm shadow-amber-600/20 transition-all hover:brightness-105">
+                <a href="{{ route('login') }}" wire:navigate class="hidden xl:inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm shadow-amber-600/20 transition-all hover:brightness-105">
                     <flux:icon name="arrow-right-start-on-rectangle" class="size-4" />
                     <span>Masuk</span>
                 </a>
@@ -130,7 +130,7 @@
             <x-theme-toggle />
 
             {{-- Mobile Menu Button --}}
-            <div class="md:hidden" x-data="{ open: false }">
+            <div class="xl:hidden" x-data="{ open: false }">
                 <button @click="open = !open" type="button" class="inline-flex size-9 items-center justify-center rounded-lg border border-zinc-200 text-zinc-600 dark:border-zinc-800 dark:text-zinc-300 cursor-pointer" aria-label="Menu Utama">
                     <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />

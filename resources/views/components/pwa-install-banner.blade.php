@@ -147,6 +147,7 @@
             return outputArray;
         }
     }"
+    x-effect="window.__pwaBannerVisible = showInstallBanner; window.dispatchEvent(new CustomEvent('pwa-banner-change'))"
     class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 max-w-sm sm:max-w-md w-[calc(100%-2rem)] sm:w-auto pointer-events-none print:hidden"
 >
     {{-- Notifikasi Mengambang Pasang Aplikasi PWA --}}

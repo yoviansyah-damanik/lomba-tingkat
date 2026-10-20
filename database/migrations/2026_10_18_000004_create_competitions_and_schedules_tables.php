@@ -39,6 +39,7 @@ return new class extends Migration
             $table->dateTime('checkin_close_time')->nullable();
             $table->string('status')->default('scheduled'); // scheduled, in_progress, completed, rescheduled, cancelled
             $table->boolean('is_published')->default(true);
+            $table->timestamp('reminder_sent_at')->nullable(); // penanda pengingat push H-30 menit sudah dikirim
             $table->timestamps();
 
             $table->index(['competition_id', 'start_time', 'is_published'], 'comp_sched_time_pub_idx');

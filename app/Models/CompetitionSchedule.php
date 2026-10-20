@@ -29,6 +29,7 @@ class CompetitionSchedule extends Model
         'checkin_close_time',
         'status',
         'is_published',
+        'reminder_sent_at',
     ];
 
     protected function casts(): array
@@ -39,6 +40,7 @@ class CompetitionSchedule extends Model
             'checkin_open_time' => 'datetime',
             'checkin_close_time' => 'datetime',
             'is_published' => 'boolean',
+            'reminder_sent_at' => 'datetime',
         ];
     }
 
@@ -48,6 +50,11 @@ class CompetitionSchedule extends Model
     protected static function booted(): void
     {
         static::saving(function (CompetitionSchedule $schedule) {
+            // Jadwal diubah: pengingat push boleh dikirim ulang untuk waktu yang baru
+            if ($schedule->exists && $schedule->isDirty('start_time') && ! $schedule->isDirty('reminder_sent_at')) {
+                $schedule->reminder_sent_at = null;
+            }
+
             // Presensi dibuka paling cepat 30 menit sebelum waktu lomba dimulai
             if ($schedule->start_time) {
                 $schedule->checkin_open_time = $schedule->start_time->copy()->subMinutes(30);
