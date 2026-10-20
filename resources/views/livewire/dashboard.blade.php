@@ -34,6 +34,7 @@
                     {{ now()->setTimezone('Asia/Jakarta')->locale('id')->isoFormat('dddd, D MMMM Y • HH:mm') }} WIB
                 </span>
             </div>
+            <livewire:notifications.bell lazy />
             <x-theme-toggle :show-label="true" class="hidden sm:inline-flex px-3 py-2 text-xs" />
         </div>
     </div>

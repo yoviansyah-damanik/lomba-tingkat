@@ -1,3 +1,5 @@
+@props(['sidebar' => false])
+
 {{-- Notifikasi mengambang Aktifkan Notifikasi (gaya sama dengan banner Pasang Aplikasi, posisi kiri-bawah) --}}
 <div
     x-data="{
@@ -105,7 +107,7 @@
             return Uint8Array.from(raw, (c) => c.charCodeAt(0));
         },
     }"
-    class="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-50 max-w-sm sm:max-w-md w-[calc(100%-2rem)] sm:w-auto pointer-events-none print:hidden"
+    class="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 {{ $sidebar ? 'lg:left-72' : '' }} z-50 max-w-sm sm:max-w-md w-[calc(100%-2rem)] sm:w-auto pointer-events-none print:hidden"
 >
     <div
         x-show="visible"

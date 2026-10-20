@@ -156,6 +156,12 @@
                                 Masuk ke Dasbor &rarr;
                             </a>
                         </div>
+
+                        <div class="mt-3">
+                            <flux:button href="{{ route('guide') }}" wire:navigate icon="book-open-text" variant="subtle" size="sm" class="w-full">
+                            Baca Panduan Pendaftaran &amp; Penggunaan
+                        </flux:button>
+                        </div>
                     </div>
                 </div>
 

@@ -6,9 +6,12 @@ use App\Enums\RegistrationStatusEnum;
 use App\Enums\RoleEnum;
 use App\Models\Event;
 use App\Models\ScoutGroup;
+use App\Jobs\SendScoutGroupRegisteredPush;
 use App\Models\User;
+use App\Services\WebPushService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class ScoutGroupRegistrationTest extends TestCase
@@ -343,5 +346,52 @@ class ScoutGroupRegistrationTest extends TestCase
         $this->assertEquals(RegistrationStatusEnum::Verified, $scoutGroup->fresh()->verification_status);
         $this->assertEquals($admin->id, $scoutGroup->fresh()->verified_by);
     }
-}
 
+    public function test_registration_queues_push_notification_for_admins(): void
+    {
+        Queue::fake();
+
+        $this->post(route('register.scout-group.store'), [
+            'school_name' => 'SMP Negeri 5 Padangsidimpuan',
+            'group_number' => '01-101',
+            'kwarran' => 'Kwarran Padangsidimpuan Utara',
+            'address' => 'Jl. Sudirman No. 5',
+            'pic_name' => 'Kak Rahmat',
+            'phone_number' => '081211112222',
+            'email' => 'gudep05@pramukapsp.test',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'terms' => '1',
+        ])->assertSessionHasNoErrors();
+
+        $group = ScoutGroup::where('school_name', 'SMP Negeri 5 Padangsidimpuan')->firstOrFail();
+
+        Queue::assertPushed(SendScoutGroupRegisteredPush::class, fn ($job) => $job->scoutGroupId === $group->id);
+    }
+
+    public function test_registered_push_job_targets_admin_role_only(): void
+    {
+        $user = User::factory()->create();
+        $group = ScoutGroup::create([
+            'user_id' => $user->id,
+            'registration_code' => ScoutGroup::generateRegistrationCode(),
+            'school_name' => 'SMP Uji Push',
+            'group_number' => '01-201',
+            'kwarran_name' => 'Kwarran Padangsidimpuan Utara',
+            'address' => 'Jl. Uji',
+            'contact_person' => 'Kak Uji',
+            'contact_phone' => '081200000000',
+            'verification_status' => RegistrationStatusEnum::Draft,
+        ]);
+
+        $this->mock(WebPushService::class, function ($mock) {
+            $mock->shouldReceive('broadcastNotification')
+                ->once()
+                ->withArgs(fn ($payload, $role) => $role === RoleEnum::Admin->value
+                    && $payload['title'] === 'Pendaftaran Gugus Depan Baru')
+                ->andReturn(['total' => 1, 'sent' => 1, 'failed' => 0, 'expired' => 0, 'target_role' => 'admin']);
+        });
+
+        (new SendScoutGroupRegisteredPush($group->id))->handle(app(WebPushService::class));
+    }
+}

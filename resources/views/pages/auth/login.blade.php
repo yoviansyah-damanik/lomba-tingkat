@@ -217,6 +217,13 @@
                         </div>
                     </div>
 
+                    {{-- Tautan Panduan --}}
+                    <div class="mt-4">
+                        <flux:button href="{{ route('guide') }}" wire:navigate icon="book-open-text" variant="subtle" size="sm" class="w-full">
+                            Baca Panduan Pendaftaran &amp; Penggunaan
+                        </flux:button>
+                    </div>
+
                     {{-- Helpdesk Footnote --}}
                     <div class="mt-4 text-center">
                         <p class="text-[11px] text-zinc-500 dark:text-zinc-400">

@@ -14,6 +14,8 @@ use Minishlink\WebPush\WebPush;
  */
 class WebPushService
 {
+    public function __construct(protected InAppNotificationService $inApp) {}
+
     /**
      * Mengambil VAPID Public Key
      */
@@ -132,11 +134,31 @@ class WebPushService
     }
 
     /**
+     * Mengirim notifikasi push ke seluruh perangkat milik satu akun pengguna
+     */
+    public function notifyUser(User $user, array $payload): array
+    {
+        $sent = 0;
+        $failed = 0;
+
+        $this->inApp->toUsers($user, $payload);
+
+        foreach (PushSubscription::where('user_id', $user->id)->get() as $subscription) {
+            $this->sendNotification($subscription, $payload)['success'] ? $sent++ : $failed++;
+        }
+
+        return ['sent' => $sent, 'failed' => $failed];
+    }
+
+    /**
      * Menyiarkan notifikasi push massal. Target: null (semua perangkat),
      * "guest" (pengunjung tanpa login), atau nama role.
      */
     public function broadcastNotification(array $payload, ?string $targetRole = null, ?User $sender = null): array
     {
+        // Pemberitahuan dalam aplikasi untuk akun yang menjadi sasaran (muncul di lonceng dasbor)
+        $this->inApp->toTarget($targetRole, $payload);
+
         $query = PushSubscription::query();
 
         if ($targetRole === 'guest') {

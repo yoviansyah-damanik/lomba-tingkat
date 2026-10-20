@@ -71,7 +71,8 @@
 
                     <div class="pt-2">
                         <span class="text-[11px] text-zinc-500 block leading-relaxed max-w-md">
-                            Dikelola oleh Panitia Pelaksana dan Dewan Juri LT III Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan Tahun 2026.
+                            Dikelola oleh Panitia Pelaksana dan Dewan Juri LT III Kwartir Cabang Gerakan Pramuka Kota
+                            Padangsidimpuan Tahun 2026.
                         </span>
                     </div>
                 </div>
@@ -92,10 +93,12 @@
                         Pasang Aplikasi LT
                     </h3>
 
-                    <div class="rounded-2xl border border-amber-500/25 bg-gradient-to-br from-amber-950/40 via-zinc-900/90 to-zinc-900/90 p-5 shadow-lg backdrop-blur-xs space-y-3.5">
+                    <div
+                        class="rounded-2xl border border-amber-500/25 bg-gradient-to-br from-amber-950/40 via-zinc-900/90 to-zinc-900/90 p-5 shadow-lg backdrop-blur-xs space-y-3.5">
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex items-center gap-3">
-                                <span class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-md ring-2 ring-amber-400/30">
+                                <span
+                                    class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-md ring-2 ring-amber-400/30">
                                     <flux:icon name="device-phone-mobile" class="size-6" />
                                 </span>
                                 <div>
@@ -103,18 +106,20 @@
                                         Aplikasi Resmi LT III
                                     </h4>
                                     <span class="text-xs text-amber-400 font-semibold">
-                                        Progressive Web App (PWA)
+                                        Kwarcab Padangsidimpuan
                                     </span>
                                 </div>
                             </div>
-                            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/30">
+                            <span
+                                class="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/30">
                                 <flux:icon name="bolt" class="size-3" />
                                 Ringan
                             </span>
                         </div>
 
                         <p class="text-xs text-zinc-300 leading-relaxed">
-                            Pasang aplikasi langsung di Layar Utama (*Home Screen*) ponsel atau desktop Anda untuk akses cepat, stabil, dan hemat kuota.
+                            Pasang aplikasi langsung di Layar Utama (*Home Screen*) ponsel atau desktop Anda untuk akses
+                            cepat, stabil, dan hemat kuota.
                         </p>
 
                         <div class="space-y-1.5 text-[11px] text-zinc-400 border-t border-zinc-800/80 pt-2.5">
@@ -130,7 +135,8 @@
 
                         <div class="pt-1">
                             <template x-if="isStandalone">
-                                <div class="flex items-center justify-center gap-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 py-2.5 px-3 text-xs font-bold text-emerald-400">
+                                <div
+                                    class="flex items-center justify-center gap-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 py-2.5 px-3 text-xs font-bold text-emerald-400">
                                     <flux:icon name="check-circle" class="size-4 text-emerald-400" />
                                     <span>Aplikasi Sudah Terpasang</span>
                                 </div>
@@ -138,16 +144,14 @@
 
                             <template x-if="!isStandalone">
                                 <div class="space-y-2">
-                                    <flux:button
-                                        icon="arrow-down-tray"
-                                        variant="primary"
+                                    <flux:button icon="arrow-down-tray" variant="primary"
                                         class="w-full justify-center shadow-md shadow-amber-500/10 cursor-pointer"
-                                        x-on:click="installApp()"
-                                    >
+                                        x-on:click="installApp()">
                                         Pasang Aplikasi Sekarang
                                     </flux:button>
                                     <span class="block text-[10px] text-center text-zinc-400">
-                                        Pengguna iOS: pilih menu <em>Bagikan (Share)</em> &rarr; <em>Tambah ke Layar Utama</em>
+                                        Pengguna iOS: pilih menu <em>Bagikan (Share)</em> &rarr; <em>Tambah ke Layar
+                                            Utama</em>
                                     </span>
                                 </div>
                             </template>
@@ -183,8 +187,7 @@
                         </div>
 
                         <div class="pt-2 border-t border-zinc-800/80">
-                            <span
-                                class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 block mb-1.5">
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 block mb-1.5">
                                 Akses Informasi:
                             </span>
                             <div class="flex flex-wrap gap-2 text-xs">
@@ -222,8 +225,8 @@
                     }
                 }">
                     <template x-if="!isStandalone">
-                        <flux:button icon="arrow-down-tray" variant="subtle" size="xs"
-                            x-on:click="installApp()" class="text-amber-400 hover:text-amber-300">
+                        <flux:button icon="arrow-down-tray" variant="subtle" size="xs" x-on:click="installApp()"
+                            class="text-amber-400 hover:text-amber-300">
                             Pasang Aplikasi di Layar Utama
                         </flux:button>
                     </template>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Enums\RegistrationStatusEnum;
 use App\Enums\RoleEnum;
 use App\Http\Controllers\Controller;
+use App\Jobs\SendScoutGroupRegisteredPush;
 use App\Models\Event;
 use App\Models\ScoutGroup;
 use App\Models\User;
@@ -13,8 +14,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
+use Throwable;
 
 /**
  * Controller untuk registrasi akun baru pangkalan Gugus Depan (Sekolah / Kontingen)
@@ -128,6 +131,13 @@ class ScoutGroupRegistrationController extends Controller
                 'verification_status' => RegistrationStatusEnum::Draft,
             ]);
         });
+
+        // Beritahu Admin lewat push; kegagalan notifikasi tidak boleh menggagalkan pendaftaran
+        try {
+            SendScoutGroupRegisteredPush::dispatch($scoutGroup->id);
+        } catch (Throwable $e) {
+            Log::warning('Gagal mengantrekan notifikasi pendaftaran gudep: '.$e->getMessage());
+        }
 
         // Login otomatis dan arahkan langsung ke Dasbor Kontingen Gudep
         Auth::login($scoutGroup->user);

@@ -10,10 +10,13 @@ use App\Models\Chaperone;
 use App\Models\Participant;
 use App\Models\Patrol;
 use App\Models\ScoutGroup;
+use App\Jobs\SendVerificationResultPush;
 use App\Models\User;
+use App\Services\WebPushService;
 use App\Livewire\Portal\PatrolsManagement;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -97,6 +100,90 @@ class ContingentRegistrationTest extends TestCase
             ->assertOk()
             ->assertSee('Kwartir Ranting (Kwarran)')
             ->assertSee('Jl. Kenanga No. 10');
+    }
+
+    /**
+     * Menguji profil terkunci setelah pendaftaran diajukan atau diverifikasi
+     */
+    public function test_scout_group_cannot_update_profile_after_submission_or_verification(): void
+    {
+        foreach ([RegistrationStatusEnum::Submitted, RegistrationStatusEnum::Verified] as $status) {
+            $scoutGroup = ScoutGroup::factory()->create([
+                'user_id' => $this->scoutGroupUser->id,
+                'school_name' => 'SMP Terkunci',
+                'verification_status' => $status,
+            ]);
+
+            $this->actingAs($this->scoutGroupUser)->get(route('scout-group.profile'))
+                ->assertOk()
+                ->assertSee('Data Terkunci')
+                ->assertDontSee('Simpan Profil');
+
+            $this->actingAs($this->scoutGroupUser)->post(route('scout-group.profile.update'), [
+                'school_name' => 'Nama Diubah',
+                'group_number' => '01-093',
+                'kwarran' => 'Kwarran Padangsidimpuan Utara',
+                'address' => 'Jl. Baru',
+                'pic_name' => 'Nama Baru',
+                'phone_number' => '0800000000',
+                'email' => 'baru@example.test',
+                'password' => 'password-baru-123',
+                'password_confirmation' => 'password-baru-123',
+            ])->assertSessionHasErrors('status');
+
+            $this->assertDatabaseHas('scout_groups', ['id' => $scoutGroup->id, 'school_name' => 'SMP Terkunci']);
+            $this->assertDatabaseMissing('users', ['email' => 'baru@example.test']);
+
+            $scoutGroup->delete();
+        }
+    }
+
+    /**
+     * Menguji akun Gudep dinotifikasi saat pendaftaran disetujui, diminta revisi, atau ditolak
+     */
+    public function test_verification_result_dispatches_push_to_scout_group_account(): void
+    {
+        Queue::fake();
+
+        $scoutGroup = ScoutGroup::factory()->create([
+            'user_id' => $this->scoutGroupUser->id,
+            'verification_status' => RegistrationStatusEnum::Submitted,
+        ]);
+
+        // Perubahan ke Submitted / field lain tidak memicu notifikasi
+        $scoutGroup->update(['school_name' => 'SMP Nama Lain']);
+        Queue::assertNothingPushed();
+
+        foreach ([RegistrationStatusEnum::Verified, RegistrationStatusEnum::NeedsRevision, RegistrationStatusEnum::Rejected] as $status) {
+            $scoutGroup->update(['verification_status' => $status, 'revision_notes' => 'Lengkapi berkas peserta.']);
+
+            Queue::assertPushed(SendVerificationResultPush::class,
+                fn ($job) => $job->scoutGroupId === $scoutGroup->id && $job->status === $status->value);
+        }
+    }
+
+    /**
+     * Menguji job hanya mengirim push ke perangkat milik akun Gudep terkait
+     */
+    public function test_verification_result_job_notifies_owner_account(): void
+    {
+        $scoutGroup = ScoutGroup::factory()->create([
+            'user_id' => $this->scoutGroupUser->id,
+            'verification_status' => RegistrationStatusEnum::NeedsRevision,
+            'revision_notes' => 'Foto peserta belum jelas.',
+        ]);
+
+        $this->mock(WebPushService::class, function ($mock) {
+            $mock->shouldReceive('notifyUser')
+                ->once()
+                ->withArgs(fn ($user, $payload) => $user->id === $this->scoutGroupUser->id
+                    && $payload['title'] === 'Pendaftaran Perlu Perbaikan'
+                    && str_contains($payload['body'], 'Foto peserta belum jelas.'))
+                ->andReturn(['sent' => 1, 'failed' => 0]);
+        });
+
+        (new SendVerificationResultPush($scoutGroup->id, RegistrationStatusEnum::NeedsRevision->value))
+            ->handle(app(WebPushService::class));
     }
 
     /**

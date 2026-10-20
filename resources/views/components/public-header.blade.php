@@ -15,7 +15,7 @@
         </a>
 
         {{-- Navigasi Desktop (Livewire 4 wire:navigate) --}}
-        <nav class="hidden xl:flex min-w-0 items-center gap-0.5 text-[13px] font-medium 2xl:gap-1 2xl:text-sm">
+        <nav class="hidden xl:flex min-w-0 flex-1 items-center justify-center gap-0.5 text-[13px] font-medium 2xl:gap-1 2xl:text-sm">
             <a href="{{ route('home') }}" wire:navigate class="whitespace-nowrap rounded-lg px-2.5 py-1.5 transition-colors 2xl:px-3.5 {{ request()->routeIs('home') ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300' : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800' }}">
                 Beranda
             </a>
@@ -34,9 +34,6 @@
             <a href="{{ route('leaderboard') }}" wire:navigate class="whitespace-nowrap rounded-lg px-2.5 py-1.5 transition-colors 2xl:px-3.5 {{ request()->routeIs('leaderboard') ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300' : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800' }}">
                 Klasemen
             </a>
-            <a href="{{ route('guide') }}" wire:navigate class="whitespace-nowrap rounded-lg px-2.5 py-1.5 transition-colors 2xl:px-3.5 {{ request()->routeIs('guide') ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300' : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800' }}">
-                Panduan
-            </a>
         </nav>
 
         {{-- Tombol Aksi Masuk / Data User --}}
@@ -53,11 +50,11 @@
                     <button @click="userMenuOpen = !userMenuOpen"
                             type="button"
                             id="user-menu-button"
-                            class="flex items-center gap-2.5 rounded-full border border-amber-200/80 bg-white/90 py-1 pl-1.5 pr-3 shadow-xs hover:border-amber-300 dark:border-amber-500/20 dark:bg-zinc-800/90 dark:hover:border-amber-500/40 transition-all cursor-pointer">
+                            class="flex items-center gap-2.5 rounded-full border border-amber-200/80 bg-white/90 py-1 pl-1.5 pr-2.5 shadow-xs hover:border-amber-300 dark:border-amber-500/20 dark:bg-zinc-800/90 dark:hover:border-amber-500/40 transition-all cursor-pointer">
                         <div class="flex size-7 items-center justify-center rounded-full bg-gradient-to-br from-amber-600 to-amber-700 text-[11px] font-bold text-white shadow-xs">
                             {{ $initials ?: 'U' }}
                         </div>
-                        <div class="text-left leading-tight">
+                        <div class="hidden text-left leading-tight 2xl:block">
                             <span class="block text-xs font-bold text-zinc-900 dark:text-zinc-100 max-w-[130px] truncate">
                                 {{ $user->name }}
                             </span>
@@ -198,7 +195,6 @@
                         <a href="{{ route('schedules') }}" wire:navigate class="rounded-lg p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800">Jadwal Kegiatan</a>
                         <a href="{{ route('participants') }}" wire:navigate class="rounded-lg p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800">Peserta Kontingen</a>
                         <a href="{{ route('leaderboard') }}" wire:navigate class="rounded-lg p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800">Klasemen</a>
-                        <a href="{{ route('guide') }}" wire:navigate class="rounded-lg p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800">Panduan Pendaftaran</a>
                     </nav>
 
                 </div>

@@ -1,10 +1,10 @@
 <x-layouts::app title="Profil Pangkalan Gugus Depan">
-    <div class="mx-auto max-w-4xl space-y-6">
+    <div class="mx-auto max-w-7xl space-y-6">
         <x-official-header />
 
         <x-heading-section
             title="Profil Pangkalan Gugus Depan"
-            description="Perbarui identitas pangkalan, nomor gudep resmi, dan akun penanggung jawab kontingen."
+            description="Identitas pangkalan, nomor gudep resmi, dan akun penanggung jawab kontingen."
             badge="Data Pangkalan Gudep"
             badge-icon="building-library"
             badge-color="amber"
@@ -12,9 +12,76 @@
 
         <x-alert />
 
-        <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:p-8">
+        @php($isLocked = ! $scoutGroup->isEditable())
+
+        <div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
+            {{-- Kolom Kiri: Status & Ketentuan --}}
+            <div class="space-y-6 lg:col-span-4 lg:sticky lg:top-24">
+                <div class="rounded-2xl border border-amber-300/70 bg-gradient-to-br from-amber-50/90 to-white p-5 shadow-sm dark:border-amber-500/20 dark:from-zinc-900 dark:to-zinc-900/90">
+                    <div class="flex items-center gap-3">
+                        <div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-600 font-bold text-white shadow-md shadow-amber-600/20">
+                            <flux:icon name="identification" class="size-5" />
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100">Status Pendaftaran</h3>
+                            <span class="text-[11px] font-medium text-amber-700 dark:text-amber-400">{{ $scoutGroup->registration_code }}</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <span class="inline-flex items-center rounded-lg border px-2.5 py-1 text-xs font-semibold {{ $scoutGroup->verification_status?->badgeClasses() }}">
+                            {{ $scoutGroup->verification_status?->label() ?? 'Draft (Belum Diajukan)' }}
+                        </span>
+                    </div>
+
+                    @if ($isLocked)
+                        <div class="mt-4 rounded-xl border border-amber-200 bg-amber-100/50 p-3 text-xs text-amber-950 dark:border-amber-500/20 dark:bg-amber-950/40 dark:text-amber-200">
+                            <strong class="mb-1 flex items-center gap-1.5 font-bold">
+                                <flux:icon name="lock-closed" class="size-4 text-amber-700 dark:text-amber-400" />
+                                Data Terkunci
+                            </strong>
+                            <p class="text-[11px] leading-relaxed">
+                                Profil tidak dapat diubah selama pendaftaran diajukan atau setelah diverifikasi. Hubungi Sekretariat Panitia LT III bila ada data yang perlu dikoreksi.
+                            </p>
+                        </div>
+                    @else
+                        <div class="mt-4 rounded-xl border border-amber-200 bg-amber-100/50 p-3 text-xs text-amber-950 dark:border-amber-500/20 dark:bg-amber-950/40 dark:text-amber-200">
+                            <strong class="mb-1 flex items-center gap-1.5 font-bold">
+                                <flux:icon name="information-circle" class="size-4 text-amber-700 dark:text-amber-400" />
+                                Perhatian
+                            </strong>
+                            <p class="text-[11px] leading-relaxed">
+                                Setelah pendaftaran diajukan dan diverifikasi Administrator, seluruh data profil tidak dapat diubah lagi.
+                            </p>
+                        </div>
+                    @endif
+                </div>
+
+                <div class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Ketentuan Pangkalan</h4>
+                    <ul class="mt-3 space-y-2 text-xs text-zinc-600 dark:text-zinc-400">
+                        <li class="flex items-start gap-2">
+                            <flux:icon name="check" class="mt-0.5 size-4 shrink-0 text-emerald-600" />
+                            <span>Pangkalan resmi SMP/MTs sederajat di 6 Kwartir Ranting Kota Padangsidimpuan.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <flux:icon name="check" class="mt-0.5 size-4 shrink-0 text-emerald-600" />
+                            <span>Setiap sekolah hanya mendaftarkan <strong>1 akun resmi</strong> penanggung jawab.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <flux:icon name="check" class="mt-0.5 size-4 shrink-0 text-emerald-600" />
+                            <span>Nomor WhatsApp aktif digunakan untuk konfirmasi verifikasi dan pemberitahuan pos lomba.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            {{-- Kolom Kanan: Formulir --}}
+            <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:p-8 lg:col-span-8">
             <form method="POST" action="{{ route('scout-group.profile.update') }}" class="space-y-6">
                 @csrf
+
+                <fieldset @disabled($isLocked) class="min-w-0 space-y-6 disabled:opacity-70">
 
                 {{-- Section A: Identitas Pangkalan --}}
                 <div>
@@ -220,11 +287,16 @@
                     </div>
                 </div>
 
-                <div class="flex items-center justify-end gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                    <flux:button href="{{ route('scout-group.index') }}" variant="subtle">Batal</flux:button>
-                    <flux:button type="submit" variant="primary" icon="check">Simpan Profil</flux:button>
+                </fieldset>
+
+                <div class="flex items-center justify-end gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                    <flux:button href="{{ route('scout-group.index') }}" variant="subtle">{{ $isLocked ? 'Kembali' : 'Batal' }}</flux:button>
+                    @unless ($isLocked)
+                        <flux:button type="submit" variant="primary" icon="check">Simpan Profil</flux:button>
+                    @endunless
                 </div>
             </form>
+            </div>
         </div>
     </div>
 </x-layouts::app>

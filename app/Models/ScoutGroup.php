@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\PatrolGenderEnum;
 use App\Enums\RegistrationStatusEnum;
+use App\Jobs\SendVerificationResultPush;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -35,6 +36,24 @@ class ScoutGroup extends Model
         'verified_by',
         'verified_at',
     ];
+
+    /**
+     * Boot model: beri tahu akun Gudep saat hasil verifikasi ditetapkan (disetujui, revisi, atau ditolak)
+     */
+    protected static function booted(): void
+    {
+        static::updated(function (ScoutGroup $group) {
+            $status = $group->verification_status;
+
+            if (! $group->wasChanged('verification_status') || ! $status) {
+                return;
+            }
+
+            if (in_array($status, [RegistrationStatusEnum::Verified, RegistrationStatusEnum::NeedsRevision, RegistrationStatusEnum::Rejected], true)) {
+                SendVerificationResultPush::dispatch($group->id, $status->value)->afterCommit();
+            }
+        });
+    }
 
     protected function casts(): array
     {
