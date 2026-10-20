@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8" wire:poll.15s="refreshStandings">
+<div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8" wire:poll.15s.visible="refreshStandings">
     {{-- Header Section --}}
     <x-heading-section
         title="Klasemen Perolehan Prestasi"

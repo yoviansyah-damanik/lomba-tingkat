@@ -235,4 +235,16 @@ class PwaAndWebPushTest extends TestCase
         $adminResponse->assertSee('Pasang Aplikasi LT III di Layar Utama (Homescreen)');
         $adminResponse->assertSee('Akses lebih cepat dengan mode offline terintegrasi tanpa perlu membuka browser berulang kali.');
     }
+
+    /**
+     * Memastikan service worker hanya meng-cache aset statis publik (bukan halaman/AJAX bersesi)
+     */
+    public function test_service_worker_only_caches_static_assets(): void
+    {
+        $content = file_get_contents(public_path('sw.js'));
+
+        $this->assertStringContainsString("url.pathname.startsWith('/build/')", $content);
+        $this->assertStringContainsString('if (!isStaticAsset || acceptsHtmlOrJson)', $content);
+        $this->assertStringNotContainsString('lt3-pwa-v1', $content);
+    }
 }

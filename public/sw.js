@@ -1,5 +1,5 @@
 // Progressive Web App (PWA) Service Worker — LT III Kwarcab Padangsidimpuan 2026
-const CACHE_NAME = 'lt3-pwa-v3';
+const CACHE_NAME = 'lt3-pwa-v4';
 const PRECACHE_ASSETS = [
     '/offline.html',
     '/manifest.json',
@@ -57,7 +57,20 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Untuk aset statis (Gambar, font, icons)
+    // Hanya aset statis publik yang di-cache. Halaman, fetch wire:navigate, JSON/AJAX, dan endpoint
+    // bersesi TIDAK boleh disimpan: cache lintas pengguna menyebabkan sesi/halaman pengguna lain tersaji.
+    const isStaticAsset =
+        PRECACHE_ASSETS.includes(url.pathname) ||
+        url.pathname.startsWith('/build/') ||
+        url.pathname.startsWith('/fonts/') ||
+        (['style', 'script', 'font'].includes(request.destination) && url.pathname.startsWith('/build/'));
+
+    const acceptsHtmlOrJson = (request.headers.get('accept') || '').match(/text\/html|application\/json/);
+
+    if (!isStaticAsset || acceptsHtmlOrJson) {
+        return;
+    }
+
     event.respondWith(
         caches.match(request).then((cachedResponse) => {
             if (cachedResponse) {

@@ -1,4 +1,4 @@
-<div wire:poll.30s class="relative" x-data="{ open: false }" x-on:keydown.escape.window="open = false">
+<div wire:poll.30s.visible class="relative" x-data="{ open: false }" x-on:keydown.escape.window="open = false">
     <div class="relative">
         <flux:button icon="bell" variant="subtle" size="sm" x-on:click="open = !open" aria-label="Notifikasi" />
 
