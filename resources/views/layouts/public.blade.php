@@ -30,6 +30,7 @@
     @fluxAppearance
 </head>
 <body class="min-h-screen bg-zinc-50 text-zinc-900 antialiased selection:bg-amber-500 selection:text-white dark:bg-zinc-950 dark:text-zinc-100 flex flex-col font-sans">
+    {{-- Header Navigasi Publik --}}
     <x-public-header />
 
     {{-- Main Content --}}

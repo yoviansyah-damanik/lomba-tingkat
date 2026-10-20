@@ -36,27 +36,7 @@
     @endphp
 
     {{-- Dedicated Top Navigation Bar for Registration Template --}}
-    <header class="sticky top-0 z-40 border-b border-zinc-200/70 bg-white/80 backdrop-blur-md dark:border-zinc-800/70 dark:bg-zinc-950/80">
-        <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-            {{-- Brand Logo sebagai Link ke Beranda --}}
-            <a href="{{ route('home') }}" wire:navigate class="flex items-center gap-2.5 sm:gap-3 transition hover:opacity-90 group" title="Kembali ke Beranda">
-                <img src="{{ asset('logo.png') }}" alt="Logo LT III" class="size-8 sm:size-9 object-contain drop-shadow-xs transition-transform group-hover:scale-105">
-                <div class="leading-tight">
-                    <span class="block text-xs font-bold text-zinc-900 dark:text-zinc-100 sm:text-sm">
-                        {{ config('app.name', 'LT III Kwarcab Padangsidimpuan') }}
-                    </span>
-                    <span class="block text-[10px] text-amber-700 dark:text-amber-400 font-medium">
-                        {{ config('app.description', 'Kwarcab Padangsidimpuan') }}
-                    </span>
-                </div>
-            </a>
-
-            {{-- Right Utilities --}}
-            <div class="flex items-center gap-2.5">
-                <x-theme-toggle />
-            </div>
-        </div>
-    </header>
+    <x-public-header />
 
     {{-- Main Container --}}
     <main class="flex-1 py-8 sm:py-10">
