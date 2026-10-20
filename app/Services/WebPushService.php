@@ -214,7 +214,7 @@ class WebPushService
             'subject' => config('services.vapid.subject') ?: config('app.url'),
             'publicKey' => config('services.vapid.public_key'),
             'privateKey' => config('services.vapid.private_key'),
-        ]], [], 10);
+        ]]);
     }
 
     /**
