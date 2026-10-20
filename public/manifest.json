@@ -1,0 +1,48 @@
+{
+  "name": "Lomba Tingkat III Kwarcab Padangsidimpuan 2026",
+  "short_name": "LT III 2026",
+  "description": "Sistem Informasi Terpadu Akreditasi, Presensi QR, Penilaian & Live Rank LT III 2026",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#d97706",
+  "categories": ["education", "sports"],
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Klasemen Live Rank",
+      "short_name": "Live Rank",
+      "description": "Pantau perolehan medali dan klasemen kontingen",
+      "url": "/leaderboard",
+      "icons": [{ "src": "/favicon.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Jadwal Pertandingan",
+      "short_name": "Jadwal",
+      "description": "Lihat jadwal sesi perlombaan",
+      "url": "/schedules",
+      "icons": [{ "src": "/favicon.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Portal Presensi Pos",
+      "short_name": "Presensi",
+      "description": "Scanner presensi pos QR code",
+      "url": "/portal/attendance",
+      "icons": [{ "src": "/favicon.png", "sizes": "192x192" }]
+    }
+  ]
+}
