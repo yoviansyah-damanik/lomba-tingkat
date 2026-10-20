@@ -17,8 +17,17 @@ class PushSubscriptionController extends Controller
      */
     public function vapidPublicKey(): JsonResponse
     {
+        $publicKey = $this->webPushService->getVapidPublicKey();
+
+        if ($publicKey === '') {
+            return response()->json([
+                'publicKey' => null,
+                'message' => 'Kunci VAPID belum dikonfigurasi di server. Hubungi Administrator.',
+            ], 503);
+        }
+
         return response()->json([
-            'publicKey' => $this->webPushService->getVapidPublicKey(),
+            'publicKey' => $publicKey,
         ]);
     }
 

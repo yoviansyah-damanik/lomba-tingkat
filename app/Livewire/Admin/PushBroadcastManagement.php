@@ -100,8 +100,18 @@ class PushBroadcastManagement extends Component
         $this->body = '';
         $this->actionUrl = '/announcements';
 
-        session()->flash('success', "Siaran notifikasi berhasil dikirimkan ke {$result['sent']} perangkat aktif.");
-        Flux::toast(variant: 'success', heading: 'Siaran Terkirim', text: "Siaran notifikasi berhasil dikirimkan ke {$result['sent']} perangkat aktif.");
+        if ($result['total'] === 0) {
+            session()->flash('warning', 'Belum ada perangkat yang terdaftar untuk target audiens ini.');
+            Flux::toast(variant: 'warning', heading: 'Tidak Ada Penerima', text: 'Belum ada perangkat yang terdaftar untuk target audiens ini.');
+        } elseif ($result['failed'] > 0) {
+            $message = "Terkirim ke {$result['sent']} dari {$result['total']} perangkat. {$result['failed']} gagal (kemungkinan langganan kedaluwarsa atau kunci VAPID belum diatur).";
+            session()->flash('warning', $message);
+            Flux::toast(variant: 'warning', heading: 'Siaran Terkirim Sebagian', text: $message);
+        } else {
+            $message = "Siaran notifikasi berhasil dikirimkan ke seluruh {$result['sent']} perangkat aktif.";
+            session()->flash('success', $message);
+            Flux::toast(variant: 'success', heading: 'Siaran Terkirim', text: $message);
+        }
     }
 
     public function render()

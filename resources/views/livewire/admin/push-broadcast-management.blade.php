@@ -78,11 +78,14 @@
                         wire:model="targetRole"
                         class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                     >
-                        <option value="">Semua Perangkat Terdaftar (Publik & Aparatur)</option>
+                        <option value="">Seluruh Pengguna Aplikasi (Semua Perangkat Terdaftar)</option>
                         <option value="judge">Khusus Dewan Juri</option>
                         <option value="committee">Khusus Panitia Pelaksana</option>
                         <option value="scout_group">Khusus Pembina Gugus Depan</option>
                     </select>
+                    <p class="mt-1 text-[11px] text-zinc-400">
+                        Pilih "Seluruh Pengguna Aplikasi" untuk menyiarkan contoh/pesan ini ke semua perangkat yang telah mengaktifkan notifikasi, tanpa dibatasi peran.
+                    </p>
                 </div>
 
                 {{-- Judul Notifikasi --}}
@@ -268,7 +271,7 @@
                             </td>
                             <td class="py-3 px-4 text-center">
                                 <span class="rounded bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                                    {{ $vals['target_role'] ? ucfirst($vals['target_role']) : 'Semua Perangkat' }}
+                                    {{ $vals['target_role'] ? ucfirst($vals['target_role']) : 'Seluruh Pengguna' }}
                                 </span>
                             </td>
                             <td class="py-3 px-4 text-center font-mono">

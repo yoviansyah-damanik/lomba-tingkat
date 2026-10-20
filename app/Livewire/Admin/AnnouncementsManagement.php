@@ -178,9 +178,10 @@ class AnnouncementsManagement extends Component
                 reason: 'Pembuatan pengumuman baru oleh Administrator'
             );
 
-            // Otomatis kirim notifikasi PWA Web Push saat pengumuman ditambahkan dan dipublikasikan
+            // Otomatis kirim notifikasi PWA Web Push ke seluruh pengguna aplikasi saat pengumuman ditambahkan dan dipublikasikan
+            $pushResult = null;
             if ($this->broadcastPush && $announcement->is_published) {
-                $webPushService->broadcastNotification(
+                $pushResult = $webPushService->broadcastNotification(
                     payload: [
                         'title' => 'Pengumuman: ' . $announcement->title,
                         'body' => $announcement->summary ?: Str::limit(strip_tags($announcement->content), 120),
@@ -194,8 +195,16 @@ class AnnouncementsManagement extends Component
                 );
             }
 
-            session()->flash('success', "Pengumuman '{$announcement->title}' berhasil dipublikasikan dan notifikasi PWA telah dikirim.");
-            Flux::toast(variant: 'success', heading: 'Pengumuman Dipublikasikan', text: "Pengumuman '{$announcement->title}' berhasil dipublikasikan dan notifikasi PWA telah dikirim.");
+            if ($pushResult !== null && $pushResult['total'] > 0) {
+                $pushNote = " Notifikasi PWA terkirim ke {$pushResult['sent']} dari {$pushResult['total']} perangkat pengguna.";
+            } elseif ($pushResult !== null) {
+                $pushNote = ' Belum ada perangkat yang terdaftar untuk menerima notifikasi PWA.';
+            } else {
+                $pushNote = '';
+            }
+
+            session()->flash('success', "Pengumuman '{$announcement->title}' berhasil dipublikasikan.{$pushNote}");
+            Flux::toast(variant: 'success', heading: 'Pengumuman Dipublikasikan', text: "Pengumuman '{$announcement->title}' berhasil dipublikasikan.{$pushNote}");
         }
 
         $this->showFormModal = false;

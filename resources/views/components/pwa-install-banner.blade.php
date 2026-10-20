@@ -97,6 +97,12 @@
 
                 const keyRes = await fetch('/api/push/vapid-public-key');
                 const keyData = await keyRes.json();
+
+                if (!keyRes.ok || !keyData.publicKey) {
+                    alert(keyData.message || 'Notifikasi belum tersedia untuk saat ini. Hubungi Administrator.');
+                    return;
+                }
+
                 const publicKey = keyData.publicKey;
 
                 const reg = await navigator.serviceWorker.ready;

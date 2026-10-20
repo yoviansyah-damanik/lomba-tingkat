@@ -35,4 +35,22 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | VAPID Keys (Web Push Notification)
+    |--------------------------------------------------------------------------
+    |
+    | Kunci VAPID (Voluntary Application Server Identification) digunakan
+    | untuk menandatangani serta mengenkripsi notifikasi Web Push (PWA).
+    | Jalankan `php artisan vapid:generate` untuk membuat pasangan kunci
+    | baru, lalu salin hasilnya ke berkas .env.
+    |
+    */
+
+    'vapid' => [
+        'public_key' => env('VAPID_PUBLIC_KEY'),
+        'private_key' => env('VAPID_PRIVATE_KEY'),
+        'subject' => env('VAPID_SUBJECT'),
+    ],
+
 ];
