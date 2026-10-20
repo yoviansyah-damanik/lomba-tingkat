@@ -124,66 +124,8 @@
                     {{-- Notification Alerts (Status & Errors) --}}
                     <x-alert class="mb-4" />
 
-                    {{-- Login Form --}}
-                    <form method="POST" action="{{ route('login.store') }}" class="space-y-4">
-                        @csrf
-
-                        {{-- Email Field --}}
-                        <div>
-                            <flux:input
-                                name="email"
-                                label="Alamat Email Terdaftar"
-                                :value="old('email')"
-                                type="email"
-                                required
-                                autofocus
-                                autocomplete="email"
-                                placeholder="nama@sekolah.sch.id / email..."
-                                icon="envelope"
-                            />
-                        </div>
-
-                        {{-- Password Field --}}
-                        <div class="space-y-1">
-                            <div class="flex items-center justify-between">
-                                <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                                    Kata Sandi
-                                </label>
-                                @if (Route::has('password.request'))
-                                    <a href="{{ route('password.request') }}" class="text-xs font-semibold text-amber-700 hover:text-amber-800 hover:underline dark:text-amber-400 dark:hover:text-amber-300">
-                                        Lupa kata sandi?
-                                    </a>
-                                @endif
-                            </div>
-                            <flux:input
-                                name="password"
-                                type="password"
-                                required
-                                autocomplete="current-password"
-                                placeholder="••••••••"
-                                icon="lock-closed"
-                                viewable
-                            />
-                        </div>
-
-                        {{-- Remember Me Option --}}
-                        <div class="pt-0.5 flex items-center justify-between">
-                            <flux:checkbox name="remember" label="Ingat saya di perangkat ini" :checked="old('remember')" />
-                        </div>
-
-                        {{-- Submit Button --}}
-                        <div class="pt-2">
-                            <flux:button
-                                type="submit"
-                                variant="primary"
-                                icon="arrow-right-start-on-rectangle"
-                                data-test="login-button"
-                                class="w-full justify-center shadow-lg shadow-amber-600/25"
-                            >
-                                Masuk ke Dasbor
-                            </flux:button>
-                        </div>
-                    </form>
+                    {{-- Login Form (Livewire) --}}
+                    <livewire:auth.login />
 
                     {{-- Opsi Pendaftaran Gudep (Pemisah Estetik) --}}
                     <div class="mt-6 pt-5 border-t border-zinc-200/80 dark:border-zinc-800">

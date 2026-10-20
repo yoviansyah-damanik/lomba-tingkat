@@ -15,8 +15,9 @@ class AlertComponentTest extends TestCase
 
         $this->assertStringContainsString('Operasi Sukses', $rendered);
         $this->assertStringContainsString('Data berhasil disimpan ke sistem.', $rendered);
-        $this->assertStringContainsString('data-alert-type="success"', $rendered);
-        $this->assertStringContainsString('role="alert"', $rendered);
+        $this->assertStringContainsString("variant: 'success'", $rendered);
+        $this->assertStringContainsString('data-alert-toast', $rendered);
+        $this->assertStringNotContainsString('data-alert-root', $rendered);
     }
 
     public function test_renders_explicit_danger_alert(): void
@@ -25,7 +26,9 @@ class AlertComponentTest extends TestCase
 
         $this->assertStringContainsString('Peringatan Keras', $rendered);
         $this->assertStringContainsString('Terjadi galat tak terduga.', $rendered);
-        $this->assertStringContainsString('data-alert-type="danger"', $rendered);
+        $this->assertStringContainsString("variant: 'danger'", $rendered);
+        $this->assertStringContainsString('data-alert-toast', $rendered);
+        $this->assertStringNotContainsString('data-alert-root', $rendered);
     }
 
     public function test_renders_explicit_warning_alert(): void
@@ -34,7 +37,9 @@ class AlertComponentTest extends TestCase
 
         $this->assertStringContainsString('Perhatian', $rendered);
         $this->assertStringContainsString('Batas waktu pendaftaran hampir berakhir.', $rendered);
-        $this->assertStringContainsString('data-alert-type="warning"', $rendered);
+        $this->assertStringContainsString("variant: 'warning'", $rendered);
+        $this->assertStringContainsString('data-alert-toast', $rendered);
+        $this->assertStringNotContainsString('data-alert-root', $rendered);
     }
 
     public function test_auto_detects_session_success(): void
@@ -45,7 +50,9 @@ class AlertComponentTest extends TestCase
 
         $this->assertStringContainsString('Berhasil Disimpan', $rendered);
         $this->assertStringContainsString('Pendaftaran kontingen berhasil diverifikasi.', $rendered);
-        $this->assertStringContainsString('data-alert-type="success"', $rendered);
+        $this->assertStringContainsString("variant: 'success'", $rendered);
+        $this->assertStringContainsString('data-alert-toast', $rendered);
+        $this->assertStringNotContainsString('data-alert-root', $rendered);
     }
 
     public function test_auto_detects_session_error(): void
@@ -56,7 +63,9 @@ class AlertComponentTest extends TestCase
 
         $this->assertStringContainsString('Terjadi Kesalahan', $rendered);
         $this->assertStringContainsString('Token QR tidak valid atau kedaluwarsa.', $rendered);
-        $this->assertStringContainsString('data-alert-type="danger"', $rendered);
+        $this->assertStringContainsString("variant: 'danger'", $rendered);
+        $this->assertStringContainsString('data-alert-toast', $rendered);
+        $this->assertStringNotContainsString('data-alert-root', $rendered);
     }
 
     public function test_auto_detects_session_warning(): void
@@ -67,7 +76,9 @@ class AlertComponentTest extends TestCase
 
         $this->assertStringContainsString('Peringatan', $rendered);
         $this->assertStringContainsString('Berkas bindamping belum lengkap.', $rendered);
-        $this->assertStringContainsString('data-alert-type="warning"', $rendered);
+        $this->assertStringContainsString("variant: 'warning'", $rendered);
+        $this->assertStringContainsString('data-alert-toast', $rendered);
+        $this->assertStringNotContainsString('data-alert-root', $rendered);
     }
 
     public function test_auto_detects_form_validation_errors(): void
@@ -85,6 +96,15 @@ class AlertComponentTest extends TestCase
         $this->assertStringContainsString('Terdapat Kesalahan Pengisian Formulir', $rendered);
         $this->assertStringContainsString('Format email tidak valid.', $rendered);
         $this->assertStringContainsString('Kata sandi minimal 8 karakter.', $rendered);
-        $this->assertStringContainsString('data-alert-type="danger"', $rendered);
+        $this->assertStringContainsString("variant: 'danger'", $rendered);
+        $this->assertStringContainsString('data-alert-toast', $rendered);
+        $this->assertStringNotContainsString('data-alert-root', $rendered);
+    }
+
+    public function test_renders_nothing_when_there_is_no_message(): void
+    {
+        $rendered = Blade::render('<x-alert />');
+
+        $this->assertStringNotContainsString('toast-show', $rendered);
     }
 }
