@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Jobs\SendScheduleReminderPush;
 use App\Models\Competition;
 use App\Models\CompetitionSchedule;
+use App\Models\AuditLog;
 use App\Models\Event;
 use Database\Seeders\EventSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -91,5 +92,19 @@ class ScheduleReminderPushTest extends TestCase
         $this->artisan('schedules:notify-upcoming')->assertSuccessful();
 
         Queue::assertNothingPushed();
+    }
+
+    /**
+     * Job benar-benar dieksekusi (queue sync pada test) dan menghasilkan jejak audit siaran
+     */
+    public function test_reminder_job_executes_and_logs_broadcast(): void
+    {
+        $this->makeSchedule(15);
+
+        $this->artisan('schedules:notify-upcoming')->assertSuccessful();
+
+        $log = AuditLog::where('action', 'push_broadcast_sent')->latest()->first();
+        $this->assertNotNull($log);
+        $this->assertStringContainsString('Lomba dimulai 30 menit lagi', json_encode($log->new_values));
     }
 }

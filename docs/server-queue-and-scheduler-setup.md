@@ -117,3 +117,13 @@ sudo supervisorctl status
 - Do not print or log VAPID private keys; do not commit `.env`.
 - Do not touch the `vendor` and `node_modules` folders.
 - Report back: output of `schedule:list`, `supervisorctl status`, and the result of the end-to-end test.
+
+## 9. Verification status (update after running on the server)
+| Item | Status | Notes |
+|---|---|---|
+| Command, job, and scheduler logic | Verified (2026-10-20) | `tests/Feature/ScheduleReminderPushTest.php` (4 tests: queued once, reschedule reset, cancelled skipped, job executes and writes `push_broadcast_sent` audit log) |
+| `php artisan schedule:list` | Verified locally | Shows `schedules:notify-upcoming` every minute |
+| `queue:work --queue=notifications,default` | Verified locally | Processes the queue and exits cleanly, no failed jobs |
+| Supervisor `lt3-worker` RUNNING | **Pending on server** | Supervisor is not available on the Windows dev machine; run section 3 and 6 on the server |
+| Cron `schedule:run` | **Pending on server** | Run section 4 on the server |
+| Real push delivered to a device | **Pending on server** | Requires HTTPS, VAPID keys, and a subscribed device |
