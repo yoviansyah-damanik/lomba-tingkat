@@ -9,7 +9,9 @@ use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Services\WebPushService;
 use Livewire\Livewire;
+use Mockery\MockInterface;
 use Tests\TestCase;
 
 class PwaAndWebPushTest extends TestCase
@@ -38,8 +40,8 @@ class PwaAndWebPushTest extends TestCase
         $json = json_decode($content, true);
 
         $this->assertIsArray($json);
-        $this->assertEquals('Lomba Tingkat III Kwarcab Padangsidimpuan 2026', $json['name']);
-        $this->assertEquals('LT III 2026', $json['short_name']);
+        $this->assertEquals('LT III Kwarcab Padangsidimpuan 2026', $json['name']);
+        $this->assertEquals('LT III Kwarcab Padangsidimpuan 2026', $json['short_name']);
         $this->assertEquals('standalone', $json['display']);
         $this->assertEquals('#d97706', $json['theme_color']);
         $this->assertNotEmpty($json['icons']);
@@ -77,6 +79,8 @@ class PwaAndWebPushTest extends TestCase
      */
     public function test_vapid_public_key_endpoint_returns_valid_key(): void
     {
+        config(['services.vapid.public_key' => 'test-public-key']);
+
         $response = $this->getJson(route('push.vapid'));
 
         $response->assertStatus(200);
@@ -158,6 +162,13 @@ class PwaAndWebPushTest extends TestCase
             'device_label' => 'Android Browser',
         ]);
 
+        $this->mock(WebPushService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('isConfigured')->andReturn(true);
+            $mock->shouldReceive('broadcastNotification')
+                ->once()
+                ->andReturn(['total' => 1, 'sent' => 1, 'failed' => 0, 'expired' => 0, 'target_role' => null]);
+        });
+
         Livewire::actingAs($admin)
             ->test(PushBroadcastManagement::class)
             ->set('title', 'Panggilan Sesi 2 Pos Penjelajahan')
@@ -166,14 +177,43 @@ class PwaAndWebPushTest extends TestCase
             ->set('urgencyTag', 'urgent')
             ->call('sendBroadcast')
             ->assertHasNoErrors()
-            ->assertSee('Siaran notifikasi berhasil dikirimkan')
+            ->assertSee('Terkirim: 1 perangkat')
             ->assertSet('title', '');
+    }
 
-        // Audit log tercatat
-        $this->assertDatabaseHas('audit_logs', [
-            'action' => 'push_broadcast_sent',
-            'user_id' => $admin->id,
-        ]);
+    /**
+     * Memastikan tamu dapat mendaftar dan memicu notifikasi uji untuk perangkatnya sendiri
+     */
+    public function test_guest_can_subscribe_and_trigger_own_test_notification(): void
+    {
+        $endpoint = 'https://fcm.googleapis.com/fcm/send/guest-device-1';
+
+        $this->postJson(route('push.subscribe'), [
+            'endpoint' => $endpoint,
+            'keys' => ['p256dh' => 'k', 'auth' => 'a'],
+        ])->assertOk();
+
+        $this->assertDatabaseHas('push_subscriptions', ['endpoint' => $endpoint, 'user_id' => null]);
+
+        $this->mock(WebPushService::class, function (MockInterface $mock) use ($endpoint) {
+            $mock->shouldReceive('sendTestToEndpoint')
+                ->with($endpoint)
+                ->once()
+                ->andReturn(['success' => true]);
+        });
+
+        $this->postJson(route('push.test'), ['endpoint' => $endpoint])
+            ->assertOk()
+            ->assertJson(['success' => true]);
+    }
+
+    /**
+     * Memastikan notifikasi uji ditolak untuk endpoint yang belum terdaftar
+     */
+    public function test_push_test_requires_registered_endpoint(): void
+    {
+        $this->postJson(route('push.test'), ['endpoint' => 'https://example.test/unknown'])
+            ->assertNotFound();
     }
 
     /**

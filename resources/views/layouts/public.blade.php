@@ -19,7 +19,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="LT III 2026">
+    <meta name="apple-mobile-web-app-title" content="LT III Kwarcab Padangsidimpuan 2026">
 
     {{-- Fonts --}}
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -38,6 +38,8 @@
         <x-pwa-install-banner />
         {{ $slot }}
     </main>
+
+    <x-push-notification-card />
 
     {{-- Official Footer --}}
     <footer class="mt-auto">

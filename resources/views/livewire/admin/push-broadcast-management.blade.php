@@ -13,8 +13,8 @@
         <x-slot:actions>
             <div class="flex items-center gap-2">
                 <span class="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-600 shadow-xs dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
-                    <span class="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span>VAPID Gateway Siap</span>
+                    <span class="size-2 rounded-full {{ $vapidReady ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500' }}"></span>
+                    <span>{{ $vapidReady ? 'VAPID Gateway Siap' : 'Kunci VAPID Belum Diatur' }}</span>
                 </span>
             </div>
         </x-slot:actions>
@@ -79,6 +79,7 @@
                         class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                     >
                         <option value="">Semua Perangkat Terdaftar (Publik & Aparatur)</option>
+                        <option value="guest">Khusus Pengunjung (Tanpa Login)</option>
                         <option value="judge">Khusus Dewan Juri</option>
                         <option value="committee">Khusus Panitia Pelaksana</option>
                         <option value="scout_group">Khusus Pembina Gugus Depan</option>
@@ -153,6 +154,16 @@
                     <span class="text-[11px] text-zinc-400">
                         Notifikasi terkirim otomatis dengan icon LT III 2026
                     </span>
+
+                    <flux:button
+                        type="button"
+                        icon="beaker"
+                        wire:click="sendTestToAll"
+                        wire:confirm="Kirim notifikasi uji ke seluruh perangkat terdaftar (termasuk pengunjung tanpa login)?"
+                        wire:loading.attr="disabled"
+                    >
+                        Uji ke Semua Perangkat
+                    </flux:button>
 
                     <flux:button
                         type="submit"
@@ -268,7 +279,7 @@
                             </td>
                             <td class="py-3 px-4 text-center">
                                 <span class="rounded bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                                    {{ $vals['target_role'] ? ucfirst($vals['target_role']) : 'Semua Perangkat' }}
+                                    {{ ($vals['target_role'] ?? null) ? ucfirst($vals['target_role']) : 'Semua Perangkat' }}
                                 </span>
                             </td>
                             <td class="py-3 px-4 text-center font-mono">

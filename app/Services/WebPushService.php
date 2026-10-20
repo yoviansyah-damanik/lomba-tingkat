@@ -5,9 +5,9 @@ namespace App\Services;
 use App\Models\AuditLog;
 use App\Models\PushSubscription;
 use App\Models\User;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Minishlink\WebPush\Subscription;
+use Minishlink\WebPush\WebPush;
 
 /**
  * Service untuk orkestrasi Progressive Web App (PWA) Web Push Notifications (VAPID)
@@ -15,17 +15,19 @@ use Illuminate\Support\Facades\Log;
 class WebPushService
 {
     /**
-     * Kunci publik default VAPID untuk registrasi browser service worker
-     */
-    protected const DEFAULT_VAPID_PUBLIC = 'BCb_Vl8K8-l4R6uN7G8D8k4gqXw9vB_2hXp0Xv7r8B4g9G_2hXp0Xv7r8B4g9G_2hXp0Xv7r8B4g9G_2hXp0Xv7r';
-
-    /**
      * Mengambil VAPID Public Key
      */
     public function getVapidPublicKey(): string
     {
-        return config('services.vapid.public_key') 
-            ?: env('VAPID_PUBLIC_KEY', self::DEFAULT_VAPID_PUBLIC);
+        return (string) config('services.vapid.public_key');
+    }
+
+    /**
+     * Menentukan apakah kunci VAPID sudah dikonfigurasi
+     */
+    public function isConfigured(): bool
+    {
+        return filled(config('services.vapid.public_key')) && filled(config('services.vapid.private_key'));
     }
 
     /**
@@ -56,41 +58,54 @@ class WebPushService
     }
 
     /**
-     * Mengirim notifikasi push ke langganan tertentu
+     * Mengirim notifikasi push terenkripsi (VAPID + aes128gcm) ke satu langganan.
+     * Langganan yang sudah kedaluwarsa (404/410) dihapus otomatis.
      */
     public function sendNotification(PushSubscription $subscription, array $payload): array
     {
-        $formattedPayload = [
-            'title' => $payload['title'] ?? 'Pemberitahuan LT III 2026',
-            'body' => $payload['body'] ?? '',
-            'icon' => $payload['icon'] ?? '/logo.png',
-            'badge' => $payload['badge'] ?? '/favicon.png',
-            'url' => $payload['url'] ?? url('/'),
-            'tag' => $payload['tag'] ?? 'lt3-notification-' . time(),
-            'timestamp' => now()->timestamp * 1000,
-        ];
+        $formattedPayload = $this->formatPayload($payload);
 
-        // Simulasi pengiriman atau pengiriman via HTTP push endpoint
+        if (! $this->isConfigured()) {
+            return [
+                'success' => false,
+                'expired' => false,
+                'subscription_id' => $subscription->id,
+                'error' => 'Kunci VAPID belum dikonfigurasi.',
+            ];
+        }
+
         try {
-            if (filter_var($subscription->endpoint, FILTER_VALIDATE_URL)) {
-                Http::timeout(3)->withHeaders([
-                    'TTL' => '86400',
-                    'Urgency' => 'high',
-                ])->post($subscription->endpoint, $formattedPayload);
+            $report = $this->makeClient()->sendOneNotification(
+                Subscription::create([
+                    'endpoint' => $subscription->endpoint,
+                    'publicKey' => $subscription->public_key,
+                    'authToken' => $subscription->auth_token,
+                    'contentEncoding' => $subscription->content_encoding ?: 'aes128gcm',
+                ]),
+                json_encode($formattedPayload),
+                ['TTL' => 86400, 'urgency' => 'high']
+            );
+
+            $expired = $report->isSubscriptionExpired();
+            if ($expired) {
+                $subscription->delete();
             }
 
             return [
-                'success' => true,
+                'success' => $report->isSuccess(),
+                'expired' => $expired,
                 'subscription_id' => $subscription->id,
                 'payload' => $formattedPayload,
+                'error' => $report->isSuccess() ? null : $report->getReason(),
             ];
         } catch (\Throwable $e) {
-            Log::warning('WebPush dispatch notice: ' . $e->getMessage(), [
+            Log::warning('WebPush dispatch failed: '.$e->getMessage(), [
                 'endpoint' => $subscription->endpoint,
             ]);
 
             return [
                 'success' => false,
+                'expired' => false,
                 'subscription_id' => $subscription->id,
                 'error' => $e->getMessage(),
             ];
@@ -98,21 +113,42 @@ class WebPushService
     }
 
     /**
-     * Menyiarkan notifikasi push massal ke seluruh atau kelompok pengguna
+     * Mengirim notifikasi uji ke satu endpoint (tanpa perlu login)
+     */
+    public function sendTestToEndpoint(string $endpoint): ?array
+    {
+        $subscription = PushSubscription::where('endpoint', $endpoint)->first();
+
+        if (! $subscription) {
+            return null;
+        }
+
+        return $this->sendNotification($subscription, [
+            'title' => 'Uji Notifikasi LT III 2026',
+            'body' => 'Notifikasi berhasil diterima di perangkat ini.',
+            'url' => url('/'),
+            'tag' => 'lt3-test',
+        ]);
+    }
+
+    /**
+     * Menyiarkan notifikasi push massal. Target: null (semua perangkat),
+     * "guest" (pengunjung tanpa login), atau nama role.
      */
     public function broadcastNotification(array $payload, ?string $targetRole = null, ?User $sender = null): array
     {
-        $query = PushSubscription::with('user');
+        $query = PushSubscription::query();
 
-        if ($targetRole) {
-            $query->whereHas('user.roles', function ($q) use ($targetRole) {
-                $q->where('name', $targetRole);
-            });
+        if ($targetRole === 'guest') {
+            $query->whereNull('user_id');
+        } elseif ($targetRole) {
+            $query->whereHas('user.roles', fn ($q) => $q->where('name', $targetRole));
         }
 
         $subscriptions = $query->get();
         $sentCount = 0;
         $failedCount = 0;
+        $expiredCount = 0;
 
         foreach ($subscriptions as $sub) {
             $result = $this->sendNotification($sub, $payload);
@@ -120,6 +156,9 @@ class WebPushService
                 $sentCount++;
             } else {
                 $failedCount++;
+            }
+            if ($result['expired'] ?? false) {
+                $expiredCount++;
             }
         }
 
@@ -135,6 +174,7 @@ class WebPushService
                 'total_targeted' => $subscriptions->count(),
                 'sent_count' => $sentCount,
                 'failed_count' => $failedCount,
+                'expired_count' => $expiredCount,
             ],
             reason: 'Siaran Notifikasi Web Push oleh ' . ($sender?->name ?? 'Administrator'),
             userId: $sender?->id ?? auth()->id()
@@ -144,8 +184,37 @@ class WebPushService
             'total' => $subscriptions->count(),
             'sent' => $sentCount,
             'failed' => $failedCount,
+            'expired' => $expiredCount,
             'target_role' => $targetRole,
         ];
+    }
+
+    /**
+     * Menyusun payload notifikasi dengan nilai default
+     */
+    protected function formatPayload(array $payload): array
+    {
+        return [
+            'title' => $payload['title'] ?? 'Pemberitahuan LT III 2026',
+            'body' => $payload['body'] ?? '',
+            'icon' => $payload['icon'] ?? '/logo.png',
+            'badge' => $payload['badge'] ?? '/favicon.png',
+            'url' => $payload['url'] ?? url('/'),
+            'tag' => $payload['tag'] ?? 'lt3-notification-'.time(),
+            'timestamp' => now()->timestamp * 1000,
+        ];
+    }
+
+    /**
+     * Membuat klien WebPush dengan kredensial VAPID
+     */
+    protected function makeClient(): WebPush
+    {
+        return new WebPush(['VAPID' => [
+            'subject' => config('services.vapid.subject') ?: config('app.url'),
+            'publicKey' => config('services.vapid.public_key'),
+            'privateKey' => config('services.vapid.private_key'),
+        ]], [], 10);
     }
 
     /**

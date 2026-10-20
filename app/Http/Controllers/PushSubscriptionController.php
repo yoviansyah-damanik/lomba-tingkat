@@ -45,6 +45,32 @@ class PushSubscriptionController extends Controller
     }
 
     /**
+     * Mengirim notifikasi uji hanya ke perangkat pemanggil (tanpa login)
+     */
+    public function test(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'endpoint' => 'required|string',
+        ]);
+
+        $result = $this->webPushService->sendTestToEndpoint($validated['endpoint']);
+
+        if ($result === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Perangkat belum terdaftar. Aktifkan notifikasi terlebih dahulu.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['success']
+                ? 'Notifikasi uji dikirim. Periksa tray notifikasi perangkat Anda.'
+                : 'Gagal mengirim notifikasi uji: '.($result['error'] ?? 'tidak diketahui'),
+        ], $result['success'] ? 200 : 502);
+    }
+
+    /**
      * Menghapus langganan web push
      */
     public function unsubscribe(Request $request): JsonResponse

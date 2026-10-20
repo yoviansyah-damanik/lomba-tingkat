@@ -27,6 +27,7 @@ use App\Http\Controllers\ScoutGroupPortalController;
 // Phase 9: Web Push Subscriptions & VAPID API
 Route::get('/api/push/vapid-public-key', [PushSubscriptionController::class, 'vapidPublicKey'])->name('push.vapid');
 Route::post('/api/push-subscriptions', [PushSubscriptionController::class, 'subscribe'])->name('push.subscribe');
+Route::post('/api/push-subscriptions/test', [PushSubscriptionController::class, 'test'])->middleware('throttle:5,1')->name('push.test');
 Route::delete('/api/push-subscriptions', [PushSubscriptionController::class, 'unsubscribe'])->name('push.unsubscribe');
 
 // Public Digital Card QR Verification Endpoint

@@ -100,8 +100,38 @@ class PushBroadcastManagement extends Component
         $this->body = '';
         $this->actionUrl = '/announcements';
 
-        session()->flash('success', "Siaran notifikasi berhasil dikirimkan ke {$result['sent']} perangkat aktif.");
-        Flux::toast(variant: 'success', heading: 'Siaran Terkirim', text: "Siaran notifikasi berhasil dikirimkan ke {$result['sent']} perangkat aktif.");
+        $this->flashResult($result);
+    }
+
+    /**
+     * Mengirim notifikasi uji ke seluruh perangkat terdaftar (termasuk pengunjung tanpa login)
+     */
+    public function sendTestToAll(WebPushService $webPushService): void
+    {
+        $result = $webPushService->broadcastNotification(
+            payload: [
+                'title' => 'Uji Notifikasi LT III 2026',
+                'body' => 'Ini adalah notifikasi uji dari panitia. Abaikan pesan ini.',
+                'url' => '/',
+                'tag' => 'lt3-test-'.time(),
+            ],
+            targetRole: null,
+            sender: auth()->user()
+        );
+
+        $this->flashResult($result);
+    }
+
+    /**
+     * Menampilkan hasil pengiriman nyata (berhasil, gagal, kedaluwarsa)
+     */
+    protected function flashResult(array $result): void
+    {
+        $variant = $result['sent'] > 0 ? 'success' : 'warning';
+        $text = "Terkirim: {$result['sent']} perangkat, gagal: {$result['failed']}, kedaluwarsa dihapus: {$result['expired']}.";
+
+        session()->flash($variant, $text);
+        Flux::toast(variant: $variant, heading: $result['sent'] > 0 ? 'Siaran Terkirim' : 'Siaran Tidak Terkirim', text: $text);
     }
 
     public function render()
@@ -110,6 +140,7 @@ class PushBroadcastManagement extends Component
             'totalSubscribers' => $this->totalSubscribers,
             'deviceBreakdown' => $this->deviceBreakdown,
             'recentBroadcasts' => $this->recentBroadcasts,
+            'vapidReady' => app(WebPushService::class)->isConfigured(),
         ]);
     }
 }
