@@ -29,6 +29,11 @@
                 'title' => 'Terdapat Kesalahan Pengisian Formulir',
                 'items' => $errors->all(),
             ];
+            $sessionToasts[] = [
+                'variant' => 'danger',
+                'heading' => 'Terdapat Kesalahan Pengisian Formulir',
+                'text' => $errors->first(),
+            ];
         }
 
         // Cek pesan error dari flash session
