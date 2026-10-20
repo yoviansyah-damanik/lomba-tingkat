@@ -41,6 +41,7 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware(['auth', 'role'])->group(function () {
     Route::get('dashboard', \App\Livewire\Dashboard::class)->name('dashboard');
+    Route::get('notifications', \App\Livewire\Notifications\Index::class)->name('notifications.index');
 
     // Digital Credentials / ID Cards
     Route::get('/digital-cards/participant/{id}', [DigitalCardController::class, 'participantCard'])->name('digital-cards.participant');

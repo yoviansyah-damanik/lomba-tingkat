@@ -16,6 +16,8 @@
             &copy; 2026 LT III Kwarcab Padangsidimpuan &mdash; Bidang Humas dan Informatika Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan.
         </div>
 
+        <x-alert />
+
         @persist('toast')
             <flux:toast.group position="top end">
                 <flux:toast />

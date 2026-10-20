@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\ViewErrorBag;
@@ -9,6 +10,8 @@ use Tests\TestCase;
 
 class AlertComponentTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_renders_explicit_success_alert(): void
     {
         $rendered = Blade::render('<x-alert type="success" title="Operasi Sukses" message="Data berhasil disimpan ke sistem." />');
@@ -132,5 +135,17 @@ class AlertComponentTest extends TestCase
 
             $this->assertStringContainsString($classes, $rendered, "Posisi {$position}");
         }
+    }
+
+    public function test_layouts_render_flash_toast_once_without_per_page_alert(): void
+    {
+        $this->withSession(['success' => 'Layout menampilkan toast.'])
+            ->get('/')
+            ->assertOk()
+            ->assertSee('Layout menampilkan toast.')
+            ->assertSee('data-alert-toast', false);
+
+        $html = $this->withSession(['success' => 'Sekali saja.'])->get(route('login'))->getContent();
+        $this->assertSame(1, substr_count($html, 'Sekali saja.'));
     }
 }

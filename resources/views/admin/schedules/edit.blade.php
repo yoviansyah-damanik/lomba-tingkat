@@ -26,9 +26,6 @@
             </div>
         </div>
 
-        {{-- Notification Alerts --}}
-        <x-alert />
-
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
             {{-- KOLOM KIRI: EDIT PARAMETER JADWAL (lg:col-span-5) --}}

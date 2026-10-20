@@ -121,9 +121,6 @@
                         </p>
                     </div>
 
-                    {{-- Notification Alerts (Status & Errors) --}}
-                    <x-alert class="mb-4" />
-
                     {{-- Login Form (Livewire) --}}
                     <livewire:auth.login />
 
@@ -182,6 +179,8 @@
     <footer class="mt-auto border-t border-zinc-200/60 bg-white/60 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/60">
         <x-official-footer :compact="true" />
     </footer>
+
+    <x-alert />
 
     @persist('toast')
         <flux:toast.group position="top end">

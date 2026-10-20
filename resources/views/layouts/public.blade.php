@@ -52,31 +52,7 @@
         </flux:toast.group>
     @endpersist
 
-    @if (session('success') || session('error') || session('danger') || session('warning') || session('status'))
-        @php
-            $pubSuccess = session()->pull('success');
-            $pubError = session()->pull('error') ?: session()->pull('danger');
-            $pubWarning = session()->pull('warning');
-            $pubStatus = session()->pull('status');
-            $pubText = $pubSuccess ?: $pubError ?: $pubWarning ?: $pubStatus;
-            $pubVariant = $pubSuccess ? 'success' : ($pubError ? 'danger' : ($pubWarning ? 'warning' : 'info'));
-            $pubHeading = $pubSuccess ? 'Berhasil' : ($pubError ? 'Perhatian' : ($pubWarning ? 'Peringatan' : 'Informasi'));
-        @endphp
-        <div x-data x-init="
-            $nextTick(() => {
-                $dispatch('toast-show', {
-                    duration: 5000,
-                    slots: {
-                        text: {{ Js::from($pubText) }},
-                        heading: {{ Js::from($pubHeading) }}
-                    },
-                    dataset: {
-                        variant: {{ Js::from($pubVariant) }}
-                    }
-                });
-            });
-        " class="hidden"></div>
-    @endif
+    <x-alert />
 
     @fluxScripts
 

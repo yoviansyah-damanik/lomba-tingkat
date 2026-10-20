@@ -838,7 +838,7 @@ class ContingentRegistrationTest extends TestCase
             ->test(PatrolsManagement::class)
             ->call('deletePatrol', $patrol->id)
             ->assertHasNoErrors()
-            ->assertSee('berhasil dihapus');
+            ->assertDispatched('toast-show');
 
         // Pastikan regu dan anggotanya terhapus
         $this->assertDatabaseMissing('patrols', ['id' => $patrol->id]);

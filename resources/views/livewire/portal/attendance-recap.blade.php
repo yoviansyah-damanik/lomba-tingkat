@@ -35,9 +35,6 @@
         </x-slot:actions>
     </x-heading-section>
 
-    {{-- Notification Alerts --}}
-    <x-alert />
-
     {{-- Stats Cards KPI --}}
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <x-stat-card

@@ -39,13 +39,7 @@
             @forelse ($this->notifications as $notification)
                 @php
                     $data = $notification->data;
-                    $tag = (string) ($data['tag'] ?? '');
-                    $icon = match (true) {
-                        str_starts_with($tag, 'lt3-registration') => 'building-library',
-                        str_starts_with($tag, 'lt3-verification') => 'shield-check',
-                        str_starts_with($tag, 'lt3-reminder') => 'calendar',
-                        default => 'bell',
-                    };
+                    $icon = \App\Notifications\AppNotification::iconFor($data['tag'] ?? null);
                     $isUnread = $notification->read_at === null;
                 @endphp
 
@@ -79,5 +73,11 @@
                 </div>
             @endforelse
         </div>
+
+        <a href="{{ route('notifications.index') }}" wire:navigate x-on:click="open = false"
+            class="flex items-center justify-center gap-1.5 border-t border-zinc-100 px-4 py-3 text-xs font-semibold text-amber-700 transition hover:bg-amber-50 dark:border-zinc-800 dark:text-amber-400 dark:hover:bg-zinc-800/60">
+            <span>Lihat semua notifikasi</span>
+            <flux:icon name="arrow-right" class="size-3.5" />
+        </a>
     </div>
 </div>

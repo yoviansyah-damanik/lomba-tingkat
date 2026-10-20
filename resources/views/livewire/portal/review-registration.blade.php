@@ -19,9 +19,6 @@
         </div>
     </div>
 
-    {{-- Notification Alerts --}}
-    <x-alert />
-
     {{-- Readiness Checklist Card (Livewire 4 Reactive) --}}
     <div class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
         <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-3">

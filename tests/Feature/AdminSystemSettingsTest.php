@@ -86,7 +86,7 @@ class AdminSystemSettingsTest extends TestCase
             ->set('contact_phone', '081234567899')
             ->call('saveSettings')
             ->assertHasNoErrors()
-            ->assertSee('berhasil diperbarui');
+            ->assertDispatched('toast-show');
 
         $this->event->refresh();
         $this->assertEquals('Lomba Tingkat III Kwarcab Padangsidimpuan 2026 - Edisi Juara', $this->event->title);
@@ -111,7 +111,7 @@ class AdminSystemSettingsTest extends TestCase
             ->set('hide_patrol_identities', true)
             ->call('saveSettings')
             ->assertHasNoErrors()
-            ->assertSee('berhasil diperbarui');
+            ->assertDispatched('toast-show');
 
         $this->event->refresh();
         $this->assertTrue((bool) $this->event->hide_patrol_identities);

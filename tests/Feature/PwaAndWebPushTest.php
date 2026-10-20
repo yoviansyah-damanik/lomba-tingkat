@@ -177,7 +177,7 @@ class PwaAndWebPushTest extends TestCase
             ->set('urgencyTag', 'urgent')
             ->call('sendBroadcast')
             ->assertHasNoErrors()
-            ->assertSee('Terkirim: 1 perangkat')
+            ->assertDispatched('toast-show')
             ->assertSet('title', '');
     }
 

@@ -39,6 +39,8 @@
             </div>
         </div>
 
+        <x-alert />
+
         @persist('toast')
             <flux:toast.group position="top end">
                 <flux:toast />

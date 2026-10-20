@@ -20,9 +20,6 @@
         </x-slot:actions>
     </x-heading-section>
 
-    {{-- Notification Alert & Toast Bridge --}}
-    <x-alert />
-
     {{-- Ringkasan Statistik Pelanggan Notifikasi --}}
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <x-stat-card

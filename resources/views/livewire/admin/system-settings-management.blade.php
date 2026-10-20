@@ -11,9 +11,6 @@
         </x-slot:breadcrumbs>
     </x-heading-section>
 
-    {{-- Notification Alert & Toast Bridge --}}
-    <x-alert />
-
     <form wire:submit="saveSettings" class="space-y-6">
         {{-- Card 1: Identitas Resmi Kegiatan --}}
         <div class="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900 space-y-4">

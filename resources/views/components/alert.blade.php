@@ -71,6 +71,11 @@
         // Status bawaan Laravel
         if (session('status') && ! session('success')) {
             $statusMsg = session('status');
+            // Kode status bawaan Fortify diterjemahkan ke pesan yang ramah
+            $statusMsg = match ($statusMsg) {
+                'verification-link-sent' => 'Tautan verifikasi baru telah dikirim ke alamat email Anda.',
+                default => $statusMsg,
+            };
             $toasts[] = [
                 'variant' => (is_string($statusMsg) && str_contains(strtolower($statusMsg), 'error')) ? 'danger' : 'success',
                 'heading' => 'Status Operasi',

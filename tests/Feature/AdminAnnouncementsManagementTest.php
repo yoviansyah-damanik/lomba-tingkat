@@ -81,7 +81,7 @@ class AdminAnnouncementsManagementTest extends TestCase
             ->set('is_published', true)
             ->call('saveAnnouncement')
             ->assertHasNoErrors()
-            ->assertSee('berhasil dipublikasikan');
+            ->assertDispatched('toast-show');
 
         $announcement = Announcement::where('title', 'Instruksi Pemasangan Tenda Sektor Barat')->first();
         $this->assertNotNull($announcement);
@@ -113,7 +113,7 @@ class AdminAnnouncementsManagementTest extends TestCase
             ->set('category', 'urgent')
             ->call('saveAnnouncement')
             ->assertHasNoErrors()
-            ->assertSee('berhasil diperbarui');
+            ->assertDispatched('toast-show');
 
         $announcement->refresh();
         $this->assertEquals('Judul Pengumuman Diperbarui', $announcement->title);
@@ -131,7 +131,7 @@ class AdminAnnouncementsManagementTest extends TestCase
         Livewire::actingAs($this->admin)
             ->test(AnnouncementsManagement::class)
             ->call('togglePublish', $announcement->id)
-            ->assertSee('berhasil dijadikan draf');
+            ->assertDispatched('toast-show');
 
         $announcement->refresh();
         $this->assertFalse($announcement->is_published);
@@ -139,7 +139,7 @@ class AdminAnnouncementsManagementTest extends TestCase
         Livewire::actingAs($this->admin)
             ->test(AnnouncementsManagement::class)
             ->call('togglePublish', $announcement->id)
-            ->assertSee('berhasil dipublikasikan');
+            ->assertDispatched('toast-show');
 
         $announcement->refresh();
         $this->assertTrue($announcement->is_published);
@@ -157,7 +157,7 @@ class AdminAnnouncementsManagementTest extends TestCase
             ->test(AnnouncementsManagement::class)
             ->call('openDeleteModal', $id)
             ->call('deleteAnnouncement')
-            ->assertSee('berhasil dihapus');
+            ->assertDispatched('toast-show');
 
         $this->assertDatabaseMissing('announcements', ['id' => $id]);
     }

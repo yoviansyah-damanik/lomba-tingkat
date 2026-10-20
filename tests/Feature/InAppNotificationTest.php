@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\RoleEnum;
 use App\Livewire\Notifications\Bell;
+use App\Livewire\Notifications\Index;
 use App\Models\User;
 use App\Services\InAppNotificationService;
 use App\Services\WebPushService;
@@ -112,5 +113,39 @@ class InAppNotificationTest extends TestCase
         $this->actingAs($this->admin)->get(route('schedules'))
             ->assertOk()
             ->assertSee('notifications.bell', false);
+    }
+
+    public function test_notifications_page_lists_filters_and_marks_as_read(): void
+    {
+        $service = app(InAppNotificationService::class);
+        $service->toUsers($this->gudep, ['title' => 'Satu', 'body' => 'a', 'url' => '/dashboard']);
+        $service->toUsers($this->gudep, ['title' => 'Dua', 'body' => 'b']);
+        $first = $this->gudep->notifications()->where('data->title', 'Satu')->first();
+
+        $this->actingAs($this->gudep)->get(route('notifications.index'))->assertOk()->assertSee('Notifikasi');
+
+        $component = Livewire::actingAs($this->gudep)->test(Index::class)
+            ->assertSee('Satu')
+            ->assertSee('Dua');
+
+        $component->call('open', $first->id)->assertRedirect('/dashboard');
+        $this->assertSame(1, $this->gudep->unreadNotifications()->count());
+
+        $component->set('filter', 'unread')->assertDontSee('Satu')->assertSee('Dua');
+
+        $component->call('markAllAsRead');
+        $this->assertSame(0, $this->gudep->fresh()->unreadNotifications()->count());
+    }
+
+    public function test_guest_cannot_open_notifications_page(): void
+    {
+        auth()->logout();
+        $this->get(route('notifications.index'))->assertRedirect();
+    }
+
+    public function test_bell_links_to_notifications_page(): void
+    {
+        Livewire::actingAs($this->gudep)->test(Bell::class, ['lazy' => false])
+            ->assertSee(route('notifications.index'), false);
     }
 }

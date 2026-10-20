@@ -25,4 +25,19 @@ class AppNotification extends Notification
             'tag' => $this->payload['tag'] ?? null,
         ];
     }
+
+    /**
+     * Ikon Flux untuk notifikasi berdasarkan awalan tag
+     */
+    public static function iconFor(?string $tag): string
+    {
+        $tag = (string) $tag;
+
+        return match (true) {
+            str_starts_with($tag, 'lt3-registration') => 'building-library',
+            str_starts_with($tag, 'lt3-verification') => 'shield-check',
+            str_starts_with($tag, 'lt3-reminder') => 'calendar',
+            default => 'bell',
+        };
+    }
 }

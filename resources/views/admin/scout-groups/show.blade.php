@@ -42,9 +42,6 @@
             </div>
         </div>
 
-        {{-- Notification Alerts --}}
-        <x-alert />
-
         {{-- Revision Notes Alert --}}
         @if($scoutGroup->revision_notes)
             <div class="rounded-2xl border border-orange-300 bg-orange-50/70 p-4 text-xs text-orange-900 dark:border-orange-500/30 dark:bg-orange-950/40 dark:text-orange-200">

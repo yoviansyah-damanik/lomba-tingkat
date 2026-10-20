@@ -10,8 +10,6 @@
             badge-color="amber"
         />
 
-        <x-alert />
-
         @php($isLocked = ! $scoutGroup->isEditable())
 
         <div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">

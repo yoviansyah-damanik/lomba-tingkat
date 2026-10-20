@@ -17,9 +17,6 @@
         </x-slot:actions>
     </x-heading-section>
 
-    {{-- Notification Alerts --}}
-    <x-alert />
-
     {{-- 2 Slot Resmi Bindamping Putra & Putri --}}
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
         {{-- Slot 1: Bindamping Putra --}}

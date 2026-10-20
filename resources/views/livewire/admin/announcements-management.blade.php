@@ -21,9 +21,6 @@
         </x-slot:actions>
     </x-heading-section>
 
-    {{-- Notification Alert & Toast Bridge --}}
-    <x-alert />
-
     {{-- Filter Bar --}}
     <div class="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         <div class="flex-1">

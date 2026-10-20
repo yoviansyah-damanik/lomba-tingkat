@@ -23,9 +23,6 @@
         </x-slot:actions>
     </x-heading-section>
 
-    {{-- Notification Alerts --}}
-    <x-alert />
-
     {{-- Form Bentuk Regu Baru jika belum lengkap 2 regu (Putra & Putri) --}}
     @if($scoutGroup->isEditable() && $scoutGroup->patrols->count() < 2)
         <div id="form-buat-regu" class="rounded-2xl border border-amber-300/80 bg-gradient-to-r from-amber-50 to-white p-5 shadow-sm dark:border-amber-500/20 dark:from-zinc-900 dark:to-zinc-900">

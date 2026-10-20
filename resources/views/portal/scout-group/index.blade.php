@@ -69,9 +69,6 @@
             @endif
         </div>
 
-        {{-- Notification Alerts --}}
-        <x-alert />
-
         {{-- Summary Grid: Regu Putra, Regu Putri, Bindamping --}}
         <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
             {{-- Regu Putra --}}

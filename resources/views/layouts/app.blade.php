@@ -2,7 +2,7 @@
     <flux:main>
         <x-pwa-install-banner />
         <x-push-notification-card sidebar />
-        <x-alert class="mb-6" />
+        <x-alert />
         {{ $slot }}
     </flux:main>
 </x-layouts::app.sidebar>

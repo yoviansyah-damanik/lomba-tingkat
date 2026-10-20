@@ -17,9 +17,6 @@
             </div>
         </div>
 
-        {{-- Notification Alerts --}}
-        <x-alert />
-
         {{-- Statistics Cards --}}
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div class="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">

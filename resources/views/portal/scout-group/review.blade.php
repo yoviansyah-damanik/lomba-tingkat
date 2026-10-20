@@ -20,9 +20,6 @@
             </div>
         </div>
 
-        {{-- Notification Alerts --}}
-        <x-alert />
-
         {{-- 1. Identitas Gugus Depan --}}
         <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             <div class="flex items-center justify-between border-b border-zinc-100 pb-3 dark:border-zinc-800">

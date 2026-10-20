@@ -84,7 +84,7 @@ class AdminUsersManagementTest extends TestCase
             ->set('selectedRoles', [RoleEnum::Judge->value])
             ->call('createUser')
             ->assertHasNoErrors()
-            ->assertSee('berhasil ditambahkan');
+            ->assertDispatched('toast-show');
 
         $newUser = User::where('email', 'budi.santoso@lt3kwarcab.id')->first();
         $this->assertNotNull($newUser);
@@ -110,7 +110,7 @@ class AdminUsersManagementTest extends TestCase
             ->set('selectedRoles', [RoleEnum::Committee->value, RoleEnum::Judge->value])
             ->call('updateUser')
             ->assertHasNoErrors()
-            ->assertSee('berhasil diperbarui');
+            ->assertDispatched('toast-show');
 
         $this->regularUser->refresh();
         $this->assertEquals('Panitia Lapangan Senior', $this->regularUser->name);
@@ -129,7 +129,7 @@ class AdminUsersManagementTest extends TestCase
         Livewire::actingAs($this->admin)
             ->test(UsersManagement::class)
             ->call('toggleActive', $this->regularUser->id)
-            ->assertSee('berhasil dinonaktifkan');
+            ->assertDispatched('toast-show');
 
         $this->regularUser->refresh();
         $this->assertFalse($this->regularUser->is_active);
@@ -138,7 +138,7 @@ class AdminUsersManagementTest extends TestCase
         Livewire::actingAs($this->admin)
             ->test(UsersManagement::class)
             ->call('toggleActive', $this->regularUser->id)
-            ->assertSee('berhasil diaktifkan');
+            ->assertDispatched('toast-show');
 
         $this->regularUser->refresh();
         $this->assertTrue($this->regularUser->is_active);
@@ -152,7 +152,7 @@ class AdminUsersManagementTest extends TestCase
         Livewire::actingAs($this->admin)
             ->test(UsersManagement::class)
             ->call('toggleActive', $this->admin->id)
-            ->assertSee('Anda tidak dapat menonaktifkan akun sendiri');
+            ->assertDispatched('toast-show');
 
         $this->admin->refresh();
         $this->assertTrue($this->admin->is_active);
@@ -169,7 +169,7 @@ class AdminUsersManagementTest extends TestCase
             ->set('newPassword', 'passwordBaru2026')
             ->call('resetUserPassword')
             ->assertHasNoErrors()
-            ->assertSee('berhasil disetel ulang');
+            ->assertDispatched('toast-show');
 
         $this->regularUser->refresh();
         $this->assertTrue(Hash::check('passwordBaru2026', $this->regularUser->password));
@@ -187,7 +187,7 @@ class AdminUsersManagementTest extends TestCase
             ->test(UsersManagement::class)
             ->call('openDeleteModal', $userToDelete->id)
             ->call('deleteUser')
-            ->assertSee('berhasil dihapus');
+            ->assertDispatched('toast-show');
 
         $this->assertDatabaseMissing('users', ['id' => $userToDelete->id]);
     }

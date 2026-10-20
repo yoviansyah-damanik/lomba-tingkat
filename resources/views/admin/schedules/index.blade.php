@@ -26,9 +26,6 @@
             </div>
         </div>
 
-        {{-- Notification Alerts --}}
-        <x-alert />
-
         {{-- Statistik Counter Grid --}}
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             <x-stat-card
