@@ -142,7 +142,7 @@
                     </div>
 
                     {{-- Notification Alerts (Status & Errors) --}}
-                    <x-alert class="mb-4" />
+                    <x-alert class="mb-4" :toast="false" />
 
                     {{-- Login Form --}}
                     <form method="POST" action="{{ route('login.store') }}" class="space-y-4">

@@ -5,6 +5,7 @@
     'items' => null, // array of bullet point items
     'dismissible' => true,
     'autoSession' => true,
+    'toast' => true, // set false untuk hanya menampilkan banner alert tanpa popup toast
 ])
 
 @php
@@ -108,7 +109,7 @@
 @endphp
 
 {{-- Trigger Toast Component untuk Flash Session --}}
-@if(!empty($sessionToasts))
+@if($toast && !empty($sessionToasts))
     <div x-data x-init="
         $nextTick(() => {
             @foreach($sessionToasts as $st)
