@@ -29,7 +29,6 @@ class AdminChaperonesLivewireTest extends TestCase
         $this->seed(EventSeeder::class);
 
         $this->admin = User::factory()->create([
-            'email_verified_at' => now(),
             'is_active' => true,
         ]);
         $this->admin->assignRole(RoleEnum::Admin);

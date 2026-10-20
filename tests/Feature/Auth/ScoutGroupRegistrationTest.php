@@ -49,7 +49,7 @@ class ScoutGroupRegistrationTest extends TestCase
         $response->assertSee('Kwarran Padangsidimpuan Utara');
         $response->assertSee('Batas Waktu Registrasi Pangkalan');
         $response->assertSee('Verifikasi Berkas oleh Administrator');
-        $response->assertSee('tidak memerlukan verifikasi email');
+        $response->assertSee('tidak memerlukan email');
     }
 
     public function test_scout_group_can_register_and_create_contingent_account(): void
@@ -61,7 +61,7 @@ class ScoutGroupRegistrationTest extends TestCase
             'address' => 'Jl. Merdeka No. 10',
             'pic_name' => 'Kak Marwan Daulay, S.Pd',
             'phone_number' => '081299887766',
-            'email' => 'gudep02@pramukapsp.test',
+            'username' => 'gudep02',
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'terms' => '1',
@@ -71,7 +71,7 @@ class ScoutGroupRegistrationTest extends TestCase
         $response->assertRedirect(route('scout-group.index'));
 
         // Pastikan user terbuat dan memiliki role scout_group
-        $user = User::where('email', 'gudep02@pramukapsp.test')->first();
+        $user = User::where('username', 'gudep02')->first();
         $this->assertNotNull($user);
         $this->assertTrue($user->hasRole(RoleEnum::ScoutGroup));
         $this->assertEquals('Kak Marwan Daulay, S.Pd', $user->name);
@@ -106,7 +106,7 @@ class ScoutGroupRegistrationTest extends TestCase
             'address' => 'Jl. Imam Bonjol No. 12',
             'pic_name' => 'Kak Syahrul Siregar',
             'phone_number' => '081211223344',
-            'email' => 'gudep04@pramukapsp.test',
+            'username' => 'gudep04',
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'terms' => '1',
@@ -131,7 +131,7 @@ class ScoutGroupRegistrationTest extends TestCase
             'address' => 'Jl. Raja Inal Siregar',
             'pic_name' => 'Kak Budianto',
             'phone_number' => '081255667788',
-            'email' => 'gudep05@pramukapsp.test',
+            'username' => 'gudep05',
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'terms' => '1',
@@ -143,7 +143,7 @@ class ScoutGroupRegistrationTest extends TestCase
 
     public function test_registration_validation_fails_for_duplicate_email(): void
     {
-        User::factory()->create(['email' => 'terdaftar@pramukapsp.test']);
+        User::factory()->create(['username' => 'terdaftar']);
 
         $response = $this->post(route('register.scout-group.store'), [
             'school_name' => 'SMP Negeri 3 Padangsidimpuan',
@@ -152,13 +152,13 @@ class ScoutGroupRegistrationTest extends TestCase
             'address' => 'Jl. Imam Bonjol',
             'pic_name' => 'Kak Syahrul Siregar',
             'phone_number' => '081211223344',
-            'email' => 'terdaftar@pramukapsp.test',
+            'username' => 'terdaftar',
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'terms' => '1',
         ]);
 
-        $response->assertSessionHasErrors(['email']);
+        $response->assertSessionHasErrors(['username']);
         $this->assertGuest();
     }
 
@@ -171,7 +171,7 @@ class ScoutGroupRegistrationTest extends TestCase
             'address' => 'Jl. Raja Inal Siregar',
             'pic_name' => 'Kak Fauzi Lubis',
             'phone_number' => '081244556677',
-            'email' => 'mtsn1@pramukapsp.test',
+            'username' => 'mtsn1',
             'password' => 'password123',
             'password_confirmation' => 'password123',
             // terms tidak disertakan
@@ -191,7 +191,7 @@ class ScoutGroupRegistrationTest extends TestCase
             'address' => 'Jl. Sudirman No. 1',
             'pic_name' => 'Kak Syahrul',
             'phone_number' => '081234567890',
-            'email' => 'smpn1@pramukapsp.test',
+            'username' => 'smpn1',
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'terms' => '1',
@@ -276,7 +276,7 @@ class ScoutGroupRegistrationTest extends TestCase
             'address' => 'Jl. BM Muda',
             'pic_name' => 'Kak Ridwan',
             'phone_number' => '081233445566',
-            'email' => 'smpn7@pramukapsp.test',
+            'username' => 'smpn7',
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'terms' => '1',
@@ -301,7 +301,7 @@ class ScoutGroupRegistrationTest extends TestCase
             'address' => 'Jl. Sabungan No. 3',
             'pic_name' => 'Kak Zulham Efendi',
             'phone_number' => '081299112233',
-            'email' => 'smpn8@pramukapsp.test',
+            'username' => 'smpn8',
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'terms' => '1',
@@ -358,7 +358,7 @@ class ScoutGroupRegistrationTest extends TestCase
             'address' => 'Jl. Sudirman No. 5',
             'pic_name' => 'Kak Rahmat',
             'phone_number' => '081211112222',
-            'email' => 'gudep05@pramukapsp.test',
+            'username' => 'gudep05',
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'terms' => '1',

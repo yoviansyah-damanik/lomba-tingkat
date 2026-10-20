@@ -80,6 +80,8 @@ new #[Title('Security settings')] class extends Component {
      */
     public function updatePassword(): void
     {
+        abort_if(Auth::user()->isManagedAccount(), 403);
+
         try {
             $validated = $this->validate([
                 'current_password' => $this->currentPasswordRules(),

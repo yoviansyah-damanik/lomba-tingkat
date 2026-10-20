@@ -2,15 +2,14 @@
     'title' => 'ID Card B2 (79 x 126 mm)',
     'subtitle' => null,
     'backUrl' => 'javascript:window.history.back()',
-    'backLabel' => '← Kembali',
-    'printLabel' => '🖨 Cetak Kartu B2',
+    'backLabel' => 'Kembali',
     'batchUrl' => null,
-    'batchLabel' => 'Cetak Lembar A4 (Batch)',
+    'batchLabel' => 'Lihat & Simpan Seluruh Kartu (ZIP)',
     'downloadFilename' => 'KARTU_DIGITAL',
 ])
 
 <div
-    class="w-full max-w-3xl mb-5 flex flex-wrap justify-between items-center gap-3 bg-slate-800 p-[12px_18px] rounded-[14px] shadow-md border border-slate-700 text-slate-50 print:hidden">
+    class="w-full max-w-3xl mb-5 flex flex-wrap justify-between items-center gap-3 bg-slate-800 p-[12px_18px] rounded-[14px] shadow-md border border-slate-700 text-slate-50">
     <div>
         <strong class="text-[13px] font-bold text-slate-100 block">{{ $title }}</strong>
         @if ($subtitle)
@@ -19,25 +18,22 @@
     </div>
     <div class="flex items-center gap-2 flex-wrap">
         @if ($batchUrl)
-            <a href="{{ $batchUrl }}"
-                class="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-semibold rounded-lg bg-amber-500/15 border border-amber-500/40 text-amber-400 hover:bg-amber-500/25 transition">
-                {{ $batchLabel }}
-            </a>
+            <flux:button :href="$batchUrl" icon="squares-2x2" size="sm">{{ $batchLabel }}</flux:button>
         @endif
-        <a href="{{ $backUrl }}"
-            class="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-semibold rounded-lg bg-slate-700 border border-slate-600 text-slate-100 hover:bg-slate-600 transition">
-            {{ $backLabel }}
-        </a>
-        <button type="button"
+        <flux:button :href="$backUrl" icon="arrow-left" size="sm">{{ $backLabel }}</flux:button>
+        <flux:button
             id="btn-save-png"
-            onclick="window.saveCardAsPng ? window.saveCardAsPng('{{ $downloadFilename }}') : alert('Menyiapkan generator PNG...')"
-            class="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition cursor-pointer shadow-sm">
-            💾 Simpan .PNG
-        </button>
-        <button onclick="window.print()"
-            class="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-semibold rounded-lg bg-amber-600 hover:bg-amber-500 text-white transition cursor-pointer">
-            {{ $printLabel }}
-        </button>
+            variant="primary"
+            icon="arrow-down-tray"
+            size="sm"
+            onclick="window.saveCardAsPng('{{ $downloadFilename }}')"
+        >Simpan .PNG</flux:button>
     </div>
 </div>
 
+<div data-digital-card {{ $attributes->merge(['class' => 'w-[79mm] h-[126mm] bg-white rounded-[5mm] overflow-hidden shadow-2xl relative flex flex-col border border-slate-300 break-inside-avoid select-none']) }}>
+    {{-- Watermark Logo Background --}}
+    <img src="{{ asset('logo.png') }}" alt="Watermark" class="absolute inset-0 m-auto w-[65mm] opacity-[0.045] pointer-events-none select-none z-0">
+
+    {{ $slot }}
+</div>

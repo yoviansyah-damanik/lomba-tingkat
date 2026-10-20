@@ -26,7 +26,7 @@ class ProfileUpdateTest extends TestCase
 
         $response = Livewire::test('pages::settings.profile')
             ->set('name', 'Test User')
-            ->set('email', 'test@example.com')
+            ->set('username', 'test')
             ->call('updateProfileInformation');
 
         $response->assertHasNoErrors();
@@ -34,24 +34,42 @@ class ProfileUpdateTest extends TestCase
         $user->refresh();
 
         $this->assertEquals('Test User', $user->name);
-        $this->assertEquals('test@example.com', $user->email);
-        $this->assertNull($user->email_verified_at);
+        $this->assertEquals('test', $user->username);
     }
 
-    public function test_email_verification_status_is_unchanged_when_email_address_is_unchanged(): void
+    public function test_username_must_be_unique_and_valid(): void
+    {
+        User::factory()->create(['username' => 'terpakai']);
+        $user = User::factory()->create();
+
+        $this->actingAs($user);
+
+        Livewire::test('pages::settings.profile')
+            ->set('name', 'Test User')
+            ->set('username', 'terpakai')
+            ->call('updateProfileInformation')
+            ->assertHasErrors(['username' => 'unique']);
+
+        Livewire::test('pages::settings.profile')
+            ->set('name', 'Test User')
+            ->set('username', 'ada spasi')
+            ->call('updateProfileInformation')
+            ->assertHasErrors(['username' => 'regex']);
+    }
+
+    public function test_username_is_stored_lowercase(): void
     {
         $user = User::factory()->create();
 
         $this->actingAs($user);
 
-        $response = Livewire::test('pages::settings.profile')
+        Livewire::test('pages::settings.profile')
             ->set('name', 'Test User')
-            ->set('email', $user->email)
-            ->call('updateProfileInformation');
+            ->set('username', 'Nama.Pengguna')
+            ->call('updateProfileInformation')
+            ->assertHasNoErrors();
 
-        $response->assertHasNoErrors();
-
-        $this->assertNotNull($user->refresh()->email_verified_at);
+        $this->assertSame('nama.pengguna', $user->refresh()->username);
     }
 
     public function test_user_can_delete_their_account(): void

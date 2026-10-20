@@ -10,9 +10,11 @@
     >
         <x-slot:actions>
             @if($scoutGroup->chaperones->count() > 0)
+                @if($scoutGroup->canDownloadDocuments())
                 <flux:button href="{{ route('digital-cards.chaperone.batch', $scoutGroup->id) }}" target="_blank" variant="subtle" icon="qr-code">
-                    ID Card Bindamping (.PNG / A4)
+                    ID Card Bindamping (.ZIP / .PNG)
                 </flux:button>
+                @endif
             @endif
         </x-slot:actions>
     </x-heading-section>
@@ -50,6 +52,7 @@
                             <div class="mt-1 space-y-0.5 text-xs text-zinc-500 dark:text-zinc-400">
                                 <p>No. WhatsApp: <strong class="text-zinc-800 dark:text-zinc-200">{{ $maleChaperone->phone_number }}</strong></p>
                                 <p>NTA Pramuka: <span class="font-mono">{{ $maleChaperone->scout_id ?: '-' }}</span></p>
+                                <p>ID: <span class="font-mono font-bold text-amber-700 dark:text-amber-400">{{ $maleChaperone->id_number ?: '-' }}</span></p>
                             </div>
                             <div class="mt-2.5">
                                 <span class="inline-flex items-center rounded-lg border px-2 py-0.5 text-[11px] font-semibold {{ $maleChaperone->status?->badgeClasses() ?? 'bg-zinc-100 text-zinc-700' }}">
@@ -70,17 +73,21 @@
             <div class="mt-5 pt-4 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
                 @if($maleChaperone)
                     <div class="flex items-center gap-2">
+                        @if($scoutGroup->canDownloadDocuments())
                         <a href="{{ route('scout-group.chaperones.print', $maleChaperone->id) }}" target="_blank"
                             class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-400">
                             <flux:icon name="printer" class="size-3.5" />
                             Biodata
                         </a>
+                        @endif
                         <span class="text-zinc-300">&bull;</span>
+                        @if($scoutGroup->canDownloadDocuments())
                         <a href="{{ route('digital-cards.chaperone', $maleChaperone->id) }}" target="_blank"
                             class="inline-flex items-center gap-1 text-xs font-semibold text-zinc-700 hover:text-zinc-900 dark:text-zinc-300">
                             <flux:icon name="qr-code" class="size-3.5" />
                             Kartu
                         </a>
+                        @endif
                         @if($scoutGroup->isEditable())
                             <span class="text-zinc-300">&bull;</span>
                             <a href="{{ route('scout-group.chaperones.edit', $maleChaperone->id) }}" wire:navigate
@@ -142,6 +149,7 @@
                             <div class="mt-1 space-y-0.5 text-xs text-zinc-500 dark:text-zinc-400">
                                 <p>No. WhatsApp: <strong class="text-zinc-800 dark:text-zinc-200">{{ $femaleChaperone->phone_number }}</strong></p>
                                 <p>NTA Pramuka: <span class="font-mono">{{ $femaleChaperone->scout_id ?: '-' }}</span></p>
+                                <p>ID: <span class="font-mono font-bold text-amber-700 dark:text-amber-400">{{ $femaleChaperone->id_number ?: '-' }}</span></p>
                             </div>
                             <div class="mt-2.5">
                                 <span class="inline-flex items-center rounded-lg border px-2 py-0.5 text-[11px] font-semibold {{ $femaleChaperone->status?->badgeClasses() ?? 'bg-zinc-100 text-zinc-700' }}">
@@ -162,17 +170,21 @@
             <div class="mt-5 pt-4 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
                 @if($femaleChaperone)
                     <div class="flex items-center gap-2">
+                        @if($scoutGroup->canDownloadDocuments())
                         <a href="{{ route('scout-group.chaperones.print', $femaleChaperone->id) }}" target="_blank"
                             class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-400">
                             <flux:icon name="printer" class="size-3.5" />
                             Biodata
                         </a>
+                        @endif
                         <span class="text-zinc-300">&bull;</span>
+                        @if($scoutGroup->canDownloadDocuments())
                         <a href="{{ route('digital-cards.chaperone', $femaleChaperone->id) }}" target="_blank"
                             class="inline-flex items-center gap-1 text-xs font-semibold text-zinc-700 hover:text-zinc-900 dark:text-zinc-300">
                             <flux:icon name="qr-code" class="size-3.5" />
                             Kartu
                         </a>
+                        @endif
                         @if($scoutGroup->isEditable())
                             <span class="text-zinc-300">&bull;</span>
                             <a href="{{ route('scout-group.chaperones.edit', $femaleChaperone->id) }}" wire:navigate

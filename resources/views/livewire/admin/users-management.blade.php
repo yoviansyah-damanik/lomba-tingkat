@@ -27,7 +27,7 @@
             <input
                 type="text"
                 wire:model.live.debounce.300ms="search"
-                placeholder="Cari nama, email, nomor HP, instansi, atau ID..."
+                placeholder="Cari nama, username, nomor HP, instansi, atau ID..."
                 class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
             />
         </div>
@@ -38,11 +38,13 @@
                 class="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
             >
                 <option value="">Semua Peran</option>
+                <option value="superadmin">Superadmin</option>
                 <option value="admin">Administrator</option>
                 <option value="committee">Panitia</option>
                 <option value="judge">Dewan Juri</option>
                 <option value="scout_group">Gugus Depan</option>
-                <option value="participant">Peserta / Pinru</option>
+                <option value="participant">Peserta</option>
+                <option value="chaperone">Bindamping</option>
             </select>
 
             <select
@@ -83,8 +85,14 @@
                                             {{ $user->name }}
                                         </strong>
                                         <span class="text-zinc-500 dark:text-zinc-400 text-[11px] font-mono block">
-                                            {{ $user->email }}
+                                            {{ $user->username }}
                                         </span>
+                                        @if($user->isManagedAccount() || $user->isScoutGroup())
+                                            <span class="mt-0.5 inline-flex items-center gap-1 text-[10px] text-zinc-400">
+                                                <flux:icon name="lock-closed" class="size-3" />
+                                                Mengikuti data gudep
+                                            </span>
+                                        @endif
                                     </div>
                                 </div>
                             </td>
@@ -101,6 +109,7 @@
                                     @foreach($user->roles as $role)
                                         @php
                                             $color = match($role->name) {
+                                                'superadmin' => 'bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-950/60 dark:text-fuchsia-300',
                                                 'admin' => 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300',
                                                 'committee' => 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300',
                                                 'judge' => 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300',
@@ -132,14 +141,17 @@
 
                             {{-- Aksi --}}
                             <td class="py-3 px-4 text-right">
+                                @php($locked = $user->isManagedAccount() || $user->isScoutGroup())
                                 <div class="flex items-center justify-end gap-1.5">
-                                    <flux:button
-                                        size="xs"
-                                        variant="subtle"
-                                        icon="pencil-square"
-                                        wire:click="openEditModal('{{ $user->id }}')"
-                                        title="Edit Pengguna & Peran"
-                                    />
+                                    @unless($locked)
+                                        <flux:button
+                                            size="xs"
+                                            variant="subtle"
+                                            icon="pencil-square"
+                                            wire:click="openEditModal('{{ $user->id }}')"
+                                            title="Edit Pengguna & Peran"
+                                        />
+                                    @endunless
 
                                     <flux:button
                                         size="xs"
@@ -149,7 +161,7 @@
                                         title="Reset Kata Sandi"
                                     />
 
-                                    @if($user->id !== auth()->id())
+                                    @if($user->id !== auth()->id() && ! $locked)
                                         <flux:button
                                             size="xs"
                                             variant="subtle"
@@ -207,9 +219,9 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Email:</label>
-                            <input type="email" wire:model="email" class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
-                            @error('email') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
+                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Username:</label>
+                            <input type="text" wire:model="username" autocapitalize="none" class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
+                            @error('username') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
                         </div>
 
                         <div>
@@ -279,9 +291,9 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Email:</label>
-                            <input type="email" wire:model="email" class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
-                            @error('email') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
+                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Username:</label>
+                            <input type="text" wire:model="username" autocapitalize="none" class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
+                            @error('username') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
                         </div>
 
                         <div>
@@ -338,7 +350,7 @@
                     Reset Kata Sandi
                 </h3>
                 <p class="text-xs text-zinc-500 dark:text-zinc-400">
-                    Masukkan kata sandi baru untuk pengguna <strong>{{ $name }}</strong>:
+                    Masukkan kata sandi baru untuk pengguna <strong>{{ $name }}</strong>. Untuk Peserta dan Bindamping, bawaannya adalah tanggal lahir (Ymd):
                 </p>
 
                 <div>

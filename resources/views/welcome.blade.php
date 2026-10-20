@@ -11,7 +11,9 @@
                     </div>
 
                     <h1 class="text-3xl font-extrabold tracking-tight text-zinc-950 sm:text-5xl lg:text-5xl dark:text-zinc-50 leading-tight">
-                        Lomba Tingkat III Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan
+                        Lomba Tingkat III<br>
+                        Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan<br>
+                        Tahun 2026
                     </h1>
 
                     <p class="text-sm font-medium text-amber-800 dark:text-amber-400 sm:text-base">

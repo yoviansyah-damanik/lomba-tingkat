@@ -104,6 +104,8 @@ class JudgeCockpit extends Component
                 'finalized_patrols' => $finalizedPatrols,
                 'progress_percentage' => $totalPatrols > 0 ? round(($finalizedPatrols / $totalPatrols) * 100) : 0,
                 'my_role' => $myAssignment?->roleLabel() ?? ($user->isAdmin() ? 'Administrator' : 'Juri'),
+                'scoring_state' => $schedule->scoringState(),
+                'scoring_message' => $schedule->scoringClosedMessage(),
                 'criteria_count' => $schedule->competition?->criteria?->count() ?? 0,
             ];
         });

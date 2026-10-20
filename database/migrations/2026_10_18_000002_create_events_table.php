@@ -21,6 +21,13 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->string('contact_email')->nullable();
             $table->string('contact_phone')->nullable();
+            // Penandatangan dokumen resmi (nama & NTA)
+            $table->string('committee_chair_name')->nullable();
+            $table->string('committee_chair_nta')->nullable();
+            $table->string('judge_chair_name')->nullable();
+            $table->string('judge_chair_nta')->nullable();
+            $table->string('kwarcab_chair_name')->nullable();
+            $table->string('kwarcab_chair_nta')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });

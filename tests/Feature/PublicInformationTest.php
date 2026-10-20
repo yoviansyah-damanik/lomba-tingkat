@@ -46,7 +46,7 @@ class PublicInformationTest extends TestCase
         $response = $this->get('/');
 
         $response->assertStatus(200);
-        $response->assertSee('Lomba Tingkat III Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan');
+        $response->assertSeeInOrder(['Lomba Tingkat III', 'Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan', 'Tahun 2026']);
         $response->assertSee('Sambutan dan Deskripsi Singkat Kegiatan LT III');
         $response->assertSee('Mata Lomba');
         $response->assertSee('Juknis');

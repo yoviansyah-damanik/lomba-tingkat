@@ -113,7 +113,7 @@
                                     @endif
                                     <div>
                                         <div class="font-bold text-zinc-900 dark:text-zinc-100">{{ $official->name }}</div>
-                                        <div class="text-[11px] text-zinc-400 font-mono">{{ $official->email }}</div>
+                                        <div class="text-[11px] text-zinc-400 font-mono">{{ $official->id_number }}</div>
                                     </div>
                                 </div>
                             </td>
@@ -222,10 +222,10 @@
                         <flux:input wire:model="name" label="Nama Lengkap & Gelar" placeholder="Contoh: Kak Ahmad Siregar, S.Pd" required />
                     </div>
 
-                    {{-- Email & Password --}}
+                    {{-- ID (username otomatis) & Password --}}
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <flux:input wire:model="email" type="email" label="Alamat Email" placeholder="nama@email.com" required />
+                            <flux:input :value="$editingId ? $idNumber : 'Dibuat otomatis saat disimpan'" type="text" label="ID / Username Login" readonly disabled />
                         </div>
                         <div>
                             <flux:input wire:model="password" type="password" label="{{ $editingId ? 'Ganti Password (Opsional)' : 'Password' }}" placeholder="{{ $editingId ? 'Kosongkan jika tetap' : 'Minimal 8 karakter' }}" />

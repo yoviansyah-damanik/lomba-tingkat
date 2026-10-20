@@ -1,26 +1,19 @@
 <x-layouts::app title="Formulir Biodata Pembina Pendamping">
     <div class="flex h-full w-full flex-1 flex-col gap-6">
         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <a href="{{ route('scout-group.chaperones') }}" class="text-xs font-semibold text-amber-600 hover:underline dark:text-amber-400">
-                    &larr; Kembali ke Pembina Pendamping
-                </a>
-                <h1 class="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-1">
-                    Formulir Biodata Pembina Pendamping (Bindamping)
-                </h1>
-                <p class="text-xs text-zinc-500 dark:text-zinc-400">
-                    Sesuai format resmi formulir data kontingen LT III Kwarcab Padangsidimpuan
-                </p>
-            </div>
-            <span class="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900 dark:border-amber-700 dark:bg-amber-950/60 dark:text-amber-200">
-                Pangkalan: {{ $scoutGroup->school_name }}
-            </span>
+            <x-official-header
+                :title="'Formulir Biodata Pembina Pendamping: ' . $scoutGroup->school_name"
+                :subtitle="'Kategori: ' . ($gender === 'male' ? 'Putra' : 'Putri') . ' • Gudep ' . ($gender === 'male' ? ($scoutGroup->male_group_number ?? $scoutGroup->group_number) : ($scoutGroup->female_group_number ?? $scoutGroup->group_number)) . ' • ' . $scoutGroup->school_name"
+            />
+            <a href="{{ route('scout-group.chaperones') }}" class="inline-flex items-center gap-1.5 self-start rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                &larr; Kembali ke Pembina Pendamping
+            </a>
         </div>
 
         @if($errors->any())
-            <div class="rounded-xl border border-red-300 bg-red-50 p-4 text-xs text-red-900 dark:border-red-500/30 dark:bg-red-950/40 dark:text-red-200">
-                <strong class="font-bold block mb-1">Periksa kembali data formulir:</strong>
-                <ul class="list-disc pl-4 space-y-1">
+            <div class="rounded-2xl border border-red-300 bg-red-50 p-4 text-xs text-red-900 dark:border-red-500/30 dark:bg-red-950/40 dark:text-red-200">
+                <p class="font-bold mb-1">Periksa kembali data formulir:</p>
+                <ul class="list-disc pl-4 space-y-0.5">
                     @foreach($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
@@ -31,8 +24,18 @@
         <form method="POST" action="{{ route('scout-group.chaperones.store') }}" enctype="multipart/form-data" class="space-y-6">
             @csrf
 
-            {{-- Bagian Header Kwarda, Kwarcab & Gudep --}}
-            <div class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            {{-- 1. IDENTITAS DIRI & PAS FOTO --}}
+            <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:p-8">
+                <div class="mb-6 flex items-center justify-between border-b border-zinc-100 pb-4 dark:border-zinc-800">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Bagian 1</span>
+                        <h2 class="text-base font-bold text-zinc-900 dark:text-zinc-100">Identitas Diri & Pas Foto</h2>
+                    </div>
+                    <span class="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                        Bindamping {{ $gender === 'male' ? 'Putra' : 'Putri' }}
+                    </span>
+                </div>
+
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 border-b border-zinc-200 pb-4 dark:border-zinc-800 text-xs">
                     <div class="rounded-xl bg-zinc-50 p-3 dark:bg-zinc-800/60">
                         <span class="text-zinc-500 block uppercase font-semibold text-[10px] tracking-wider">Kwartir Daerah</span>
@@ -78,18 +81,18 @@
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
-                                    Tempat Lahir
+                                    Tempat Lahir <span class="text-red-500">*</span>
                                 </label>
-                                <input type="text" name="birth_place" value="{{ old('birth_place') }}"
+                                <input type="text" name="birth_place" required value="{{ old('birth_place') }}"
                                     placeholder="Kota / Tempat Lahir..."
                                     class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" />
                             </div>
 
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
-                                    Tanggal Lahir (Tgl/Bln/Th)
+                                    Tanggal Lahir (Tgl/Bln/Th) <span class="text-red-500">*</span>
                                 </label>
-                                <input type="date" name="birth_date" value="{{ old('birth_date') }}"
+                                <input type="date" name="birth_date" required value="{{ old('birth_date') }}"
                                     class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" />
                             </div>
                         </div>
@@ -97,9 +100,9 @@
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
-                                    Agama
+                                    Agama <span class="text-red-500">*</span>
                                 </label>
-                                <select name="religion"
+                                <select name="religion" required
                                     class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
                                     <option value="">-- Pilih Agama --</option>
                                     @foreach(['Islam', 'Kristen Protestan', 'Katolik', 'Hindu', 'Buddha', 'Khonghucu'] as $rel)
@@ -110,9 +113,9 @@
 
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
-                                    Golongan Darah
+                                    Golongan Darah <span class="text-red-500">*</span>
                                 </label>
-                                <select name="blood_type"
+                                <select name="blood_type" required
                                     class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
                                     <option value="">-- Pilih --</option>
                                     @foreach(['A', 'B', 'AB', 'O', '-'] as $bt)
@@ -123,9 +126,9 @@
 
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
-                                    NTA (Nomor Tanda Anggota)
+                                    NTA (Nomor Tanda Anggota) <span class="text-red-500">*</span>
                                 </label>
-                                <input type="text" name="scout_id" value="{{ old('scout_id') }}"
+                                <input type="text" name="scout_id" required value="{{ old('scout_id') }}"
                                     placeholder="Contoh: 02.21.10.001"
                                     class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" />
                             </div>
@@ -133,9 +136,9 @@
 
                         <div>
                             <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
-                                Alamat Rumah Lengkap
+                                Alamat Rumah Lengkap <span class="text-red-500">*</span>
                             </label>
-                            <input type="text" name="home_address" value="{{ old('home_address') }}"
+                            <input type="text" name="home_address" required value="{{ old('home_address') }}"
                                 placeholder="Jalan, No. Rumah, Lingkungan / Kelurahan..."
                                 class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" />
                         </div>
@@ -143,17 +146,17 @@
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                             <div class="sm:col-span-2">
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
-                                    Kota / Kabupaten
+                                    Kota / Kabupaten <span class="text-red-500">*</span>
                                 </label>
-                                <input type="text" name="city" value="{{ old('city', 'Kota Padangsidimpuan') }}"
+                                <input type="text" name="city" required value="{{ old('city', 'Kota Padangsidimpuan') }}"
                                     class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" />
                             </div>
 
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
-                                    Kode Pos
+                                    Kode Pos <span class="text-red-500">*</span>
                                 </label>
-                                <input type="text" name="postal_code" value="{{ old('postal_code') }}"
+                                <input type="text" name="postal_code" required value="{{ old('postal_code') }}"
                                     placeholder="22727"
                                     class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" />
                             </div>
@@ -162,9 +165,9 @@
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
-                                    Telepon Rumah
+                                    Telepon Rumah <span class="text-red-500">*</span>
                                 </label>
-                                <input type="text" name="home_phone" value="{{ old('home_phone') }}"
+                                <input type="text" name="home_phone" required value="{{ old('home_phone') }}"
                                     placeholder="Contoh: (0634) 21xxx"
                                     class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" />
                             </div>
@@ -184,7 +187,7 @@
                     <div class="lg:col-span-3 flex flex-col items-center justify-start rounded-xl border border-dashed border-zinc-300 bg-zinc-50/50 p-4 dark:border-zinc-700 dark:bg-zinc-800/40 text-center"
                         x-data="{ photoPreview: null }">
                         <span class="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-2">
-                            Pas Foto 3 x 4
+                            Pas Foto 3 x 4 <span class="text-red-500">*</span>
                         </span>
                         
                         <div class="w-32 h-44 rounded-lg border-2 border-zinc-300 bg-white shadow-inner flex items-center justify-center overflow-hidden dark:border-zinc-600 dark:bg-zinc-800 mb-3 relative">
@@ -218,12 +221,11 @@
             </div>
 
             {{-- Tabel 1: PENDIDIKAN FORMAL --}}
-            <div class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-                <div class="border-b border-zinc-100 pb-3 dark:border-zinc-800 flex items-center justify-between">
+            <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:p-8">
+                <div class="border-b border-zinc-100 pb-4 dark:border-zinc-800 flex items-center justify-between">
                     <div>
-                        <h3 class="text-sm font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
-                            Pendidikan Formal
-                        </h3>
+                        <span class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Bagian 2</span>
+                        <h2 class="text-base font-bold text-zinc-900 dark:text-zinc-100">Pendidikan Formal</h2>
                         <p class="text-xs text-zinc-400">Riwayat jenjang pendidikan SD s/d Pascasarjana</p>
                     </div>
                 </div>
@@ -274,11 +276,10 @@
             </div>
 
             {{-- Tabel 2: KEPRAMUKAAN --}}
-            <div class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-                <div class="border-b border-zinc-100 pb-3 dark:border-zinc-800">
-                    <h3 class="text-sm font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
-                        Kepramukaan
-                    </h3>
+            <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:p-8">
+                <div class="border-b border-zinc-100 pb-4 dark:border-zinc-800">
+                    <span class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Bagian 3</span>
+                        <h2 class="text-base font-bold text-zinc-900 dark:text-zinc-100">Kepramukaan</h2>
                     <p class="text-xs text-zinc-400">Riwayat golongan kepramukaan yang pernah dilalui</p>
                 </div>
 
@@ -322,11 +323,10 @@
             </div>
 
             {{-- Tabel 3: KURSUS / PELATIHAN KEPRAMUKAAN --}}
-            <div class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-                <div class="border-b border-zinc-100 pb-3 dark:border-zinc-800">
-                    <h3 class="text-sm font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
-                        Kursus / Pelatihan Kepramukaan
-                    </h3>
+            <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:p-8">
+                <div class="border-b border-zinc-100 pb-4 dark:border-zinc-800">
+                    <span class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Bagian 4</span>
+                        <h2 class="text-base font-bold text-zinc-900 dark:text-zinc-100">Kursus / Pelatihan Kepramukaan</h2>
                     <p class="text-xs text-zinc-400">Kursus kualifikasi pembina (KMD, KML, KPD, KPL)</p>
                 </div>
 
@@ -370,7 +370,7 @@
             </div>
 
             {{-- Tabel 4: KURSUS / PELATIHAN DI LUAR KEPRAMUKAAN --}}
-            <div class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+            <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:p-8"
                 x-data="{
                     rows: {{ json_encode(old('other_trainings', [['name' => '', 'year' => '', 'location' => '', 'notes' => '']])) }},
                     addRow() {
@@ -382,11 +382,10 @@
                         }
                     }
                 }">
-                <div class="border-b border-zinc-100 pb-3 dark:border-zinc-800 flex items-center justify-between">
+                <div class="border-b border-zinc-100 pb-4 dark:border-zinc-800 flex items-center justify-between">
                     <div>
-                        <h3 class="text-sm font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
-                            Kursus / Pelatihan di Luar Kepramukaan
-                        </h3>
+                        <span class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Bagian 5</span>
+                        <h2 class="text-base font-bold text-zinc-900 dark:text-zinc-100">Kursus / Pelatihan di Luar Kepramukaan</h2>
                         <p class="text-xs text-zinc-400">Pelatihan kepemimpinan, keguruan, teknis atau keahlian umum lainnya</p>
                     </div>
                     <button type="button" @click="addRow()" class="rounded-lg bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300">
@@ -440,13 +439,13 @@
                 </div>
             </div>
 
-            <div class="flex items-center justify-between pt-2">
-                <a href="{{ route('scout-group.chaperones') }}" class="text-xs font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200">
-                    &larr; Batal & Kembali
+            {{-- Action Buttons --}}
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <a href="{{ route('scout-group.chaperones') }}" class="rounded-xl border border-zinc-300 px-5 py-2.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300">
+                    Batal
                 </a>
-
-                <button type="submit" class="rounded-xl bg-amber-600 px-6 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md shadow-amber-600/25 hover:bg-amber-700">
-                    Simpan Formulir Biodata Bindamping
+                <button type="submit" class="rounded-xl bg-amber-600 px-6 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-amber-700">
+                    Simpan Biodata Bindamping
                 </button>
             </div>
         </form>

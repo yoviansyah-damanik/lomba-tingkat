@@ -41,7 +41,7 @@ class AdminOfficialController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('id_number', 'like', "%{$search}%")
                   ->orWhere('institution', 'like', "%{$search}%")
                   ->orWhere('position', 'like', "%{$search}%")
                   ->orWhere('scout_id', 'like', "%{$search}%");
@@ -76,7 +76,6 @@ class AdminOfficialController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
             'phone_number' => ['nullable', 'string', 'max:30'],
             'scout_id' => ['nullable', 'string', 'max:50'],
@@ -89,7 +88,6 @@ class AdminOfficialController extends Controller
 
         $userData = [
             'name' => $validated['name'],
-            'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'phone_number' => $validated['phone_number'] ?? null,
             'scout_id' => $validated['scout_id'] ?? null,
@@ -132,7 +130,6 @@ class AdminOfficialController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($official->id)],
             'password' => ['nullable', 'string', 'min:8'],
             'phone_number' => ['nullable', 'string', 'max:30'],
             'scout_id' => ['nullable', 'string', 'max:50'],
@@ -146,7 +143,6 @@ class AdminOfficialController extends Controller
 
         $updateData = [
             'name' => $validated['name'],
-            'email' => $validated['email'],
             'phone_number' => $validated['phone_number'] ?? null,
             'scout_id' => $validated['scout_id'] ?? null,
             'institution' => $validated['institution'] ?? 'Kwarcab Kota Padangsidimpuan',

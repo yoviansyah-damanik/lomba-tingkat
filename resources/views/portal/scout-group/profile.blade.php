@@ -266,10 +266,10 @@
                         </div>
 
                         <div class="sm:col-span-2">
-                            <flux:input name="email" :label="__('Alamat Email Resmi Kontingen')"
-                                :value="old('email', auth()->user()->email)" type="email" required autocomplete="email"
-                                placeholder="gudep.smpn2@gmail.com" />
-                            <p class="mt-1 text-[11px] text-zinc-500">Email ini digunakan sebagai username login ke Dasbor Kontingen.</p>
+                            <flux:input name="username" label="Username Login Kontingen"
+                                :value="old('username', auth()->user()->username)" type="text" required autocomplete="username" autocapitalize="none"
+                                placeholder="gudep.smpn2" />
+                            <p class="mt-1 text-[11px] text-zinc-500">Username digunakan untuk masuk ke Dasbor Kontingen.</p>
                         </div>
 
                         <div>

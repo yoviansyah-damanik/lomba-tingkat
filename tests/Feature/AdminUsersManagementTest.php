@@ -76,7 +76,7 @@ class AdminUsersManagementTest extends TestCase
             ->test(UsersManagement::class)
             ->call('openCreateModal')
             ->set('name', 'Kak Budi Santoso')
-            ->set('email', 'budi.santoso@lt3kwarcab.id')
+            ->set('username', 'budi.santoso')
             ->set('phone_number', '081298765432')
             ->set('institution', 'Kwarran Padangsidimpuan Selatan')
             ->set('position', 'Anggota Dewan Juri')
@@ -86,7 +86,7 @@ class AdminUsersManagementTest extends TestCase
             ->assertHasNoErrors()
             ->assertDispatched('toast-show');
 
-        $newUser = User::where('email', 'budi.santoso@lt3kwarcab.id')->first();
+        $newUser = User::where('username', 'budi.santoso')->first();
         $this->assertNotNull($newUser);
         $this->assertEquals('Kak Budi Santoso', $newUser->name);
         $this->assertTrue($newUser->hasRole(RoleEnum::Judge));

@@ -41,8 +41,8 @@ class AssessmentsAudit extends Component
 
     public function mount(): void
     {
-        if (! Auth::user()->isAdmin()) {
-            abort(403, 'Akses terbatas khusus Administrator.');
+        if (! Auth::user()->isSuperadmin()) {
+            abort(403, 'Akses terbatas khusus Superadmin.');
         }
     }
 

@@ -255,7 +255,7 @@
                                                 </span>
                                             </div>
                                             <p class="text-[11px] text-zinc-500">
-                                                {{ $assignment->judge?->email }} &bull; {{ $assignment->judge?->institution ?: 'Kwarcab Padangsidimpuan' }}
+                                                {{ $assignment->judge?->username }} &bull; {{ $assignment->judge?->institution ?: 'Kwarcab Padangsidimpuan' }}
                                             </p>
                                         </div>
                                     </div>

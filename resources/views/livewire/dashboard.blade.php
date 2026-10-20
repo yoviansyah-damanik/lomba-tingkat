@@ -95,6 +95,7 @@
                 </div>
             </a>
 
+            @if(auth()->user()->isSuperadmin())
             <a href="{{ route('admin.officials.index') }}" wire:navigate class="flex items-center gap-3.5 rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900">
                 <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                     <flux:icon name="user-group" class="size-5" />
@@ -104,6 +105,7 @@
                     <p class="text-[11px] text-zinc-500">Kelola aparatur & kartu B2</p>
                 </div>
             </a>
+            @endif
 
             <a href="{{ route('admin.competitions.index') }}" wire:navigate class="flex items-center gap-3.5 rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900">
                 <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
@@ -335,21 +337,35 @@
         </div>
 
     @else
-        {{-- Panel Peserta --}}
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <x-stat-card
-                label="Identitas Peserta Regu"
-                value="Kartu Digital QR Sah"
-                description="Tunjukkan QR Code saat presensi di pos lomba"
-                color="amber"
-                icon="qr-code"
-            />
+        {{-- Panel Peserta & Bindamping --}}
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            @if($user->isParticipant())
+                <x-stat-card
+                    label="Identitas Peserta Regu"
+                    value="Kartu Digital QR Sah"
+                    description="Tunjukkan QR Code saat presensi di pos lomba"
+                    color="amber"
+                    icon="qr-code"
+                />
+            @endif
+
+            @if($user->isParticipant() || $user->isChaperone())
+                <x-stat-card
+                    label="Penilaian Regu"
+                    value="Nilai & Pencapaian"
+                    description="Pantau nilai akhir dan peringkat regu"
+                    action-text="Lihat Penilaian Regu"
+                    href="{{ route('team-assessment.index') }}"
+                    color="indigo"
+                    icon="clipboard-document-check"
+                />
+            @endif
 
             <x-stat-card
-                label="Jadwal Tanding"
+                label="Jadwal Kegiatan"
                 value="LT III Kwarcab Padangsidimpuan"
-                action-text="Lihat Jadwal Sesi Lomba"
-                href="{{ route('schedules') }}"
+                action-text="Lihat Jadwal Terdekat"
+                href="{{ route('agenda.index') }}"
                 color="emerald"
                 icon="clock"
             />

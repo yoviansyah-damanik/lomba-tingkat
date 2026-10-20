@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
 use App\Services\AttendanceService;
+use App\Services\PdfService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 class AttendanceScannerController extends Controller
@@ -284,7 +286,7 @@ class AttendanceScannerController extends Controller
     /**
      * Halaman cetak laporan rekapitulasi presensi (Print View)
      */
-    public function printRecap(Request $request): View
+    protected function recapData(Request $request): array
     {
         $user = $request->user();
 
@@ -332,7 +334,70 @@ class AttendanceScannerController extends Controller
             'absent' => $attendances->where('status', 'absent')->count(),
         ];
 
-        return view('portal.attendance.recap-print', compact('attendances', 'selectedSession', 'stats'));
+        $event = \App\Models\Event::where('is_active', true)->first() ?? \App\Models\Event::first();
+
+        // Satu lembar per sesi presensi. Pada pilihan "seluruh sesi", semua sesi yang dapat diakses
+        // ditampilkan terpisah, termasuk sesi yang belum memiliki catatan presensi.
+        $sessions = $selectedSession
+            ? collect([$selectedSession])
+            : AttendanceSession::accessibleBy($user)->with('schedule.competition')->orderBy('opened_at')->orderBy('title')->get();
+
+        $grouped = $attendances->groupBy('attendance_session_id');
+
+        // Nomor urut dokumen mengikuti urutan sesi (stabil, tidak bergantung pada filter atau sesi yang dipilih)
+        $sessionOrder = AttendanceSession::orderBy('opened_at')->orderBy('title')->pluck('id')->flip();
+        $year = now()->timezone('Asia/Jakarta')->year;
+
+        $sections = $sessions->map(function (AttendanceSession $session) use ($grouped, $sessionOrder, $year) {
+            $rows = ($grouped->get($session->id) ?? collect())->values();
+
+            return [
+                'session' => $session,
+                'number' => sprintf('BAP-LT3/KWARCAB-PSP/%d/%03d', $year, ($sessionOrder[$session->id] ?? 0) + 1),
+                'attendances' => $rows,
+                'stats' => [
+                    'total' => $rows->count(),
+                    'present' => $rows->where('status', 'present')->count(),
+                    'late' => $rows->where('status', 'late')->count(),
+                    'excused' => $rows->where('status', 'excused')->count(),
+                    'absent' => $rows->where('status', 'absent')->count(),
+                ],
+            ];
+        })->values();
+
+        if ($sections->isEmpty()) {
+            $sections = collect([['session' => null, 'number' => sprintf('BAP-LT3/KWARCAB-PSP/%d/001', $year), 'attendances' => $attendances, 'stats' => $stats]]);
+        }
+
+        return compact('attendances', 'selectedSession', 'stats', 'event', 'sections');
+    }
+
+    /**
+     * Halaman pratinjau PDF rekapitulasi presensi dengan tombol unduh
+     */
+    public function previewRecap(Request $request): View
+    {
+        $query = $request->query();
+
+        return view('reports.pdf-preview', [
+            'title' => 'Rekapitulasi Presensi & Kehadiran',
+            'pdfUrl' => route('attendance.recap.pdf', $query),
+            'downloadUrl' => route('attendance.recap.pdf', array_merge($query, ['download' => 1])),
+            'backUrl' => route('attendance.recap'),
+        ]);
+    }
+
+    /**
+     * Berkas PDF rekapitulasi presensi (A4 portrait): tampil di pratinjau, atau diunduh dengan ?download=1
+     */
+    public function pdfRecap(Request $request, PdfService $pdf): Response
+    {
+        return $pdf->response(
+            'portal.attendance.recap-pdf',
+            $this->recapData($request),
+            'rekap-presensi-'.now()->setTimezone('Asia/Jakarta')->format('Ymd-His').'.pdf',
+            $request->boolean('download'),
+        );
     }
 }
 

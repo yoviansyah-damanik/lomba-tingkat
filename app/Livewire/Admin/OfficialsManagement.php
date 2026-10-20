@@ -35,7 +35,7 @@ class OfficialsManagement extends Component
 
     // Field Form
     public string $name = '';
-    public string $email = '';
+    public string $idNumber = '';
     public string $password = '';
     public string $phone_number = '';
     public string $scout_id = '';
@@ -108,7 +108,7 @@ class OfficialsManagement extends Component
             $term = trim($this->search);
             $query->where(function ($q) use ($term) {
                 $q->where('name', 'like', "%{$term}%")
-                  ->orWhere('email', 'like', "%{$term}%")
+                  ->orWhere('id_number', 'like', "%{$term}%")
                   ->orWhere('institution', 'like', "%{$term}%")
                   ->orWhere('position', 'like', "%{$term}%")
                   ->orWhere('scout_id', 'like', "%{$term}%");
@@ -138,7 +138,7 @@ class OfficialsManagement extends Component
 
         $this->editingId = $user->id;
         $this->name = $user->name;
-        $this->email = $user->email;
+        $this->idNumber = (string) $user->id_number;
         $this->password = '';
         $this->phone_number = $user->phone_number ?? '';
         $this->scout_id = $user->scout_id ?? '';
@@ -158,10 +158,6 @@ class OfficialsManagement extends Component
     {
         $rules = [
             'name' => ['required', 'string', 'max:255'],
-            'email' => [
-                'required', 'string', 'email', 'max:255',
-                $this->editingId ? Rule::unique('users')->ignore($this->editingId) : 'unique:users,email',
-            ],
             'phone_number' => ['nullable', 'string', 'max:30'],
             'scout_id' => ['nullable', 'string', 'max:50'],
             'institution' => ['nullable', 'string', 'max:150'],
@@ -182,7 +178,6 @@ class OfficialsManagement extends Component
 
         $data = [
             'name' => $validated['name'],
-            'email' => $validated['email'],
             'phone_number' => $validated['phone_number'] ?: null,
             'scout_id' => $validated['scout_id'] ?: null,
             'institution' => $validated['institution'] ?: 'Kwarcab Kota Padangsidimpuan',
@@ -255,7 +250,7 @@ class OfficialsManagement extends Component
     {
         $this->editingId = null;
         $this->name = '';
-        $this->email = '';
+        $this->idNumber = '';
         $this->password = '';
         $this->phone_number = '';
         $this->scout_id = '';

@@ -77,7 +77,7 @@ class ScoutGroupRegistrationController extends Controller
             // Akun Penanggung Jawab / Pembina (PIC Kontingen)
             'pic_name' => ['required', 'string', 'max:255'],
             'phone_number' => ['required', 'string', 'max:30'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'username' => User::usernameRules(),
             'password' => ['required', 'string', 'confirmed', Password::defaults()],
 
             // Pernyataan & Pakta Integritas
@@ -89,8 +89,7 @@ class ScoutGroupRegistrationController extends Controller
             'address.required' => 'Alamat lengkap pangkalan wajib diisi.',
             'pic_name.required' => 'Nama lengkap pembina penanggung jawab (PIC) wajib diisi.',
             'phone_number.required' => 'Nomor WhatsApp / HP penanggung jawab wajib diisi.',
-            'email.required' => 'Alamat email resmi wajib diisi.',
-            'email.unique' => 'Alamat email ini telah terdaftar. Silakan gunakan email lain atau login.',
+            ...User::usernameMessages(),
             'password.required' => 'Kata sandi wajib diisi.',
             'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
             'terms.accepted' => 'Anda wajib menyetujui pernyataan keabsahan data pangkalan.',
@@ -102,11 +101,10 @@ class ScoutGroupRegistrationController extends Controller
             // Buat akun penanggung jawab
             $user = User::create([
                 'name' => $validated['pic_name'],
-                'email' => $validated['email'],
+                'username' => $validated['username'],
                 'phone_number' => $validated['phone_number'],
                 'password' => Hash::make($validated['password']),
                 'is_active' => true,
-                'email_verified_at' => now(),
             ]);
 
             // Tetapkan hak akses pangkalan Gudep

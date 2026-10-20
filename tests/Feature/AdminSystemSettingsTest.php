@@ -116,4 +116,24 @@ class AdminSystemSettingsTest extends TestCase
         $this->event->refresh();
         $this->assertTrue((bool) $this->event->hide_patrol_identities);
     }
+
+    /**
+     * Memastikan nama dan NTA penandatangan dokumen resmi dapat disimpan dan dibaca model Event
+     */
+    public function test_admin_can_save_official_signatories(): void
+    {
+        Livewire::actingAs($this->admin)
+            ->test(SystemSettingsManagement::class)
+            ->set('committee_chair_name', 'Drs. Ahmad Siregar')
+            ->set('committee_chair_nta', '02.08.01.001')
+            ->set('judge_chair_name', 'Hj. Rosmawati Harahap')
+            ->set('kwarcab_chair_name', 'H. Syahrul Daulay')
+            ->call('saveSettings')
+            ->assertHasNoErrors();
+
+        $event = Event::first();
+        $this->assertSame(['name' => 'Drs. Ahmad Siregar', 'nta' => '02.08.01.001'], $event->signatory('committee'));
+        $this->assertSame(['name' => 'Hj. Rosmawati Harahap', 'nta' => null], $event->signatory('judge'));
+        $this->assertSame(['name' => 'H. Syahrul Daulay', 'nta' => null], $event->signatory('kwarcab'));
+    }
 }

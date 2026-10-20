@@ -117,7 +117,7 @@
                             Masuk ke Sistem
                         </h2>
                         <p class="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-                            Silakan masukkan email dan kata sandi akun pangkalan Gudep, panitia, atau juri.
+                            Silakan masukkan username dan kata sandi akun pangkalan Gudep, panitia, atau juri.
                         </p>
                     </div>
 

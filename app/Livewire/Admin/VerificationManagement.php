@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Enums\RegistrationStatusEnum;
 use App\Models\Participant;
 use App\Models\ScoutGroup;
+use App\Services\ContingentAccountService;
 use Flux\Flux;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -125,7 +126,9 @@ class VerificationManagement extends Component
             ->update(['status' => RegistrationStatusEnum::Verified]);
         $group->chaperones()->update(['status' => RegistrationStatusEnum::Verified]);
 
-        Flux::toast(variant: 'success', heading: 'Kontingen Disetujui', text: "Pendaftaran {$group->school_name} berhasil diverifikasi.");
+        $accounts = app(ContingentAccountService::class)->provision($group);
+
+        Flux::toast(variant: 'success', heading: 'Kontingen Disetujui', text: "Pendaftaran {$group->school_name} berhasil diverifikasi. Akun dibuat: {$accounts['chaperones']} bindamping, {$accounts['participants']} peserta.");
         $this->showReviewModal = false;
     }
 

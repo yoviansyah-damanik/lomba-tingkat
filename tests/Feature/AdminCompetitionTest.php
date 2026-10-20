@@ -28,13 +28,11 @@ class AdminCompetitionTest extends TestCase
         $this->event = Event::first();
 
         $this->admin = User::factory()->create([
-            'email_verified_at' => now(),
             'is_active' => true,
         ]);
         $this->admin->assignRole(RoleEnum::Admin);
 
         $this->judge = User::factory()->create([
-            'email_verified_at' => now(),
             'is_active' => true,
         ]);
         $this->judge->assignRole(RoleEnum::Judge);

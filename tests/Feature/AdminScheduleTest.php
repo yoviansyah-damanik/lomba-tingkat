@@ -42,14 +42,12 @@ class AdminScheduleTest extends TestCase
         ]);
 
         $this->admin = User::factory()->create([
-            'email_verified_at' => now(),
             'is_active' => true,
         ]);
         $this->admin->assignRole(RoleEnum::Admin);
 
         $this->judgeUser = User::factory()->create([
             'name' => 'Kak Pembina Juri Lapangan',
-            'email_verified_at' => now(),
             'is_active' => true,
         ]);
         $this->judgeUser->assignRole(RoleEnum::Judge);

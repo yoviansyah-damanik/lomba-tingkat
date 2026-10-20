@@ -71,11 +71,13 @@
                                 <span class="text-xs text-zinc-400">({{ $patrol->gender_category?->label() }})</span>
                             </div>
                             <div class="flex items-center gap-3">
+                                @if($scoutGroup->canDownloadDocuments())
                                 <a href="{{ route('scout-group.patrols.form-01', $patrol->id) }}" target="_blank"
                                     class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-amber-800 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-amber-300">
                                     <flux:icon name="printer" class="size-3.5" />
                                     Cetak FORM : 01
                                 </a>
+                                @endif
                                 <span class="text-xs font-semibold text-amber-700 dark:text-amber-400">
                                     {{ $patrol->participantCount() }} Peserta
                                 </span>

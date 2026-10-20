@@ -42,6 +42,8 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth', 'role'])->group(function () {
     Route::get('dashboard', \App\Livewire\Dashboard::class)->name('dashboard');
     Route::get('notifications', \App\Livewire\Notifications\Index::class)->name('notifications.index');
+    Route::get('portal/agenda', \App\Livewire\Portal\UpcomingSchedules::class)->name('agenda.index');
+    Route::get('portal/team-assessment', \App\Livewire\Portal\TeamAssessment::class)->middleware('role:participant|chaperone|scout_group')->name('team-assessment.index');
 
     // Digital Credentials / ID Cards
     Route::get('/digital-cards/participant/{id}', [DigitalCardController::class, 'participantCard'])->name('digital-cards.participant');
@@ -59,7 +61,7 @@ Route::middleware(['auth', 'role'])->group(function () {
         Route::get('/scout-groups/{scoutGroupId}/chaperones/{chaperoneId}/print', [AdminVerificationController::class, 'chaperonePrint'])->name('scout-groups.chaperones.print');
         Route::get('/scout-groups/{scoutGroupId}/participants/{participantId}/print', [AdminVerificationController::class, 'participantPrint'])->name('scout-groups.participants.print');
         Route::get('/scout-groups/{scoutGroupId}/patrols/{patrolId}/form-01', [AdminVerificationController::class, 'form01Print'])->name('scout-groups.patrols.form-01');
-        Route::get('/scout-groups/{scoutGroupId}/patrols/{patrolId}/id-cards', [DigitalCardController::class, 'patrolBatchCards'])->name('scout-groups.patrols.id-cards');
+        Route::get('/scout-groups/{scoutGroupId}/patrols/{patrolId}/id-cards', [DigitalCardController::class, 'adminPatrolBatchCards'])->name('scout-groups.patrols.id-cards');
         Route::get('/scout-groups/{scoutGroupId}/chaperones/id-cards', [DigitalCardController::class, 'chaperoneBatchCards'])->name('scout-groups.chaperones.id-cards');
         Route::get('/scout-groups/{scoutGroupId}/id-cards', [DigitalCardController::class, 'scoutGroupBatchCards'])->name('scout-groups.id-cards');
 
@@ -79,10 +81,6 @@ Route::middleware(['auth', 'role'])->group(function () {
         Route::post('/scout-groups/{id}/revision', [AdminVerificationController::class, 'requestRevision'])->name('scout-groups.revision');
         Route::post('/scout-groups/{id}/reject', [AdminVerificationController::class, 'reject'])->name('scout-groups.reject');
 
-        // Aparatur Panitia & Dewan Juri (Livewire 4 SPA)
-        Route::get('/officials', \App\Livewire\Admin\OfficialsManagement::class)->name('officials.index');
-        Route::resource('officials', AdminOfficialController::class)->except(['show', 'index']);
-
         // Phase 5: Manajemen Mata Lomba & Rubrik Penilaian (Livewire 4 SPA)
         Route::get('/competitions', \App\Livewire\Admin\CompetitionsManagement::class)->name('competitions.index');
         Route::resource('competitions', AdminCompetitionController::class)->except(['index']);
@@ -99,12 +97,6 @@ Route::middleware(['auth', 'role'])->group(function () {
         // Rekap Nilai & Klasemen Prestasi di Dasbor (Livewire 4 SPA)
         Route::get('/standings', \App\Livewire\Admin\StandingsLeaderboard::class)->name('standings.index');
 
-        // Phase 7: Audit Penilaian Juri & Jejak Rekam Sistem (Livewire 4 SPA)
-        Route::get('/assessments', \App\Livewire\Admin\AssessmentsAudit::class)->name('assessments.index');
-
-        // Phase 9: Siaran Notifikasi PWA & Pengumuman Kilat (Livewire 4 SPA)
-        Route::get('/push-broadcast', \App\Livewire\Admin\PushBroadcastManagement::class)->name('push-broadcast.index');
-
         // Phase 10: Pusat Laporan, Ekspor CSV & Berita Acara Resmi (Livewire 4 SPA)
         Route::get('/reports', \App\Livewire\Admin\ReportsCenter::class)->name('reports.index');
         Route::get('/reports/export/contingents', [ReportExportController::class, 'contingentsCsv'])->name('reports.export.contingents');
@@ -112,20 +104,36 @@ Route::middleware(['auth', 'role'])->group(function () {
         Route::get('/reports/export/attendance', [ReportExportController::class, 'attendanceCsv'])->name('reports.export.attendance');
         Route::get('/reports/export/scores', [ReportExportController::class, 'scoresCsv'])->name('reports.export.scores');
         Route::get('/reports/export/standings', [ReportExportController::class, 'standingsCsv'])->name('reports.export.standings');
-        Route::get('/reports/print/berita-acara', [ReportExportController::class, 'officialBeritaAcaraPrint'])->name('reports.print.berita-acara');
-
-        // Phase 11: Tata Kelola Pengguna & Peran (Livewire 4 SPA)
-        Route::get('/users', \App\Livewire\Admin\UsersManagement::class)->name('users.index');
-
-        // Phase 11: Konfigurasi Sistem & Master Kegiatan (Livewire 4 SPA)
-        Route::get('/settings/system', \App\Livewire\Admin\SystemSettingsManagement::class)->name('settings.system');
+        Route::get('/reports/print/berita-acara', [ReportExportController::class, 'beritaAcaraPreview'])->name('reports.print.berita-acara');
+        Route::get('/reports/pdf/berita-acara', [ReportExportController::class, 'beritaAcaraPdf'])->name('reports.pdf.berita-acara');
 
         // Phase 11: Manajemen Publikasi Pengumuman (Livewire 4 SPA)
         Route::get('/announcements', \App\Livewire\Admin\AnnouncementsManagement::class)->name('announcements.index');
     });
 
+    // Superadmin: aparatur, audit penilaian, tata kelola pengguna & peran, konfigurasi sistem
+    Route::middleware('role:superadmin')->prefix('admin')->name('admin.')->group(function () {
+        // Aparatur Panitia & Dewan Juri (Livewire 4 SPA)
+        Route::get('/officials', \App\Livewire\Admin\OfficialsManagement::class)->name('officials.index');
+        Route::resource('officials', AdminOfficialController::class)->except(['show', 'index']);
+
+        // Audit Penilaian Juri & Jejak Rekam Sistem (Livewire 4 SPA)
+        Route::get('/assessments', \App\Livewire\Admin\AssessmentsAudit::class)->name('assessments.index');
+
+        // Tata Kelola Pengguna & Peran (Livewire 4 SPA)
+        Route::get('/users', \App\Livewire\Admin\UsersManagement::class)->name('users.index');
+
+        // Siaran Notifikasi PWA & Pengumuman Kilat (Livewire 4 SPA)
+        Route::get('/push-broadcast', \App\Livewire\Admin\PushBroadcastManagement::class)->name('push-broadcast.index');
+
+        // Konfigurasi Sistem & Master Kegiatan (Livewire 4 SPA)
+        Route::get('/settings/system', \App\Livewire\Admin\SystemSettingsManagement::class)->name('settings.system');
+    });
+
     // Akses Dasbor Terpadu: Rekap Nilai & Klasemen Resmi
     Route::get('/standings', \App\Livewire\Admin\StandingsLeaderboard::class)->name('standings');
+    Route::get('/standings/print', [ReportExportController::class, 'standingsRecapPreview'])->name('standings.print');
+    Route::get('/standings/pdf', [ReportExportController::class, 'standingsRecapPdf'])->name('standings.pdf');
 
     // Committee routes group (field operational monitoring)
     Route::middleware('role:committee')->prefix('committee')->name('committee.')->group(function () {
@@ -136,7 +144,8 @@ Route::middleware(['auth', 'role'])->group(function () {
     Route::middleware(['auth', 'role:admin|committee|judge'])->prefix('portal/attendance')->name('attendance.')->group(function () {
         Route::get('/', \App\Livewire\Portal\AttendanceDashboard::class)->name('index');
         Route::get('/recap', \App\Livewire\Portal\AttendanceRecap::class)->name('recap');
-        Route::get('/recap/print', [AttendanceScannerController::class, 'printRecap'])->name('recap.print');
+        Route::get('/recap/preview', [AttendanceScannerController::class, 'previewRecap'])->name('recap.preview');
+        Route::get('/recap/pdf', [AttendanceScannerController::class, 'pdfRecap'])->name('recap.pdf');
         Route::get('/scanner/{session}', [AttendanceScannerController::class, 'scanner'])->name('scanner');
         Route::post('/scan/{session}', [AttendanceScannerController::class, 'scan'])->name('scan');
         Route::post('/manual/{session}', [AttendanceScannerController::class, 'manual'])->name('manual');

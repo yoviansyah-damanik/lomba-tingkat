@@ -229,6 +229,69 @@ class CompetitionSchedule extends Model
     }
 
     /**
+     * Toleransi penilaian setelah jadwal berakhir (menit)
+     */
+    public const SCORING_GRACE_MINUTES = 30;
+
+    /**
+     * Waktu penilaian juri dibuka (saat jadwal dimulai)
+     */
+    public function scoringOpensAt(): ?\Carbon\CarbonInterface
+    {
+        return $this->start_time ? $this->start_time->copy() : null;
+    }
+
+    /**
+     * Waktu penilaian juri ditutup (jadwal berakhir + 30 menit)
+     */
+    public function scoringClosesAt(): ?\Carbon\CarbonInterface
+    {
+        return $this->end_time ? $this->end_time->copy()->addMinutes(self::SCORING_GRACE_MINUTES) : null;
+    }
+
+    /**
+     * Status jendela penilaian: upcoming (belum mulai), open (berlangsung), closed (sudah ditutup)
+     */
+    public function scoringState(?\Carbon\CarbonInterface $at = null): string
+    {
+        $at ??= now();
+        $opens = $this->scoringOpensAt();
+        $closes = $this->scoringClosesAt();
+
+        if ($opens && $at->lt($opens)) {
+            return 'upcoming';
+        }
+
+        if ($closes && $at->gt($closes)) {
+            return 'closed';
+        }
+
+        return 'open';
+    }
+
+    /**
+     * Apakah penilaian juri sedang dapat dilakukan
+     */
+    public function isScoringOpen(?\Carbon\CarbonInterface $at = null): bool
+    {
+        return $this->scoringState($at) === 'open';
+    }
+
+    /**
+     * Pesan penjelasan bila penilaian belum atau tidak lagi dapat dilakukan
+     */
+    public function scoringClosedMessage(?\Carbon\CarbonInterface $at = null): ?string
+    {
+        $format = fn ($time) => $time->copy()->setTimezone('Asia/Jakarta')->translatedFormat('d M Y, H:i').' WIB';
+
+        return match ($this->scoringState($at)) {
+            'upcoming' => 'Penilaian baru dapat dilakukan setelah jadwal dimulai ('.$format($this->scoringOpensAt()).').',
+            'closed' => 'Penilaian telah ditutup. Batas akhir '.self::SCORING_GRACE_MINUTES.' menit setelah jadwal berakhir ('.$format($this->scoringClosesAt()).').',
+            default => null,
+        };
+    }
+
+    /**
      * Waktu buka presensi resmi (paling cepat 30 menit sebelum jadwal lomba dimulai)
      */
     public function getAttendanceOpenTimeAttribute(): ?\Carbon\CarbonInterface

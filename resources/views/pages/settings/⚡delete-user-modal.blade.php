@@ -15,6 +15,8 @@ new class extends Component {
      */
     public function deleteUser(Logout $logout): void
     {
+        abort_if(Auth::user()->isManagedAccount(), 403);
+
         $this->validate([
             'password' => $this->currentPasswordRules(),
         ]);

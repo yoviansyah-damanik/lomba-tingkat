@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\PatrolGenderEnum;
 use App\Enums\PatrolRoleEnum;
 use App\Enums\RegistrationStatusEnum;
+use App\Services\ContingentAccountService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -34,6 +35,16 @@ class Patrol extends Model
             'status' => RegistrationStatusEnum::class,
             'draw_number' => 'integer',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        // Penghapusan regu menghapus peserta lewat cascade DB, sehingga akun peserta dihapus manual
+        static::deleting(function (Patrol $patrol) {
+            $service = app(ContingentAccountService::class);
+
+            $patrol->participants()->get()->each(fn (Participant $participant) => $service->deleteParticipantAccount($participant));
+        });
     }
 
     /**

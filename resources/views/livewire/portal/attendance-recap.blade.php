@@ -29,8 +29,8 @@
                 Buka Scanner Kamera
             </flux:button>
 
-            <flux:button href="{{ route('attendance.recap.print', $printParams) }}" target="_blank" variant="primary" icon="printer">
-                Cetak Lembar Presensi
+            <flux:button href="{{ route('attendance.recap.preview', $printParams) }}" target="_blank" variant="primary" icon="document-text">
+                Pratinjau PDF
             </flux:button>
         </x-slot:actions>
     </x-heading-section>

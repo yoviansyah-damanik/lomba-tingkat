@@ -10,9 +10,11 @@
     >
         <x-slot:actions>
             @if($scoutGroup->patrols->count() > 0)
+                @if($scoutGroup->canDownloadDocuments())
                 <flux:button href="{{ route('digital-cards.scout-group.batch', $scoutGroup->id) }}" target="_blank" variant="subtle" icon="qr-code">
-                    ID Card Kontingen (.PNG / A4)
+                    ID Card Kontingen (.ZIP / .PNG)
                 </flux:button>
+                @endif
             @endif
 
             @if($scoutGroup->isEditable() && $scoutGroup->patrols->count() < 2)
@@ -92,13 +94,17 @@
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2 self-start sm:self-center">
+                        @if($scoutGroup->canDownloadDocuments())
                         <flux:button href="{{ route('digital-cards.patrol.batch', $patrol->id) }}" target="_blank" variant="subtle" size="sm" icon="qr-code">
-                            ID Card Regu (A4 / .PNG)
+                            ID Card Regu (.ZIP / .PNG)
                         </flux:button>
+                        @endif
 
+                        @if($scoutGroup->canDownloadDocuments())
                         <flux:button href="{{ route('scout-group.patrols.form-01', $patrol->id) }}" target="_blank" variant="subtle" size="sm" icon="printer">
                             Cetak FORM : 01
                         </flux:button>
+                        @endif
 
                         @if($scoutGroup->isEditable())
                             <flux:button href="{{ route('scout-group.participants.create', $patrol->id) }}" wire:navigate variant="primary" size="sm" icon="plus">
@@ -150,6 +156,7 @@
                                             @endif
                                             <div>
                                                 <div class="font-semibold text-zinc-900 dark:text-zinc-100">{{ $participant->full_name }}</div>
+                                                <div class="mt-0.5"><x-id-badge :value="$participant->id_number" /></div>
                                                 <div class="text-[11px] text-zinc-400">Gol. Darah: {{ $participant->blood_type ?: '-' }}</div>
                                             </div>
                                         </div>
@@ -175,12 +182,16 @@
                                     </td>
                                     <td class="py-3 px-3 text-center">
                                         <div class="inline-flex items-center gap-1.5">
+                                            @if($scoutGroup->canDownloadDocuments())
                                             <flux:button href="{{ route('scout-group.participants.print', $participant->id) }}" target="_blank" variant="subtle" size="xs" icon="printer" title="Cetak Formulir Biodata Resmi">
                                                 Form
                                             </flux:button>
-                                            <flux:button href="{{ route('digital-cards.participant', $participant->id) }}" target="_blank" variant="subtle" size="xs" icon="qr-code" title="Cetak Kartu Peserta B2 (QR)">
+                                            @endif
+                                            @if($scoutGroup->canDownloadDocuments())
+                                            <flux:button href="{{ route('digital-cards.participant', $participant->id) }}" target="_blank" variant="subtle" size="xs" icon="qr-code" title="Simpan Kartu Peserta B2 (.PNG)">
                                                 Kartu
                                             </flux:button>
+                                            @endif
                                         </div>
                                     </td>
                                     @if($scoutGroup->isEditable())

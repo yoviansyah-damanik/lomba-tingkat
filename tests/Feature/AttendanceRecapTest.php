@@ -43,19 +43,16 @@ class AttendanceRecapTest extends TestCase
         $event = Event::first();
 
         $this->admin = User::factory()->create([
-            'email_verified_at' => now(),
             'is_active' => true,
         ]);
         $this->admin->assignRole(RoleEnum::Admin);
 
         $this->committee = User::factory()->create([
-            'email_verified_at' => now(),
             'is_active' => true,
         ]);
         $this->committee->assignRole(RoleEnum::Committee);
 
         $this->judge = User::factory()->create([
-            'email_verified_at' => now(),
             'is_active' => true,
         ]);
         $this->judge->assignRole(RoleEnum::Judge);
@@ -242,16 +239,124 @@ class AttendanceRecapTest extends TestCase
         $this->assertEquals('Izin medis posko kesehatan', $this->attendance->fresh()->notes);
     }
 
-    public function test_attendance_recap_print_view(): void
+    public function test_attendance_recap_pdf_template_content(): void
+    {
+        $attendances = \App\Models\Attendance::with(['participant.patrol.scoutGroup', 'chaperone.scoutGroup', 'user', 'session.schedule.competition'])->get();
+
+        $html = view('portal.attendance.recap-pdf', [
+            'attendances' => $attendances,
+            'selectedSession' => $this->session->load('schedule.competition'),
+            'stats' => ['total' => $attendances->count(), 'present' => 1, 'late' => 0, 'excused' => 0, 'absent' => 0],
+            'event' => \App\Models\Event::first(),
+        ])->render();
+
+        $this->assertStringContainsString('Berita Acara', $html);
+        $this->assertStringContainsString('Rekapitulasi Presensi Kegiatan', $html);
+        $this->assertStringContainsString('Aditya Pratama', $html);
+        $this->assertStringContainsString('Pionering Menara Pandang', $html);
+        $this->assertStringContainsString('Ketua Panitia Pelaksana LT III', $html);
+        $this->assertStringContainsString('NTA.', $html);
+        $this->assertStringNotContainsString('GERAKAN PRAMUKA KWARTIR CABANG', $html);
+    }
+
+    public function test_all_sessions_recap_prints_each_session_on_its_own_sheet_with_configured_signatory(): void
+    {
+        $event = \App\Models\Event::first();
+        $event->update(['committee_chair_name' => 'Drs. Ahmad Siregar', 'committee_chair_nta' => '02.08.01.001']);
+
+        $attendances = \App\Models\Attendance::with(['participant.patrol.scoutGroup', 'chaperone.scoutGroup', 'user', 'session.schedule.competition'])->get();
+        $stats = ['total' => $attendances->count(), 'present' => 1, 'late' => 0, 'excused' => 0, 'absent' => 0];
+
+        $secondSession = \App\Models\AttendanceSession::create([
+            'title' => 'Presensi Sesi Kedua Uji',
+            'session_type' => 'participant',
+            'is_competition' => false,
+            'opened_at' => now(),
+            'closed_at' => now()->addHour(),
+            'is_active' => true,
+        ]);
+
+        $html = view('portal.attendance.recap-pdf', [
+            'attendances' => $attendances,
+            'selectedSession' => null,
+            'stats' => $stats,
+            'event' => $event,
+            'sections' => collect([
+                ['session' => $this->session->load('schedule.competition'), 'number' => 'BAP-LT3/KWARCAB-PSP/2026/001', 'attendances' => $attendances, 'stats' => $stats],
+                ['session' => $secondSession, 'number' => 'BAP-LT3/KWARCAB-PSP/2026/002', 'attendances' => collect(), 'stats' => array_fill_keys(['total', 'present', 'late', 'excused', 'absent'], 0)],
+            ]),
+        ])->render();
+
+        // Lembar kedua dimulai pada halaman baru; lembar pertama tidak
+        $this->assertSame(1, substr_count($html, 'page-break-before: always'));
+        $this->assertStringContainsString('Nomor: BAP-LT3/KWARCAB-PSP/2026/001', $html);
+        $this->assertStringContainsString('Nomor: BAP-LT3/KWARCAB-PSP/2026/002', $html);
+        $this->assertSame(2, substr_count($html, 'Rekapitulasi Presensi Kegiatan'));
+        $this->assertStringContainsString('Presensi Sesi Kedua Uji', $html);
+        $this->assertStringContainsString('Drs. Ahmad Siregar', $html);
+        $this->assertStringNotContainsString('text-transform: uppercase', mb_substr($html, (int) mb_strpos($html, 'Drs. Ahmad Siregar') - 80, 100));
+        $this->assertStringContainsString('NTA. 02.08.01.001', $html);
+    }
+
+    public function test_recap_data_for_all_sessions_returns_every_session_including_empty_ones(): void
+    {
+        \App\Models\AttendanceSession::create([
+            'title' => 'Sesi Tanpa Presensi Uji',
+            'session_type' => 'participant',
+            'is_competition' => false,
+            'opened_at' => now()->addDay(),
+            'closed_at' => now()->addDay()->addHour(),
+            'is_active' => true,
+        ]);
+
+        $request = \Illuminate\Http\Request::create('/portal/attendance/recap/pdf', 'GET', ['session_id' => 'all']);
+        $request->setUserResolver(fn () => $this->admin);
+
+        $method = new \ReflectionMethod(\App\Http\Controllers\AttendanceScannerController::class, 'recapData');
+        $method->setAccessible(true);
+        $data = $method->invoke(app(\App\Http\Controllers\AttendanceScannerController::class), $request);
+
+        $titles = $data['sections']->pluck('session.title');
+        $this->assertSame(\App\Models\AttendanceSession::count(), $data['sections']->count());
+        $this->assertTrue($titles->contains('Sesi Tanpa Presensi Uji'));
+        $this->assertSame(0, $data['sections']->firstWhere('session.title', 'Sesi Tanpa Presensi Uji')['stats']['total']);
+        $this->assertSame($data['attendances']->count(), $data['sections']->sum(fn ($section) => $section['attendances']->count()));
+        $this->assertSame($data['sections']->count(), $data['sections']->pluck('number')->unique()->count());
+        $this->assertMatchesRegularExpression('#^BAP-LT3/KWARCAB-PSP/\\d{4}/\\d{3}$#', $data['sections']->first()['number']);
+    }
+
+    public function test_print_window_route_is_removed(): void
+    {
+        $this->assertFalse(\Illuminate\Support\Facades\Route::has('attendance.recap.print'));
+    }
+
+    public function test_attendance_recap_preview_page_embeds_pdf_and_offers_download(): void
     {
         $response = $this->actingAs($this->admin)->get(
-            route('attendance.recap.print', ['session_id' => $this->session->id])
+            route('attendance.recap.preview', ['session_id' => $this->session->id])
         );
 
-        $response->assertStatus(200)
-            ->assertSee('BERITA ACARA', false)
-            ->assertSee('REKAPITULASI PRESENSI KEGIATAN', false)
-            ->assertSee('Aditya Pratama')
-            ->assertSee('Pionering Menara Pandang');
+        $response->assertOk()
+            ->assertSee('PRATINJAU PDF')
+            ->assertSee('Unduh PDF')
+            ->assertSee(route('attendance.recap.pdf', ['session_id' => $this->session->id]), false)
+            ->assertSee('download=1', false);
+    }
+
+    public function test_attendance_recap_pdf_is_inline_by_default_and_attachment_on_download(): void
+    {
+        $inline = $this->actingAs($this->admin)->get(
+            route('attendance.recap.pdf', ['session_id' => $this->session->id])
+        );
+
+        $inline->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF', $inline->getContent());
+        $this->assertStringContainsString('inline; filename="rekap-presensi-', $inline->headers->get('Content-Disposition'));
+
+        $download = $this->actingAs($this->admin)->get(
+            route('attendance.recap.pdf', ['session_id' => $this->session->id, 'download' => 1])
+        );
+
+        $this->assertStringContainsString('attachment; filename="rekap-presensi-', $download->headers->get('Content-Disposition'));
     }
 }

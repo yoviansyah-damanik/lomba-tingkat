@@ -238,8 +238,16 @@
                     </div>
 
                     @php
-                        $canScore = $isAssignedJudge && (! $activeAssessment || ! $activeAssessment->isLocked());
+                        $scoringClosedMessage = $this->scoringClosedMessage;
+                        $canScore = $isAssignedJudge && ! $scoringClosedMessage && (! $activeAssessment || ! $activeAssessment->isLocked());
                     @endphp
+
+                    @if($scoringClosedMessage)
+                        <div class="flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-200">
+                            <flux:icon name="clock" class="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                            <span class="font-medium">{{ $scoringClosedMessage }}</span>
+                        </div>
+                    @endif
 
                     <div class="space-y-4">
                         @forelse($criteria as $criterion)
@@ -375,6 +383,7 @@
                                         icon="document-text"
                                         variant="subtle"
                                         wire:click="saveDraft"
+                                        :disabled="(bool) $scoringClosedMessage"
                                     >
                                         Simpan Draf
                                     </flux:button>
@@ -383,6 +392,7 @@
                                         icon="lock-closed"
                                         variant="primary"
                                         wire:click="openFinalizeModal"
+                                        :disabled="(bool) $scoringClosedMessage"
                                     >
                                         Kunci & Finalisasi Nilai
                                     </flux:button>

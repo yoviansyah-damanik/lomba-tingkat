@@ -2,18 +2,19 @@
 <form wire:submit="login" method="POST" action="{{ route('login.store') }}" class="space-y-4">
     @csrf
 
-    {{-- Email Field --}}
+    {{-- Username Field --}}
     <div>
         <flux:input
-            wire:model="email"
-            name="email"
-            label="Alamat Email Terdaftar"
-            type="email"
+            wire:model="username"
+            name="username"
+            label="Username"
+            type="text"
             required
             autofocus
-            autocomplete="email"
-            placeholder="nama@sekolah.sch.id / email..."
-            icon="envelope"
+            autocomplete="username"
+            autocapitalize="none"
+            placeholder="Masukkan username Anda"
+            icon="user"
         />
     </div>
 

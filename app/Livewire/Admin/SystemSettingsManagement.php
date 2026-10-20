@@ -30,6 +30,12 @@ class SystemSettingsManagement extends Component
     public string $contact_phone = '';
     public bool $is_active = true;
     public bool $hide_patrol_identities = false;
+    public string $committee_chair_name = '';
+    public string $committee_chair_nta = '';
+    public string $judge_chair_name = '';
+    public string $judge_chair_nta = '';
+    public string $kwarcab_chair_name = '';
+    public string $kwarcab_chair_nta = '';
 
     protected function rules(): array
     {
@@ -47,6 +53,12 @@ class SystemSettingsManagement extends Component
             'contact_phone' => 'nullable|string|max:30',
             'is_active' => 'boolean',
             'hide_patrol_identities' => 'boolean',
+            'committee_chair_name' => 'nullable|string|max:150',
+            'committee_chair_nta' => 'nullable|string|max:150',
+            'judge_chair_name' => 'nullable|string|max:150',
+            'judge_chair_nta' => 'nullable|string|max:150',
+            'kwarcab_chair_name' => 'nullable|string|max:150',
+            'kwarcab_chair_nta' => 'nullable|string|max:150',
         ];
     }
 
@@ -78,6 +90,12 @@ class SystemSettingsManagement extends Component
             $this->contact_phone = $event->contact_phone ?? '';
             $this->is_active = (bool) $event->is_active;
             $this->hide_patrol_identities = (bool) ($event->hide_patrol_identities ?? false);
+            $this->committee_chair_name = $event->committee_chair_name ?? '';
+            $this->committee_chair_nta = $event->committee_chair_nta ?? '';
+            $this->judge_chair_name = $event->judge_chair_name ?? '';
+            $this->judge_chair_nta = $event->judge_chair_nta ?? '';
+            $this->kwarcab_chair_name = $event->kwarcab_chair_name ?? '';
+            $this->kwarcab_chair_nta = $event->kwarcab_chair_nta ?? '';
         }
     }
 
@@ -95,6 +113,12 @@ class SystemSettingsManagement extends Component
             'title', 'theme', 'location', 'start_date', 'end_date',
             'registration_start_at', 'registration_end_at', 'is_registration_open',
             'hide_patrol_identities',
+            'committee_chair_name',
+            'committee_chair_nta',
+            'judge_chair_name',
+            'judge_chair_nta',
+            'kwarcab_chair_name',
+            'kwarcab_chair_nta',
         ]);
 
         $event->fill([
@@ -111,6 +135,12 @@ class SystemSettingsManagement extends Component
             'contact_phone' => $validated['contact_phone'] ?: null,
             'is_active' => $validated['is_active'],
             'hide_patrol_identities' => $validated['hide_patrol_identities'],
+            'committee_chair_name' => $validated['committee_chair_name'] ?: null,
+            'committee_chair_nta' => $validated['committee_chair_nta'] ?: null,
+            'judge_chair_name' => $validated['judge_chair_name'] ?: null,
+            'judge_chair_nta' => $validated['judge_chair_nta'] ?: null,
+            'kwarcab_chair_name' => $validated['kwarcab_chair_name'] ?: null,
+            'kwarcab_chair_nta' => $validated['kwarcab_chair_nta'] ?: null,
         ]);
 
         $event->save();

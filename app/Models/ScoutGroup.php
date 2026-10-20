@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\PatrolGenderEnum;
 use App\Enums\RegistrationStatusEnum;
 use App\Jobs\SendVerificationResultPush;
+use App\Services\ContingentAccountService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -42,6 +43,21 @@ class ScoutGroup extends Model
      */
     protected static function booted(): void
     {
+        // Pangkalan pada akun peserta/bindamping mengikuti nama dan nomor gudep
+        static::updated(function (ScoutGroup $group) {
+            if ($group->wasChanged(['school_name', 'group_number', 'male_group_number', 'female_group_number'])) {
+                app(ContingentAccountService::class)->syncGroup($group);
+            }
+        });
+
+        // Akun peserta/bindamping ikut dihapus saat gugus depan dihapus (data anak terhapus lewat cascade DB)
+        static::deleting(function (ScoutGroup $group) {
+            $service = app(ContingentAccountService::class);
+
+            $group->chaperones()->get()->each(fn (Chaperone $chaperone) => $service->deleteChaperoneAccount($chaperone));
+            $group->participants()->get()->each(fn (Participant $participant) => $service->deleteParticipantAccount($participant));
+        });
+
         static::updated(function (ScoutGroup $group) {
             $status = $group->verification_status;
 
@@ -134,6 +150,16 @@ class ScoutGroup extends Model
     {
         return $this->verification_status === RegistrationStatusEnum::Verified;
     }
+
+    /**
+     * ID Card dan Form 01/02/03 hanya dapat diunduh setelah kontingen diverifikasi Administrator
+     */
+    public function canDownloadDocuments(): bool
+    {
+        return $this->isVerified();
+    }
+
+    public const DOWNLOAD_LOCKED_MESSAGE = 'ID Card dan formulir hanya dapat diunduh setelah pendaftaran kontingen diverifikasi Administrator.';
 
     /**
      * Pembina Pendamping Putra (Bindamping Putra)

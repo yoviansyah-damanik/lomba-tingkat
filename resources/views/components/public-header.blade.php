@@ -81,7 +81,7 @@
 
                         <div class="px-3 py-2.5 border-b border-zinc-100 dark:border-zinc-800">
                             <div class="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">{{ $user->name }}</div>
-                            <div class="text-[11px] text-zinc-500 truncate">{{ $user->email }}</div>
+                            <div class="text-[11px] text-zinc-500 truncate">{{ $user->username }}</div>
                             <div class="mt-1">
                                 <span class="inline-flex items-center rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
                                     {{ $roleLabel }}
@@ -147,7 +147,7 @@
                                 </div>
                                 <div class="flex-1 min-w-0 text-xs">
                                     <div class="font-bold text-zinc-900 dark:text-zinc-100 truncate">{{ auth()->user()->name }}</div>
-                                    <div class="text-[11px] text-zinc-500 truncate">{{ auth()->user()->email }}</div>
+                                    <div class="text-[11px] text-zinc-500 truncate">{{ auth()->user()->username }}</div>
                                     <div class="mt-1">
                                         <span class="inline-flex items-center rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
                                             {{ $roleLabel ?? auth()->user()->roleLabel() }}

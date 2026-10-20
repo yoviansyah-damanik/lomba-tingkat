@@ -578,7 +578,7 @@ class AttendanceService
                 ->where(function ($q) use ($term) {
                     $q->where('name', 'like', "%{$term}%")
                         ->orWhere('id_number', 'like', "%{$term}%")
-                        ->orWhere('email', 'like', "%{$term}%");
+                        ->orWhere('username', 'like', "%{$term}%");
                 })
                 ->limit(10)
                 ->get()

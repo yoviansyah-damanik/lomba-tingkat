@@ -57,7 +57,7 @@ class ReportExportService
             'Alamat Pangkalan',
             'Nama Kamabigus',
             'No HP Kontak',
-            'Email Akun',
+            'Username Akun',
             'Jumlah Regu',
             'Jumlah Peserta',
             'Jumlah Bindamping',
@@ -80,7 +80,7 @@ class ReportExportService
                 $group->school_address ?? '-',
                 $group->kamabigus_name ?? '-',
                 $group->phone_number ?? $group->user?->phone_number ?? '-',
-                $group->user?->email ?? '-',
+                $group->user?->username ?? '-',
                 $group->patrols->count(),
                 $group->participants->count(),
                 $group->chaperones->count(),
@@ -289,7 +289,9 @@ class ReportExportService
     public function exportStandingsCsv(string $gender = 'all'): StreamedResponse
     {
         $headers = [
+            'Kategori',
             'Peringkat',
+            'Nama Regu',
             'Pangkalan / Gugus Depan',
             'Nomor Gudep',
             'Kwartir Ranting',
@@ -298,23 +300,16 @@ class ReportExportService
             'Prestasi Cukup (Perunggu)',
             'Total Prestasi',
             'Total Poin Prestasi',
-            'Peringkat Umum',
+            'Predikat',
         ];
 
-        $standings = $this->standingsService->getContingentStandings($gender);
-
+        // Klasemen putra dan putri selalu terpisah; peringkat dihitung per kategori
         $rows = [];
-        $rank = 1;
-        foreach ($standings as $st) {
-            $title = match ($rank) {
-                1 => 'Regu Prestasi Tinggi',
-                2 => 'Regu Prestasi Baik',
-                3 => 'Regu Prestasi Cukup',
-                default => 'Kontingen Berprestasi',
-            };
-
+        foreach ($this->standingsService->getPatrolStandings($gender) as $st) {
             $rows[] = [
-                $rank++,
+                $st['gender_category'] === 'boys' ? 'Putra' : 'Putri',
+                $st['rank'],
+                $st['patrol_name'],
                 $st['school_name'],
                 $st['group_number'],
                 $st['kwarran_name'],
@@ -323,7 +318,7 @@ class ReportExportService
                 $st['bronze'],
                 $st['total_medals'],
                 $st['total_points'],
-                $title,
+                $st['general_rank_title'] ?? 'Peringkat '.$st['rank'],
             ];
         }
 

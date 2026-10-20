@@ -108,11 +108,13 @@
                             <span class="text-xs text-zinc-400">({{ $patrol->gender_category?->label() }})</span>
                         </div>
                         <div class="flex items-center gap-3">
+                            @if($scoutGroup->canDownloadDocuments())
                             <a href="{{ route('scout-group.patrols.form-01', $patrol->id) }}" target="_blank"
                                 class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-amber-800 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-amber-300">
                                 <flux:icon name="printer" class="size-3.5" />
                                 Cetak FORM : 01
                             </a>
+                            @endif
                             <span class="text-xs font-semibold text-amber-700 dark:text-amber-400">
                                 {{ $patrol->participantCount() }} Peserta
                             </span>
@@ -134,7 +136,10 @@
                                 @forelse($patrol->participants as $idx => $participant)
                                     <tr>
                                         <td class="py-2 px-2.5 text-zinc-400">{{ $idx + 1 }}</td>
-                                        <td class="py-2 px-2.5 font-medium text-zinc-900 dark:text-zinc-100">{{ $participant->full_name }}</td>
+                                        <td class="py-2 px-2.5 font-medium text-zinc-900 dark:text-zinc-100">
+                                            {{ $participant->full_name }}
+                                            <div class="mt-0.5"><x-id-badge :value="$participant->id_number" /></div>
+                                        </td>
                                         <td class="py-2 px-2.5">
                                             <span class="rounded bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
                                                 {{ $participant->role_in_patrol?->label() }}
@@ -173,6 +178,7 @@
             @forelse($scoutGroup->chaperones as $chaperone)
                 <div class="rounded-xl border border-zinc-100 bg-zinc-50/50 p-3.5 text-xs dark:border-zinc-800 dark:bg-zinc-800/40">
                     <span class="font-bold text-zinc-900 dark:text-zinc-100 block">{{ $chaperone->full_name }}</span>
+                    <x-id-badge :value="$chaperone->id_number" class="my-0.5" />
                     <span class="text-zinc-500">{{ $chaperone->gender === 'male' ? 'Pembina Putra' : 'Pembina Putri' }} &bull; HP: {{ $chaperone->phone_number }}</span>
                 </div>
             @empty

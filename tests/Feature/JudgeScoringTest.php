@@ -124,8 +124,8 @@ class JudgeScoringTest extends TestCase
             'session_name' => 'Sesi A - Lapangan Utama',
             'gender_category' => 'boys',
             'arena_location' => 'Lapangan Alun-Alun',
-            'start_time' => now()->addHour(),
-            'end_time' => now()->addHours(3),
+            'start_time' => now()->subHour(),
+            'end_time' => now()->addHours(2),
             'status' => 'in_progress',
             'is_published' => true,
         ]);
@@ -432,5 +432,74 @@ class JudgeScoringTest extends TestCase
             'patrol_id' => $this->patrol1->id,
             'criteria_scores' => [$this->criterion1->id => 90],
         ], $this->unassignedJudge);
+    }
+
+    /**
+     * Penilaian hanya dapat dilakukan sejak jadwal dimulai hingga 30 menit setelah berakhir
+     */
+    public function test_scoring_window_state_follows_start_and_end_plus_30_minutes(): void
+    {
+        $start = $this->schedule->start_time->copy();
+        $end = $this->schedule->end_time->copy();
+
+        $this->assertSame('upcoming', $this->schedule->scoringState($start->copy()->subSecond()));
+        $this->assertSame('open', $this->schedule->scoringState($start->copy()));
+        $this->assertSame('open', $this->schedule->scoringState($end->copy()->addMinutes(30)));
+        $this->assertSame('closed', $this->schedule->scoringState($end->copy()->addMinutes(30)->addSecond()));
+        $this->assertNull($this->schedule->scoringClosedMessage($start->copy()->addMinute()));
+        $this->assertStringContainsString('setelah jadwal dimulai', $this->schedule->scoringClosedMessage($start->copy()->subMinute()));
+        $this->assertStringContainsString('telah ditutup', $this->schedule->scoringClosedMessage($end->copy()->addHour()));
+    }
+
+    public function test_judge_cannot_save_or_finalize_before_schedule_starts(): void
+    {
+        $this->schedule->update(['start_time' => now()->addHour(), 'end_time' => now()->addHours(3)]);
+
+        Livewire::actingAs($this->judge1)
+            ->test(JudgeScoring::class, ['scheduleId' => $this->schedule->id])
+            ->set('selectedPatrolId', $this->patrol1->id)
+            ->call('saveDraft')
+            ->assertDispatched('alert')
+            ->call('openFinalizeModal')
+            ->assertSet('isFinalizeModalOpen', false)
+            ->assertSee('Penilaian baru dapat dilakukan setelah jadwal dimulai');
+
+        $this->assertSame(0, Assessment::where('competition_schedule_id', $this->schedule->id)->count());
+    }
+
+    public function test_judge_cannot_score_after_30_minutes_past_schedule_end(): void
+    {
+        $this->schedule->update(['start_time' => now()->subHours(3), 'end_time' => now()->subMinutes(31)]);
+
+        Livewire::actingAs($this->judge1)
+            ->test(JudgeScoring::class, ['scheduleId' => $this->schedule->id])
+            ->set('selectedPatrolId', $this->patrol1->id)
+            ->call('saveDraft')
+            ->assertSee('Penilaian telah ditutup');
+
+        $this->assertSame(0, Assessment::where('competition_schedule_id', $this->schedule->id)->count());
+
+        // Dalam toleransi 30 menit setelah berakhir masih dapat dinilai
+        $this->schedule->update(['end_time' => now()->subMinutes(29)]);
+
+        Livewire::actingAs($this->judge1)
+            ->test(JudgeScoring::class, ['scheduleId' => $this->schedule->id])
+            ->set('selectedPatrolId', $this->patrol1->id)
+            ->call('saveDraft');
+
+        $this->assertSame(1, Assessment::where('competition_schedule_id', $this->schedule->id)->count());
+    }
+
+    public function test_service_rejects_scoring_outside_window(): void
+    {
+        $this->schedule->update(['start_time' => now()->addHour(), 'end_time' => now()->addHours(3)]);
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        app(\App\Services\AssessmentScoringService::class)->saveDraft([
+            'competition_schedule_id' => $this->schedule->id,
+            'patrol_id' => $this->patrol1->id,
+            'criteria_scores' => [$this->criterion1->id => 80, $this->criterion2->id => 90],
+        ], $this->judge1);
     }
 }

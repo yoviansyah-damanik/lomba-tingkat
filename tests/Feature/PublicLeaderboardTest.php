@@ -131,7 +131,7 @@ class PublicLeaderboardTest extends TestCase
             ->assertSee('Peringkat Regu Penggalang')
             ->assertSee('SMP Negeri 1 Padangsidimpuan')
             ->assertSee('MTs Negeri 2 Padangsidimpuan')
-            ->assertSee('Regu Prestasi Tinggi')
+            ->assertSee('Regu Berprestasi Tinggi')
             ->assertDontSee('Total Skor Poin')
             ->assertDontSee('Akumulasi Nilai')
             ->set('activeTab', 'competitions')
@@ -214,15 +214,23 @@ class PublicLeaderboardTest extends TestCase
         ]);
 
         Livewire::test(LeaderboardPage::class)
-            ->assertSee('PERINGKAT UMUM REGU PUTRA')
-            ->assertSee('PERINGKAT UMUM REGU PUTRI')
-            ->assertSee('Regu Prestasi Tinggi Putra')
-            ->assertSee('Regu Prestasi Tinggi Putri')
+            ->assertSee('Regu Putra Berprestasi')
+            ->assertSee('Regu Putri Berprestasi')
+            ->assertSee('Regu Berprestasi Tinggi')
             ->call('setTab', 'patrols')
+            // Klasemen putra dan putri tidak digabung: hanya kategori terpilih (bawaan: putra)
+            ->assertSet('genderFilter', 'boys')
             ->assertSee('Klasemen Peringkat Umum Regu Penggalang Putra')
-            ->assertSee('Klasemen Peringkat Umum Regu Penggalang Putri')
+            ->assertDontSee('Klasemen Peringkat Umum Regu Penggalang Putri')
             ->assertSee('Rajawali')
-            ->assertSee('Melati');
+            ->call('setGender', 'girls')
+            ->assertSee('Klasemen Peringkat Umum Regu Penggalang Putri')
+            ->assertDontSee('Klasemen Peringkat Umum Regu Penggalang Putra')
+            ->assertSee('Melati')
+            // Pilihan "Semua" tidak tersedia
+            ->call('setGender', 'all')
+            ->assertSet('genderFilter', 'boys')
+            ->assertDontSee('setGender(&#039;all&#039;)', false);
     }
 
     /**

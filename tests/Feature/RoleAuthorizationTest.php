@@ -29,7 +29,6 @@ class RoleAuthorizationTest extends TestCase
     public function test_admin_can_access_admin_dashboard_and_has_administration_gates(): void
     {
         $admin = User::factory()->create([
-            'email_verified_at' => now(),
             'is_active' => true,
         ]);
         $admin->assignRole(RoleEnum::Admin);
@@ -50,7 +49,6 @@ class RoleAuthorizationTest extends TestCase
     public function test_committee_member_cannot_access_admin_dashboard_or_verify_registrations(): void
     {
         $committee = User::factory()->create([
-            'email_verified_at' => now(),
             'is_active' => true,
         ]);
         $committee->assignRole(RoleEnum::Committee);
@@ -76,7 +74,6 @@ class RoleAuthorizationTest extends TestCase
     public function test_judge_can_access_judge_dashboard_but_is_forbidden_from_admin_dashboard(): void
     {
         $judge = User::factory()->create([
-            'email_verified_at' => now(),
             'is_active' => true,
         ]);
         $judge->assignRole(RoleEnum::Judge);
@@ -95,7 +92,6 @@ class RoleAuthorizationTest extends TestCase
     public function test_dual_role_user_committee_and_judge_can_access_both_committee_and_judge_routes(): void
     {
         $dualUser = User::factory()->create([
-            'email_verified_at' => now(),
             'is_active' => true,
         ]);
         $dualUser->assignRole(RoleEnum::Committee);
@@ -114,7 +110,6 @@ class RoleAuthorizationTest extends TestCase
     public function test_inactive_user_is_logged_out_and_blocked_from_accessing_dashboard(): void
     {
         $user = User::factory()->create([
-            'email_verified_at' => now(),
             'is_active' => false,
         ]);
         $user->assignRole(RoleEnum::Participant);
@@ -129,13 +124,13 @@ class RoleAuthorizationTest extends TestCase
      */
     public function test_committee_and_judge_can_access_participants_chaperones_and_scout_groups_pages(): void
     {
-        $committee = User::factory()->create(['email_verified_at' => now(), 'is_active' => true]);
+        $committee = User::factory()->create(['is_active' => true]);
         $committee->assignRole(RoleEnum::Committee);
 
-        $judge = User::factory()->create(['email_verified_at' => now(), 'is_active' => true]);
+        $judge = User::factory()->create(['is_active' => true]);
         $judge->assignRole(RoleEnum::Judge);
 
-        $gudepUser = User::factory()->create(['email_verified_at' => now(), 'is_active' => true]);
+        $gudepUser = User::factory()->create(['is_active' => true]);
         $gudepUser->assignRole(RoleEnum::ScoutGroup);
 
         $scoutGroup = ScoutGroup::factory()->create(['user_id' => $gudepUser->id]);

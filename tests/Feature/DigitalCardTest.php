@@ -31,13 +31,11 @@ class DigitalCardTest extends TestCase
         $this->seed(RoleSeeder::class);
 
         $this->admin = User::factory()->create([
-            'email_verified_at' => now(),
             'is_active' => true,
         ]);
         $this->admin->assignRole(RoleEnum::Admin);
 
         $this->scoutUser = User::factory()->create([
-            'email_verified_at' => now(),
             'is_active' => true,
         ]);
         $this->scoutUser->assignRole(RoleEnum::ScoutGroup);
@@ -300,7 +298,7 @@ class DigitalCardTest extends TestCase
         // 3. Simpan official baru
         $storeResponse = $this->actingAs($this->admin)->post(route('admin.officials.store'), [
             'name' => 'Kak Hasan Basri, S.Pd',
-            'email' => 'hasan@kwarcab.org',
+            'username' => 'hasan',
             'password' => 'secret12345',
             'phone_number' => '085211223344',
             'scout_id' => '02.17.009.99',
@@ -311,11 +309,11 @@ class DigitalCardTest extends TestCase
 
         $storeResponse->assertRedirect(route('admin.officials.index'));
         $this->assertDatabaseHas('users', [
-            'email' => 'hasan@kwarcab.org',
+            'username' => 'hasan',
             'name' => 'Kak Hasan Basri, S.Pd',
         ]);
 
-        $newOfficial = User::where('email', 'hasan@kwarcab.org')->first();
+        $newOfficial = User::where('username', 'hasan')->first();
         $this->assertNotNull($newOfficial);
         $this->assertNotNull($newOfficial->qr_token);
         $this->assertTrue($newOfficial->isCommittee());

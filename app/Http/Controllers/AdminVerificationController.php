@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\RegistrationStatusEnum;
 use App\Models\Participant;
 use App\Models\ScoutGroup;
+use App\Services\ContingentAccountService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -75,8 +76,10 @@ class AdminVerificationController extends Controller
             ->update(['status' => RegistrationStatusEnum::Verified]);
         $scoutGroup->chaperones()->update(['status' => RegistrationStatusEnum::Verified]);
 
+        $accounts = app(ContingentAccountService::class)->provision($scoutGroup);
+
         return redirect()->route('admin.scout-groups.show', $scoutGroup->id)
-            ->with('success', "Pendaftaran kontingen {$scoutGroup->school_name} berhasil diverifikasi dan disetujui.");
+            ->with('success', "Pendaftaran kontingen {$scoutGroup->school_name} berhasil diverifikasi dan disetujui. Akun dibuat: {$accounts['chaperones']} bindamping, {$accounts['participants']} peserta.");
     }
 
     /**
@@ -131,6 +134,8 @@ class AdminVerificationController extends Controller
     public function chaperonePrint(string $scoutGroupId, string $chaperoneId): View
     {
         $scoutGroup = ScoutGroup::findOrFail($scoutGroupId);
+        abort_unless($scoutGroup->canDownloadDocuments(), 403, ScoutGroup::DOWNLOAD_LOCKED_MESSAGE);
+
         $chaperone = $scoutGroup->chaperones()->findOrFail($chaperoneId);
 
         return view('portal.scout-group.chaperones.print', compact('scoutGroup', 'chaperone'));
@@ -142,6 +147,8 @@ class AdminVerificationController extends Controller
     public function participantPrint(string $scoutGroupId, string $participantId): View
     {
         $scoutGroup = ScoutGroup::findOrFail($scoutGroupId);
+        abort_unless($scoutGroup->canDownloadDocuments(), 403, ScoutGroup::DOWNLOAD_LOCKED_MESSAGE);
+
         $participant = Participant::whereHas('patrol', function ($q) use ($scoutGroupId) {
             $q->where('scout_group_id', $scoutGroupId);
         })->with('patrol')->findOrFail($participantId);
@@ -155,6 +162,8 @@ class AdminVerificationController extends Controller
     public function form01Print(string $scoutGroupId, string $patrolId): View
     {
         $scoutGroup = ScoutGroup::with(['chaperones', 'patrols'])->findOrFail($scoutGroupId);
+        abort_unless($scoutGroup->canDownloadDocuments(), 403, ScoutGroup::DOWNLOAD_LOCKED_MESSAGE);
+
         $patrol = $scoutGroup->patrols()->with('participants')->findOrFail($patrolId);
         $chaperone = $patrol->chaperone();
         $orderedParticipants = $patrol->orderedParticipants();

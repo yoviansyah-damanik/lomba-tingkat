@@ -111,6 +111,22 @@
                             <span class="rounded-md bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                                 Peran: <strong class="text-zinc-900 dark:text-zinc-100">{{ $sched['my_role'] }}</strong>
                             </span>
+                            @if($sched['scoring_state'] === 'open')
+                                <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300" title="Penilaian dibuka sejak jadwal dimulai hingga 30 menit setelah berakhir">
+                                    <flux:icon name="pencil-square" class="size-3" />
+                                    Penilaian Dibuka
+                                </span>
+                            @elseif($sched['scoring_state'] === 'upcoming')
+                                <span class="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400" title="{{ $sched['scoring_message'] }}">
+                                    <flux:icon name="clock" class="size-3" />
+                                    Belum Dimulai
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-semibold text-rose-700 dark:bg-rose-950/60 dark:text-rose-300" title="{{ $sched['scoring_message'] }}">
+                                    <flux:icon name="lock-closed" class="size-3" />
+                                    Penilaian Ditutup
+                                </span>
+                            @endif
                             @if($sched['status'] === 'in_progress')
                                 <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
                                     <span class="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span>

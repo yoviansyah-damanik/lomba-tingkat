@@ -211,6 +211,7 @@
                                             {{ $chaperone->full_name }}
                                         </div>
                                         <div class="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
+                                            <x-id-badge :value="$chaperone->id_number" />
                                             <span>NTA: <strong class="font-mono text-zinc-700 dark:text-zinc-300">{{ $chaperone->scout_id ?: '-' }}</strong></span>
                                         </div>
                                     </div>
@@ -222,6 +223,7 @@
                                 <div class="font-semibold text-zinc-900 dark:text-zinc-100">
                                     {{ $chaperone->scoutGroup?->school_name ?? '-' }}
                                 </div>
+                                <x-id-badge label="Gudep" :value="$chaperone->scoutGroup?->registration_code" class="mt-0.5" />
                                 <div class="mt-0.5 flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400">
                                     <span>Gudep {{ $chaperone->group_number ?: ($chaperone->scoutGroup?->group_number ?? '-') }}</span>
                                     <span>&bull;</span>
@@ -285,6 +287,7 @@
 
                                     {{-- Cetak Biodata Formulir Resmi Pembina --}}
                                     @if($chaperone->scout_group_id)
+                                        @if($chaperone->scoutGroup?->canDownloadDocuments())
                                         <a
                                             href="{{ route('admin.scout-groups.chaperones.print', ['scoutGroupId' => $chaperone->scout_group_id, 'chaperoneId' => $chaperone->id]) }}"
                                             target="_blank"
@@ -294,18 +297,21 @@
                                             <flux:icon name="printer" class="size-3.5" />
                                             <span>Form</span>
                                         </a>
+                                        @endif
                                     @endif
 
                                     {{-- Cetak Kartu Digital B2 Bindamping --}}
+                                    @if($chaperone->scoutGroup?->canDownloadDocuments())
                                     <a
                                         href="{{ route('digital-cards.chaperone', $chaperone->id) }}"
                                         target="_blank"
                                         class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-semibold text-zinc-700 shadow-2xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
-                                        title="Cetak Kartu Tanda Pengenal Bindamping (QR Code)"
+                                        title="Simpan Kartu Tanda Pengenal Bindamping (.PNG)"
                                     >
                                         <flux:icon name="qr-code" class="size-3.5" />
                                         <span>Kartu</span>
                                     </a>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -508,6 +514,7 @@
                                 </div>
                             </div>
                             <div class="shrink-0 flex items-center gap-2">
+                                @if($c->scoutGroup?->canDownloadDocuments())
                                 <a
                                     href="{{ route('digital-cards.chaperone', $c->id) }}"
                                     target="_blank"
@@ -516,6 +523,7 @@
                                     <flux:icon name="qr-code" class="size-4" />
                                     <span>Tampilkan Kartu QR</span>
                                 </a>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -525,6 +533,7 @@
                 <div class="flex items-center justify-between border-t border-zinc-100 p-4 px-6 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/40">
                     <div>
                         @if($c->scout_group_id)
+                            @if($c->scoutGroup?->canDownloadDocuments())
                             <a
                                 href="{{ route('admin.scout-groups.chaperones.print', ['scoutGroupId' => $c->scout_group_id, 'chaperoneId' => $c->id]) }}"
                                 target="_blank"
@@ -533,6 +542,7 @@
                                 <flux:icon name="printer" class="size-4" />
                                 <span>Cetak Formulir Biodata Resmi</span>
                             </a>
+                            @endif
                         @endif
                     </div>
 

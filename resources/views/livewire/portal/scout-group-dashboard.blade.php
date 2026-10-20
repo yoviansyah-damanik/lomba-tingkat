@@ -109,9 +109,11 @@
                         <a href="{{ route('scout-group.patrols') }}" wire:navigate class="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
                             Kelola Peserta &rarr;
                         </a>
+                        @if($scoutGroup->canDownloadDocuments())
                         <a href="{{ route('scout-group.patrols.form-01', $boysPatrol->id) }}" target="_blank" class="rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                             FORM 01
                         </a>
+                        @endif
                     </div>
                 @else
                     <div class="py-6 text-center text-xs text-zinc-400">
@@ -168,9 +170,11 @@
                         <a href="{{ route('scout-group.patrols') }}" wire:navigate class="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
                             Kelola Peserta &rarr;
                         </a>
+                        @if($scoutGroup->canDownloadDocuments())
                         <a href="{{ route('scout-group.patrols.form-01', $girlsPatrol->id) }}" target="_blank" class="rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                             FORM 01
                         </a>
+                        @endif
                     </div>
                 @else
                     <div class="py-6 text-center text-xs text-zinc-400">

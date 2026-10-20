@@ -24,15 +24,14 @@ class AdminOfficialsLivewireTest extends TestCase
         $this->seed(RoleSeeder::class);
 
         $this->admin = User::factory()->create([
-            'email' => 'admin@test.com',
-            'email_verified_at' => now(),
+            'username' => 'admin',
             'is_active' => true,
         ]);
         $this->admin->assignRole(RoleEnum::Admin);
 
         $this->committeeUser = User::factory()->create([
             'name' => 'Kak Budi Panitia',
-            'email' => 'budi@test.com',
+            'username' => 'budi',
             'is_active' => true,
         ]);
         $this->committeeUser->assignRole(RoleEnum::Committee);
@@ -55,7 +54,7 @@ class AdminOfficialsLivewireTest extends TestCase
 
         $judge = User::factory()->create([
             'name' => 'Kak Siti Dewan Juri',
-            'email' => 'siti@test.com',
+            'username' => 'siti',
             'is_active' => true,
         ]);
         $judge->assignRole(RoleEnum::Judge);
@@ -89,7 +88,7 @@ class AdminOfficialsLivewireTest extends TestCase
         Livewire::test(OfficialsManagement::class)
             ->call('openCreateModal')
             ->set('name', 'Kak Rahmat Baru')
-            ->set('email', 'rahmat@test.com')
+            ->set('username', 'rahmat')
             ->set('password', 'password123')
             ->set('selectedRoles', ['committee', 'judge'])
             ->call('save')
@@ -97,10 +96,10 @@ class AdminOfficialsLivewireTest extends TestCase
 
         $this->assertDatabaseHas('users', [
             'name' => 'Kak Rahmat Baru',
-            'email' => 'rahmat@test.com',
+            'username' => 'rahmat',
         ]);
 
-        $created = User::where('email', 'rahmat@test.com')->first();
+        $created = User::where('username', 'rahmat')->first();
         $this->assertTrue($created->isCommittee());
         $this->assertTrue($created->isJudge());
     }

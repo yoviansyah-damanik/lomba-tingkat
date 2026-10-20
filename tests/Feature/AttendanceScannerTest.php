@@ -42,23 +42,23 @@ class AttendanceScannerTest extends TestCase
         $this->seed(\Database\Seeders\EventSeeder::class);
 
         // Buat berbagai akun pengguna sesuai peran
-        $this->admin = User::factory()->create(['email_verified_at' => now(), 'is_active' => true]);
+        $this->admin = User::factory()->create(['is_active' => true]);
         $this->admin->assignRole(RoleEnum::Admin);
 
-        $this->committee = User::factory()->create(['email_verified_at' => now(), 'is_active' => true]);
+        $this->committee = User::factory()->create(['is_active' => true]);
         $this->committee->assignRole(RoleEnum::Committee);
 
-        $this->assignedJudge = User::factory()->create(['email_verified_at' => now(), 'is_active' => true]);
+        $this->assignedJudge = User::factory()->create(['is_active' => true]);
         $this->assignedJudge->assignRole(RoleEnum::Judge);
 
-        $this->unassignedJudge = User::factory()->create(['email_verified_at' => now(), 'is_active' => true]);
+        $this->unassignedJudge = User::factory()->create(['is_active' => true]);
         $this->unassignedJudge->assignRole(RoleEnum::Judge);
 
-        $this->dualRoleUser = User::factory()->create(['email_verified_at' => now(), 'is_active' => true]);
+        $this->dualRoleUser = User::factory()->create(['is_active' => true]);
         $this->dualRoleUser->assignRole(RoleEnum::Committee);
         $this->dualRoleUser->assignRole(RoleEnum::Judge);
 
-        $this->regularUser = User::factory()->create(['email_verified_at' => now(), 'is_active' => true]);
+        $this->regularUser = User::factory()->create(['is_active' => true]);
 
         $event = Event::first();
         $competition = Competition::create([

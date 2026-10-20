@@ -150,6 +150,30 @@ class JudgeScoring extends Component
     }
 
     /**
+     * Pesan penutupan jendela penilaian (null bila penilaian sedang dibuka)
+     */
+    #[Computed]
+    public function scoringClosedMessage(): ?string
+    {
+        return $this->schedule()->scoringClosedMessage();
+    }
+
+    /**
+     * Tolak aksi penilaian di luar jendela waktu (jadwal dimulai s.d. 30 menit setelah berakhir)
+     */
+    protected function denyIfScoringClosed(): bool
+    {
+        if (! $message = $this->scoringClosedMessage) {
+            return false;
+        }
+
+        Flux::toast(variant: 'warning', heading: 'Penilaian Ditutup', text: $message);
+        $this->dispatch('alert', ['type' => 'warning', 'message' => $message]);
+
+        return true;
+    }
+
+    /**
      * Memilih regu peserta yang akan dinilai
      */
     public function selectPatrol(string $patrolId): void
@@ -194,6 +218,10 @@ class JudgeScoring extends Component
                 'type' => 'error',
                 'message' => $msg,
             ]);
+            return;
+        }
+
+        if ($this->denyIfScoringClosed()) {
             return;
         }
 
@@ -242,6 +270,10 @@ class JudgeScoring extends Component
             return;
         }
 
+        if ($this->denyIfScoringClosed()) {
+            return;
+        }
+
         $this->isFinalizeModalOpen = true;
     }
 
@@ -258,6 +290,12 @@ class JudgeScoring extends Component
                 'type' => 'error',
                 'message' => $msg,
             ]);
+            return;
+        }
+
+        if ($this->denyIfScoringClosed()) {
+            $this->isFinalizeModalOpen = false;
+
             return;
         }
 

@@ -40,7 +40,7 @@ class UsersManagement extends Component
 
     // Form Properties
     public string $name = '';
-    public string $email = '';
+    public string $username = '';
     public string $phone_number = '';
     public string $institution = '';
     public string $position = '';
@@ -54,14 +54,7 @@ class UsersManagement extends Component
     {
         return [
             'name' => 'required|string|min:3|max:100',
-            'email' => [
-                'required',
-                'email',
-                'max:150',
-                $this->selectedUserId
-                    ? Rule::unique('users', 'email')->ignore($this->selectedUserId)
-                    : Rule::unique('users', 'email'),
-            ],
+            'username' => User::usernameRules($this->selectedUserId),
             'phone_number' => 'nullable|string|max:20',
             'institution' => 'nullable|string|max:150',
             'position' => 'nullable|string|max:100',
@@ -73,9 +66,10 @@ class UsersManagement extends Component
 
     protected array $messages = [
         'name.required' => 'Nama pengguna wajib diisi.',
-        'email.required' => 'Alamat email wajib diisi.',
-        'email.email' => 'Format email tidak valid.',
-        'email.unique' => 'Email ini telah digunakan pengguna lain.',
+        'username.required' => 'Username wajib diisi.',
+        'username.regex' => 'Username hanya boleh berisi huruf, angka, titik, strip, dan garis bawah.',
+        'username.min' => 'Username minimal 3 karakter.',
+        'username.unique' => 'Username ini telah digunakan pengguna lain.',
         'password.required' => 'Kata sandi wajib diisi.',
         'password.min' => 'Kata sandi minimal 6 karakter.',
         'selectedRoles.required' => 'Pilih minimal satu peran untuk pengguna ini.',
@@ -97,10 +91,32 @@ class UsersManagement extends Component
         $this->resetPage();
     }
 
+    /**
+     * Peran akun yang dikelola otomatis dari data gudep (hanya dapat direset kata sandinya)
+     */
+    public const MANAGED_ROLES = ['scout_group', 'participant', 'chaperone'];
+
+    /**
+     * Peran yang dapat ditetapkan manual pada akun aparatur/pengelola
+     */
     #[Computed]
     public function availableRoles(): Collection
     {
-        return Role::orderBy('name')->get();
+        return Role::whereNotIn('name', self::MANAGED_ROLES)->orderBy('name')->get();
+    }
+
+    /**
+     * Tolak perubahan data selain kata sandi untuk akun Peserta/Gudep/Bindamping
+     */
+    protected function ensureEditable(User $user): bool
+    {
+        if (! $user->isManagedAccount() && ! $user->isScoutGroup()) {
+            return true;
+        }
+
+        Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Akun Peserta, Gudep, dan Bindamping mengikuti data gudep dan hanya dapat diubah kata sandinya.');
+
+        return false;
     }
 
     #[Computed]
@@ -112,7 +128,7 @@ class UsersManagement extends Component
             $term = '%' . $this->search . '%';
             $query->where(function ($q) use ($term) {
                 $q->where('name', 'like', $term)
-                    ->orWhere('email', 'like', $term)
+                    ->orWhere('username', 'like', $term)
                     ->orWhere('phone_number', 'like', $term)
                     ->orWhere('institution', 'like', $term)
                     ->orWhere('id_number', 'like', $term);
@@ -137,7 +153,7 @@ class UsersManagement extends Component
         $this->resetValidation();
         $this->selectedUserId = null;
         $this->name = '';
-        $this->email = '';
+        $this->username = '';
         $this->phone_number = '';
         $this->institution = '';
         $this->position = '';
@@ -153,13 +169,12 @@ class UsersManagement extends Component
 
         $user = User::create([
             'name' => $validated['name'],
-            'email' => $validated['email'],
+            'username' => $validated['username'],
             'phone_number' => $validated['phone_number'] ?: null,
             'institution' => $validated['institution'] ?: null,
             'position' => $validated['position'] ?: null,
             'password' => Hash::make($validated['password']),
             'is_active' => true,
-            'email_verified_at' => now(),
         ]);
 
         foreach ($this->selectedRoles as $roleName) {
@@ -173,7 +188,7 @@ class UsersManagement extends Component
             oldValues: null,
             newValues: [
                 'name' => $user->name,
-                'email' => $user->email,
+                'username' => $user->username,
                 'roles' => $this->selectedRoles,
             ],
             reason: 'Pembuatan akun baru oleh Administrator'
@@ -189,9 +204,13 @@ class UsersManagement extends Component
         $this->resetValidation();
         $user = User::with('roles')->findOrFail($userId);
 
+        if (! $this->ensureEditable($user)) {
+            return;
+        }
+
         $this->selectedUserId = $user->id;
         $this->name = $user->name;
-        $this->email = $user->email;
+        $this->username = $user->username;
         $this->phone_number = $user->phone_number ?? '';
         $this->institution = $user->institution ?? '';
         $this->position = $user->position ?? '';
@@ -206,11 +225,16 @@ class UsersManagement extends Component
         $validated = $this->validate();
 
         $user = User::findOrFail($this->selectedUserId);
+
+        if (! $this->ensureEditable($user)) {
+            return;
+        }
+
         $oldRoles = $user->roles->pluck('name')->toArray();
 
         $user->update([
             'name' => $validated['name'],
-            'email' => $validated['email'],
+            'username' => $validated['username'],
             'phone_number' => $validated['phone_number'] ?: null,
             'institution' => $validated['institution'] ?: null,
             'position' => $validated['position'] ?: null,
@@ -250,6 +274,11 @@ class UsersManagement extends Component
         }
 
         $user = User::findOrFail($userId);
+
+        if (! $this->ensureEditable($user)) {
+            return;
+        }
+
         $user->is_active = ! $user->is_active;
         $user->save();
 
@@ -272,8 +301,20 @@ class UsersManagement extends Component
         $user = User::findOrFail($userId);
         $this->selectedUserId = $user->id;
         $this->name = $user->name;
-        $this->newPassword = 'password123';
+        $this->newPassword = $this->defaultPasswordFor($user);
         $this->showResetPasswordModal = true;
+    }
+
+    /**
+     * Kata sandi bawaan reset: tanggal lahir (Ymd) untuk Peserta/Bindamping, selain itu password123
+     */
+    protected function defaultPasswordFor(User $user): string
+    {
+        $birthDate = $user->isParticipant()
+            ? $user->participant?->birth_date
+            : ($user->isChaperone() ? $user->chaperone?->birth_date : null);
+
+        return $birthDate ? $birthDate->format('Ymd') : 'password123';
     }
 
     public function resetUserPassword(): void
@@ -309,6 +350,11 @@ class UsersManagement extends Component
         }
 
         $user = User::findOrFail($userId);
+
+        if (! $this->ensureEditable($user)) {
+            return;
+        }
+
         $this->selectedUserId = $user->id;
         $this->name = $user->name;
         $this->showDeleteModal = true;
@@ -323,13 +369,18 @@ class UsersManagement extends Component
         }
 
         $user = User::findOrFail($this->selectedUserId);
+
+        if (! $this->ensureEditable($user)) {
+            return;
+        }
+
         $userName = $user->name;
 
         AuditLog::log(
             action: 'user_deleted',
             modelType: User::class,
             modelId: $user->id,
-            oldValues: ['email' => $user->email, 'name' => $user->name],
+            oldValues: ['username' => $user->username, 'name' => $user->name],
             newValues: null,
             reason: 'Penghapusan akun oleh Administrator'
         );

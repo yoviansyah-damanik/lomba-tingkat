@@ -35,21 +35,21 @@ class ContingentRegistrationTest extends TestCase
 
         $this->adminUser = User::factory()->create([
             'name' => 'Admin Kwarcab',
-            'email' => 'admin.test@lt3-padangsidimpuan.id',
+            'username' => 'admin.test',
             'is_active' => true,
         ]);
         $this->adminUser->assignRole(RoleEnum::Admin);
 
         $this->committeeUser = User::factory()->create([
             'name' => 'Panitia Lapangan',
-            'email' => 'committee.test@lt3-padangsidimpuan.id',
+            'username' => 'committee.test',
             'is_active' => true,
         ]);
         $this->committeeUser->assignRole(RoleEnum::Committee);
 
         $this->scoutGroupUser = User::factory()->create([
             'name' => 'Pangkalan SMPN 1 Padangsidimpuan',
-            'email' => 'gudep.smpn1@lt3-padangsidimpuan.id',
+            'username' => 'gudep.smpn1',
             'phone_number' => '08126001001',
             'is_active' => true,
         ]);
@@ -73,7 +73,7 @@ class ContingentRegistrationTest extends TestCase
             'address' => 'Jl. Kenanga No. 10',
             'pic_name' => 'Budi Santoso, S.Pd',
             'phone_number' => '08126001001',
-            'email' => $this->scoutGroupUser->email,
+            'username' => $this->scoutGroupUser->username,
         ]);
 
         $updateResponse->assertRedirect(route('scout-group.index'));
@@ -126,13 +126,13 @@ class ContingentRegistrationTest extends TestCase
                 'address' => 'Jl. Baru',
                 'pic_name' => 'Nama Baru',
                 'phone_number' => '0800000000',
-                'email' => 'baru@example.test',
+                'username' => 'baru',
                 'password' => 'password-baru-123',
                 'password_confirmation' => 'password-baru-123',
             ])->assertSessionHasErrors('status');
 
             $this->assertDatabaseHas('scout_groups', ['id' => $scoutGroup->id, 'school_name' => 'SMP Terkunci']);
-            $this->assertDatabaseMissing('users', ['email' => 'baru@example.test']);
+            $this->assertDatabaseMissing('users', ['username' => 'baru']);
 
             $scoutGroup->delete();
         }
@@ -241,7 +241,7 @@ class ContingentRegistrationTest extends TestCase
         ]);
 
         // Tambah Pinru pertama
-        $resPinru1 = $this->actingAs($this->scoutGroupUser)->post(route('scout-group.participants.store', $patrol->id), [
+        $resPinru1 = $this->actingAs($this->scoutGroupUser)->post(route('scout-group.participants.store', $patrol->id), $this->participantPayload([
             'full_name' => 'Ahmad Fauzi',
             'scout_id' => '02.08.01.001',
             'role_in_patrol' => PatrolRoleEnum::PatrolLeader->value,
@@ -249,40 +249,40 @@ class ContingentRegistrationTest extends TestCase
             'birth_date' => '2011-05-12',
             'birth_place' => 'Padangsidimpuan',
             'blood_type' => 'O',
-        ]);
+        ]));
         $resPinru1->assertRedirect(route('scout-group.patrols'));
         $this->assertDatabaseHas('participants', ['full_name' => 'Ahmad Fauzi']);
 
         // Coba tambah Pinru kedua ke regu yang sama (harus ditolak)
-        $resPinru2 = $this->actingAs($this->scoutGroupUser)->post(route('scout-group.participants.store', $patrol->id), [
+        $resPinru2 = $this->actingAs($this->scoutGroupUser)->post(route('scout-group.participants.store', $patrol->id), $this->participantPayload([
             'full_name' => 'Bambang Irawan',
             'role_in_patrol' => PatrolRoleEnum::PatrolLeader->value,
             'gender' => 'male',
             'birth_date' => '2011-06-14',
             'birth_place' => 'Padangsidimpuan',
-        ]);
+        ]));
         $resPinru2->assertSessionHasErrors('role_in_patrol');
         $this->assertDatabaseMissing('participants', ['full_name' => 'Bambang Irawan']);
 
         // Tambah Wapinru
-        $resWapinru = $this->actingAs($this->scoutGroupUser)->post(route('scout-group.participants.store', $patrol->id), [
+        $resWapinru = $this->actingAs($this->scoutGroupUser)->post(route('scout-group.participants.store', $patrol->id), $this->participantPayload([
             'full_name' => 'Candra Wijaya',
             'role_in_patrol' => PatrolRoleEnum::AssistantPatrolLeader->value,
             'gender' => 'male',
             'birth_date' => '2011-08-20',
             'birth_place' => 'Padangsidimpuan',
-        ]);
+        ]));
         $resWapinru->assertRedirect(route('scout-group.patrols'));
         $this->assertDatabaseHas('participants', ['full_name' => 'Candra Wijaya']);
 
         // Tambah Anggota biasa
-        $resMember = $this->actingAs($this->scoutGroupUser)->post(route('scout-group.participants.store', $patrol->id), [
+        $resMember = $this->actingAs($this->scoutGroupUser)->post(route('scout-group.participants.store', $patrol->id), $this->participantPayload([
             'full_name' => 'Dedi Gunawan',
             'role_in_patrol' => PatrolRoleEnum::Member->value,
             'gender' => 'male',
             'birth_date' => '2011-09-01',
             'birth_place' => 'Padangsidimpuan',
-        ]);
+        ]));
         $resMember->assertRedirect(route('scout-group.patrols'));
 
         // Uji hapus peserta
@@ -585,7 +585,7 @@ class ContingentRegistrationTest extends TestCase
         $createRes->assertDontSee('name="national_student_id"', false);
 
         // 2. Simpan peserta dengan biodata lengkap tanpa NISN
-        $storeRes = $this->actingAs($this->scoutGroupUser)->post(route('scout-group.participants.store', $patrol->id), [
+        $storeRes = $this->actingAs($this->scoutGroupUser)->post(route('scout-group.participants.store', $patrol->id), $this->participantPayload([
             'full_name' => 'Muhammad Zaki',
             'role_in_patrol' => 'patrol_leader',
             'gender' => 'male',
@@ -628,7 +628,7 @@ class ContingentRegistrationTest extends TestCase
                 'tkk_madya' => ['Sholat', '', '', '', '', '', '', '', '', ''],
                 'tkk_utama' => ['', '', '', '', '', '', '', '', '', ''],
             ],
-        ]);
+        ]));
 
         $storeRes->assertRedirect(route('scout-group.patrols'));
         $participant = Participant::where('full_name', 'Muhammad Zaki')->first();
@@ -645,7 +645,7 @@ class ContingentRegistrationTest extends TestCase
         $editRes->assertDontSee('name="national_student_id"', false);
 
         // 4. Update data peserta
-        $updateRes = $this->actingAs($this->scoutGroupUser)->put(route('scout-group.participants.update', $participant->id), [
+        $updateRes = $this->actingAs($this->scoutGroupUser)->put(route('scout-group.participants.update', $participant->id), $this->participantPayload([
             'full_name' => 'Muhammad Zaki Harahap',
             'role_in_patrol' => 'patrol_leader',
             'gender' => 'male',
@@ -653,7 +653,7 @@ class ContingentRegistrationTest extends TestCase
             'birth_date' => '2011-04-10',
             'religion' => 'Islam',
             'parent_name' => 'H. Zulkifli Harahap',
-        ]);
+        ]));
         $updateRes->assertRedirect(route('scout-group.patrols'));
         $participant->refresh();
         $this->assertEquals('Muhammad Zaki Harahap', $participant->full_name);
@@ -855,5 +855,90 @@ class ContingentRegistrationTest extends TestCase
         $deleteRes = $this->actingAs($this->scoutGroupUser)->delete(route('scout-group.patrols.destroy', $patrolGirls->id));
         $deleteRes->assertRedirect(route('scout-group.patrols'));
         $this->assertDatabaseMissing('patrols', ['id' => $patrolGirls->id]);
+    }
+
+    /**
+     * Payload peserta lengkap (Bagian 1, 2, dan 3 wajib diisi); nilai dapat ditimpa per kasus uji
+     */
+    protected function participantPayload(array $overrides = []): array
+    {
+        return array_merge([
+            'photo' => \Illuminate\Http\UploadedFile::fake()->image('foto.jpg', 300, 400),
+            'full_name' => 'Peserta Uji',
+            'role_in_patrol' => 'member',
+            'gender' => 'male',
+            'religion' => 'Islam',
+            'blood_type' => 'O',
+            'scout_id' => '02.21.01.999',
+            'birth_place' => 'Padangsidimpuan',
+            'birth_date' => '2011-05-12',
+            'home_address' => 'Jl. Imam Bonjol No. 10',
+            'city' => 'Padangsidimpuan',
+            'postal_code' => '22719',
+            'home_phone' => '0634-21111',
+            'phone' => '081234567890',
+            'parent_name' => 'Orang Tua Uji',
+            'parent_job' => 'Wiraswasta',
+            'parent_address' => 'Jl. Imam Bonjol No. 10',
+            'parent_city' => 'Padangsidimpuan',
+            'parent_postal_code' => '22719',
+            'parent_home_phone' => '0634-21111',
+            'parent_phone' => '081377889900',
+            'formal_education' => [
+                ['level' => 'SD', 'school_name' => 'SDN 2 Padangsidimpuan', 'city' => 'Padangsidimpuan', 'graduation_year' => '2023', 'notes' => 'Lulus'],
+                ['level' => 'SMP', 'school_name' => 'SMPN 1 Padangsidimpuan', 'city' => 'Padangsidimpuan', 'graduation_year' => '2026', 'notes' => 'Siswa Aktif'],
+            ],
+        ], $overrides);
+    }
+
+    /**
+     * Bagian 1, 2, dan 3 formulir peserta wajib diisi seluruhnya
+     */
+    public function test_participant_form_sections_one_to_three_are_all_required(): void
+    {
+        $scoutGroup = ScoutGroup::factory()->create(['user_id' => $this->scoutGroupUser->id]);
+        $patrol = Patrol::factory()->create(['scout_group_id' => $scoutGroup->id, 'gender_category' => PatrolGenderEnum::Boys]);
+
+        $required = [
+            'photo', 'full_name', 'religion', 'blood_type', 'scout_id', 'birth_place', 'birth_date', 'home_address', 'city', 'postal_code', 'phone',
+            'parent_name', 'parent_job', 'parent_address', 'parent_city', 'parent_postal_code', 'parent_phone',
+            'formal_education',
+        ];
+
+        $payload = $this->participantPayload();
+        foreach ($required as $field) {
+            unset($payload[$field]);
+        }
+
+        $this->actingAs($this->scoutGroupUser)
+            ->post(route('scout-group.participants.store', $patrol->id), $payload)
+            ->assertSessionHasErrors($required);
+
+        foreach (['school_name', 'city', 'graduation_year'] as $column) {
+            $payload = $this->participantPayload();
+            $payload['formal_education'][1][$column] = '';
+
+            $this->actingAs($this->scoutGroupUser)
+                ->post(route('scout-group.participants.store', $patrol->id), $payload)
+                ->assertSessionHasErrors("formal_education.1.$column");
+        }
+
+        $this->assertDatabaseCount('participants', 0);
+
+        // Telepon rumah (Bagian 1 dan 2) dan keterangan pendidikan (Bagian 3) opsional
+        $optional = $this->participantPayload(['full_name' => 'Tanpa Telepon Rumah', 'home_phone' => '', 'parent_home_phone' => '', 'formal_education' => [
+            ['level' => 'SD', 'school_name' => 'SDN 2', 'city' => 'Padangsidimpuan', 'graduation_year' => '2023', 'notes' => ''],
+            ['level' => 'SMP', 'school_name' => 'SMPN 1', 'city' => 'Padangsidimpuan', 'graduation_year' => '2026', 'notes' => ''],
+        ]]);
+        $this->actingAs($this->scoutGroupUser)
+            ->post(route('scout-group.participants.store', $patrol->id), $optional)
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('scout-group.patrols'));
+
+        $this->actingAs($this->scoutGroupUser)
+            ->get(route('scout-group.participants.create', $patrol->id))
+            ->assertOk()
+            ->assertSee('name="parent_phone" required', false)
+            ->assertSee('name="photo" required', false);
     }
 }

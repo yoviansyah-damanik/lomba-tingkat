@@ -6,10 +6,12 @@
                 :subtitle="'Regu: ' . $patrol->patrol_name . ' • ' . $patrol->gender_category?->label() . ' • Gudep ' . $patrol->group_number . ' • ' . $scoutGroup->school_name"
             />
             <div class="flex items-center gap-2 self-start">
+                @if($scoutGroup->canDownloadDocuments())
                 <a href="{{ route('scout-group.participants.print', $participant->id) }}" target="_blank" class="inline-flex items-center gap-1.5 rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs font-semibold text-amber-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-amber-400">
                     <flux:icon name="printer" class="size-3.5" />
                     Cetak Form
                 </a>
+                @endif
                 <a href="{{ route('scout-group.patrols') }}" class="inline-flex items-center gap-1.5 rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                     &larr; Kembali
                 </a>
@@ -47,7 +49,7 @@
                     {{-- Pas Foto Box --}}
                     <div class="lg:col-span-1" x-data="{ photoPreview: '{{ $participant->photo_path ? asset('storage/' . $participant->photo_path) : '' }}' }">
                         <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-2">
-                            Pas Foto 3 x 4
+                            Pas Foto 3 x 4 <span class="text-red-500">*</span>
                         </label>
                         <div class="relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-zinc-300 bg-zinc-50 p-4 text-center dark:border-zinc-700 dark:bg-zinc-800/50">
                             <template x-if="photoPreview">
@@ -62,7 +64,7 @@
                             </template>
                             <input
                                 type="file"
-                                name="photo"
+                                name="photo" {{ $participant->photo_path ? '' : 'required' }}
                                 accept="image/png,image/jpeg,image/jpg"
                                 class="mt-2 block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
                                 @change="
@@ -88,7 +90,7 @@
                                 </label>
                                 <input
                                     type="text"
-                                    name="full_name"
+                                    name="full_name" required
                                     value="{{ old('full_name', $participant->full_name) }}"
                                     required
                                     class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
@@ -143,10 +145,10 @@
 
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-                                    Agama
-                                </label>
+                                    Agama <span class="text-red-500">*</span>
+                            </label>
                                 <select
-                                    name="religion"
+                                    name="religion" required
                                     class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs sm:text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                                 >
                                     <option value="">Pilih Agama</option>
@@ -159,10 +161,10 @@
 
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-                                    Gol. Darah
-                                </label>
+                                    Gol. Darah <span class="text-red-500">*</span>
+                            </label>
                                 <select
-                                    name="blood_type"
+                                    name="blood_type" required
                                     class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs sm:text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                                 >
                                     <option value="">-</option>
@@ -175,11 +177,11 @@
 
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-                                    NTA Pramuka
-                                </label>
+                                    NTA Pramuka <span class="text-red-500">*</span>
+                            </label>
                                 <input
                                     type="text"
-                                    name="scout_id"
+                                    name="scout_id" required
                                     value="{{ old('scout_id', $participant->scout_id) }}"
                                     placeholder="Nomor NTA..."
                                     class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
@@ -195,7 +197,7 @@
                                 </label>
                                 <input
                                     type="text"
-                                    name="birth_place"
+                                    name="birth_place" required
                                     value="{{ old('birth_place', $participant->birth_place) }}"
                                     required
                                     placeholder="Kota kelahiran..."
@@ -210,7 +212,7 @@
                                 </label>
                                 <input
                                     type="date"
-                                    name="birth_date"
+                                    name="birth_date" required
                                     value="{{ old('birth_date', $participant->birth_date?->format('Y-m-d')) }}"
                                     required
                                     class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
@@ -221,11 +223,11 @@
 
                         <div>
                             <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-                                Alamat Rumah Peserta
+                                Alamat Rumah Peserta <span class="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
-                                name="home_address"
+                                name="home_address" required
                                 value="{{ old('home_address', $participant->home_address) }}"
                                 placeholder="Jalan, No. Rumah, Lingkungan / Kelurahan..."
                                 class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
@@ -236,11 +238,11 @@
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-4">
                             <div class="sm:col-span-2">
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-                                    Kota / Kabupaten
-                                </label>
+                                    Kota / Kabupaten <span class="text-red-500">*</span>
+                            </label>
                                 <input
                                     type="text"
-                                    name="city"
+                                    name="city" required
                                     value="{{ old('city', $participant->city ?: 'Padangsidimpuan') }}"
                                     class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                                 >
@@ -248,11 +250,11 @@
 
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-                                    Kode Pos
-                                </label>
+                                    Kode Pos <span class="text-red-500">*</span>
+                            </label>
                                 <input
                                     type="text"
-                                    name="postal_code"
+                                    name="postal_code" required
                                     value="{{ old('postal_code', $participant->postal_code) }}"
                                     placeholder="227xx"
                                     class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
@@ -262,7 +264,7 @@
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
                                     Telp. Rumah
-                                </label>
+                            </label>
                                 <input
                                     type="text"
                                     name="home_phone"
@@ -275,11 +277,11 @@
 
                         <div>
                             <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-                                Handphone / WhatsApp Peserta
+                                Handphone / WhatsApp Peserta <span class="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
-                                name="phone"
+                                name="phone" required
                                 value="{{ old('phone', $participant->phone) }}"
                                 placeholder="08xxxxxxxxxx"
                                 class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
@@ -300,11 +302,11 @@
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
                             <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-                                Nama Orang Tua (Ayah / Ibu / Wali)
+                                Nama Orang Tua (Ayah / Ibu / Wali) <span class="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
-                                name="parent_name"
+                                name="parent_name" required
                                 value="{{ old('parent_name', $participant->parent_name) }}"
                                 placeholder="Nama lengkap orang tua..."
                                 class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
@@ -313,11 +315,11 @@
 
                         <div>
                             <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-                                Pekerjaan Orang Tua
+                                Pekerjaan Orang Tua <span class="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
-                                name="parent_job"
+                                name="parent_job" required
                                 value="{{ old('parent_job', $participant->parent_job) }}"
                                 placeholder="Contoh: PNS, Wiraswasta, Guru, TNI/Polri..."
                                 class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
@@ -327,11 +329,11 @@
 
                     <div>
                         <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-                            Alamat Rumah Orang Tua
-                        </label>
+                            Alamat Rumah Orang Tua <span class="text-red-500">*</span>
+                            </label>
                         <input
                             type="text"
-                            name="parent_address"
+                            name="parent_address" required
                             value="{{ old('parent_address', $participant->parent_address) }}"
                             placeholder="Alamat domisili orang tua..."
                             class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
@@ -341,11 +343,11 @@
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-4">
                         <div class="sm:col-span-2">
                             <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-                                Kota / Kabupaten
+                                Kota / Kabupaten <span class="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
-                                name="parent_city"
+                                name="parent_city" required
                                 value="{{ old('parent_city', $participant->parent_city ?: 'Padangsidimpuan') }}"
                                 class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                             >
@@ -353,11 +355,11 @@
 
                         <div>
                             <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-                                Kode Pos
+                                Kode Pos <span class="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
-                                name="parent_postal_code"
+                                name="parent_postal_code" required
                                 value="{{ old('parent_postal_code', $participant->parent_postal_code) }}"
                                 placeholder="227xx"
                                 class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
@@ -380,11 +382,11 @@
 
                     <div>
                         <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-                            Handphone / WhatsApp Orang Tua
-                        </label>
+                            Handphone / WhatsApp Orang Tua <span class="text-red-500">*</span>
+                            </label>
                         <input
                             type="text"
-                            name="parent_phone"
+                            name="parent_phone" required
                             value="{{ old('parent_phone', $participant->parent_phone) }}"
                             placeholder="08xxxxxxxxxx"
                             class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
@@ -406,9 +408,9 @@
                         <thead class="border-b border-zinc-200 bg-zinc-50/70 text-zinc-500 uppercase tracking-wider dark:border-zinc-800 dark:bg-zinc-800/40">
                             <tr>
                                 <th class="py-2.5 px-3 w-20">Sekolah</th>
-                                <th class="py-2.5 px-3">Nama Sekolah</th>
-                                <th class="py-2.5 px-3 w-44">Kota</th>
-                                <th class="py-2.5 px-3 w-28">Tahun Lulus</th>
+                                <th class="py-2.5 px-3">Nama Sekolah <span class="text-red-500">*</span></th>
+                                <th class="py-2.5 px-3 w-44">Kota <span class="text-red-500">*</span></th>
+                                <th class="py-2.5 px-3 w-28">Tahun Lulus <span class="text-red-500">*</span></th>
                                 <th class="py-2.5 px-3 w-44">Keterangan</th>
                             </tr>
                         </thead>
@@ -422,7 +424,7 @@
                                     <td class="py-2.5 px-3">
                                         <input
                                             type="text"
-                                            name="formal_education[{{ $i }}][school_name]"
+                                            name="formal_education[{{ $i }}][school_name]" required
                                             value="{{ old("formal_education.$i.school_name", $edu['school_name'] ?? '') }}"
                                             placeholder="Nama {{ $edu['level'] ?? '' }}..."
                                             class="w-full rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
@@ -431,7 +433,7 @@
                                     <td class="py-2.5 px-3">
                                         <input
                                             type="text"
-                                            name="formal_education[{{ $i }}][city]"
+                                            name="formal_education[{{ $i }}][city]" required
                                             value="{{ old("formal_education.$i.city", $edu['city'] ?? 'Padangsidimpuan') }}"
                                             class="w-full rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                                         >
@@ -439,7 +441,7 @@
                                     <td class="py-2.5 px-3">
                                         <input
                                             type="text"
-                                            name="formal_education[{{ $i }}][graduation_year]"
+                                            name="formal_education[{{ $i }}][graduation_year]" required
                                             value="{{ old("formal_education.$i.graduation_year", $edu['graduation_year'] ?? '') }}"
                                             placeholder="Tahun..."
                                             class="w-full rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"

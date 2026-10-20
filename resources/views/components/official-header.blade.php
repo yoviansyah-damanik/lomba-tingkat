@@ -15,7 +15,7 @@
                 </span>
             </div>
             <h1 class="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-2xl">
-                {{ $title ?? 'Lomba Tingkat III Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan' }}
+                {{ $title ?? 'Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan' }}
             </h1>
             <p class="text-xs text-zinc-600 dark:text-zinc-400 sm:text-sm">
                 {{ $subtitle ?? 'Aplikasi Resmi Penyelenggaraan, Akreditasi, Presensi QR, dan Live Scoring LT III' }}

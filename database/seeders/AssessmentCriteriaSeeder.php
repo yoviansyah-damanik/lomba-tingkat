@@ -84,8 +84,8 @@ class AssessmentCriteriaSeeder extends Seeder
         }
 
         // 2. Data Penugasan Juri untuk jadwal lomba yang sudah ada
-        $judge1 = User::where('email', 'juri@lt3padangsidimpuan.id')->first();
-        $judge2 = User::where('email', 'panitia.juri@lt3padangsidimpuan.id')->first();
+        $judge1 = User::where('username', 'juri')->first();
+        $judge2 = User::where('username', 'panitia.juri')->first();
 
         $schedules = CompetitionSchedule::all();
 

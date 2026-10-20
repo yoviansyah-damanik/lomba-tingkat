@@ -14,7 +14,7 @@ use Livewire\Component;
  */
 class Login extends Component
 {
-    public string $email = '';
+    public string $username = '';
 
     public string $password = '';
 
@@ -23,7 +23,7 @@ class Login extends Component
     protected function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            'username' => ['required', 'string'],
             'password' => ['required', 'string'],
         ];
     }
@@ -31,8 +31,7 @@ class Login extends Component
     protected function messages(): array
     {
         return [
-            'email.required' => 'Alamat email wajib diisi.',
-            'email.email' => 'Format alamat email tidak valid.',
+            'username.required' => 'Username wajib diisi.',
             'password.required' => 'Kata sandi wajib diisi.',
         ];
     }
@@ -41,7 +40,7 @@ class Login extends Component
     {
         $this->validate();
 
-        $throttleKey = Str::transliterate(Str::lower($this->email).'|'.request()->ip());
+        $throttleKey = Str::transliterate(Str::lower(trim($this->username)).'|'.request()->ip());
 
         if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
             $seconds = RateLimiter::availableIn($throttleKey);
@@ -51,12 +50,12 @@ class Login extends Component
         }
 
         $provider = Auth::guard(config('fortify.guard'))->getProvider();
-        $user = $provider->retrieveByCredentials([Fortify::username() => Str::lower($this->email)]);
+        $user = $provider->retrieveByCredentials([Fortify::username() => Str::lower(trim($this->username))]);
 
         if (! $user || ! $provider->validateCredentials($user, ['password' => $this->password])) {
             RateLimiter::hit($throttleKey);
             $this->reset('password');
-            $this->toast('danger', 'Gagal Masuk', 'Email atau kata sandi tidak sesuai.');
+            $this->toast('danger', 'Gagal Masuk', 'Username atau kata sandi tidak sesuai.');
 
             return;
         }

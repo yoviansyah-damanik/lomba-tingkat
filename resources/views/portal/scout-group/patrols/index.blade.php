@@ -74,17 +74,21 @@
                         </div>
 
                         <div class="flex items-center gap-2 self-start sm:self-center">
+                            @if($scoutGroup->canDownloadDocuments())
                             <a href="{{ route('digital-cards.patrol.batch', $patrol->id) }}" target="_blank"
                                 class="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
                                 <flux:icon name="qr-code" class="size-3.5" />
-                                ID Card Regu (A4)
+                                ID Card Regu (.ZIP / .PNG)
                             </a>
+                            @endif
 
+                            @if($scoutGroup->canDownloadDocuments())
                             <a href="{{ route('scout-group.patrols.form-01', $patrol->id) }}" target="_blank"
                                 class="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-amber-800 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-amber-300">
                                 <flux:icon name="printer" class="size-3.5" />
                                 Cetak FORM : 01
                             </a>
+                            @endif
 
                             @if($scoutGroup->isEditable())
                                 <a href="{{ route('scout-group.participants.create', $patrol->id) }}" class="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-700">
@@ -125,6 +129,7 @@
                                                 @endif
                                                 <div>
                                                     <div class="font-semibold text-zinc-900 dark:text-zinc-100">{{ $participant->full_name }}</div>
+                                                    <div class="mt-0.5"><x-id-badge :value="$participant->id_number" /></div>
                                                     <div class="text-[11px] text-zinc-400">Gol. Darah: {{ $participant->blood_type ?: '-' }}</div>
                                                 </div>
                                             </div>
@@ -150,16 +155,20 @@
                                         </td>
                                         <td class="py-3 px-3 text-center">
                                             <div class="inline-flex items-center gap-1.5">
+                                                @if($scoutGroup->canDownloadDocuments())
                                                 <a href="{{ route('scout-group.participants.print', $participant->id) }}" target="_blank"
                                                     class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-semibold text-amber-700 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-amber-400" title="Cetak Formulir Biodata Resmi">
                                                     <flux:icon name="printer" class="size-3.5" />
                                                     Form
                                                 </a>
+                                                @endif
+                                                @if($scoutGroup->canDownloadDocuments())
                                                 <a href="{{ route('digital-cards.participant', $participant->id) }}" target="_blank"
-                                                    class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200" title="Cetak Kartu Peserta B2 (QR)">
+                                                    class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200" title="Simpan Kartu Peserta B2 (.PNG)">
                                                     <flux:icon name="qr-code" class="size-3.5" />
                                                     Kartu
                                                 </a>
+                                                @endif
                                             </div>
                                         </td>
                                         @if($scoutGroup->isEditable())

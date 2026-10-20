@@ -27,11 +27,13 @@
             </div>
 
             <div class="flex items-center gap-2 flex-wrap">
+                @if($scoutGroup->canDownloadDocuments())
                 <a href="{{ route('admin.scout-groups.id-cards', $scoutGroup->id) }}" target="_blank"
                    class="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
                     <flux:icon name="qr-code" class="size-4 text-emerald-600" />
-                    <span>ID Card Kontingen (.PNG / A4)</span>
+                    <span>ID Card Kontingen (.ZIP / .PNG)</span>
                 </a>
+                @endif
 
                 @if($scoutGroup->verified_by && $scoutGroup->verifier)
                     <div class="rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-2 text-right text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400">
@@ -96,16 +98,20 @@
                         </div>
 
                         <div class="flex items-center gap-2">
+                            @if($scoutGroup->canDownloadDocuments())
                             <a href="{{ route('admin.scout-groups.patrols.id-cards', [$scoutGroup->id, $patrol->id]) }}" target="_blank"
                                 class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
                                 <flux:icon name="qr-code" class="size-3.5" />
-                                ID Card Regu (A4 / .PNG)
+                                ID Card Regu (.ZIP / .PNG)
                             </a>
+                            @endif
+                            @if($scoutGroup->canDownloadDocuments())
                             <a href="{{ route('admin.scout-groups.patrols.form-01', [$scoutGroup->id, $patrol->id]) }}" target="_blank"
                                 class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-amber-800 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-amber-300">
                                 <flux:icon name="printer" class="size-3.5" />
                                 Cetak FORM : 01
                             </a>
+                            @endif
                         </div>
                     </div>
 
@@ -126,6 +132,7 @@
                                     <tr class="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40">
                                         <td class="px-5 py-2.5 font-semibold text-zinc-900 dark:text-zinc-100">
                                             {{ $participant->full_name }}
+                                            <div class="mt-0.5"><x-id-badge :value="$participant->id_number" /></div>
                                         </td>
                                         <td class="px-5 py-2.5">
                                             <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold {{ $participant->role_in_patrol?->badgeClasses() }}">
@@ -143,16 +150,20 @@
                                         </td>
                                         <td class="px-5 py-2.5 text-right">
                                             <div class="inline-flex items-center justify-end gap-1.5">
+                                                @if($scoutGroup->canDownloadDocuments())
                                                 <a href="{{ route('admin.scout-groups.participants.print', [$scoutGroup->id, $participant->id]) }}" target="_blank"
                                                     class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-amber-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-amber-400">
                                                     <flux:icon name="printer" class="size-3.5" />
                                                     Form
                                                 </a>
+                                                @endif
+                                                @if($scoutGroup->canDownloadDocuments())
                                                 <a href="{{ route('digital-cards.participant', $participant->id) }}" target="_blank"
                                                     class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
                                                     <flux:icon name="qr-code" class="size-3.5" />
                                                     Kartu
                                                 </a>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>
@@ -181,11 +192,13 @@
                     Pembina Pendamping (Bindamping) &bull; {{ $scoutGroup->chaperones->count() }} Orang
                 </h3>
                 @if($scoutGroup->chaperones->count() > 0)
+                    @if($scoutGroup->canDownloadDocuments())
                     <a href="{{ route('admin.scout-groups.chaperones.id-cards', $scoutGroup->id) }}" target="_blank"
                        class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
                         <flux:icon name="qr-code" class="size-3.5" />
-                        ID Card Bindamping (A4 / .PNG)
+                        ID Card Bindamping (.ZIP / .PNG)
                     </a>
+                    @endif
                 @endif
             </div>
             <div class="overflow-x-auto">
@@ -204,6 +217,7 @@
                             <tr class="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40">
                                 <td class="px-5 py-2.5 font-semibold text-zinc-900 dark:text-zinc-100">
                                     {{ $chaperone->full_name }}
+                                    <div class="mt-0.5"><x-id-badge :value="$chaperone->id_number" /></div>
                                 </td>
                                 <td class="px-5 py-2.5">
                                     <span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold {{ $chaperone->gender === 'male' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300' }}">
@@ -218,16 +232,20 @@
                                 </td>
                                 <td class="px-5 py-2.5 text-right">
                                     <div class="inline-flex items-center justify-end gap-1.5">
+                                        @if($scoutGroup->canDownloadDocuments())
                                         <a href="{{ route('admin.scout-groups.chaperones.print', [$scoutGroup->id, $chaperone->id]) }}" target="_blank"
                                             class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-amber-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-amber-400">
                                             <flux:icon name="printer" class="size-3.5" />
                                             Form
                                         </a>
+                                        @endif
+                                        @if($scoutGroup->canDownloadDocuments())
                                         <a href="{{ route('digital-cards.chaperone', $chaperone->id) }}" target="_blank"
                                             class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
                                             <flux:icon name="qr-code" class="size-3.5" />
                                             Kartu
                                         </a>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

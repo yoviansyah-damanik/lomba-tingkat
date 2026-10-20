@@ -19,8 +19,7 @@ class ContingentSeeder extends Seeder
 {
     public function run(): void
     {
-        $gudepUser = User::where('email', 'gudep01@lt3padangsidimpuan.id')->first();
-        $adminUser = User::where('email', 'admin@lt3padangsidimpuan.id')->first();
+        $gudepUser = User::where('username', 'gudep01')->first();
 
         if (! $gudepUser) {
             return;
@@ -38,9 +37,7 @@ class ContingentSeeder extends Seeder
                 'address' => 'Jl. Teuku Umar No. 12, Padangsidimpuan Selatan',
                 'contact_person' => 'Drs. H. M. Siregar',
                 'contact_phone' => '081234567894',
-                'verification_status' => RegistrationStatusEnum::Verified,
-                'verified_by' => $adminUser?->id,
-                'verified_at' => now(),
+                'verification_status' => RegistrationStatusEnum::Submitted,
             ]
         );
 
@@ -52,7 +49,7 @@ class ContingentSeeder extends Seeder
             ],
             [
                 'patrol_name' => 'Rajawali',
-                'status' => RegistrationStatusEnum::Verified,
+                'status' => RegistrationStatusEnum::Submitted,
             ]
         );
 
@@ -116,7 +113,7 @@ class ContingentSeeder extends Seeder
                         'tkk_madya' => ['Sholat', 'Gerak Jalan', 'Berkemah', '', '', '', '', '', '', ''],
                         'tkk_utama' => ['P3K', '', '', '', '', '', '', '', '', ''],
                     ],
-                    'status' => RegistrationStatusEnum::Verified,
+                    'status' => RegistrationStatusEnum::Submitted,
                 ]
             );
 
@@ -168,7 +165,7 @@ class ContingentSeeder extends Seeder
             ],
             [
                 'patrol_name' => 'Melati',
-                'status' => RegistrationStatusEnum::Verified,
+                'status' => RegistrationStatusEnum::Submitted,
             ]
         );
 
@@ -232,7 +229,7 @@ class ContingentSeeder extends Seeder
                         'tkk_madya' => ['Sholat', 'Juru Masak', 'Berkemah', '', '', '', '', '', '', ''],
                         'tkk_utama' => ['P3K', '', '', '', '', '', '', '', '', ''],
                     ],
-                    'status' => RegistrationStatusEnum::Verified,
+                    'status' => RegistrationStatusEnum::Submitted,
                 ]
             );
 
@@ -317,7 +314,7 @@ class ContingentSeeder extends Seeder
                 'other_trainings' => [
                     ['name' => 'Pelatihan Pertolongan Pertama Gawat Darurat (PPGD)', 'year' => '2021', 'location' => 'PMI Padangsidimpuan', 'notes' => 'Sertifikat Kompetensi'],
                 ],
-                'status' => RegistrationStatusEnum::Verified,
+                'status' => RegistrationStatusEnum::Submitted,
             ]
         );
 
@@ -359,7 +356,7 @@ class ContingentSeeder extends Seeder
                     ['course' => 'KPD', 'year' => '', 'location' => '', 'notes' => ''],
                     ['course' => 'KPL', 'year' => '', 'location' => '', 'notes' => ''],
                 ],
-                'status' => RegistrationStatusEnum::Verified,
+                'status' => RegistrationStatusEnum::Submitted,
             ]
         );
     }

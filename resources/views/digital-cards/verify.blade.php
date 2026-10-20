@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $data ? 'Verifikasi Kredensial - ' . $data['name'] : 'QR Code Tidak Valid' }} - LT III Padangsidimpuan</title>
-    <link rel="icon" type="image/png" href="{{ asset('resources/images/logo.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-center p-5">

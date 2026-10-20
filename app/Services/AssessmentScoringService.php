@@ -91,6 +91,11 @@ class AssessmentScoringService
             throw new InvalidArgumentException('Pemberian nilai hanya dapat dilakukan oleh Juri yang telah ditunjuk pada sesi lomba ini.');
         }
 
+        // Penilaian hanya dalam jendela waktu: sejak jadwal dimulai hingga 30 menit setelah berakhir
+        if ($message = $schedule->scoringClosedMessage()) {
+            throw new InvalidArgumentException($message);
+        }
+
         $competition = $schedule->competition;
 
         $calc = $this->calculateWeightedScore($data['criteria_scores'] ?? [], $competition);
@@ -157,6 +162,11 @@ class AssessmentScoringService
             $isAssigned = $judge->isJudge() && $assessment->schedule?->judgeAssignments()->where('user_id', $judge->id)->exists();
             if (! $isAssigned) {
                 throw new InvalidArgumentException('Pemberian nilai hanya dapat dilakukan oleh Juri yang telah ditunjuk pada sesi lomba ini.');
+            }
+
+            // Finalisasi pun hanya dalam jendela waktu penilaian
+            if ($message = $assessment->schedule?->scoringClosedMessage()) {
+                throw new InvalidArgumentException($message);
             }
 
             $oldValues = $assessment->toArray();

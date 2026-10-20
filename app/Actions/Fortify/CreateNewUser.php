@@ -26,9 +26,8 @@ class CreateNewUser implements CreatesNewUsers
 
         $user = User::create([
             'name' => $input['name'],
-            'email' => $input['email'],
+            'username' => $input['username'],
             'password' => $input['password'],
-            'email_verified_at' => now(),
         ]);
 
         $user->assignRole(\App\Enums\RoleEnum::ScoutGroup);

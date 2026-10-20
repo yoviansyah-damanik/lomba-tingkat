@@ -489,7 +489,7 @@
                         <flux:select wire:model="selectedJudgeId" placeholder="Pilih Juri / Aparatur">
                             @foreach($availableJudges as $judge)
                                 <flux:select.option value="{{ $judge->id }}">
-                                    {{ $judge->name }} ({{ $judge->email }})
+                                    {{ $judge->name }} ({{ $judge->username }})
                                 </flux:select.option>
                             @endforeach
                         </flux:select>

@@ -18,8 +18,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 /**
  * @property string $id
  * @property string $name
- * @property string $email
- * @property Carbon|null $email_verified_at
+ * @property string $username
  * @property string $password
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
@@ -28,7 +27,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'phone_number', 'avatar_path', 'is_active', 'scout_id', 'institution', 'position', 'id_number', 'qr_token', 'qr_generated_at'])]
+#[Fillable(['name', 'username', 'password', 'phone_number', 'avatar_path', 'is_active', 'scout_id', 'institution', 'position', 'id_number', 'qr_token', 'qr_generated_at', 'participant_id'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
@@ -43,7 +42,6 @@ class User extends Authenticatable implements PasskeyUser
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
             'qr_generated_at' => 'datetime',
@@ -54,12 +52,24 @@ class User extends Authenticatable implements PasskeyUser
     {
         parent::boot();
 
+        static::saving(function (User $user) {
+            // Username selalu huruf kecil tanpa spasi agar login konsisten
+            if ($user->username !== null) {
+                $user->username = Str::lower(trim($user->username));
+            }
+        });
+
         static::creating(function (User $user) {
             if (empty($user->id_number)) {
                 do {
                     $code = 'ID-' . strtoupper(Str::random(8));
                 } while (static::where('id_number', $code)->exists());
                 $user->id_number = $code;
+            }
+
+            // Username aparatur/peserta/bindamping otomatis mengikuti ID
+            if (empty($user->username)) {
+                $user->username = Str::lower($user->id_number);
             }
 
             if (empty($user->qr_token)) {
@@ -95,6 +105,11 @@ class User extends Authenticatable implements PasskeyUser
     public function hasRole(string|\App\Enums\RoleEnum $role): bool
     {
         $roleName = $role instanceof \App\Enums\RoleEnum ? $role->value : $role;
+
+        // Superadmin mewarisi seluruh wewenang Administrator
+        if ($roleName === \App\Enums\RoleEnum::Admin->value && $this->roles->contains('name', \App\Enums\RoleEnum::Superadmin->value)) {
+            return true;
+        }
 
         return $this->roles->contains('name', $roleName);
     }
@@ -141,7 +156,15 @@ class User extends Authenticatable implements PasskeyUser
     }
 
     /**
-     * Helper cepat pengecekan role Administrator
+     * Helper cepat pengecekan role Superadmin
+     */
+    public function isSuperadmin(): bool
+    {
+        return $this->hasRole(\App\Enums\RoleEnum::Superadmin);
+    }
+
+    /**
+     * Helper cepat pengecekan role Administrator (termasuk Superadmin)
      */
     public function isAdmin(): bool
     {
@@ -189,6 +212,76 @@ class User extends Authenticatable implements PasskeyUser
     }
 
     /**
+     * Aturan validasi username (huruf, angka, titik, strip, garis bawah)
+     */
+    public static function usernameRules(?string $ignoreId = null): array
+    {
+        return [
+            'required',
+            'string',
+            'regex:/^[A-Za-z0-9._-]+$/',
+            'min:3',
+            'max:50',
+            \Illuminate\Validation\Rule::unique('users', 'username')->ignore($ignoreId),
+        ];
+    }
+
+    /**
+     * Pesan validasi username (bahasa Indonesia)
+     */
+    public static function usernameMessages(): array
+    {
+        return [
+            'username.required' => 'Username wajib diisi.',
+            'username.regex' => 'Username hanya boleh berisi huruf, angka, titik, strip, dan garis bawah (tanpa spasi).',
+            'username.min' => 'Username minimal 3 karakter.',
+            'username.max' => 'Username maksimal 50 karakter.',
+            'username.unique' => 'Username ini telah digunakan. Silakan pilih username lain.',
+        ];
+    }
+
+    /**
+     * Nama pengguna untuk tampilan WebAuthn (passkey)
+     */
+    public function getPasskeyUsername(): string
+    {
+        return $this->username;
+    }
+
+    /**
+     * Helper cepat pengecekan akun Bindamping
+     */
+    public function isChaperone(): bool
+    {
+        return $this->hasRole(\App\Enums\RoleEnum::Chaperone);
+    }
+
+    /**
+     * Akun peserta/bindamping dikelola otomatis dari data gudep terverifikasi,
+     * sehingga profil dan kata sandinya tidak dapat diubah oleh pemiliknya sendiri
+     */
+    public function isManagedAccount(): bool
+    {
+        return $this->isParticipant() || $this->isChaperone();
+    }
+
+    /**
+     * Data peserta yang ditautkan ke akun peserta
+     */
+    public function participant(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Participant::class, 'participant_id');
+    }
+
+    /**
+     * Data bindamping yang ditautkan ke akun bindamping
+     */
+    public function chaperone(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Chaperone::class, 'user_id');
+    }
+
+    /**
      * Relasi penugasan juri ke jadwal sesi lomba
      */
     public function judgeAssignments(): \Illuminate\Database\Eloquent\Relations\HasMany
@@ -225,6 +318,10 @@ class User extends Authenticatable implements PasskeyUser
      */
     public function roleLabel(): string
     {
+        if ($this->isSuperadmin()) {
+            return 'Superadmin';
+        }
+
         if ($this->isAdmin()) {
             return 'Administrator';
         }
@@ -247,6 +344,10 @@ class User extends Authenticatable implements PasskeyUser
 
         if ($this->isParticipant()) {
             return 'Peserta';
+        }
+
+        if ($this->isChaperone()) {
+            return 'Bindamping';
         }
 
         $labels = $this->roles->pluck('label')->filter()->values();

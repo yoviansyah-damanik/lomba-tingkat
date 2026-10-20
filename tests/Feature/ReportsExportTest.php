@@ -179,11 +179,58 @@ class ReportsExportTest extends TestCase
     {
         $response = $this->actingAs($this->admin)->get(route('admin.reports.print.berita-acara'));
 
-        $response->assertStatus(200);
-        $response->assertSee('BERITA ACARA PENETAPAN HASIL AKHIR');
-        $response->assertSee('Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan');
-        $response->assertSee('Ketua Dewan Juri');
-        $response->assertSee('SMP Negeri 1 Padangsidimpuan');
+        $response->assertStatus(200)
+            ->assertSee('PRATINJAU PDF')
+            ->assertSee('Unduh PDF')
+            ->assertSee(route('admin.reports.pdf.berita-acara'), false)
+            ->assertSee('download=1', false);
+    }
+
+    /**
+     * Berita acara dan rekap regu berprestasi tersedia sebagai PDF (tampil inline, unduh dengan ?download=1)
+     */
+    public function test_reports_are_served_as_pdf_with_preview_first(): void
+    {
+        foreach (['admin.reports.pdf.berita-acara' => 'berita-acara-', 'standings.pdf' => 'rekap-regu-berprestasi-'] as $route => $prefix) {
+            $inline = $this->actingAs($this->admin)->get(route($route));
+            $inline->assertOk()->assertHeader('Content-Type', 'application/pdf');
+            $this->assertStringStartsWith('%PDF', $inline->getContent());
+            $this->assertStringContainsString('inline; filename="'.$prefix, $inline->headers->get('Content-Disposition'));
+
+            $download = $this->actingAs($this->admin)->get(route($route, ['download' => 1]));
+            $this->assertStringContainsString('attachment; filename="'.$prefix, $download->headers->get('Content-Disposition'));
+        }
+
+        $this->actingAs($this->admin)->get(route('standings.print'))
+            ->assertOk()
+            ->assertSee('PRATINJAU PDF')
+            ->assertSee(route('standings.pdf'), false);
+    }
+
+    /**
+     * Seluruh dokumen PDF memakai kop seragam: logo kiri, tiga baris identitas kegiatan
+     */
+    public function test_pdf_templates_share_the_standard_letterhead(): void
+    {
+        $data = [
+            'event' => \App\Models\Event::first(),
+            'boysStandings' => collect(),
+            'girlsStandings' => collect(),
+            'generatedAt' => now(),
+        ];
+
+        foreach (['reports.berita-acara-pdf', 'reports.standings-recap-pdf'] as $view) {
+            $html = view($view, $data)->render();
+
+            $this->assertStringContainsString('Lomba Tingkat III', $html);
+            $this->assertStringContainsString('Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan', $html);
+            $this->assertStringContainsString('Tahun ', $html);
+            $this->assertStringContainsString('logo.png', $html);
+        }
+
+        $berita = view('reports.berita-acara-pdf', $data)->render();
+        $this->assertStringContainsString('Berita Acara Penetapan Hasil Akhir', $berita);
+        $this->assertStringContainsString('Ketua Dewan Juri', $berita);
     }
 
     /**

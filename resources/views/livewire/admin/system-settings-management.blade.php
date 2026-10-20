@@ -36,7 +36,7 @@
                     <input
                         type="text"
                         wire:model="title"
-                        placeholder="Contoh: Lomba Tingkat III Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan"
+                        placeholder="Contoh: Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan"
                         class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 font-semibold"
                     />
                     @error('title') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
@@ -207,6 +207,102 @@
                     <input type="checkbox" wire:model="is_active" class="sr-only peer" />
                     <div class="w-11 h-6 bg-zinc-200 peer-focus:outline-hidden rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-zinc-600 peer-checked:bg-emerald-600"></div>
                 </label>
+            </div>
+        </div>
+
+        {{-- Card: Penandatangan Dokumen Resmi --}}
+        <div class="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900 space-y-4">
+            <div class="border-b border-zinc-100 dark:border-zinc-800 pb-3">
+                <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
+                    Penandatangan Dokumen Resmi
+                </h3>
+                <p class="text-xs text-zinc-400">
+                    Nama dan NTA yang dicetak pada bagian tanda tangan Berita Acara dan Rekapitulasi Presensi. Kosongkan bila ingin diisi tangan.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div class="sm:col-span-3 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Ketua Panitia Pelaksana LT III</div>
+                <div>
+                    <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                        Nama Lengkap & Gelar:
+                    </label>
+                    <input
+                        type="text"
+                        wire:model="committee_chair_name"
+                        placeholder="Contoh: Drs. H. Ahmad Siregar, M.Pd"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                    />
+                    @error('committee_chair_name') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                        NTA:
+                    </label>
+                    <input
+                        type="text"
+                        wire:model="committee_chair_nta"
+                        placeholder="Contoh: 02.08.01.001"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                    />
+                    @error('committee_chair_nta') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div class="sm:col-span-3 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Ketua Dewan Juri</div>
+                <div>
+                    <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                        Nama Lengkap & Gelar:
+                    </label>
+                    <input
+                        type="text"
+                        wire:model="judge_chair_name"
+                        placeholder="Contoh: Hj. Rosmawati Harahap, S.Pd"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                    />
+                    @error('judge_chair_name') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                        NTA:
+                    </label>
+                    <input
+                        type="text"
+                        wire:model="judge_chair_nta"
+                        placeholder="Contoh: 02.08.01.001"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                    />
+                    @error('judge_chair_nta') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div class="sm:col-span-3 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Ketua Kwartir Cabang</div>
+                <div>
+                    <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                        Nama Lengkap & Gelar:
+                    </label>
+                    <input
+                        type="text"
+                        wire:model="kwarcab_chair_name"
+                        placeholder="Contoh: H. Syahrul Daulay, S.E"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                    />
+                    @error('kwarcab_chair_name') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                        NTA:
+                    </label>
+                    <input
+                        type="text"
+                        wire:model="kwarcab_chair_nta"
+                        placeholder="Contoh: 02.08.01.001"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                    />
+                    @error('kwarcab_chair_nta') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
+                </div>
             </div>
         </div>
 

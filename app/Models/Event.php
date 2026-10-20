@@ -26,9 +26,28 @@ class Event extends Model
         'description',
         'contact_email',
         'contact_phone',
+        'committee_chair_name',
+        'committee_chair_nta',
+        'judge_chair_name',
+        'judge_chair_nta',
+        'kwarcab_chair_name',
+        'kwarcab_chair_nta',
         'is_active',
         'hide_patrol_identities',
     ];
+
+    /**
+     * Penandatangan dokumen resmi: committee (Ketua Panitia Pelaksana LT III), judge (Ketua Dewan Juri), kwarcab (Ketua Kwartir Cabang)
+     *
+     * @return array{name: ?string, nta: ?string}
+     */
+    public function signatory(string $role): array
+    {
+        return [
+            'name' => $this->{$role.'_chair_name'} ?: null,
+            'nta' => $this->{$role.'_chair_nta'} ?: null,
+        ];
+    }
 
     protected function casts(): array
     {

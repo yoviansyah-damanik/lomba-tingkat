@@ -124,10 +124,10 @@
                         <div class="mt-5 rounded-xl border border-amber-200 bg-amber-100/50 p-3 text-xs text-amber-950 dark:border-amber-500/20 dark:bg-amber-950/40 dark:text-amber-200">
                             <strong class="font-bold flex items-center gap-1.5 mb-1">
                                 <flux:icon name="information-circle" class="size-4 text-amber-700 dark:text-amber-400" />
-                                Verifikasi Administrator (Tanpa Verifikasi Email):
+                                Verifikasi Administrator:
                             </strong>
                             <p class="text-[11px] leading-relaxed">
-                                Pendaftaran akun pangkalan <strong>tidak memerlukan verifikasi email</strong>. Akun langsung aktif dan dapat digunakan. Seluruh data kontingen (regu, peserta, bindamping) selanjutnya <strong>diverifikasi langsung oleh Administrator</strong>.
+                                Pendaftaran akun pangkalan <strong>tidak memerlukan email</strong>. Akun langsung aktif dan dapat digunakan. Seluruh data kontingen (regu, peserta, bindamping) selanjutnya <strong>diverifikasi langsung oleh Administrator</strong>.
                             </p>
                         </div>
                     </div>
@@ -398,12 +398,12 @@
                                             <p class="mt-1 text-[11px] text-zinc-500">Digunakan Administrator untuk konfirmasi berkas verifikasi kontingen.</p>
                                         </div>
 
-                                        {{-- Alamat Email --}}
+                                        {{-- Username --}}
                                         <div class="sm:col-span-2">
-                                            <flux:input name="email" :label="__('Alamat Email Resmi Kontingen')"
-                                                :value="old('email')" type="email" required autocomplete="email"
-                                                placeholder="gudep.smpn2@gmail.com" />
-                                            <p class="mt-1 text-[11px] text-zinc-500">Email ini digunakan sebagai username login ke Dasbor Kontingen (tanpa verifikasi email).</p>
+                                            <flux:input name="username" label="Username Login Kontingen"
+                                                :value="old('username')" type="text" required autocomplete="username" autocapitalize="none"
+                                                placeholder="gudep.smpn2" />
+                                            <p class="mt-1 text-[11px] text-zinc-500">Username digunakan untuk masuk ke Dasbor Kontingen. Gunakan huruf, angka, titik, strip, atau garis bawah (minimal 3 karakter).</p>
                                         </div>
 
                                         {{-- Kata Sandi --}}

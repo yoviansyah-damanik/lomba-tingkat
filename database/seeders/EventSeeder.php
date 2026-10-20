@@ -13,7 +13,7 @@ class EventSeeder extends Seeder
     public function run(): void
     {
         Event::firstOrCreate(
-            ['title' => 'Lomba Tingkat III Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan'],
+            ['title' => 'Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan'],
             [
                 'theme' => 'Tangkas, Berkarakter, Bersaudara, dan Berprestasi Menuju Generasi Indonesia Emas',
                 'start_date' => now()->addDays(5)->toDateString(),

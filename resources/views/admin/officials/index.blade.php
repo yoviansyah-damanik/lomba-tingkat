@@ -109,7 +109,6 @@
                                         @endif
                                         <div>
                                             <div class="font-bold text-zinc-900 dark:text-zinc-100">{{ $official->name }}</div>
-                                            <div class="text-[11px] text-zinc-400">{{ $official->email }}</div>
                                             @if($official->id_number)
                                                 <span class="inline-block mt-1 font-mono text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800/50">{{ $official->id_number }}</span>
                                             @endif
@@ -154,7 +153,7 @@
                                     <a href="{{ route('digital-cards.staff', $official->id) }}" target="_blank"
                                        class="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-amber-700 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-amber-400">
                                         <flux:icon name="qr-code" class="size-3.5" />
-                                        Cetak ID Card
+                                        Simpan ID Card (.PNG)
                                     </a>
                                 </td>
                                 <td class="py-3 px-4 text-right">

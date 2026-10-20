@@ -9,6 +9,7 @@ use App\Models\Chaperone;
 use App\Models\Participant;
 use App\Models\Patrol;
 use App\Models\ScoutGroup;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -108,7 +109,7 @@ class ScoutGroupPortalController extends Controller
             'address' => ['required', 'string', 'max:500'],
             'pic_name' => ['required', 'string', 'max:255'],
             'phone_number' => ['required', 'string', 'max:30'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'username' => User::usernameRules($user->id),
             'password' => ['nullable', 'string', 'confirmed', Password::defaults()],
         ], [
             'school_name.required' => 'Nama pangkalan / sekolah wajib diisi.',
@@ -118,8 +119,7 @@ class ScoutGroupPortalController extends Controller
             'address.required' => 'Alamat lengkap pangkalan wajib diisi.',
             'pic_name.required' => 'Nama lengkap pembina penanggung jawab (PIC) wajib diisi.',
             'phone_number.required' => 'Nomor WhatsApp / HP penanggung jawab wajib diisi.',
-            'email.required' => 'Alamat email resmi wajib diisi.',
-            'email.unique' => 'Alamat email ini telah terdaftar. Silakan gunakan email lain.',
+            ...User::usernameMessages(),
             'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
         ]);
 
@@ -140,7 +140,7 @@ class ScoutGroupPortalController extends Controller
 
             $userData = [
                 'name' => $validated['pic_name'],
-                'email' => $validated['email'],
+                'username' => $validated['username'],
                 'phone_number' => $validated['phone_number'],
             ];
             if (! empty($validated['password'])) {
@@ -225,6 +225,8 @@ class ScoutGroupPortalController extends Controller
     public function form01Print(Request $request, string $patrolId): View
     {
         $scoutGroup = $this->getOrCreateScoutGroup($request);
+        abort_unless($scoutGroup->canDownloadDocuments(), 403, ScoutGroup::DOWNLOAD_LOCKED_MESSAGE);
+
         $scoutGroup->load(['chaperones', 'patrols']);
         $patrol = $scoutGroup->patrols()->with('participants')->findOrFail($patrolId);
         $chaperone = $patrol->chaperone();
@@ -260,32 +262,7 @@ class ScoutGroupPortalController extends Controller
             return back()->withErrors(['status' => 'Pendaftaran terkunci dan tidak dapat menambah peserta.']);
         }
 
-        $validated = $request->validate([
-            'full_name' => ['required', 'string', 'max:255'],
-            'role_in_patrol' => ['required', 'in:patrol_leader,assistant_patrol_leader,member'],
-            'gender' => ['required', 'in:male,female'],
-            'scout_id' => ['nullable', 'string', 'max:50'],
-            'birth_place' => ['required', 'string', 'max:100'],
-            'birth_date' => ['required', 'date'],
-            'religion' => ['nullable', 'string', 'max:50'],
-            'blood_type' => ['nullable', 'in:A,B,AB,O'],
-            'home_address' => ['nullable', 'string'],
-            'city' => ['nullable', 'string', 'max:100'],
-            'postal_code' => ['nullable', 'string', 'max:10'],
-            'home_phone' => ['nullable', 'string', 'max:30'],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'parent_name' => ['nullable', 'string', 'max:255'],
-            'parent_job' => ['nullable', 'string', 'max:100'],
-            'parent_address' => ['nullable', 'string'],
-            'parent_city' => ['nullable', 'string', 'max:100'],
-            'parent_postal_code' => ['nullable', 'string', 'max:10'],
-            'parent_home_phone' => ['nullable', 'string', 'max:30'],
-            'parent_phone' => ['nullable', 'string', 'max:30'],
-            'photo' => ['nullable', 'image', 'max:2048'],
-            'formal_education' => ['nullable', 'array'],
-            'scout_siaga' => ['nullable', 'array'],
-            'scout_penggalang' => ['nullable', 'array'],
-        ]);
+        $validated = $request->validate($this->participantRules(), $this->participantMessages(), $this->participantAttributes());
 
         // Validasi: 1 regu hanya boleh punya 1 Pinru dan 1 Wapinru
         if ($validated['role_in_patrol'] === PatrolRoleEnum::PatrolLeader->value && $patrol->hasLeader()) {
@@ -308,6 +285,93 @@ class ScoutGroupPortalController extends Controller
         ]));
 
         return redirect()->route('scout-group.patrols')->with('success', 'Peserta berhasil didaftarkan ke dalam regu.');
+    }
+
+    /**
+     * Aturan validasi data peserta: Bagian 1 (identitas), 2 (orang tua), dan 3 (pendidikan formal) wajib diisi
+     */
+    protected function participantRules(?Participant $participant = null): array
+    {
+        return [
+            // Bagian 1: Identitas diri & jabatan regu (telepon rumah opsional)
+            'photo' => [$participant?->photo_path ? 'nullable' : 'required', 'image', 'max:2048'],
+            'full_name' => ['required', 'string', 'max:255'],
+            'role_in_patrol' => ['required', 'in:patrol_leader,assistant_patrol_leader,member'],
+            'gender' => ['required', 'in:male,female'],
+            'religion' => ['required', 'string', 'max:50'],
+            'blood_type' => ['required', 'in:A,B,AB,O'],
+            'scout_id' => ['required', 'string', 'max:50'],
+            'birth_place' => ['required', 'string', 'max:100'],
+            'birth_date' => ['required', 'date'],
+            'home_address' => ['required', 'string'],
+            'city' => ['required', 'string', 'max:100'],
+            'postal_code' => ['required', 'string', 'max:10'],
+            'home_phone' => ['nullable', 'string', 'max:30'],
+            'phone' => ['required', 'string', 'max:30'],
+
+            // Bagian 2: Data orang tua / wali (telepon rumah opsional)
+            'parent_name' => ['required', 'string', 'max:255'],
+            'parent_job' => ['required', 'string', 'max:100'],
+            'parent_address' => ['required', 'string'],
+            'parent_city' => ['required', 'string', 'max:100'],
+            'parent_postal_code' => ['required', 'string', 'max:10'],
+            'parent_home_phone' => ['nullable', 'string', 'max:30'],
+            'parent_phone' => ['required', 'string', 'max:30'],
+
+            // Bagian 3: Pendidikan formal (SD & SMP)
+            'formal_education' => ['required', 'array', 'min:1'],
+            'formal_education.*.level' => ['required', 'string', 'max:20'],
+            'formal_education.*.school_name' => ['required', 'string', 'max:255'],
+            'formal_education.*.city' => ['required', 'string', 'max:100'],
+            'formal_education.*.graduation_year' => ['required', 'string', 'max:10'],
+            'formal_education.*.notes' => ['nullable', 'string', 'max:255'],
+
+            // Bagian 4 & 5: Riwayat kepramukaan (opsional)
+            'scout_siaga' => ['nullable', 'array'],
+            'scout_penggalang' => ['nullable', 'array'],
+        ];
+    }
+
+    protected function participantMessages(): array
+    {
+        return [
+            'required' => ':attribute wajib diisi.',
+            'photo.image' => 'Pas foto harus berupa gambar JPG atau PNG.',
+            'photo.max' => 'Ukuran pas foto maksimal 2MB.',
+        ];
+    }
+
+    protected function participantAttributes(): array
+    {
+        return [
+            'photo' => 'Pas foto',
+            'full_name' => 'Nama lengkap',
+            'role_in_patrol' => 'Jabatan dalam regu',
+            'gender' => 'Jenis kelamin',
+            'religion' => 'Agama',
+            'blood_type' => 'Golongan darah',
+            'scout_id' => 'Nomor KTA',
+            'birth_place' => 'Tempat lahir',
+            'birth_date' => 'Tanggal lahir',
+            'home_address' => 'Alamat rumah',
+            'city' => 'Kota / kabupaten',
+            'postal_code' => 'Kode pos',
+            'home_phone' => 'Telepon rumah',
+            'phone' => 'Nomor HP peserta',
+            'parent_name' => 'Nama orang tua / wali',
+            'parent_job' => 'Pekerjaan orang tua / wali',
+            'parent_address' => 'Alamat orang tua / wali',
+            'parent_city' => 'Kota orang tua / wali',
+            'parent_postal_code' => 'Kode pos orang tua / wali',
+            'parent_home_phone' => 'Telepon rumah orang tua / wali',
+            'parent_phone' => 'Nomor HP orang tua / wali',
+            'formal_education' => 'Pendidikan formal',
+            'formal_education.*.level' => 'Jenjang pendidikan',
+            'formal_education.*.school_name' => 'Nama sekolah',
+            'formal_education.*.city' => 'Kota sekolah',
+            'formal_education.*.graduation_year' => 'Tahun lulus',
+            'formal_education.*.notes' => 'Keterangan pendidikan',
+        ];
     }
 
     /**
@@ -342,32 +406,7 @@ class ScoutGroupPortalController extends Controller
             return back()->withErrors(['status' => 'Pendaftaran terkunci dan data peserta tidak dapat diubah.']);
         }
 
-        $validated = $request->validate([
-            'full_name' => ['required', 'string', 'max:255'],
-            'role_in_patrol' => ['required', 'in:patrol_leader,assistant_patrol_leader,member'],
-            'gender' => ['required', 'in:male,female'],
-            'scout_id' => ['nullable', 'string', 'max:50'],
-            'birth_place' => ['required', 'string', 'max:100'],
-            'birth_date' => ['required', 'date'],
-            'religion' => ['nullable', 'string', 'max:50'],
-            'blood_type' => ['nullable', 'in:A,B,AB,O'],
-            'home_address' => ['nullable', 'string'],
-            'city' => ['nullable', 'string', 'max:100'],
-            'postal_code' => ['nullable', 'string', 'max:10'],
-            'home_phone' => ['nullable', 'string', 'max:30'],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'parent_name' => ['nullable', 'string', 'max:255'],
-            'parent_job' => ['nullable', 'string', 'max:100'],
-            'parent_address' => ['nullable', 'string'],
-            'parent_city' => ['nullable', 'string', 'max:100'],
-            'parent_postal_code' => ['nullable', 'string', 'max:10'],
-            'parent_home_phone' => ['nullable', 'string', 'max:30'],
-            'parent_phone' => ['nullable', 'string', 'max:30'],
-            'photo' => ['nullable', 'image', 'max:2048'],
-            'formal_education' => ['nullable', 'array'],
-            'scout_siaga' => ['nullable', 'array'],
-            'scout_penggalang' => ['nullable', 'array'],
-        ]);
+        $validated = $request->validate($this->participantRules($participant), $this->participantMessages(), $this->participantAttributes());
 
         $patrol = $participant->patrol;
 
@@ -404,6 +443,8 @@ class ScoutGroupPortalController extends Controller
     public function participantPrint(Request $request, string $id): View
     {
         $scoutGroup = $this->getOrCreateScoutGroup($request);
+        abort_unless($scoutGroup->canDownloadDocuments(), 403, ScoutGroup::DOWNLOAD_LOCKED_MESSAGE);
+
         $participant = Participant::whereHas('patrol', function ($q) use ($scoutGroup) {
             $q->where('scout_group_id', $scoutGroup->id);
         })->with('patrol')->findOrFail($id);
@@ -486,18 +527,18 @@ class ScoutGroupPortalController extends Controller
         $validated = $request->validate([
             'full_name' => ['required', 'string', 'max:255'],
             'gender' => ['required', 'in:male,female'],
-            'birth_place' => ['nullable', 'string', 'max:100'],
-            'birth_date' => ['nullable', 'date'],
-            'religion' => ['nullable', 'string', 'max:50'],
-            'blood_type' => ['nullable', 'string', 'max:5'],
-            'scout_id' => ['nullable', 'string', 'max:50'],
+            'birth_place' => ['required', 'string', 'max:100'],
+            'birth_date' => ['required', 'date'],
+            'religion' => ['required', 'string', 'max:50'],
+            'blood_type' => ['required', 'string', 'max:5'],
+            'scout_id' => ['required', 'string', 'max:50'],
             'national_identity_number' => ['nullable', 'string', 'max:30'],
-            'home_address' => ['nullable', 'string', 'max:500'],
-            'city' => ['nullable', 'string', 'max:100'],
-            'postal_code' => ['nullable', 'string', 'max:20'],
+            'home_address' => ['required', 'string', 'max:500'],
+            'city' => ['required', 'string', 'max:100'],
+            'postal_code' => ['required', 'string', 'max:20'],
             'home_phone' => ['nullable', 'string', 'max:30'],
             'phone_number' => ['required', 'string', 'max:30'],
-            'photo' => ['nullable', 'image', 'max:2048'],
+            'photo' => ['required', 'image', 'max:2048'],
             'formal_education' => ['nullable', 'array'],
             'scout_experiences' => ['nullable', 'array'],
             'scout_trainings' => ['nullable', 'array'],
@@ -577,18 +618,18 @@ class ScoutGroupPortalController extends Controller
         $validated = $request->validate([
             'full_name' => ['required', 'string', 'max:255'],
             'gender' => ['required', 'in:male,female'],
-            'birth_place' => ['nullable', 'string', 'max:100'],
-            'birth_date' => ['nullable', 'date'],
-            'religion' => ['nullable', 'string', 'max:50'],
-            'blood_type' => ['nullable', 'string', 'max:5'],
-            'scout_id' => ['nullable', 'string', 'max:50'],
+            'birth_place' => ['required', 'string', 'max:100'],
+            'birth_date' => ['required', 'date'],
+            'religion' => ['required', 'string', 'max:50'],
+            'blood_type' => ['required', 'string', 'max:5'],
+            'scout_id' => ['required', 'string', 'max:50'],
             'national_identity_number' => ['nullable', 'string', 'max:30'],
-            'home_address' => ['nullable', 'string', 'max:500'],
-            'city' => ['nullable', 'string', 'max:100'],
-            'postal_code' => ['nullable', 'string', 'max:20'],
+            'home_address' => ['required', 'string', 'max:500'],
+            'city' => ['required', 'string', 'max:100'],
+            'postal_code' => ['required', 'string', 'max:20'],
             'home_phone' => ['nullable', 'string', 'max:30'],
             'phone_number' => ['required', 'string', 'max:30'],
-            'photo' => ['nullable', 'image', 'max:2048'],
+            'photo' => [$chaperone->photo_path ? 'nullable' : 'required', 'image', 'max:2048'],
             'formal_education' => ['nullable', 'array'],
             'scout_experiences' => ['nullable', 'array'],
             'scout_trainings' => ['nullable', 'array'],
@@ -619,6 +660,8 @@ class ScoutGroupPortalController extends Controller
     public function chaperonePrint(Request $request, string $id): View
     {
         $scoutGroup = $this->getOrCreateScoutGroup($request);
+        abort_unless($scoutGroup->canDownloadDocuments(), 403, ScoutGroup::DOWNLOAD_LOCKED_MESSAGE);
+
         $chaperone = $scoutGroup->chaperones()->findOrFail($id);
 
         return view('portal.scout-group.chaperones.print', compact('scoutGroup', 'chaperone'));

@@ -23,10 +23,10 @@ use Livewire\Component;
 class StandingsLeaderboard extends Component
 {
     #[Url(as: 'tab')]
-    public string $activeTab = 'contingents'; // contingents, patrols, competitions
+    public string $activeTab = 'patrols'; // patrols, competitions
 
     #[Url(as: 'gender')]
-    public string $genderFilter = 'all'; // all, boys, girls
+    public string $genderTab = 'boys'; // boys, girls
 
     public string $search = '';
 
@@ -143,27 +143,30 @@ class StandingsLeaderboard extends Component
     }
 
     #[Computed]
-    public function contingentStandings(): Collection
-    {
-        return app(StandingsService::class)->getContingentStandings(
-            $this->genderFilter,
-            $this->search,
-            $this->canUnmask
-        );
-    }
-
-    #[Computed]
     public function patrolStandings(): Collection
     {
         return app(StandingsService::class)->getPatrolStandings(
-            $this->genderFilter,
+            'all',
             $this->search,
             $this->canUnmask
         );
     }
 
+    /**
+     * Batasi tab kategori hanya pada putra atau putri
+     */
+    public function updatedGenderTab(string $value): void
+    {
+        if (! in_array($value, ['boys', 'girls'], true)) {
+            $this->genderTab = 'boys';
+        }
+    }
+
+    /**
+     * Seluruh rekap nilai cabang terpilih (putra dan putri)
+     */
     #[Computed]
-    public function competitionRecap(): Collection
+    public function competitionRecapAll(): Collection
     {
         if (! $this->selectedCompetitionId) {
             return collect();
@@ -173,6 +176,39 @@ class StandingsLeaderboard extends Component
             $this->selectedCompetitionId,
             $this->canUnmask
         );
+    }
+
+    /**
+     * Rekap nilai cabang terpilih sesuai tab kategori aktif
+     */
+    #[Computed]
+    public function competitionRecap(): Collection
+    {
+        return $this->competitionRecapAll
+            ->filter(fn ($score) => $this->genderOf($score->patrol?->gender_category) === $this->genderTab)
+            ->values();
+    }
+
+    /**
+     * Jumlah regu per kategori untuk lencana tab (klasemen regu atau rekap nilai)
+     *
+     * @return array{boys: int, girls: int}
+     */
+    #[Computed]
+    public function categoryCounts(): array
+    {
+        if ($this->activeTab === 'competitions') {
+            $grouped = $this->competitionRecapAll->groupBy(fn ($score) => $this->genderOf($score->patrol?->gender_category));
+        } else {
+            $grouped = $this->patrolStandings->groupBy('gender_category');
+        }
+
+        return ['boys' => $grouped->get('boys', collect())->count(), 'girls' => $grouped->get('girls', collect())->count()];
+    }
+
+    protected function genderOf(mixed $gender): string
+    {
+        return $gender instanceof \App\Enums\PatrolGenderEnum ? $gender->value : (string) $gender;
     }
 
     #[Computed]
@@ -190,6 +226,9 @@ class StandingsLeaderboard extends Component
         } elseif ($comp->category === 'girls') {
             $query->where('gender_category', 'girls');
         }
+
+        // Hanya regu pada tab kategori yang sedang dibuka
+        $query->where('gender_category', $this->genderTab);
 
         return $query->orderBy('patrol_name')->get();
     }
@@ -330,9 +369,9 @@ class StandingsLeaderboard extends Component
     public function render()
     {
         return view('livewire.admin.standings-leaderboard', [
-            'contingents' => $this->contingentStandings,
             'patrols' => $this->patrolStandings,
             'recap' => $this->competitionRecap,
+            'categoryCounts' => $this->categoryCounts,
             'competitions' => $this->competitions,
             'selectedComp' => $this->selectedCompetition,
             'eligiblePatrols' => $this->eligiblePatrolsForScoring,

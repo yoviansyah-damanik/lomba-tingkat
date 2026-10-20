@@ -25,7 +25,7 @@ class LeaderboardPage extends Component
     public string $activeTab = 'patrols'; // patrols, competitions
 
     #[Url(as: 'gender')]
-    public string $genderFilter = 'all'; // all, boys, girls
+    public string $genderFilter = 'boys'; // boys, girls (klasemen putra dan putri tidak pernah digabung)
 
     #[Url(as: 'q')]
     public string $search = '';
@@ -40,6 +40,7 @@ class LeaderboardPage extends Component
     public function mount(): void
     {
         $this->lastUpdated = now()->timezone('Asia/Jakarta')->format('H:i:s');
+        $this->updatedGenderFilter($this->genderFilter);
 
         if (! $this->selectedCompetitionId) {
             $firstComp = Competition::published()->first();
@@ -71,8 +72,17 @@ class LeaderboardPage extends Component
 
     public function setGender(string $gender): void
     {
-        if (in_array($gender, ['all', 'boys', 'girls'])) {
-            $this->genderFilter = $gender;
+        $this->genderFilter = $gender;
+        $this->updatedGenderFilter($gender);
+    }
+
+    /**
+     * Hanya kategori putra atau putri yang valid; nilai lain (mis. "all" dari URL lama) kembali ke putra
+     */
+    public function updatedGenderFilter(string $value): void
+    {
+        if (! in_array($value, ['boys', 'girls'], true)) {
+            $this->genderFilter = 'boys';
         }
     }
 
@@ -102,7 +112,7 @@ class LeaderboardPage extends Component
     public function summary(): array
     {
         $standingsService = app(StandingsService::class);
-        return $standingsService->getStandingsSummary($this->genderFilter, $this->canUnmask);
+        return $standingsService->getStandingsSummary('all', $this->canUnmask);
     }
 
     #[Computed]
@@ -136,7 +146,14 @@ class LeaderboardPage extends Component
         }
 
         $standingsService = app(StandingsService::class);
-        return $standingsService->getCompetitionRecap($this->selectedCompetitionId, $this->canUnmask);
+
+        return $standingsService->getCompetitionRecap($this->selectedCompetitionId, $this->canUnmask)
+            ->filter(function ($score) {
+                $gender = $score->patrol?->gender_category;
+
+                return ($gender instanceof \App\Enums\PatrolGenderEnum ? $gender->value : (string) $gender) === $this->genderFilter;
+            })
+            ->values();
     }
 
     public function render()

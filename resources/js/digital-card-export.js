@@ -1,66 +1,97 @@
 /**
- * Modul Utilitas Ekspor Kartu Digital ke Format .PNG & .ZIP (Kumulatif)
- * Mendukung penyimpanan kartu tunggal, kumulatif dalam arsip ZIP, maupun lembar A4 utuh.
+ * Modul ekspor kartu digital ke .PNG (satuan) dan .ZIP (kumulatif, berisi PNG seluruh kartu).
+ * Memakai html2canvas-pro agar warna modern Tailwind v4 (oklch) dapat dirender.
  */
 
-export async function saveCardAsPng(filename = 'KARTU_DIGITAL') {
-    const card = document.querySelector('[data-digital-card]') || document.querySelector('.w-\\[79mm\\]');
+const RENDER_SCALE = 4;
+
+/**
+ * Pastikan font dan seluruh gambar kartu sudah termuat sebelum ditangkap
+ */
+async function waitForAssets(root = document) {
+    if (document.fonts?.ready) {
+        await document.fonts.ready;
+    }
+
+    const pending = [...root.querySelectorAll('img')]
+        .filter((img) => !img.complete)
+        .map((img) => new Promise((resolve) => {
+            img.addEventListener('load', resolve, { once: true });
+            img.addEventListener('error', resolve, { once: true });
+        }));
+
+    await Promise.all(pending);
+}
+
+/**
+ * Render elemen kartu menjadi canvas transparan pada sudut membulat
+ */
+async function renderCard(card) {
+    return window.html2canvas(card, {
+        scale: RENDER_SCALE,
+        useCORS: true,
+        backgroundColor: null,
+        logging: false,
+        scrollX: 0,
+        scrollY: -window.scrollY,
+    });
+}
+
+function canvasToBlob(canvas) {
+    return new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Gagal membuat PNG'))), 'image/png');
+    });
+}
+
+function download(blob, filename) {
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+}
+
+function safeName(value, fallback = 'KARTU') {
+    const cleaned = String(value || fallback)
+        .trim()
+        .replace(/[^a-zA-Z0-9_-]+/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '')
+        .substring(0, 60);
+
+    return cleaned || fallback;
+}
+
+/**
+ * Simpan satu kartu sebagai berkas .PNG
+ */
+export async function saveCardAsPng(filename = 'KARTU_DIGITAL', cardElement = null) {
+    const card = cardElement || document.querySelector('[data-digital-card]');
     if (!card) {
         alert('Elemen kartu digital tidak ditemukan.');
         return;
     }
 
-    const btn = document.getElementById('btn-save-png');
-    const originalText = btn ? btn.innerHTML : '';
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '⏳ Menyiapkan PNG...';
-    }
+    const trigger = document.getElementById('btn-save-png');
+    trigger?.setAttribute('disabled', 'disabled');
 
     try {
-        const canvas = await window.html2canvas(card, {
-            scale: 3, // Skala 3x menghasilkan resolusi tajam 300+ DPI
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff',
-            logging: false,
-        });
-
-        const dataUrl = canvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        link.download = `${filename}.png`;
-        link.href = dataUrl;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        await waitForAssets(card);
+        const blob = await canvasToBlob(await renderCard(card));
+        download(blob, `${safeName(filename)}.png`);
     } catch (err) {
         console.error('Gagal mengekspor kartu ke PNG:', err);
         alert('Terjadi kesalahan saat memproses gambar .PNG.');
     } finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-        }
+        trigger?.removeAttribute('disabled');
     }
 }
 
-export async function saveCumulativeCardsAsZip(cardSelector = '[data-digital-card]', zipFilename = 'KARTU_DIGITAL_KUMULATIF') {
-    const cards = document.querySelectorAll(cardSelector);
-    if (!cards || cards.length === 0) {
-        alert('Tidak ada kartu digital yang ditemukan untuk diekspor.');
-        return;
-    }
-
-    if (!window.JSZip) {
-        alert('Modul kompresi ZIP belum siap. Silakan coba sesaat lagi.');
-        return;
-    }
-
-    const zip = new window.JSZip();
-    const folder = zip.folder(zipFilename);
-
-    // Modal Progress Penyiapan Berkas
+function progressOverlay() {
     let overlay = document.getElementById('png-export-progress-modal');
+
     if (!overlay) {
         overlay = document.createElement('div');
         overlay.id = 'png-export-progress-modal';
@@ -74,123 +105,83 @@ export async function saveCumulativeCardsAsZip(cardSelector = '[data-digital-car
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-base font-bold text-slate-100">Menyimpan Kartu Kumulatif</h3>
+                    <h3 class="text-base font-bold text-slate-100">Menyiapkan Berkas ZIP</h3>
                     <p id="png-progress-text" class="text-xs text-slate-400 mt-1">Memulai pemrosesan...</p>
                 </div>
                 <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
-                    <div id="png-progress-bar" class="bg-amber-500 h-2.5 rounded-full transition-all duration-200" style="width: 0%"></div>
+                    <div id="png-progress-bar" class="bg-amber-500 h-2.5 rounded-full transition-all duration-200 w-0"></div>
                 </div>
-                <p class="text-[11px] text-slate-500 italic">Format resolusi tinggi .PNG untuk tiap peserta</p>
             </div>
         `;
         document.body.appendChild(overlay);
-    } else {
-        overlay.classList.remove('hidden');
     }
 
-    const progressText = document.getElementById('png-progress-text');
-    const progressBar = document.getElementById('png-progress-bar');
+    overlay.classList.remove('hidden');
 
-    try {
-        for (let i = 0; i < cards.length; i++) {
-            const card = cards[i];
-            const name = card.getAttribute('data-card-name') || `KARTU_${i + 1}`;
-            const idNumber = card.getAttribute('data-card-id') || '';
-            const safeName = `${name}${idNumber ? '_' + idNumber : ''}`
-                .trim()
-                .replace(/[^a-zA-Z0-9_-]/g, '_')
-                .replace(/_+/g, '_')
-                .substring(0, 50);
-
-            if (progressText) {
-                progressText.innerText = `Memproses kartu ${i + 1} dari ${cards.length} (${name})...`;
-            }
-            if (progressBar) {
-                progressBar.style.width = `${Math.round(((i + 1) / cards.length) * 90)}%`;
-            }
-
-            const canvas = await window.html2canvas(card, {
-                scale: 3,
-                useCORS: true,
-                allowTaint: true,
-                backgroundColor: '#ffffff',
-                logging: false,
-            });
-
-            const dataUrl = canvas.toDataURL('image/png');
-            const base64Data = dataUrl.split(',')[1];
-            folder.file(`${String(i + 1).padStart(2, '0')}_${safeName}.png`, base64Data, { base64: true });
-        }
-
-        if (progressText) {
-            progressText.innerText = 'Mengompresi seluruh berkas ke ZIP...';
-        }
-        if (progressBar) {
-            progressBar.style.width = '96%';
-        }
-
-        const zipBlob = await zip.generateAsync({
-            type: 'blob',
-            compression: 'DEFLATE',
-            compressionOptions: { level: 6 }
-        });
-
-        if (progressBar) {
-            progressBar.style.width = '100%';
-        }
-
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(zipBlob);
-        link.download = `${zipFilename}.zip`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
-    } catch (err) {
-        console.error('Gagal mengekspor kartu kumulatif ke PNG/ZIP:', err);
-        alert('Terjadi kesalahan saat memproses penyimpanan kartu kumulatif.');
-    } finally {
-        if (overlay) {
-            setTimeout(() => {
-                overlay.classList.add('hidden');
-            }, 400);
-        }
-    }
+    return {
+        overlay,
+        text: overlay.querySelector('#png-progress-text'),
+        bar: overlay.querySelector('#png-progress-bar'),
+    };
 }
 
-export async function saveSheetAsPng(sheetIndex = 0, filename = 'LEMBAR_A4_KARTU_DIGITAL') {
-    const sheets = document.querySelectorAll('[data-sheet-page]');
-    const target = sheets[sheetIndex] || sheets[0];
-    if (!target) {
-        alert('Lembar cetak tidak ditemukan.');
+/**
+ * Simpan seluruh kartu pada halaman sebagai .ZIP berisi satu .PNG per kartu.
+ * Atribut data-card-group pada kartu dipakai sebagai nama subfolder di dalam ZIP.
+ */
+export async function saveCardsAsZip(zipFilename = 'KARTU_DIGITAL', cardSelector = '[data-digital-card]') {
+    const cards = [...document.querySelectorAll(cardSelector)];
+    if (cards.length === 0) {
+        alert('Tidak ada kartu digital yang ditemukan untuk diekspor.');
         return;
     }
 
-    try {
-        const canvas = await window.html2canvas(target, {
-            scale: 2.5,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff',
-            logging: false,
-        });
+    if (!window.JSZip) {
+        alert('Modul kompresi ZIP belum siap. Silakan coba sesaat lagi.');
+        return;
+    }
 
-        const dataUrl = canvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        link.download = `${filename}.png`;
-        link.href = dataUrl;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    const zip = new window.JSZip();
+    const root = zip.folder(safeName(zipFilename, 'KARTU_DIGITAL'));
+    const { overlay, text, bar } = progressOverlay();
+    const counters = {};
+
+    try {
+        await waitForAssets();
+
+        for (let i = 0; i < cards.length; i++) {
+            const card = cards[i];
+            const name = card.getAttribute('data-card-name') || `KARTU_${i + 1}`;
+            const idNumber = card.getAttribute('data-card-id');
+            const group = card.getAttribute('data-card-group');
+            const folder = group ? root.folder(safeName(group, 'KARTU')) : root;
+
+            counters[group || ''] = (counters[group || ''] || 0) + 1;
+            const order = String(counters[group || '']).padStart(2, '0');
+
+            text.innerText = `Memproses kartu ${i + 1} dari ${cards.length} (${name})...`;
+            bar.style.width = `${Math.round((i / cards.length) * 92)}%`;
+
+            const blob = await canvasToBlob(await renderCard(card));
+            folder.file(`${order}_${safeName(`${name}${idNumber ? '_' + idNumber : ''}`)}.png`, blob);
+        }
+
+        text.innerText = 'Mengompresi seluruh berkas ke ZIP...';
+        bar.style.width = '96%';
+
+        const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+
+        bar.style.width = '100%';
+        download(zipBlob, `${safeName(zipFilename, 'KARTU_DIGITAL')}.zip`);
     } catch (err) {
-        console.error('Gagal mengekspor lembar ke PNG:', err);
-        alert('Terjadi kesalahan saat memproses lembar .PNG.');
+        console.error('Gagal mengekspor kartu ke ZIP:', err);
+        alert('Terjadi kesalahan saat memproses penyimpanan kartu.');
+    } finally {
+        setTimeout(() => overlay.classList.add('hidden'), 400);
     }
 }
 
-// Daftarkan fungsi ke window untuk akses langsung dari inline onclick Blade
 if (typeof window !== 'undefined') {
     window.saveCardAsPng = saveCardAsPng;
-    window.saveCumulativeCardsAsZip = saveCumulativeCardsAsZip;
-    window.saveSheetAsPng = saveSheetAsPng;
+    window.saveCardsAsZip = saveCardsAsZip;
 }

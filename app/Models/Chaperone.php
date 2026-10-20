@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\RegistrationStatusEnum;
+use App\Services\ContingentAccountService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -68,6 +69,10 @@ class Chaperone extends Model
                 $chaperone->qr_token = (string) Str::uuid();
             }
         });
+
+        // Akun bindamping mengikuti data bindamping: diperbarui saat berubah, dihapus saat bindamping dihapus
+        static::saved(fn (Chaperone $chaperone) => app(ContingentAccountService::class)->syncChaperone($chaperone));
+        static::deleting(fn (Chaperone $chaperone) => app(ContingentAccountService::class)->deleteChaperoneAccount($chaperone));
     }
 
     /**

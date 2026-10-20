@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\PatrolRoleEnum;
 use App\Enums\RegistrationStatusEnum;
+use App\Services\ContingentAccountService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -78,6 +79,10 @@ class Participant extends Model
                 $participant->qr_generated_at = now();
             }
         });
+
+        // Akun peserta mengikuti data peserta: diperbarui saat berubah, dihapus saat peserta dihapus
+        static::saved(fn (Participant $participant) => app(ContingentAccountService::class)->syncParticipant($participant));
+        static::deleting(fn (Participant $participant) => app(ContingentAccountService::class)->deleteParticipantAccount($participant));
     }
 
     /**

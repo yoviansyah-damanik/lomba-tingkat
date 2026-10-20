@@ -13,9 +13,10 @@ return new class extends Migration
     {
         // Menambahkan kolom pelengkap pada tabel users
         Schema::table('users', function (Blueprint $table) {
-            $table->string('phone_number')->nullable()->after('email');
+            $table->string('phone_number')->nullable()->after('username');
             $table->string('avatar_path')->nullable()->after('password');
             $table->boolean('is_active')->default(true)->after('avatar_path');
+            $table->uuid('participant_id')->nullable()->index()->after('is_active'); // akun peserta -> data peserta
         });
 
         // Membuat tabel master roles
@@ -47,7 +48,7 @@ return new class extends Migration
         Schema::dropIfExists('roles');
 
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['phone_number', 'avatar_path', 'is_active']);
+            $table->dropColumn(['phone_number', 'avatar_path', 'is_active', 'participant_id']);
         });
     }
 };

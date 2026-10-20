@@ -13,8 +13,8 @@
         <x-slot:actions>
             <div class="flex items-center gap-2">
                 <a href="{{ route('admin.reports.print.berita-acara') }}" target="_blank">
-                    <flux:button icon="printer" variant="primary">
-                        Cetak Berita Acara Juara Umum
+                    <flux:button icon="document-text" variant="primary">
+                        Pratinjau Berita Acara (PDF)
                     </flux:button>
                 </a>
             </div>
@@ -71,15 +71,15 @@
                         Berita Acara Penetapan Juara Umum & Peringkat Prestasi
                     </h3>
                     <p class="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5 leading-relaxed max-w-2xl">
-                        Format siap cetak (A4 PDF) mencantumkan seluruh peringkat kontingen, perolehan medali, pangkalan berprestasi tinggi putra & putri, serta ruang pengesahan tanda tangan Dewan Juri, Panitia, dan Pimpinan Kwarcab.
+                        Format siap cetak (A4 PDF) mencantumkan peringkat regu putra dan regu putri (terpisah), perolehan medali, serta regu berprestasi tinggi putra & putri, serta ruang pengesahan tanda tangan Dewan Juri, Panitia, dan Pimpinan Kwarcab.
                     </p>
                 </div>
             </div>
 
             <div class="flex items-center gap-2 shrink-0">
                 <a href="{{ route('admin.reports.print.berita-acara') }}" target="_blank">
-                    <flux:button icon="printer" variant="primary">
-                        Buka & Cetak Dokumen (PDF)
+                    <flux:button icon="document-text" variant="primary">
+                        Pratinjau & Unduh PDF
                     </flux:button>
                 </a>
             </div>
@@ -221,7 +221,7 @@
                     wire:model.live="standingsGender"
                     class="rounded-xl border border-zinc-300 bg-white px-3.5 py-1.5 text-xs text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
                 >
-                    <option value="all">Semua Kategori (Akumulasi Kontingen)</option>
+                    <option value="all">Semua Kategori (Putra & Putri Terpisah)</option>
                     <option value="boys">Khusus Kategori Putra</option>
                     <option value="girls">Khusus Kategori Putri</option>
                 </select>

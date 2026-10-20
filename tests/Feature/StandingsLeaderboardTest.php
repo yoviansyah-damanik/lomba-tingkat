@@ -122,11 +122,16 @@ class StandingsLeaderboardTest extends TestCase
     {
         Livewire::actingAs($this->admin, 'web')
             ->test(StandingsLeaderboard::class)
-            ->assertSet('activeTab', 'contingents')
-            ->set('activeTab', 'patrols')
             ->assertSet('activeTab', 'patrols')
-            ->set('genderFilter', 'boys')
-            ->assertSet('genderFilter', 'boys')
+            ->assertDontSee('Klasemen Kontingen')
+            ->assertSet('genderTab', 'boys')
+            ->assertSee('Klasemen Regu Putra Berprestasi')
+            ->assertDontSee('Klasemen Regu Putri Berprestasi')
+            ->set('genderTab', 'girls')
+            ->assertSee('Klasemen Regu Putri Berprestasi')
+            ->assertDontSee('Klasemen Regu Putra Berprestasi')
+            ->set('genderTab', 'tidak-valid')
+            ->assertSet('genderTab', 'boys')
             ->set('activeTab', 'competitions')
             ->assertSet('activeTab', 'competitions');
     }
@@ -399,17 +404,17 @@ class StandingsLeaderboardTest extends TestCase
 
         // Patrol 1: 1 Emas, 1 Perunggu -> Peringkat 1
         $this->assertEquals(1, $firstPatrol['rank']);
-        $this->assertEquals('Regu Prestasi Tinggi Putra', $firstPatrol['general_rank_title']);
+        $this->assertEquals('Regu Berprestasi Tinggi Putra', $firstPatrol['general_rank_title']);
         $this->assertEquals(1, $firstPatrol['gold']);
         $this->assertEquals(1, $firstPatrol['bronze']);
 
         // Patrol 3: 1 Emas, 0 Perunggu -> Peringkat 2
         $this->assertEquals(2, $thirdPatrol['rank']);
-        $this->assertEquals('Regu Prestasi Baik Putra', $thirdPatrol['general_rank_title']);
+        $this->assertEquals('Regu Berprestasi Baik Putra', $thirdPatrol['general_rank_title']);
 
         // Patrol 2: 0 Emas, 2 Perak -> Peringkat 3 (Kalah dari peraih Emas meskipun total skor numerik lebih tinggi)
         $this->assertEquals(3, $secondPatrol['rank']);
-        $this->assertEquals('Regu Prestasi Cukup Putra', $secondPatrol['general_rank_title']);
+        $this->assertEquals('Regu Berprestasi Cukup Putra', $secondPatrol['general_rank_title']);
         $this->assertEquals(0, $secondPatrol['gold']);
         $this->assertEquals(2, $secondPatrol['silver']);
 
@@ -458,10 +463,10 @@ class StandingsLeaderboardTest extends TestCase
 
         // Kedua regu harus memiliki Rank #1 di masing-masing kategorinya
         $this->assertEquals(1, $boysRank1['rank']);
-        $this->assertEquals('Regu Prestasi Tinggi Putra', $boysRank1['general_rank_title']);
+        $this->assertEquals('Regu Berprestasi Tinggi Putra', $boysRank1['general_rank_title']);
 
         $this->assertEquals(1, $girlsRank1['rank']);
-        $this->assertEquals('Regu Prestasi Tinggi Putri', $girlsRank1['general_rank_title']);
+        $this->assertEquals('Regu Berprestasi Tinggi Putri', $girlsRank1['general_rank_title']);
 
         // Cek summary juga memisahkan top_boys_patrols dan top_girls_patrols
         $summary = $standingsService->getStandingsSummary();
@@ -505,5 +510,75 @@ class StandingsLeaderboardTest extends TestCase
         $this->assertEquals('SMP Negeri 1 Padangsidimpuan', $unmaskedPatrolData['school_name']);
         $this->assertEquals('01-001', $unmaskedPatrolData['group_number']);
     }
-}
 
+    /**
+     * Peringkat umum: jumlah Prestasi Tinggi menjadi penentu utama, lalu Baik, lalu Cukup
+     * (Regu A 5/1/2 mengungguli Regu B 4/8/3 walau total prestasinya lebih sedikit)
+     */
+    public function test_general_ranking_is_decided_by_high_then_good_then_sufficient_counts(): void
+    {
+        $counts = [
+            'Regu A' => [5, 1, 2],
+            'Regu B' => [4, 8, 3],
+            'Regu C' => [4, 5, 7],
+            'Regu D' => [3, 9, 6],
+        ];
+
+        $competitions = [];
+        for ($i = 1; $i <= 18; $i++) {
+            $competitions[$i] = \App\Models\Competition::create([
+                'code' => 'RNK-'.str_pad((string) $i, 2, '0', STR_PAD_LEFT),
+                'title' => 'Lomba Uji '.$i,
+                'category' => 'all',
+                'participant_type' => 'patrol',
+                'scoring_formula' => 'rubric',
+                'is_published' => true,
+            ]);
+        }
+
+        $n = 0;
+        foreach ($counts as $name => $triple) {
+            $n++;
+            $group = \App\Models\ScoutGroup::factory()->create([
+                'school_name' => 'Sekolah '.$name,
+                'group_number' => '0'.$n.'-00'.$n,
+                'verification_status' => \App\Enums\RegistrationStatusEnum::Verified,
+            ]);
+            $patrol = \App\Models\Patrol::factory()->create([
+                'scout_group_id' => $group->id,
+                'patrol_name' => $name,
+                'gender_category' => 'boys',
+                'status' => \App\Enums\RegistrationStatusEnum::Verified,
+            ]);
+
+            $predicates = array_merge(
+                array_fill(0, $triple[0], 'prestasi_tinggi'),
+                array_fill(0, $triple[1], 'prestasi_baik'),
+                array_fill(0, $triple[2], 'prestasi_cukup'),
+            );
+
+            foreach ($predicates as $index => $predicate) {
+                CompetitionScore::create([
+                    'competition_id' => $competitions[$index + 1]->id,
+                    'patrol_id' => $patrol->id,
+                    'judge_id' => $this->judge->id,
+                    'final_score' => 80,
+                    'predicate' => $predicate,
+                ]);
+            }
+        }
+
+        $ranking = app(StandingsService::class)->getPatrolStandings('boys')
+            ->filter(fn ($row) => isset($counts[$row['patrol_name']]))
+            ->sortBy('rank')
+            ->values();
+
+        $this->assertSame(['Regu A', 'Regu B', 'Regu C', 'Regu D'], $ranking->pluck('patrol_name')->all());
+        $this->assertSame([5, 4, 4, 3], $ranking->pluck('gold')->all());
+
+        $this->assertSame('Regu Berprestasi Tinggi Putra', $ranking[0]['general_rank_title']);
+        $this->assertSame('Regu Berprestasi Baik Putra', $ranking[1]['general_rank_title']);
+        $this->assertSame('Regu Berprestasi Cukup Putra', $ranking[2]['general_rank_title']);
+        $this->assertNull($ranking[3]['general_rank_title']);
+    }
+}

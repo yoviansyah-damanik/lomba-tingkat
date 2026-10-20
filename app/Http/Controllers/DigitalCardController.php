@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\QrCodeService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 /**
@@ -25,12 +26,14 @@ class DigitalCardController extends Controller
         $participant = Participant::with(['patrol.scoutGroup'])->findOrFail($id);
         $scoutGroup = $participant->patrol?->scoutGroup;
 
-        // Otorisasi: Admin, Panitia, Dewan Juri, atau Gudep pemilik kontingen
+        // Otorisasi: Admin, Panitia, Dewan Juri, atau Gudep pemilik kontingen (setelah diverifikasi)
         if ($request->user() && ! $request->user()->isAdmin() && ! $request->user()->isCommittee() && ! $request->user()->isJudge()) {
             if ($scoutGroup && $scoutGroup->user_id !== $request->user()->id) {
                 abort(403, 'Anda tidak berhak mengakses ID Card peserta dari pangkalan lain.');
             }
         }
+
+        $this->ensureDownloadable($request, $scoutGroup);
 
         $qrDataUri = $qrService->generateDataUri(route('digital-cards.verify', $participant->qr_token), 220);
 
@@ -50,6 +53,8 @@ class DigitalCardController extends Controller
                 abort(403, 'Anda tidak berhak mengakses ID Card pendamping dari pangkalan lain.');
             }
         }
+
+        $this->ensureDownloadable($request, $scoutGroup);
 
         $qrDataUri = $qrService->generateDataUri(route('digital-cards.verify', $chaperone->qr_token), 220);
 
@@ -77,77 +82,159 @@ class DigitalCardController extends Controller
     }
 
     /**
-     * Cetak kolektif seluruh ID Card regu (A4 Batch)
+     * Tampilkan seluruh ID Card regu dan simpan sebagai ZIP berisi PNG tiap anggota
      */
     public function patrolBatchCards(Request $request, string $patrolId, QrCodeService $qrService): View
     {
         $patrol = Patrol::with(['scoutGroup', 'participants'])->findOrFail($patrolId);
         $scoutGroup = $patrol->scoutGroup;
 
-        if ($request->user() && ! $request->user()->isAdmin() && ! $request->user()->isCommittee() && ! $request->user()->isJudge()) {
-            if ($scoutGroup && $scoutGroup->user_id !== $request->user()->id) {
-                abort(403, 'Akses ditolak.');
-            }
-        }
+        $this->authorizeScoutGroup($request, $scoutGroup);
 
-        // Generate QR code data URI untuk setiap peserta di regu
-        $participantsWithQr = $patrol->participants->map(function ($p) use ($qrService) {
-            $p->qrDataUri = $qrService->generateDataUri(route('digital-cards.verify', $p->qr_token), 180);
-            return $p;
-        });
+        $cards = $patrol->orderedParticipants()->map(fn ($p) => $this->participantItem($p, $patrol, $qrService));
 
-        return view('digital-cards.patrol-batch', compact('patrol', 'scoutGroup', 'participantsWithQr'));
+        return view('digital-cards.batch', [
+            'title' => 'ID Card Regu '.$patrol->patrol_name,
+            'subtitle' => $scoutGroup->school_name,
+            'zipName' => 'KARTU_REGU_'.Str::slug($scoutGroup->school_name.' '.$patrol->patrol_name),
+            'emptyMessage' => 'Belum ada anggota terdaftar dalam regu ini.',
+            'backUrl' => 'javascript:window.history.back()',
+            'scoutGroup' => $scoutGroup,
+            'cards' => $cards->values(),
+        ]);
     }
 
     /**
-     * Cetak kolektif seluruh ID Card Pembina Pendamping (A4 Batch)
+     * Rute admin (membawa scoutGroupId): parameter rute diteruskan berurutan sehingga perlu penerus khusus
+     */
+    public function adminPatrolBatchCards(Request $request, string $scoutGroupId, string $patrolId, QrCodeService $qrService): View
+    {
+        return $this->patrolBatchCards($request, $patrolId, $qrService);
+    }
+
+    /**
+     * Tampilkan seluruh ID Card Pembina Pendamping dan simpan sebagai ZIP
      */
     public function chaperoneBatchCards(Request $request, string $scoutGroupId, QrCodeService $qrService): View
     {
         $scoutGroup = ScoutGroup::with('chaperones')->findOrFail($scoutGroupId);
 
-        if ($request->user() && ! $request->user()->isAdmin() && ! $request->user()->isCommittee() && ! $request->user()->isJudge()) {
-            if ($scoutGroup->user_id !== $request->user()->id) {
-                abort(403, 'Akses ditolak.');
-            }
-        }
+        $this->authorizeScoutGroup($request, $scoutGroup);
 
-        $chaperonesWithQr = $scoutGroup->chaperones->map(function ($c) use ($qrService) {
-            $c->qrDataUri = $qrService->generateDataUri(route('digital-cards.verify', $c->qr_token), 180);
-            return $c;
-        });
+        $cards = $scoutGroup->chaperones->map(fn ($c) => $this->chaperoneItem($c, $scoutGroup, $qrService));
 
-        return view('digital-cards.chaperone-batch', compact('scoutGroup', 'chaperonesWithQr'));
+        return view('digital-cards.batch', [
+            'title' => 'ID Card Pembina Pendamping',
+            'subtitle' => $scoutGroup->school_name,
+            'zipName' => 'KARTU_BINDAMPING_'.Str::slug($scoutGroup->school_name),
+            'emptyMessage' => 'Belum ada pembina pendamping terdaftar.',
+            'backUrl' => 'javascript:window.history.back()',
+            'scoutGroup' => $scoutGroup,
+            'cards' => $cards->values(),
+        ]);
     }
 
     /**
-     * Cetak & Simpan Kolektif Seluruh ID Card Kontingen Gudep (Semua Regu & Bindamping)
+     * Tampilkan seluruh ID Card kontingen (semua regu dan bindamping); ZIP dipisah subfolder per regu
      */
     public function scoutGroupBatchCards(Request $request, string $scoutGroupId, QrCodeService $qrService): View
     {
         $scoutGroup = ScoutGroup::with(['patrols.participants', 'chaperones'])->findOrFail($scoutGroupId);
 
-        if ($request->user() && ! $request->user()->isAdmin() && ! $request->user()->isCommittee() && ! $request->user()->isJudge()) {
-            if ($scoutGroup->user_id !== $request->user()->id) {
-                abort(403, 'Akses ditolak.');
+        $this->authorizeScoutGroup($request, $scoutGroup);
+
+        $cards = collect();
+
+        foreach ($scoutGroup->patrols as $patrol) {
+            foreach ($patrol->orderedParticipants() as $participant) {
+                $cards->push($this->participantItem($participant, $patrol, $qrService));
             }
         }
 
-        foreach ($scoutGroup->patrols as $patrol) {
-            $patrol->participants->transform(function ($p) use ($qrService) {
-                $p->qrDataUri = $qrService->generateDataUri(route('digital-cards.verify', $p->qr_token), 180);
-                return $p;
-            });
+        foreach ($scoutGroup->chaperones as $chaperone) {
+            $cards->push($this->chaperoneItem($chaperone, $scoutGroup, $qrService));
         }
 
-        $scoutGroup->chaperones->transform(function ($c) use ($qrService) {
-            $c->qrDataUri = $qrService->generateDataUri(route('digital-cards.verify', $c->qr_token), 180);
-            return $c;
-        });
-
-        return view('digital-cards.scout-group-batch', compact('scoutGroup'));
+        return view('digital-cards.batch', [
+            'title' => 'ID Card Kontingen',
+            'subtitle' => $scoutGroup->school_name.' • '.$scoutGroup->patrols->count().' regu, '.$scoutGroup->chaperones->count().' pembina',
+            'zipName' => 'KARTU_KONTINGEN_'.Str::slug($scoutGroup->school_name),
+            'emptyMessage' => 'Belum ada kartu anggota atau pembina yang terdaftar dalam kontingen ini.',
+            'backUrl' => 'javascript:window.history.back()',
+            'scoutGroup' => $scoutGroup,
+            'cards' => $cards,
+        ]);
     }
 
+    /**
+     * Akses batch: Admin, Panitia, Dewan Juri, atau Gudep pemilik kontingen
+     */
+    protected function authorizeScoutGroup(Request $request, ?ScoutGroup $scoutGroup): void
+    {
+        $user = $request->user();
+
+        if ($user && ! $user->isAdmin() && ! $user->isCommittee() && ! $user->isJudge() && $scoutGroup && $scoutGroup->user_id !== $user->id) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        $this->ensureDownloadable($request, $scoutGroup);
+    }
+
+    /**
+     * ID Card peserta/bindamping hanya dapat diakses setelah kontingen diverifikasi (berlaku untuk semua pengguna)
+     */
+    protected function ensureDownloadable(Request $request, ?ScoutGroup $scoutGroup): void
+    {
+        abort_unless($scoutGroup?->canDownloadDocuments(), 403, ScoutGroup::DOWNLOAD_LOCKED_MESSAGE);
+    }
+
+    /**
+     * Data satu kartu peserta untuk tampilan batch
+     */
+    protected function participantItem(Participant $participant, Patrol $patrol, QrCodeService $qrService): array
+    {
+        $isBoys = $patrol->isBoys();
+
+        return [
+            'group' => 'Regu '.$patrol->patrol_name.' ('.($isBoys ? 'Putra' : 'Putri').')',
+            'theme' => $isBoys ? 'boys' : 'girls',
+            'patrol_name' => $patrol->patrol_name,
+            'name' => $participant->full_name,
+            'id_number' => $participant->id_number ?: 'ID-PESERTA',
+            'scout_id' => $participant->scout_id,
+            'photo_path' => $participant->photo_path,
+            'qr_token' => $participant->qr_token,
+            'qrDataUri' => $qrService->generateDataUri(route('digital-cards.verify', $participant->qr_token), 180),
+            'role' => $participant->isLeader() ? 'leader' : ($participant->isAssistantLeader() ? 'assistant_leader' : 'member'),
+            'category_label' => $isBoys ? 'PESERTA PENGGALANG PUTRA' : 'PESERTA PENGGALANG PUTRI',
+            'group_number' => $patrol->group_number,
+            'contact' => $participant->phone ?: ($participant->parent_phone ?: '-'),
+        ];
+    }
+
+    /**
+     * Data satu kartu bindamping untuk tampilan batch
+     */
+    protected function chaperoneItem(Chaperone $chaperone, ScoutGroup $scoutGroup, QrCodeService $qrService): array
+    {
+        $isMale = $chaperone->gender === 'male';
+
+        return [
+            'group' => 'Pembina Pendamping',
+            'theme' => $isMale ? 'chaperone-male' : 'chaperone-female',
+            'patrol_name' => null,
+            'name' => $chaperone->full_name,
+            'id_number' => $chaperone->id_number ?: 'ID-BINDAMPING',
+            'scout_id' => $chaperone->scout_id,
+            'photo_path' => $chaperone->photo_path,
+            'qr_token' => $chaperone->qr_token,
+            'qrDataUri' => $qrService->generateDataUri(route('digital-cards.verify', $chaperone->qr_token), 180),
+            'role' => null,
+            'category_label' => 'BINDAMPING '.($isMale ? 'PUTRA' : 'PUTRI'),
+            'group_number' => $chaperone->group_number ?: ($scoutGroup->group_number ?? '-'),
+            'contact' => $chaperone->phone_number ?: '-',
+        ];
+    }
 
     /**
      * Halaman publik verifikasi akreditasi saat QR Code dipindai

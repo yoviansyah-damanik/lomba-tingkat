@@ -139,7 +139,7 @@
                                 </td>
                                 <td class="p-3.5">
                                     <div class="font-medium text-zinc-900 dark:text-zinc-100">{{ $ass->judge?->name ?? '-' }}</div>
-                                    <span class="text-[11px] text-zinc-400">{{ $ass->judge?->email ?? '-' }}</span>
+                                    <span class="text-[11px] text-zinc-400">{{ $ass->judge?->username ?? '-' }}</span>
                                 </td>
                                 <td class="p-3.5 text-center font-mono text-zinc-500">
                                     {{ number_format((float) $ass->raw_total_score, 2) }}
@@ -225,7 +225,7 @@
                                 </td>
                                 <td class="p-3.5">
                                     <div class="font-bold text-zinc-900 dark:text-zinc-100">{{ $log->user?->name ?? 'Sistem' }}</div>
-                                    <span class="text-[10px] text-zinc-400">{{ $log->user?->email ?? '-' }}</span>
+                                    <span class="text-[10px] text-zinc-400">{{ $log->user?->username ?? '-' }}</span>
                                 </td>
                                 <td class="p-3.5">
                                     @php

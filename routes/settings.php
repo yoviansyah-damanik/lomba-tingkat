@@ -13,6 +13,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::livewire('settings/security', 'pages::settings.security')
         ->middleware([
+            \App\Http\Middleware\BlockManagedAccount::class,
             'password.confirm',
         ])
         ->name('security.edit');
