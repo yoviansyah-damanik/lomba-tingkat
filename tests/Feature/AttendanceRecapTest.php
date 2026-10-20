@@ -325,6 +325,37 @@ class AttendanceRecapTest extends TestCase
         $this->assertMatchesRegularExpression('#^BAP-LT3/KWARCAB-PSP/\\d{4}/\\d{3}$#', $data['sections']->first()['number']);
     }
 
+    public function test_recap_data_for_a_selected_session_contains_only_that_session(): void
+    {
+        \App\Models\AttendanceSession::create([
+            'title' => 'Sesi Lain Uji',
+            'session_type' => 'participant',
+            'is_competition' => false,
+            'opened_at' => now()->addDay(),
+            'closed_at' => now()->addDay()->addHour(),
+            'is_active' => true,
+        ]);
+
+        $request = \Illuminate\Http\Request::create('/portal/attendance/recap/pdf', 'GET', ['session_id' => $this->session->id]);
+        $request->setUserResolver(fn () => $this->admin);
+
+        $method = new \ReflectionMethod(\App\Http\Controllers\AttendanceScannerController::class, 'recapData');
+        $method->setAccessible(true);
+        $data = $method->invoke(app(\App\Http\Controllers\AttendanceScannerController::class), $request);
+
+        $this->assertCount(1, $data['sections']);
+        $this->assertSame($this->session->id, $data['sections']->first()['session']->id);
+    }
+
+    public function test_preview_link_on_recap_page_carries_selected_session(): void
+    {
+        \Livewire\Livewire::actingAs($this->admin)
+            ->test(\App\Livewire\Portal\AttendanceRecap::class)
+            ->assertDontSeeHtml('recap/preview?session_id=')
+            ->set('sessionId', $this->session->id)
+            ->assertSeeHtml('recap/preview?session_id='.$this->session->id);
+    }
+
     public function test_print_window_route_is_removed(): void
     {
         $this->assertFalse(\Illuminate\Support\Facades\Route::has('attendance.recap.print'));

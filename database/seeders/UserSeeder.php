@@ -19,29 +19,8 @@ class UserSeeder extends Seeder
     {
         $defaultPassword = Hash::make('password123');
 
-        // 1. Akun Superadmin (akses penuh sistem)
-        $superadmin = User::firstOrCreate(
-            ['username' => 'superadmin'],
-            [
-                'name' => 'Superadmin LT III',
-                'password' => $defaultPassword,
-                'phone_number' => '081234567899',
-                'is_active' => true,
-            ]
-        );
-        $superadmin->assignRole(RoleEnum::Superadmin);
-
-        // 2. Akun Administrator (verifikasi, peserta, bindamping, lomba, jadwal, presensi, nilai, laporan, pengumuman)
-        $admin = User::firstOrCreate(
-            ['username' => 'admin'],
-            [
-                'name' => 'Administrator LT III',
-                'password' => $defaultPassword,
-                'phone_number' => '081234567890',
-                'is_active' => true,
-            ]
-        );
-        $admin->assignRole(RoleEnum::Admin);
+        // 1-2. Akun Superadmin & Administrator (juga dipakai pada production)
+        $this->call(AdministratorSeeder::class);
 
         // 3. Akun Panitia (Monitoring Operasional Lapangan). Username otomatis mengikuti ID
         $committee = User::firstOrCreate(

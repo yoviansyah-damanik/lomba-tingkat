@@ -22,7 +22,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * Seeder sampel lengkap: juri, panitia, gugus depan terverifikasi (regu, peserta, bindamping),
+ * Seeder sampel lengkap: juri, panitia, 11 gugus depan terverifikasi (regu, peserta, bindamping)
+ * ditambah gudep01 (dari ContingentSeeder) yang sengaja dibiarkan BELUM diverifikasi (status Diajukan),
  * jadwal lomba yang sudah berlangsung, dan penilaian juri yang difinalisasi hingga terbentuk klasemen regu putra dan regu putri berprestasi (terpisah).
  *
  * Jalankan: php artisan db:seed --class=SampleContestSeeder
@@ -134,8 +135,6 @@ class SampleContestSeeder extends Seeder
      */
     private function seedContingents(?User $admin): void
     {
-        $this->verifyExistingContingent($admin);
-
         foreach (self::GROUPS as $i => $row) {
             $number = $i + 2; // gudep01 sudah ada di ContingentSeeder
             $username = 'gudep'.str_pad((string) $number, 2, '0', STR_PAD_LEFT);
@@ -170,30 +169,6 @@ class SampleContestSeeder extends Seeder
             $this->seedPatrol($group, PatrolGenderEnum::Girls, $row['girls'], $number, $female);
             $this->seedChaperones($group, $number);
         }
-    }
-
-    /**
-     * Gudep contoh dari ContingentSeeder (SMP Negeri 1) ikut diverifikasi agar mengikuti klasemen
-     */
-    private function verifyExistingContingent(?User $admin): void
-    {
-        $group = ScoutGroup::where('registration_code', 'GDP-PSP-01')->first();
-
-        if (! $group || $group->verification_status === RegistrationStatusEnum::Verified) {
-            return;
-        }
-
-        // Tanpa event model agar tidak memicu notifikasi push hasil verifikasi
-        ScoutGroup::withoutEvents(fn () => $group->update([
-            'verification_status' => RegistrationStatusEnum::Verified,
-            'verified_by' => $admin?->id,
-            'verified_at' => now()->subDays(7),
-        ]));
-
-        Patrol::where('scout_group_id', $group->id)->update(['status' => RegistrationStatusEnum::Verified]);
-        Participant::whereIn('patrol_id', Patrol::where('scout_group_id', $group->id)->pluck('id'))
-            ->update(['status' => RegistrationStatusEnum::Verified]);
-        Chaperone::where('scout_group_id', $group->id)->update(['status' => RegistrationStatusEnum::Verified]);
     }
 
     private function seedPatrol(ScoutGroup $group, PatrolGenderEnum $gender, string $patrolName, int $groupNumber, string $gudepNumber): void
