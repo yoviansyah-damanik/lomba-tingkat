@@ -28,12 +28,11 @@
 
     {{-- Form Bentuk Regu Baru jika belum lengkap 2 regu (Putra & Putri) --}}
     @if($scoutGroup->isEditable() && $scoutGroup->patrols->count() < 2)
-        <div class="rounded-2xl border border-amber-300/80 bg-gradient-to-r from-amber-50 to-white p-5 shadow-sm dark:border-amber-500/20 dark:from-zinc-900 dark:to-zinc-900">
+        <div id="form-buat-regu" class="rounded-2xl border border-amber-300/80 bg-gradient-to-r from-amber-50 to-white p-5 shadow-sm dark:border-amber-500/20 dark:from-zinc-900 dark:to-zinc-900">
             <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-3">
                 Bentuk Regu Baru
             </h3>
-            <form method="POST" action="{{ route('scout-group.patrols.store') }}" wire:submit="storePatrol" class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                @csrf
+            <form wire:submit="storePatrol" class="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <div class="flex-1">
                     <input
                         type="text"
@@ -41,17 +40,17 @@
                         wire:model="patrol_name"
                         placeholder="Nama Regu (Contoh: Rajawali / Melati)"
                         required
-                        class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2 text-xs sm:text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2 text-xs sm:text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                     >
-                    @error('patrol_name') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                    @error('patrol_name') <p class="mt-1 text-xs text-rose-500">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="w-full sm:w-48">
                     <select
                         name="gender_category"
-                        wire:model="gender_category"
+                        wire:model.live="gender_category"
                         required
-                        class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs sm:text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs sm:text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                     >
                         @if(!$scoutGroup->boysPatrol)
                             <option value="boys">Penggalang Putra</option>
@@ -60,15 +59,17 @@
                             <option value="girls">Penggalang Putri</option>
                         @endif
                     </select>
-                    @error('gender_category') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                    @error('gender_category') <p class="mt-1 text-xs text-rose-500">{{ $message }}</p> @enderror
                 </div>
 
-                <button
+                <flux:button
                     type="submit"
-                    class="rounded-xl bg-amber-600 px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-amber-700 whitespace-nowrap cursor-pointer"
+                    variant="primary"
+                    icon="plus"
+                    class="whitespace-nowrap"
                 >
-                    + Buat Regu
-                </button>
+                    Buat Regu
+                </flux:button>
             </form>
         </div>
     @endif
@@ -93,23 +94,30 @@
                         </h3>
                     </div>
 
-                    <div class="flex items-center gap-2 self-start sm:self-center">
-                        <a href="{{ route('digital-cards.patrol.batch', $patrol->id) }}" target="_blank"
-                            class="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
-                            <flux:icon name="qr-code" class="size-3.5" />
+                    <div class="flex flex-wrap items-center gap-2 self-start sm:self-center">
+                        <flux:button href="{{ route('digital-cards.patrol.batch', $patrol->id) }}" target="_blank" variant="subtle" size="sm" icon="qr-code">
                             ID Card Regu (A4 / .PNG)
-                        </a>
+                        </flux:button>
 
-                        <a href="{{ route('scout-group.patrols.form-01', $patrol->id) }}" target="_blank"
-                            class="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-amber-800 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-amber-300">
-                            <flux:icon name="printer" class="size-3.5" />
+                        <flux:button href="{{ route('scout-group.patrols.form-01', $patrol->id) }}" target="_blank" variant="subtle" size="sm" icon="printer">
                             Cetak FORM : 01
-                        </a>
+                        </flux:button>
 
                         @if($scoutGroup->isEditable())
-                            <a href="{{ route('scout-group.participants.create', $patrol->id) }}" wire:navigate class="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-700">
-                                + Tambah Peserta
-                            </a>
+                            <flux:button href="{{ route('scout-group.participants.create', $patrol->id) }}" wire:navigate variant="primary" size="sm" icon="plus">
+                                Tambah Peserta
+                            </flux:button>
+
+                            <flux:button
+                                type="button"
+                                wire:click="deletePatrol('{{ $patrol->id }}')"
+                                wire:confirm="PERINGATAN: Apakah Anda yakin ingin menghapus Regu {{ $patrol->patrol_name }}? Tindakan ini akan menghapus seluruh data anggota peserta di dalam regu ini."
+                                variant="danger"
+                                size="sm"
+                                icon="trash"
+                            >
+                                Hapus Regu
+                            </flux:button>
                         @endif
                     </div>
                 </div>
@@ -170,32 +178,31 @@
                                     </td>
                                     <td class="py-3 px-3 text-center">
                                         <div class="inline-flex items-center gap-1.5">
-                                            <a href="{{ route('scout-group.participants.print', $participant->id) }}" target="_blank"
-                                                class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-semibold text-amber-700 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-amber-400" title="Cetak Formulir Biodata Resmi">
-                                                <flux:icon name="printer" class="size-3.5" />
+                                            <flux:button href="{{ route('scout-group.participants.print', $participant->id) }}" target="_blank" variant="subtle" size="xs" icon="printer" title="Cetak Formulir Biodata Resmi">
                                                 Form
-                                            </a>
-                                            <a href="{{ route('digital-cards.participant', $participant->id) }}" target="_blank"
-                                                class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200" title="Cetak Kartu Peserta B2 (QR)">
-                                                <flux:icon name="qr-code" class="size-3.5" />
+                                            </flux:button>
+                                            <flux:button href="{{ route('digital-cards.participant', $participant->id) }}" target="_blank" variant="subtle" size="xs" icon="qr-code" title="Cetak Kartu Peserta B2 (QR)">
                                                 Kartu
-                                            </a>
+                                            </flux:button>
                                         </div>
                                     </td>
                                     @if($scoutGroup->isEditable())
                                         <td class="py-3 px-3 text-right">
-                                            <div class="inline-flex items-center gap-2">
-                                                <a href="{{ route('scout-group.participants.edit', $participant->id) }}" wire:navigate class="text-xs font-semibold text-amber-600 hover:text-amber-700 dark:text-amber-400">
-                                                    Edit
-                                                </a>
-                                                <span class="text-zinc-300 dark:text-zinc-700">&bull;</span>
-                                                <button
+                                            <div class="inline-flex items-center gap-1.5 justify-end">
+                                                <flux:button href="{{ route('scout-group.participants.edit', $participant->id) }}" wire:navigate variant="ghost" size="xs" icon="pencil-square">
+                                                    Ubah
+                                                </flux:button>
+                                                <flux:button
                                                     type="button"
                                                     wire:click="deleteParticipant('{{ $participant->id }}')"
                                                     wire:confirm="Hapus peserta {{ $participant->full_name }}?"
-                                                    class="text-xs font-medium text-red-600 hover:underline dark:text-red-400 cursor-pointer">
+                                                    variant="ghost"
+                                                    size="xs"
+                                                    icon="trash"
+                                                    class="text-rose-600 hover:text-rose-700 dark:text-rose-400"
+                                                >
                                                     Hapus
-                                                </button>
+                                                </flux:button>
                                             </div>
                                         </td>
                                     @endif

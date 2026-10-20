@@ -11,8 +11,10 @@ use App\Models\Participant;
 use App\Models\Patrol;
 use App\Models\ScoutGroup;
 use App\Models\User;
+use App\Livewire\Portal\PatrolsManagement;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class ContingentRegistrationTest extends TestCase
@@ -64,9 +66,11 @@ class ContingentRegistrationTest extends TestCase
         $updateResponse = $this->actingAs($this->scoutGroupUser)->post(route('scout-group.profile.update'), [
             'school_name' => 'SMP Negeri 1 Padangsidimpuan',
             'group_number' => '01-093',
-            'address' => 'Jl. Kenanga No. 10, Padangsidimpuan',
-            'contact_person' => 'Budi Santoso, S.Pd',
-            'contact_phone' => '08126001001',
+            'kwarran' => 'Kwarran Padangsidimpuan Utara',
+            'address' => 'Jl. Kenanga No. 10',
+            'pic_name' => 'Budi Santoso, S.Pd',
+            'phone_number' => '08126001001',
+            'email' => $this->scoutGroupUser->email,
         ]);
 
         $updateResponse->assertRedirect(route('scout-group.index'));
@@ -78,7 +82,21 @@ class ContingentRegistrationTest extends TestCase
             'male_group_number' => '01-093',
             'female_group_number' => '01-094',
             'contact_person' => 'Budi Santoso, S.Pd',
+            'kwarran_name' => 'Kwarran Padangsidimpuan Utara',
+            'address' => 'Jl. Kenanga No. 10, Kwarran Padangsidimpuan Utara, Kota Padangsidimpuan',
         ]);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $this->scoutGroupUser->id,
+            'name' => 'Budi Santoso, S.Pd',
+            'phone_number' => '08126001001',
+        ]);
+
+        // Halaman profil menampilkan form identik registrasi
+        $this->actingAs($this->scoutGroupUser)->get(route('scout-group.profile'))
+            ->assertOk()
+            ->assertSee('Kwartir Ranting (Kwarran)')
+            ->assertSee('Jl. Kenanga No. 10');
     }
 
     /**
@@ -655,5 +673,100 @@ class ContingentRegistrationTest extends TestCase
         $adminRes->assertSee('FORM : 01');
         $adminRes->assertSee('Kak Rahmat Hidayat, S.Pd');
         $adminRes->assertSee('Fahri Siregar');
+    }
+
+    /**
+     * Memastikan pembuatan regu putra lalu regu putri via Livewire berjalan sukses tanpa error kuota
+     */
+    public function test_scout_group_can_create_boys_and_then_girls_patrol_via_livewire(): void
+    {
+        $scoutGroup = ScoutGroup::factory()->create(['user_id' => $this->scoutGroupUser->id]);
+
+        // 1. Buat regu putra
+        $component = Livewire::actingAs($this->scoutGroupUser)
+            ->test(PatrolsManagement::class)
+            ->set('patrol_name', 'Rajawali')
+            ->set('gender_category', 'boys')
+            ->call('storePatrol')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('patrols', [
+            'scout_group_id' => $scoutGroup->id,
+            'patrol_name' => 'Rajawali',
+            'gender_category' => PatrolGenderEnum::Boys->value,
+        ]);
+
+        // 2. Refresh komponen - sekarang regu putra sudah ada, gender_category harus otomatis beralih ke 'girls'
+        $component->call('syncAvailableGenderCategory');
+        $this->assertEquals('girls', $component->get('gender_category'));
+
+        // 3. Buat regu putri (meskipun client tidak mengubah dropdown atau jika nilai default tertinggal)
+        $component
+            ->set('patrol_name', 'Mawar')
+            ->call('storePatrol')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('patrols', [
+            'scout_group_id' => $scoutGroup->id,
+            'patrol_name' => 'Mawar',
+            'gender_category' => PatrolGenderEnum::Girls->value,
+        ]);
+
+        // 4. Pastikan pangkalan sekarang memiliki 2 regu lengkap (1 putra & 1 putri)
+        $scoutGroup->refresh();
+        $this->assertNotNull($scoutGroup->boysPatrol);
+        $this->assertNotNull($scoutGroup->girlsPatrol);
+        $this->assertEquals(2, $scoutGroup->patrols()->count());
+    }
+
+    /**
+     * Memastikan pangkalan dapat menghapus data regu beserta anggotanya via Livewire & HTTP
+     */
+    public function test_scout_group_can_delete_patrol(): void
+    {
+        $scoutGroup = ScoutGroup::factory()->create(['user_id' => $this->scoutGroupUser->id]);
+
+        $patrol = Patrol::create([
+            'scout_group_id' => $scoutGroup->id,
+            'patrol_name' => 'Rajawali',
+            'gender_category' => PatrolGenderEnum::Boys,
+            'status' => RegistrationStatusEnum::Draft,
+        ]);
+
+        $participant = Participant::create([
+            'patrol_id' => $patrol->id,
+            'full_name' => 'Ahmad Subari',
+            'gender' => 'male',
+            'role_in_patrol' => PatrolRoleEnum::PatrolLeader,
+            'birth_date' => '2011-05-15',
+            'birth_place' => 'Padangsidimpuan',
+            'status' => RegistrationStatusEnum::Draft,
+        ]);
+
+        $this->assertDatabaseHas('patrols', ['id' => $patrol->id]);
+        $this->assertDatabaseHas('participants', ['id' => $participant->id]);
+
+        // Hapus regu via Livewire
+        Livewire::actingAs($this->scoutGroupUser)
+            ->test(PatrolsManagement::class)
+            ->call('deletePatrol', $patrol->id)
+            ->assertHasNoErrors()
+            ->assertSee('berhasil dihapus');
+
+        // Pastikan regu dan anggotanya terhapus
+        $this->assertDatabaseMissing('patrols', ['id' => $patrol->id]);
+        $this->assertDatabaseMissing('participants', ['id' => $participant->id]);
+
+        // Uji hapus via HTTP DELETE route
+        $patrolGirls = Patrol::create([
+            'scout_group_id' => $scoutGroup->id,
+            'patrol_name' => 'Mawar',
+            'gender_category' => PatrolGenderEnum::Girls,
+            'status' => RegistrationStatusEnum::Draft,
+        ]);
+
+        $deleteRes = $this->actingAs($this->scoutGroupUser)->delete(route('scout-group.patrols.destroy', $patrolGirls->id));
+        $deleteRes->assertRedirect(route('scout-group.patrols'));
+        $this->assertDatabaseMissing('patrols', ['id' => $patrolGirls->id]);
     }
 }

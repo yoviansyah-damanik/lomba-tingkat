@@ -11,6 +11,10 @@ use App\Models\Patrol;
 use App\Models\ScoutGroup;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 /**
@@ -18,6 +22,18 @@ use Illuminate\View\View;
  */
 class ScoutGroupPortalController extends Controller
 {
+    /**
+     * Daftar Kwartir Ranting resmi (sama dengan form registrasi)
+     */
+    public const KWARRANS = [
+        'Kwarran Padangsidimpuan Utara',
+        'Kwarran Padangsidimpuan Selatan',
+        'Kwarran Padangsidimpuan Batunadua',
+        'Kwarran Padangsidimpuan Hutaimbaru',
+        'Kwarran Padangsidimpuan Tenggara',
+        'Kwarran Padangsidimpuan Angkola Julu',
+    ];
+
     /**
      * Mendapatkan atau membuat instance ScoutGroup milik user yang sedang login
      */
@@ -58,7 +74,18 @@ class ScoutGroupPortalController extends Controller
     {
         $scoutGroup = $this->getOrCreateScoutGroup($request);
 
-        return view('portal.scout-group.profile', compact('scoutGroup'));
+        // Pisahkan alamat jalan dari sufiks ", {Kwarran}, Kota Padangsidimpuan" agar sama seperti input registrasi
+        $streetAddress = (string) $scoutGroup->address;
+        $suffix = ', '.$scoutGroup->kwarran_name.', Kota Padangsidimpuan';
+        if ($scoutGroup->kwarran_name && str_ends_with($streetAddress, $suffix)) {
+            $streetAddress = substr($streetAddress, 0, -strlen($suffix));
+        }
+
+        return view('portal.scout-group.profile', [
+            'scoutGroup' => $scoutGroup,
+            'kwarrans' => self::KWARRANS,
+            'streetAddress' => $streetAddress,
+        ]);
     }
 
     /**
@@ -72,25 +99,55 @@ class ScoutGroupPortalController extends Controller
             return back()->withErrors(['status' => 'Data terkunci dan tidak dapat diubah karena sedang dalam proses verifikasi atau telah disetujui.']);
         }
 
+        $user = $request->user();
+
         $validated = $request->validate([
             'school_name' => ['required', 'string', 'max:255'],
             'group_number' => ['required', 'string', 'max:100'],
-            'address' => ['required', 'string'],
-            'contact_person' => ['required', 'string', 'max:255'],
-            'contact_phone' => ['required', 'string', 'max:30'],
+            'kwarran' => ['required', 'string', 'in:'.implode(',', self::KWARRANS)],
+            'address' => ['required', 'string', 'max:500'],
+            'pic_name' => ['required', 'string', 'max:255'],
+            'phone_number' => ['required', 'string', 'max:30'],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'password' => ['nullable', 'string', 'confirmed', Password::defaults()],
+        ], [
+            'school_name.required' => 'Nama pangkalan / sekolah wajib diisi.',
+            'group_number.required' => 'Nomor Gugus Depan resmi pangkalan wajib diisi.',
+            'kwarran.required' => 'Pilih Kwartir Ranting (Kwarran) pangkalan.',
+            'kwarran.in' => 'Kwartir Ranting (Kwarran) tidak valid.',
+            'address.required' => 'Alamat lengkap pangkalan wajib diisi.',
+            'pic_name.required' => 'Nama lengkap pembina penanggung jawab (PIC) wajib diisi.',
+            'phone_number.required' => 'Nomor WhatsApp / HP penanggung jawab wajib diisi.',
+            'email.required' => 'Alamat email resmi wajib diisi.',
+            'email.unique' => 'Alamat email ini telah terdaftar. Silakan gunakan email lain.',
+            'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
         ]);
 
         $groupNumberData = ScoutGroup::formatGroupNumbers($validated['group_number']);
+        $fullAddress = trim($validated['address']).', '.$validated['kwarran'].', Kota Padangsidimpuan';
 
-        $scoutGroup->update([
-            'school_name' => $validated['school_name'],
-            'group_number' => $groupNumberData['combined'],
-            'male_group_number' => $groupNumberData['male'],
-            'female_group_number' => $groupNumberData['female'],
-            'address' => $validated['address'],
-            'contact_person' => $validated['contact_person'],
-            'contact_phone' => $validated['contact_phone'],
-        ]);
+        DB::transaction(function () use ($scoutGroup, $user, $validated, $groupNumberData, $fullAddress) {
+            $scoutGroup->update([
+                'school_name' => $validated['school_name'],
+                'group_number' => $groupNumberData['combined'],
+                'male_group_number' => $groupNumberData['male'],
+                'female_group_number' => $groupNumberData['female'],
+                'kwarran_name' => $validated['kwarran'],
+                'address' => $fullAddress,
+                'contact_person' => $validated['pic_name'],
+                'contact_phone' => $validated['phone_number'],
+            ]);
+
+            $userData = [
+                'name' => $validated['pic_name'],
+                'email' => $validated['email'],
+                'phone_number' => $validated['phone_number'],
+            ];
+            if (! empty($validated['password'])) {
+                $userData['password'] = Hash::make($validated['password']);
+            }
+            $user->update($userData);
+        });
 
         return redirect()->route('scout-group.index')->with('success', 'Profil pangkalan Gugus Depan berhasil diperbarui.');
     }
@@ -135,6 +192,31 @@ class ScoutGroupPortalController extends Controller
         ]);
 
         return redirect()->route('scout-group.patrols')->with('success', 'Regu berhasil dibentuk.');
+    }
+
+    /**
+     * Hapus data regu pangkalan
+     */
+    public function patrolDestroy(Request $request, string $patrolId): RedirectResponse
+    {
+        $scoutGroup = $this->getOrCreateScoutGroup($request);
+
+        if (! $scoutGroup->isEditable()) {
+            return back()->withErrors(['status' => 'Pendaftaran terkunci dan data regu tidak dapat dihapus.']);
+        }
+
+        $patrol = $scoutGroup->patrols()->with('participants')->findOrFail($patrolId);
+        $patrolName = $patrol->patrol_name;
+
+        foreach ($patrol->participants as $participant) {
+            if ($participant->photo_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($participant->photo_path)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($participant->photo_path);
+            }
+        }
+
+        $patrol->delete();
+
+        return redirect()->route('scout-group.patrols')->with('success', "Regu {$patrolName} berhasil dihapus.");
     }
 
     /**

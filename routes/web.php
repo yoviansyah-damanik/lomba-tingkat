@@ -166,6 +166,7 @@ Route::middleware(['auth', 'role'])->group(function () {
         // Patrols & participants (Livewire 4 SPA)
         Route::get('/patrols', \App\Livewire\Portal\PatrolsManagement::class)->name('patrols');
         Route::post('/patrols', [ScoutGroupPortalController::class, 'patrolStore'])->name('patrols.store');
+        Route::delete('/patrols/{patrolId}', [ScoutGroupPortalController::class, 'patrolDestroy'])->name('patrols.destroy');
         Route::get('/patrols/{patrolId}/form-01', [ScoutGroupPortalController::class, 'form01Print'])->name('patrols.form-01');
         Route::get('/patrols/{patrolId}/participants/create', [ScoutGroupPortalController::class, 'participantCreate'])->name('participants.create');
         Route::post('/patrols/{patrolId}/participants', [ScoutGroupPortalController::class, 'participantStore'])->name('participants.store');
