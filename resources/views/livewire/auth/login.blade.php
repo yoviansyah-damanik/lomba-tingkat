@@ -1,4 +1,7 @@
-<form wire:submit="login" class="space-y-4">
+{{-- Fallback tanpa JS/saat Livewire belum siap: kirim POST ke Fortify (bukan GET yang membocorkan kata sandi di URL) --}}
+<form wire:submit="login" method="POST" action="{{ route('login.store') }}" class="space-y-4">
+    @csrf
+
     {{-- Email Field --}}
     <div>
         <flux:input
