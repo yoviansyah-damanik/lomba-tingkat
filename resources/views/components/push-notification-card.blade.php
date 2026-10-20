@@ -64,25 +64,9 @@
                 if (!res.ok) throw new Error('Server menolak pendaftaran (' + res.status + ').');
 
                 this.subscribed = true;
-                this.notify('Notifikasi aktif di perangkat ini. Tekan Kirim Notifikasi Uji untuk mencoba.', 'success');
+                this.notify('Notifikasi aktif di perangkat ini.', 'success');
             } catch (e) {
                 this.notify('Gagal mengaktifkan notifikasi: ' + e.message, 'error');
-            } finally {
-                this.loading = false;
-            }
-        },
-
-        async sendTest() {
-            this.loading = true;
-            try {
-                const reg = await navigator.serviceWorker.ready;
-                const sub = await reg.pushManager.getSubscription();
-                if (!sub) throw new Error('Perangkat belum berlangganan.');
-                const res = await this.request('POST', '/api/push-subscriptions/test', { endpoint: sub.endpoint });
-                const data = await res.json().catch(() => ({}));
-                this.notify(data.message || 'Permintaan uji diproses.', res.ok ? 'success' : 'error');
-            } catch (e) {
-                this.notify(e.message, 'error');
             } finally {
                 this.loading = false;
             }
@@ -139,9 +123,6 @@
         <div class="flex flex-wrap items-center gap-2" x-show="supported" x-cloak>
             <flux:button x-show="!subscribed" icon="bell-alert" variant="primary" size="sm" x-on:click="enable()" x-bind:disabled="loading">
                 Aktifkan Notifikasi
-            </flux:button>
-            <flux:button x-show="subscribed" x-cloak icon="paper-airplane" variant="primary" size="sm" x-on:click="sendTest()" x-bind:disabled="loading">
-                Kirim Notifikasi Uji
             </flux:button>
             <flux:button x-show="subscribed" x-cloak icon="bell-slash" size="sm" x-on:click="disable()" x-bind:disabled="loading">
                 Nonaktifkan
