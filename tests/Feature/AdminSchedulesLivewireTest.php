@@ -10,6 +10,7 @@ use App\Models\Event;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Services\WebPushService;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -231,5 +232,30 @@ class AdminSchedulesLivewireTest extends TestCase
             ->assertSee('Sesi Khusus Putri Saja')
             ->assertDontSee('Sesi Khusus Putra Saja');
     }
-}
 
+    public function test_admin_can_send_schedule_reminder_push(): void
+    {
+        $schedule = CompetitionSchedule::create([
+            'competition_id' => $this->competition->id,
+            'session_name' => 'Sesi Pengingat Uji',
+            'arena_location' => 'Pos Sandi',
+            'start_time' => now()->addDay(),
+            'end_time' => now()->addDay()->addHours(2),
+            'status' => 'scheduled',
+            'is_published' => true,
+        ]);
+
+        $this->mock(WebPushService::class, function ($mock) {
+            $mock->shouldReceive('broadcastNotification')
+                ->once()
+                ->withArgs(fn ($payload) => $payload['title'] === 'Pengingat Jadwal Lomba')
+                ->andReturn(['total' => 1, 'sent' => 1, 'failed' => 0, 'expired' => 0, 'target_role' => null]);
+        });
+
+        Livewire::actingAs($this->admin)
+            ->test(SchedulesManagement::class)
+            ->assertSee('Kirim Notifikasi')
+            ->call('sendReminder', $schedule->id)
+            ->assertHasNoErrors();
+    }
+}

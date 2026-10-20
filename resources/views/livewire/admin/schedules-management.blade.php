@@ -324,6 +324,21 @@
                             {{-- Actions --}}
                             <td class="py-4 pl-3 pr-6 align-top text-right">
                                 <div class="flex items-center justify-end gap-1.5">
+                                    @if($schedule->is_published && ! in_array($schedule->status, ['cancelled', 'completed'], true))
+                                        <flux:button
+                                            variant="subtle"
+                                            size="sm"
+                                            icon="bell-alert"
+                                            class="text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/40"
+                                            wire:click="sendReminder('{{ $schedule->id }}')"
+                                            wire:confirm="Kirim notifikasi pengingat jadwal ini ke seluruh perangkat terdaftar?"
+                                            wire:loading.attr="disabled"
+                                            wire:target="sendReminder('{{ $schedule->id }}')"
+                                        >
+                                            Kirim Notifikasi
+                                        </flux:button>
+                                    @endif
+
                                     <flux:button 
                                         variant="subtle" 
                                         size="sm" 

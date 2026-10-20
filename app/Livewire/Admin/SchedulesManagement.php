@@ -8,6 +8,7 @@ use App\Models\Competition;
 use App\Models\CompetitionSchedule;
 use App\Models\JudgeAssignment;
 use App\Models\User;
+use App\Services\WebPushService;
 use Carbon\Carbon;
 use Flux\Flux;
 use Livewire\Attributes\Computed;
@@ -380,6 +381,39 @@ class SchedulesManagement extends Component
             variant: $newStatus ? 'success' : 'warning',
             heading: $toastHeading,
             text: "Sesi presensi pos {$schedule->session_name} kini {$statusLabel}."
+        );
+    }
+
+    /**
+     * Kirim notifikasi push pengingat manual untuk satu jadwal ke seluruh perangkat terdaftar
+     */
+    public function sendReminder(string $id, WebPushService $webPush): void
+    {
+        $schedule = CompetitionSchedule::with('competition')->findOrFail($id);
+        $start = $schedule->start_time->copy()->setTimezone('Asia/Jakarta');
+
+        $result = $webPush->broadcastNotification(
+            payload: [
+                'title' => 'Pengingat Jadwal Lomba',
+                'body' => sprintf(
+                    '%s (%s) di %s, %s pukul %s WIB.',
+                    $schedule->competition?->title ?: 'Lomba',
+                    $schedule->session_name,
+                    $schedule->arena_location,
+                    $start->translatedFormat('l, d F Y'),
+                    $start->format('H:i')
+                ),
+                'url' => url('/schedules'),
+                'tag' => 'lt3-reminder-'.$schedule->id,
+            ],
+            targetRole: null,
+            sender: auth()->user()
+        );
+
+        Flux::toast(
+            variant: $result['sent'] > 0 ? 'success' : 'warning',
+            heading: $result['sent'] > 0 ? 'Notifikasi Terkirim' : 'Tidak Ada Perangkat Terkirim',
+            text: "Pengingat {$schedule->session_name}: terkirim {$result['sent']}, gagal {$result['failed']}."
         );
     }
 
