@@ -92,11 +92,12 @@
         class="pointer-events-none fixed z-[100] flex w-[calc(100%-2rem)] max-w-sm flex-col gap-2 print:hidden {{ $positionClasses }}">
         @foreach ($toasts as $t)
             @php
-                $icon = match ($t['variant']) {
-                    'success' => ['check-circle', 'text-emerald-500'],
-                    'danger' => ['x-circle', 'text-rose-500'],
-                    'warning' => ['exclamation-triangle', 'text-amber-500'],
-                    default => ['information-circle', 'text-sky-500'],
+                // Warna latar, batas, ikon, dan teks sesuai jenis notifikasi
+                $style = match ($t['variant']) {
+                    'success' => ['icon' => 'check-circle', 'card' => 'border-emerald-300 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950', 'iconColor' => 'text-emerald-600 dark:text-emerald-400', 'heading' => 'text-emerald-900 dark:text-emerald-100', 'text' => 'text-emerald-800 dark:text-emerald-200'],
+                    'danger' => ['icon' => 'x-circle', 'card' => 'border-rose-300 bg-rose-50 dark:border-rose-700 dark:bg-rose-950', 'iconColor' => 'text-rose-600 dark:text-rose-400', 'heading' => 'text-rose-900 dark:text-rose-100', 'text' => 'text-rose-800 dark:text-rose-200'],
+                    'warning' => ['icon' => 'exclamation-triangle', 'card' => 'border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950', 'iconColor' => 'text-amber-600 dark:text-amber-400', 'heading' => 'text-amber-900 dark:text-amber-100', 'text' => 'text-amber-800 dark:text-amber-200'],
+                    default => ['icon' => 'information-circle', 'card' => 'border-sky-300 bg-sky-50 dark:border-sky-700 dark:bg-sky-950', 'iconColor' => 'text-sky-600 dark:text-sky-400', 'heading' => 'text-sky-900 dark:text-sky-100', 'text' => 'text-sky-800 dark:text-sky-200'],
                 };
             @endphp
 
@@ -110,12 +111,12 @@
                 x-transition:leave-start="opacity-100 scale-100"
                 x-transition:leave-end="opacity-0 scale-95"
                 role="alert" data-variant="{{ $t['variant'] }}"
-                class="pointer-events-auto flex w-full items-start gap-3 rounded-xl border border-zinc-200 bg-white p-3 shadow-lg dark:border-zinc-600 dark:bg-zinc-700">
-                <flux:icon :name="$icon[0]" class="mt-0.5 size-5 shrink-0 {{ $icon[1] }}" />
+                class="pointer-events-auto flex w-full items-start gap-3 rounded-xl border p-3 shadow-lg {{ $style['card'] }}">
+                <flux:icon :name="$style['icon']" class="mt-0.5 size-5 shrink-0 {{ $style['iconColor'] }}" />
 
                 <div class="min-w-0 flex-1">
-                    <div class="text-sm font-semibold text-zinc-800 dark:text-white">{{ $t['heading'] }}</div>
-                    <div class="mt-0.5 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">{{ $t['text'] }}</div>
+                    <div class="text-sm font-semibold {{ $style['heading'] }}">{{ $t['heading'] }}</div>
+                    <div class="mt-0.5 text-xs leading-relaxed {{ $style['text'] }}">{{ $t['text'] }}</div>
                 </div>
 
                 @if ($dismissible)
