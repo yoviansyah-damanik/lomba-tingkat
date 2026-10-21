@@ -9,7 +9,9 @@ Route::get('/announcements', \App\Livewire\Public\AnnouncementsList::class)->nam
 Route::get('/announcements/{slug}', [PublicPageController::class, 'announcementShow'])->name('announcements.show');
 Route::get('/competitions', \App\Livewire\Public\CompetitionsCatalog::class)->name('competitions');
 Route::get('/schedules', \App\Livewire\Public\SchedulesCalendar::class)->name('schedules');
-Route::get('/guide', \App\Livewire\Public\GuidePage::class)->name('guide');
+Route::get('/schedules/calendar.ics', [\App\Http\Controllers\ScheduleCalendarController::class, 'all'])->name('schedules.calendar.all');
+Route::get('/schedules/{scheduleId}/calendar.ics', [\App\Http\Controllers\ScheduleCalendarController::class, 'show'])->name('schedules.calendar.show');
+Route::get('/guide',\App\Livewire\Public\GuidePage::class)->name('guide');
 Route::get('/leaderboard', \App\Livewire\Public\LeaderboardPage::class)->name('leaderboard');
 Route::get('/participants', \App\Livewire\Public\ParticipantsPage::class)->name('participants');
 

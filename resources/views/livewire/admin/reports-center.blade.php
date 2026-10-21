@@ -9,16 +9,6 @@
             <span class="mx-2">&rsaquo;</span>
             <span class="text-zinc-800 dark:text-zinc-200">Pusat Laporan</span>
         </x-slot:breadcrumbs>
-
-        <x-slot:actions>
-            <div class="flex items-center gap-2">
-                <a href="{{ route('admin.reports.print.berita-acara') }}" target="_blank">
-                    <flux:button icon="document-text" variant="primary">
-                        Pratinjau Berita Acara (PDF)
-                    </flux:button>
-                </a>
-            </div>
-        </x-slot:actions>
     </x-heading-section>
 
     {{-- Ringkasan Statistik Data Siap Ekspor --}}
@@ -79,7 +69,7 @@
             <div class="flex items-center gap-2 shrink-0">
                 <a href="{{ route('admin.reports.print.berita-acara') }}" target="_blank">
                     <flux:button icon="document-text" variant="primary">
-                        Pratinjau & Unduh PDF
+                        Cetak Berita Acara
                     </flux:button>
                 </a>
             </div>

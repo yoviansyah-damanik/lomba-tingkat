@@ -79,80 +79,92 @@
     {{-- Competitions List --}}
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
         @forelse($this->competitions as $competition)
-            <div class="flex flex-col justify-between rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 hover:border-amber-400/80 transition-all">
-                <div>
-                    <div class="flex items-center justify-between border-b border-zinc-100 pb-3 dark:border-zinc-800">
-                        <span class="font-mono text-sm font-bold text-amber-700 dark:text-amber-400">
-                            {{ $competition->code }}
-                        </span>
-                        <div class="flex flex-wrap items-center gap-1.5">
-                            <span class="rounded-md bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
-                                {{ $competition->categoryLabel() }}
-                            </span>
-                            <span class="rounded-md border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
-                                {{ $competition->participantRangeLabel() }}
-                            </span>
-                        </div>
+            @php
+                // Ringkasan ketentuan teknis: waktu & tempat diambil dari teks Juknis; bila tidak ada, potongan awal teks
+                $guidelines = (string) $competition->guidelines_text;
+                $time = preg_match('/^Waktu:\s*(.+)$/m', $guidelines, $m) ? $m[1] : null;
+                $place = preg_match('/^Tempat:\s*(.+)$/m', $guidelines, $m) ? $m[1] : null;
+                $fallbackSummary = \Illuminate\Support\Str::limit(trim(preg_replace('/\s+/', ' ', $guidelines)), 180);
+            @endphp
+
+            <article class="flex flex-col rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs transition hover:border-amber-400/70 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900">
+                {{-- Kepala kartu --}}
+                <header class="flex flex-wrap items-center justify-between gap-2">
+                    <span class="font-mono text-sm font-bold text-amber-700 dark:text-amber-400">{{ $competition->code }}</span>
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="rounded-md bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">{{ $competition->categoryLabel() }}</span>
+                        <span class="rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{{ $competition->participantRangeLabel() }}</span>
                     </div>
+                </header>
 
-                    <h2 class="mt-4 text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                        {{ $competition->title }}
-                    </h2>
+                <h2 class="mt-4 text-lg font-bold leading-snug text-zinc-900 dark:text-zinc-100">{{ $competition->title }}</h2>
+                <p class="mt-1.5 line-clamp-3 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">{{ $competition->description }}</p>
 
-                    <p class="mt-2 text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                        {{ $competition->description }}
-                    </p>
-
-                    {{-- Technical Guidelines Summary --}}
-                    <div class="mt-4 rounded-xl bg-zinc-50 p-3.5 text-xs text-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-300">
-                        <span class="block font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
-                            Ketentuan Teknis Lomba:
-                        </span>
-                        <p class="leading-relaxed">
-                            {{ $competition->guidelines_text ?? 'Ketentuan teknis detail tercantum dalam dokumen petunjuk teknis juknis resmi panitia.' }}
-                        </p>
-                    </div>
-
-                    {{-- Scheduled Sessions --}}
-                    @if($competition->schedules->count())
-                        <div class="mt-4">
-                            <span class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">
-                                Sesi Jadwal Terdaftar:
-                            </span>
-                            <div class="space-y-1.5">
-                                @foreach($competition->schedules as $sched)
-                                    <div class="flex items-center justify-between rounded-lg border border-zinc-200/60 px-3 py-1.5 text-xs text-zinc-600 dark:border-zinc-800 dark:text-zinc-300">
-                                        <div class="flex items-center gap-2">
-                                            <span>{{ $sched->session_name }} ({{ $sched->arena_location }})</span>
-                                            <span class="inline-flex items-center rounded px-1.5 py-0.2 text-[10px] font-medium {{ $sched->participantTypeBadgeClasses() }}">
-                                                {{ $sched->isIndividual() ? 'Individu' : 'Regu' }}
-                                            </span>
-                                        </div>
-                                        <span class="font-mono text-[11px] text-amber-700 dark:text-amber-400">
-                                            {{ $sched->start_time->translatedFormat('d M, H:i') }} WIB
-                                        </span>
-                                    </div>
-                                @endforeach
+                {{-- Ringkasan teknis --}}
+                <dl class="mt-4 divide-y divide-zinc-100 rounded-xl bg-zinc-50 text-xs dark:divide-zinc-700/60 dark:bg-zinc-800/50">
+                    @if($time || $place)
+                        @if($time)
+                            <div class="flex gap-3 px-3.5 py-2.5">
+                                <dt class="w-14 shrink-0 font-semibold text-zinc-500 dark:text-zinc-400">Waktu</dt>
+                                <dd class="text-zinc-800 dark:text-zinc-200">{{ $time }}</dd>
                             </div>
+                        @endif
+                        @if($place)
+                            <div class="flex gap-3 px-3.5 py-2.5">
+                                <dt class="w-14 shrink-0 font-semibold text-zinc-500 dark:text-zinc-400">Tempat</dt>
+                                <dd class="text-zinc-800 dark:text-zinc-200">{{ $place }}</dd>
+                            </div>
+                        @endif
+                    @else
+                        <div class="px-3.5 py-2.5 leading-relaxed text-zinc-700 dark:text-zinc-300">
+                            {{ $fallbackSummary ?: 'Ketentuan teknis detail tercantum dalam dokumen petunjuk teknis resmi panitia.' }}
                         </div>
                     @endif
-                </div>
+                </dl>
 
-                <div class="mt-6 pt-4 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs">
-                    <span class="text-zinc-400">Formula Nilai: {{ ucfirst($competition->scoring_formula) }}</span>
-                    <div class="flex items-center gap-3">
-                        <button
-                            type="button"
-                            wire:click="openDetails('{{ $competition->id }}')"
-                            class="font-semibold text-amber-700 hover:underline dark:text-amber-400 cursor-pointer">
-                            Rincian Juknis & Rubrik &rarr;
-                        </button>
-                        <a href="{{ route('schedules') }}" wire:navigate class="text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300">
-                            Jadwal
-                        </a>
+                {{-- Sesi jadwal --}}
+                @if($competition->schedules->count())
+                    <div class="mt-5">
+                        <h3 class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Sesi Jadwal</h3>
+                        <ul class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                            @foreach($competition->schedules as $sched)
+                                @php
+                                    $genderLabel = match ($sched->gender_category) {
+                                        'boys' => ['Putra', 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300'],
+                                        'girls' => ['Putri', 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'],
+                                        default => ['Putra & Putri', 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'],
+                                    };
+                                @endphp
+                                <li class="flex items-start justify-between gap-3 py-2.5 text-xs">
+                                    <div class="min-w-0">
+                                        <span class="inline-flex rounded px-1.5 py-0.5 text-[10px] font-bold {{ $genderLabel[1] }}">{{ $genderLabel[0] }}</span>
+                                        <p class="mt-1 truncate text-zinc-600 dark:text-zinc-400" title="{{ $sched->arena_location }}">{{ $sched->arena_location }}</p>
+                                    </div>
+                                    <div class="shrink-0 text-right">
+                                        <p class="font-semibold text-zinc-800 dark:text-zinc-200">{{ $sched->start_time->translatedFormat('D, d M Y') }}</p>
+                                        <p class="font-mono text-[11px] text-amber-700 dark:text-amber-400">
+                                            {{ $sched->start_time->format('H:i') }}@if($sched->end_time)&ndash;{{ $sched->end_time->format('H:i') }}@endif WIB
+                                        </p>
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ul>
                     </div>
-                </div>
-            </div>
+                @endif
+
+                {{-- Aksi --}}
+                <footer class="mt-auto flex items-center justify-between gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                    <span class="text-xs text-zinc-400">Nilai: {{ $competition->scoring_formula === 'sum' ? 'Akumulasi juri' : 'Rata-rata juri' }}</span>
+                    <div class="flex items-center gap-1">
+                        <flux:button size="sm" variant="primary" icon-trailing="arrow-right" wire:click="openDetails('{{ $competition->id }}')">
+                            Juknis & Rubrik
+                        </flux:button>
+                        <flux:button size="sm" variant="subtle" href="{{ route('schedules') }}" wire:navigate>
+                            Jadwal
+                        </flux:button>
+                    </div>
+                </footer>
+            </article>
         @empty
             <div class="col-span-2 rounded-2xl border border-dashed border-zinc-300 p-12 text-center text-sm text-zinc-500 dark:border-zinc-800">
                 Tidak ada mata lomba yang sesuai dengan filter pencarian.

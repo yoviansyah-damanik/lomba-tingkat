@@ -83,6 +83,22 @@
                         <strong class="font-mono font-semibold text-amber-700 dark:text-amber-400">{{ $start->copy()->subMinutes(30)->format('H:i') }} WIB</strong>
                     </span>
                 </span>
+                @unless ($isDone)
+                    <flux:dropdown position="bottom" align="end" class="sm:ml-auto">
+                        <flux:button icon="calendar-days" icon:trailing="chevron-down" size="sm" variant="subtle">
+                            Tambah ke Kalender
+                        </flux:button>
+
+                        <flux:menu>
+                            <flux:menu.item icon="arrow-top-right-on-square" href="{{ app(\App\Services\CalendarLinkService::class)->googleUrl($schedule) }}" target="_blank" rel="noopener">
+                                Google Calendar
+                            </flux:menu.item>
+                            <flux:menu.item icon="arrow-down-tray" href="{{ route('schedules.calendar.show', $schedule->id) }}">
+                                Unduh .ics (Apple / Outlook)
+                            </flux:menu.item>
+                        </flux:menu>
+                    </flux:dropdown>
+                @endunless
             </div>
         </div>
     </div>

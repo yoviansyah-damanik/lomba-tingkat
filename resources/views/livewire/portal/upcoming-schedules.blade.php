@@ -16,6 +16,11 @@
         </x-slot:breadcrumbs>
 
         <x-slot:actions>
+            @if ($totalSessions)
+                <flux:button icon="calendar-days" variant="primary" href="{{ route('schedules.calendar.all') }}">
+                    Tambah Semua ke Kalender
+                </flux:button>
+            @endif
             <div class="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-600 shadow-xs dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
                 <span class="size-2 animate-pulse rounded-full bg-emerald-500"></span>
                 <span>Waktu Resmi: <strong>WIB</strong></span>
