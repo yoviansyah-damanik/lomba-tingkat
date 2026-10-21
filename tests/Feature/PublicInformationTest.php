@@ -79,9 +79,9 @@ class PublicInformationTest extends TestCase
         $response = $this->get('/competitions');
 
         $response->assertStatus(200);
-        $response->assertSee('PBB-01');
-        $response->assertSee('PBB Berisyarat dan Koloni Tongkat');
-        $response->assertSee('Pionering Bangunan Darurat');
+        $response->assertSee('PION-08');
+        $response->assertSee('Lomba Pionering');
+        $response->assertSee('Lomba Pertolongan Pertama');
         $response->assertSee('Blind Scoring');
     }
 
@@ -94,7 +94,7 @@ class PublicInformationTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('WIB');
-        $response->assertSee('Lapangan Utama Bumi Perkemahan');
+        $response->assertSee('Lapangan Pulo Baok');
         $response->assertSee('Regu');
     }
 
@@ -142,26 +142,24 @@ class PublicInformationTest extends TestCase
      */
     public function test_competition_model_handles_participant_range_and_validation(): void
     {
-        // 1. Uji kompetisi regu interval (Pionering: 3-5 peserta)
-        $pionering = Competition::where('code', 'PION-02')->first();
+        // 1. Kelompok tetap (Pionering: tepat 6 peserta)
+        $pionering = Competition::where('code', 'PION-08')->first();
         $this->assertNotNull($pionering);
         $this->assertTrue($pionering->isGroup());
-        $this->assertEquals('Kelompok (3 - 5 Peserta)', $pionering->participantRangeLabel());
-        $this->assertTrue($pionering->validateParticipantCount(3));
-        $this->assertTrue($pionering->validateParticipantCount(4));
-        $this->assertTrue($pionering->validateParticipantCount(5));
-        $this->assertFalse($pionering->validateParticipantCount(2));
-        $this->assertFalse($pionering->validateParticipantCount(6));
+        $this->assertEquals('Kelompok (Tepat 6 Peserta)', $pionering->participantRangeLabel());
+        $this->assertTrue($pionering->validateParticipantCount(6));
+        $this->assertFalse($pionering->validateParticipantCount(5));
+        $this->assertFalse($pionering->validateParticipantCount(7));
 
-        // 2. Uji kompetisi regu fixed (PBB: tepat 8 peserta)
-        $pbb = Competition::where('code', 'PBB-01')->first();
-        $this->assertNotNull($pbb);
-        $this->assertEquals('Regu Utuh (Tepat 8 Peserta)', $pbb->participantRangeLabel());
-        $this->assertTrue($pbb->validateParticipantCount(8));
-        $this->assertFalse($pbb->validateParticipantCount(7));
+        // 2. Regu utuh (Baris Berbaris Tongkat: tepat 8 peserta)
+        $bbt = Competition::where('code', 'BBT-18')->first();
+        $this->assertNotNull($bbt);
+        $this->assertEquals('Regu Utuh (Tepat 8 Peserta)', $bbt->participantRangeLabel());
+        $this->assertTrue($bbt->validateParticipantCount(8));
+        $this->assertFalse($bbt->validateParticipantCount(7));
 
-        // 3. Uji kompetisi individu (Pidato: 1 peserta)
-        $speech = Competition::where('code', 'PID-09')->first();
+        // 3. Individu (Pidato: 1 peserta)
+        $speech = Competition::where('code', 'PID-22')->first();
         $this->assertNotNull($speech);
         $this->assertTrue($speech->isIndividual());
         $this->assertEquals('Individu (1 Peserta)', $speech->participantRangeLabel());

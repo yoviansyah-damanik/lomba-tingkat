@@ -44,14 +44,14 @@ class PortalSchedulesAndTeamAssessmentTest extends TestCase
 
     public function test_upcoming_schedules_are_ordered_and_hide_past_sessions(): void
     {
-        $this->travelTo(now()->setDate(2026, 10, 24)->setTime(9, 0));
+        // Sabtu 28 November 2026 pukul 12.30: sesi Jumat 27 November dan sesi pagi 28 November sudah lewat
+        $this->travelTo(now()->setDate(2026, 11, 28)->setTime(12, 30));
 
         $admin = User::where('username', 'admin')->first();
         $html = $this->actingAs($admin)->get(route('agenda.index'))->assertOk()->getContent();
 
-        // Sesi 23 Okt sudah lewat, sesi 24 Okt 13:30 dan seterusnya tampil berurutan
-        $this->assertStringNotContainsString('Jumat, 23 Oktober 2026', $html);
-        $this->assertLessThan(strpos($html, 'Minggu, 25 Oktober 2026'), strpos($html, 'Sabtu, 24 Oktober 2026'));
+        $this->assertStringNotContainsString('Jumat, 27 November 2026', $html);
+        $this->assertLessThan(strpos($html, 'Minggu, 29 November 2026'), strpos($html, 'Sabtu, 28 November 2026'));
     }
 
     public function test_participant_sees_own_patrol_assessment(): void

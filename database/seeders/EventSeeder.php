@@ -4,29 +4,38 @@ namespace Database\Seeders;
 
 use App\Models\Event;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Carbon;
 
 /**
- * Seeder untuk data resmi kegiatan LT III Kwarcab Padangsidimpuan
+ * Seeder data resmi kegiatan LT-III Tahun 2026 (bersumber dari Petunjuk Teknis)
  */
 class EventSeeder extends Seeder
 {
     public function run(): void
     {
-        Event::firstOrCreate(
-            ['title' => 'Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan'],
-            [
-                'theme' => 'Tangkas, Berkarakter, Bersaudara, dan Berprestasi Menuju Generasi Indonesia Emas',
-                'start_date' => now()->addDays(5)->toDateString(),
-                'end_date' => now()->addDays(8)->toDateString(),
-                'registration_start_at' => now()->subDays(5),
-                'registration_end_at' => now()->addDays(20)->setTime(23, 59, 59),
-                'is_registration_open' => true,
-                'location' => 'Bumi Perkemahan Kwarcab Kota Padangsidimpuan, Sumatera Utara',
-                'description' => 'Lomba Tingkat Regu Pramuka Penggalang Tiga (LT III) Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan merupakan ajang kompetisi prestasi regu penggalang tingkat pangkalan SMP/MTs se-Kota Padangsidimpuan untuk menentukan regu berprestasi tinggi yang berhak mewakili Kwarcab Padangsidimpuan ke ajang Lomba Tingkat IV (LT IV) Kwarda Sumatera Utara.',
-                'contact_email' => 'humas@kwarcab-padangsidimpuan.or.id',
-                'contact_phone' => '+62 821-6543-2100',
-                'is_active' => true,
-            ]
-        );
+        $data = (require __DIR__.'/data/lt3_2026.php')['event'];
+
+        // Batas registrasi tidak boleh sudah lewat saat seeding (lingkungan pengembangan / pengujian)
+        $registrationEnd = Carbon::parse($data['registration_end_at']);
+        if ($registrationEnd->isPast()) {
+            $registrationEnd = now()->addDays(14)->setTime(23, 59, 59);
+        }
+
+        // Satu kegiatan aktif: perbarui bila sudah ada agar seeding ulang tidak menggandakan data
+        $event = Event::first() ?? new Event;
+        $event->fill([
+            'title' => $data['title'],
+            'theme' => $data['theme'],
+            'description' => $data['description'],
+            'start_date' => $data['start_date'],
+            'end_date' => $data['end_date'],
+            'registration_start_at' => $data['registration_start_at'],
+            'registration_end_at' => $registrationEnd,
+            'is_registration_open' => true,
+            'location' => $data['location'],
+            'contact_email' => $data['contact_email'],
+            'contact_phone' => $data['contact_phone'],
+            'is_active' => true,
+        ])->save();
     }
 }

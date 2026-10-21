@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\RegistrationStatusEnum;
 use App\Models\Assessment;
 use App\Models\Chaperone;
+use App\Models\Competition;
 use App\Models\CompetitionScore;
 use App\Models\Participant;
 use App\Models\Patrol;
@@ -37,19 +38,21 @@ class SampleContestSeederTest extends TestCase
         $this->assertGreaterThanOrEqual(9, User::whereHas('roles', fn ($q) => $q->where('name', 'judge'))->count());
         $this->assertGreaterThanOrEqual(5, User::whereHas('roles', fn ($q) => $q->where('name', 'committee'))->count());
 
-        // Setiap regu dinilai 3 juri pada 7 cabang berrubrik dan seluruhnya difinalisasi
-        $this->assertSame(22 * 7 * 3, Assessment::where('status', 'finalized')->count());
-        $this->assertSame(22 * 7, CompetitionScore::count());
+        // 23 mata lomba berrubrik sesuai Juknis; setiap regu dinilai 3 juri pada seluruhnya dan difinalisasi
+        $lombas = Competition::whereHas('criteria')->count();
+        $this->assertSame(23, $lombas);
+        $this->assertSame(22 * $lombas * 3, Assessment::where('status', 'finalized')->count());
+        $this->assertSame(22 * $lombas, CompetitionScore::count());
 
-        // Klasemen regu putra dan putri terpisah; tiap cabang memberi 1 emas per kategori
+        // Klasemen regu putra dan putri terpisah; tiap lomba memberi 1 emas, 1 perak, 1 perunggu per kategori
         $service = app(StandingsService::class);
         foreach (['boys', 'girls'] as $gender) {
             $standings = $service->getPatrolStandings($gender, null, true);
             $this->assertCount(11, $standings);
             $this->assertSame(1, $standings->first()['rank']);
-            $this->assertSame(7, $standings->sum('gold'));
-            $this->assertSame(7, $standings->sum('silver'));
-            $this->assertSame(7, $standings->sum('bronze'));
+            $this->assertSame($lombas, $standings->sum('gold'));
+            $this->assertSame($lombas, $standings->sum('silver'));
+            $this->assertSame($lombas, $standings->sum('bronze'));
             $this->assertSame([$gender], $standings->pluck('gender_category')->unique()->values()->all());
         }
 
@@ -59,6 +62,6 @@ class SampleContestSeederTest extends TestCase
         // Idempoten: dijalankan ulang tidak menggandakan data
         $this->seed(SampleContestSeeder::class);
         $this->assertSame(12, ScoutGroup::count());
-        $this->assertSame(22 * 7 * 3, Assessment::count());
+        $this->assertSame(22 * $lombas * 3, Assessment::count());
     }
 }

@@ -71,16 +71,6 @@ class SampleContestSeeder extends Seeder
         ['id' => 'ID-PANITIA5', 'name' => 'Kak Dewi Sartika Ritonga'],
     ];
 
-    private const ARENAS = [
-        'Lapangan Utama Bumi Perkemahan',
-        'Zona Ketangkasan Lapangan Barat',
-        'Pos Semaphore & Morse Lapangan 1',
-        'Gerbang Start & Pos Rute Alam Bebas',
-        'Tenda Kesehatan Pos PPGD',
-        'Panggung Terbuka Api Unggun',
-        'Aula Utama Kwarcab Padangsidimpuan',
-    ];
-
     public function run(): void
     {
         mt_srand(2026); // hasil nilai konsisten setiap dijalankan
@@ -235,8 +225,9 @@ class SampleContestSeeder extends Seeder
     }
 
     /**
-     * Jadwal lomba yang sudah berlangsung (kemarin) per cabang berrubrik dan per kategori regu,
-     * ditangani 3 juri, lalu dinilai dan difinalisasi lewat alur resmi AssessmentScoringService.
+     * Sesi lomba resmi (dari CompetitionScheduleSeeder) per mata lomba berrubrik dan per kategori regu dinilai
+     * oleh panel 3 juri, lalu difinalisasi lewat alur resmi AssessmentScoringService. Waktu sistem digeser ke
+     * dalam jendela penilaian masing-masing sesi, sehingga tanggal penilaian mengikuti jadwal Juknis.
      *
      * @param  \Illuminate\Support\Collection<int, User>  $judges
      */
@@ -251,41 +242,20 @@ class SampleContestSeeder extends Seeder
             return;
         }
 
-        // Kekuatan dasar regu (acak terkendali) agar juara umum terbentuk wajar namun bervariasi
+        // Kekuatan dasar regu (acak terkendali) agar peringkat terbentuk wajar namun bervariasi
         $strength = Patrol::where('status', RegistrationStatusEnum::Verified)->pluck('id')
             ->mapWithKeys(fn ($id) => [$id => 66 + (mt_rand(0, 280) / 10)]);
 
-        $day = Carbon::yesterday()->setTimezone('Asia/Jakarta');
         $slot = 0;
 
         try {
-            foreach ($competitions as $ci => $competition) {
+            foreach ($competitions as $competition) {
                 foreach (['boys' => 'Penggalang Putra', 'girls' => 'Penggalang Putri'] as $gender => $label) {
-                    $start = $day->copy()->setTime(7, 0)->addMinutes($slot * 100);
-                    $schedule = CompetitionSchedule::updateOrCreate(
-                        ['competition_id' => $competition->id, 'session_name' => "Final {$competition->code} — {$label}"],
-                        [
-                            'participant_type' => $competition->participant_type,
-                            'gender_category' => $gender,
-                            'arena_location' => self::ARENAS[$ci % count(self::ARENAS)],
-                            'start_time' => $start,
-                            'end_time' => $start->copy()->addMinutes(90),
-                            'status' => 'completed',
-                            'is_published' => true,
-                        ]
-                    );
-                    $slot++;
+                    $schedule = $this->scheduleFor($competition, $gender, $label, $slot++);
+                    $panel = $this->panelFor($schedule, $judges, $slot);
 
-                    $panel = collect(range(0, 2))->map(fn ($k) => $judges[($slot * 3 + $k) % $judges->count()]);
-                    foreach ($panel as $k => $judge) {
-                        JudgeAssignment::updateOrCreate(
-                            ['competition_schedule_id' => $schedule->id, 'user_id' => $judge->id],
-                            ['role' => $k === 0 ? 'lead_judge' : 'scoring_judge', 'is_confirmed' => true, 'notes' => 'Panel juri sesi final']
-                        );
-                    }
-
-                    // Waktu sistem digeser ke tengah sesi agar lolos jendela penilaian juri
-                    Carbon::setTestNow($start->copy()->addMinutes(60));
+                    // Waktu sistem digeser ke dalam sesi agar lolos jendela penilaian juri
+                    Carbon::setTestNow($schedule->start_time->copy()->addMinutes(30));
 
                     $patrols = Patrol::where('status', RegistrationStatusEnum::Verified)
                         ->where('gender_category', $gender)->get();
@@ -299,11 +269,66 @@ class SampleContestSeeder extends Seeder
                     }
 
                     Carbon::setTestNow();
+                    $schedule->update(['status' => 'completed']);
                 }
             }
         } finally {
             Carbon::setTestNow();
         }
+    }
+
+    /**
+     * Sesi resmi dari seeder jadwal; bila belum ada dibuatkan sesi cadangan pada hari pertama kegiatan
+     */
+    private function scheduleFor(Competition $competition, string $gender, string $label, int $slot): CompetitionSchedule
+    {
+        $schedule = CompetitionSchedule::where('competition_id', $competition->id)->where('gender_category', $gender)->first();
+
+        if ($schedule) {
+            return $schedule;
+        }
+
+        $start = Carbon::parse('2026-11-27 07:00', 'Asia/Jakarta')->addMinutes($slot * 100);
+
+        return CompetitionSchedule::create([
+            'competition_id' => $competition->id,
+            'session_name' => "{$competition->title} — {$label}",
+            'participant_type' => $competition->participant_type,
+            'gender_category' => $gender,
+            'arena_location' => 'Lapangan Pulo Baok, Padangsidimpuan Tenggara',
+            'start_time' => $start,
+            'end_time' => $start->copy()->addMinutes(90),
+            'status' => 'scheduled',
+            'is_published' => true,
+        ]);
+    }
+
+    /**
+     * Panel 3 juri: juri yang sudah ditugaskan pada sesi, dilengkapi juri lain secara bergilir
+     *
+     * @param  \Illuminate\Support\Collection<int, User>  $judges
+     * @return \Illuminate\Support\Collection<int, User>
+     */
+    private function panelFor(CompetitionSchedule $schedule, $judges, int $slot)
+    {
+        $panel = $judges->whereIn('id', $schedule->judgeAssignments()->pluck('user_id'))->take(3)->values();
+
+        for ($k = 0; $panel->count() < 3; $k++) {
+            $candidate = $judges[($slot * 3 + $k) % $judges->count()];
+
+            if (! $panel->contains('id', $candidate->id)) {
+                $panel->push($candidate);
+            }
+        }
+
+        foreach ($panel as $k => $judge) {
+            JudgeAssignment::updateOrCreate(
+                ['competition_schedule_id' => $schedule->id, 'user_id' => $judge->id],
+                ['role' => $k === 0 ? 'lead_judge' : 'scoring_judge', 'is_confirmed' => true, 'notes' => 'Panel juri sesi lomba']
+            );
+        }
+
+        return $panel;
     }
 
     private function scoreAndFinalize(AssessmentScoringService $scoring, CompetitionSchedule $schedule, Competition $competition, Patrol $patrol, User $judge, float $base): void

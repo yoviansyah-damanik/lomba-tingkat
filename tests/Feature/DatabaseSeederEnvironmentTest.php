@@ -15,7 +15,7 @@ class DatabaseSeederEnvironmentTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_production_seeds_only_roles_superadmin_and_administrator_with_default_password(): void
+    public function test_production_seeds_admin_accounts_and_official_juknis_data_only(): void
     {
         $this->app['env'] = 'production';
 
@@ -23,8 +23,15 @@ class DatabaseSeederEnvironmentTest extends TestCase
 
         $this->assertSame(['admin', 'superadmin'], User::orderBy('username')->pluck('username')->all());
         $this->assertGreaterThan(0, Role::count());
-        $this->assertSame(0, Event::count());
         $this->assertSame(0, Patrol::count());
+
+        // Data resmi Juknis tetap ada di production
+        $this->assertSame(1, Event::count());
+        $this->assertSame(23, \App\Models\Competition::count());
+        $this->assertSame(46, \App\Models\CompetitionSchedule::count());
+        $this->assertGreaterThan(0, \App\Models\AssessmentCriterion::count());
+        $this->assertGreaterThan(0, \App\Models\AttendanceSession::count());
+        $this->assertGreaterThan(0, \App\Models\Announcement::count());
 
         foreach (['superadmin', 'admin'] as $username) {
             $this->assertTrue(Hash::check('password123', User::where('username', $username)->first()->password));
