@@ -11,7 +11,8 @@
         <x-slot:actions>
             @if($scoutGroup->patrols->count() > 0)
                 @if($scoutGroup->canDownloadDocuments())
-                <flux:button href="{{ route('digital-cards.scout-group.batch', $scoutGroup->id) }}" target="_blank" variant="subtle" icon="qr-code">
+                <flux:button href="{{ route('digital-cards.scout-group.batch', $scoutGroup->id) }}" target="_blank" variant="subtle" icon="qr-code"
+                    data-loading="Menyiapkan ID Card Kontingen (.ZIP)...">
                     ID Card Kontingen (.ZIP / .PNG)
                 </flux:button>
                 @endif
@@ -95,13 +96,15 @@
 
                     <div class="flex flex-wrap items-center gap-2 self-start sm:self-center">
                         @if($scoutGroup->canDownloadDocuments())
-                        <flux:button href="{{ route('digital-cards.patrol.batch', $patrol->id) }}" target="_blank" variant="subtle" size="sm" icon="qr-code">
+                        <flux:button href="{{ route('digital-cards.patrol.batch', $patrol->id) }}" target="_blank" variant="subtle" size="sm" icon="qr-code"
+                            data-loading="Menyiapkan ID Card Regu (.ZIP)...">
                             ID Card Regu (.ZIP / .PNG)
                         </flux:button>
                         @endif
 
                         @if($scoutGroup->canDownloadDocuments())
-                        <flux:button href="{{ route('scout-group.patrols.form-01', $patrol->id) }}" target="_blank" variant="subtle" size="sm" icon="printer">
+                        <flux:button href="{{ route('scout-group.patrols.form-01', $patrol->id) }}" target="_blank" variant="subtle" size="sm" icon="printer"
+                            data-loading="Mencetak FORM 01 Regu {{ $patrol->patrol_name }} (PDF)...">
                             Cetak FORM : 01
                         </flux:button>
                         @endif
@@ -183,12 +186,14 @@
                                     <td class="py-3 px-3 text-center">
                                         <div class="inline-flex items-center gap-1.5">
                                             @if($scoutGroup->canDownloadDocuments())
-                                            <flux:button href="{{ route('scout-group.participants.print', $participant->id) }}" target="_blank" variant="subtle" size="xs" icon="printer" title="Cetak Formulir Biodata Resmi">
+                                            <flux:button href="{{ route('scout-group.participants.print', $participant->id) }}" target="_blank" variant="subtle" size="xs" icon="printer" title="Cetak Formulir Biodata Resmi"
+                                                data-loading="Mencetak Form Biodata {{ $participant->full_name }} (PDF)...">
                                                 Form
                                             </flux:button>
                                             @endif
                                             @if($scoutGroup->canDownloadDocuments())
-                                            <flux:button href="{{ route('digital-cards.participant', $participant->id) }}" target="_blank" variant="subtle" size="xs" icon="qr-code" title="Simpan Kartu Peserta B2 (.PNG)">
+                                            <flux:button href="{{ route('digital-cards.participant', $participant->id) }}" target="_blank" variant="subtle" size="xs" icon="qr-code" title="Simpan Kartu Peserta B2 (.PNG)"
+                                                data-loading="Memuat Kartu Digital {{ $participant->full_name }}...">
                                                 Kartu
                                             </flux:button>
                                             @endif

@@ -35,6 +35,13 @@ class EnsureUserHasRole
             ]);
         }
 
+        // Pengguna dengan kata sandi awal wajib mengganti kata sandi pada login pertama
+        if ($user->must_change_password) {
+            $request->session()->put('auth.password_confirmed_at', time());
+
+            return redirect()->route('security.edit');
+        }
+
         // Memeriksa apakah user memiliki salah satu peran yang disyaratkan
         if (! empty($roles)) {
             $parsedRoles = [];

@@ -67,7 +67,7 @@ class ReportExportController extends Controller
     {
         return view('reports.pdf-preview', [
             'title' => 'Rekap Nilai & Regu Berprestasi',
-            'pdfUrl' => route('standings.pdf'),
+            'pdfUrl' => route('standings.pdf', ['raw' => 1]),
             'downloadUrl' => route('standings.pdf', ['download' => 1]),
             'backUrl' => route('standings'),
         ]);
@@ -92,7 +92,7 @@ class ReportExportController extends Controller
     {
         return view('reports.pdf-preview', [
             'title' => 'Berita Acara Penetapan Hasil Akhir & Juara Umum',
-            'pdfUrl' => route('admin.reports.pdf.berita-acara'),
+            'pdfUrl' => route('admin.reports.pdf.berita-acara', ['raw' => 1]),
             'downloadUrl' => route('admin.reports.pdf.berita-acara', ['download' => 1]),
             'backUrl' => route('admin.reports.index'),
         ]);

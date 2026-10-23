@@ -75,6 +75,7 @@
                     <div class="flex items-center gap-2">
                         @if($scoutGroup->canDownloadDocuments())
                         <a href="{{ route('scout-group.chaperones.print', $maleChaperone->id) }}" target="_blank"
+                            data-loading="Mencetak Biodata Bindamping (Putra) (PDF)..."
                             class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-400">
                             <flux:icon name="printer" class="size-3.5" />
                             Biodata
@@ -83,6 +84,7 @@
                         <span class="text-zinc-300">&bull;</span>
                         @if($scoutGroup->canDownloadDocuments())
                         <a href="{{ route('digital-cards.chaperone', $maleChaperone->id) }}" target="_blank"
+                            data-loading="Memuat Kartu Digital Bindamping (Putra)..."
                             class="inline-flex items-center gap-1 text-xs font-semibold text-zinc-700 hover:text-zinc-900 dark:text-zinc-300">
                             <flux:icon name="qr-code" class="size-3.5" />
                             Kartu
@@ -172,6 +174,7 @@
                     <div class="flex items-center gap-2">
                         @if($scoutGroup->canDownloadDocuments())
                         <a href="{{ route('scout-group.chaperones.print', $femaleChaperone->id) }}" target="_blank"
+                            data-loading="Mencetak Biodata Bindamping (Putri) (PDF)..."
                             class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-400">
                             <flux:icon name="printer" class="size-3.5" />
                             Biodata
@@ -180,6 +183,7 @@
                         <span class="text-zinc-300">&bull;</span>
                         @if($scoutGroup->canDownloadDocuments())
                         <a href="{{ route('digital-cards.chaperone', $femaleChaperone->id) }}" target="_blank"
+                            data-loading="Memuat Kartu Digital Bindamping (Putri)..."
                             class="inline-flex items-center gap-1 text-xs font-semibold text-zinc-700 hover:text-zinc-900 dark:text-zinc-300">
                             <flux:icon name="qr-code" class="size-3.5" />
                             Kartu

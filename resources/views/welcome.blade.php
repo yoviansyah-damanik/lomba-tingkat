@@ -262,6 +262,74 @@
     </section>
     @endif
 
+    @php
+        $paymentConfig = \App\Models\Event::activePaymentConfig();
+    @endphp
+
+    {{-- Penjelasan Biaya Pendaftaran Kontingen per Regu --}}
+    <section class="border-b border-zinc-200/80 bg-white py-14 dark:border-zinc-800 dark:bg-zinc-900">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 rounded-3xl border border-amber-300/80 bg-gradient-to-br from-amber-50/80 via-white to-amber-100/40 p-8 sm:p-10 shadow-lg shadow-amber-900/5 dark:border-amber-500/20 dark:from-zinc-900 dark:via-zinc-900 dark:to-amber-950/30">
+                <div class="max-w-2xl">
+                    <div class="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-100/80 px-3 py-1 text-xs font-bold text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/60 dark:text-amber-300 mb-3">
+                        <flux:icon name="banknotes" class="size-3.5" />
+                        Ketentuan Biaya Pendaftaran
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-100">
+                        Biaya Kontingen Dihitung Per Regu
+                    </h2>
+                    <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                        Setiap pangkalan Gugus Depan yang berpartisipasi dalam LT III Kwartir Cabang Kota Padangsidimpuan dikenakan biaya pendaftaran resmi per regu (Putra atau Putri) yang didaftarkan.
+                    </p>
+
+                    <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-zinc-700 dark:text-zinc-300">
+                        <div class="flex items-center gap-2.5 rounded-xl border border-amber-200/80 bg-white/80 p-3 dark:border-zinc-800 dark:bg-zinc-800/60">
+                            <flux:icon name="check-circle" class="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                            <span>ID Card Kontingen format B2 bertoken QR</span>
+                        </div>
+                        <div class="flex items-center gap-2.5 rounded-xl border border-amber-200/80 bg-white/80 p-3 dark:border-zinc-800 dark:bg-zinc-800/60">
+                            <flux:icon name="check-circle" class="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                            <span>Piagam &amp; TISKA Resmi Kwarcab</span>
+                        </div>
+                        <div class="flex items-center gap-2.5 rounded-xl border border-amber-200/80 bg-white/80 p-3 dark:border-zinc-800 dark:bg-zinc-800/60">
+                            <flux:icon name="check-circle" class="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                            <span>Kit Perkemahan &amp; Buku Petunjuk Teknis</span>
+                        </div>
+                        <div class="flex items-center gap-2.5 rounded-xl border border-amber-200/80 bg-white/80 p-3 dark:border-zinc-800 dark:bg-zinc-800/60">
+                            <flux:icon name="check-circle" class="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                            <span>Akses Penilaian &amp; Leaderboard Live</span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Price & Bank Account Card --}}
+                <div class="w-full lg:w-96 shrink-0 rounded-2xl border border-amber-300 bg-white p-6 shadow-md dark:border-zinc-800 dark:bg-zinc-900 text-center">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">Tarif Registrasi</span>
+                    <div class="mt-2 flex items-baseline justify-center gap-1">
+                        <span class="text-3xl sm:text-4xl font-extrabold text-zinc-900 dark:text-zinc-100 font-mono">{{ $paymentConfig['formatted_fee_per_patrol'] }}</span>
+                        <span class="text-xs text-zinc-500">/ regu</span>
+                    </div>
+                    <p class="mt-1 text-[11px] text-zinc-500">
+                        (Contoh: 2 Regu Putra &amp; Putri = Rp {{ number_format($paymentConfig['fee_per_patrol'] * 2, 0, ',', '.') }})
+                    </p>
+
+                    <div class="mt-5 rounded-xl border border-zinc-200 bg-zinc-50/70 p-3 text-left text-xs dark:border-zinc-800 dark:bg-zinc-800/40">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-1">Rekening Pembayaran Resmi:</span>
+                        <div class="font-semibold text-zinc-900 dark:text-zinc-100 text-xs">{{ $paymentConfig['bank_name'] }}</div>
+                        <div class="font-mono font-bold text-amber-800 dark:text-amber-400 text-sm tracking-wide">{{ $paymentConfig['account_number'] }}</div>
+                        <div class="text-[11px] text-zinc-600 dark:text-zinc-400 leading-tight mt-0.5">{{ $paymentConfig['account_holder'] }}</div>
+                    </div>
+
+                    <div class="mt-5">
+                        <flux:button href="{{ route('register.scout-group') }}" variant="primary" icon="arrow-right" class="w-full justify-center">
+                            Daftarkan Pangkalan
+                        </flux:button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     {{-- Alur Pendaftaran Kontingen --}}
     <section class="border-b border-zinc-200/80 bg-zinc-50/50 py-12 dark:border-zinc-800 dark:bg-zinc-950">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -279,20 +347,20 @@
 
                 <div class="relative rounded-xl border border-zinc-200 bg-zinc-50/60 p-5 dark:border-zinc-800 dark:bg-zinc-900/60">
                     <div class="flex size-8 items-center justify-center rounded-lg bg-amber-600 text-white font-bold text-xs">2</div>
-                    <h3 class="mt-3 text-sm font-bold text-zinc-900 dark:text-zinc-100">Input Regu & Peserta</h3>
-                    <p class="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Membuat regu Putra/Putri, memasukkan biodata Pinru, Wapinru, Anggota, dan Bindamping.</p>
+                    <h3 class="mt-3 text-sm font-bold text-zinc-900 dark:text-zinc-100">Input Regu &amp; Peserta</h3>
+                    <p class="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Membuat regu Putra/Putri, memasukkan biodata peserta dan Bindamping.</p>
                 </div>
 
                 <div class="relative rounded-xl border border-zinc-200 bg-zinc-50/60 p-5 dark:border-zinc-800 dark:bg-zinc-900/60">
                     <div class="flex size-8 items-center justify-center rounded-lg bg-amber-600 text-white font-bold text-xs">3</div>
-                    <h3 class="mt-3 text-sm font-bold text-zinc-900 dark:text-zinc-100">Verifikasi Admin</h3>
-                    <p class="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Administrator memeriksa berkas dan keabsahan kuota peserta secara terpusat.</p>
+                    <h3 class="mt-3 text-sm font-bold text-zinc-900 dark:text-zinc-100">Pembayaran &amp; Berkas</h3>
+                    <p class="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Membayar biaya per regu dan mengunggah Bukti Bayar serta Surat Tugas.</p>
                 </div>
 
                 <div class="relative rounded-xl border border-zinc-200 bg-zinc-50/60 p-5 dark:border-zinc-800 dark:bg-zinc-900/60">
                     <div class="flex size-8 items-center justify-center rounded-lg bg-amber-600 text-white font-bold text-xs">4</div>
-                    <h3 class="mt-3 text-sm font-bold text-zinc-900 dark:text-zinc-100">Kartu QR Digital</h3>
-                    <p class="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Setelah disetujui, kartu digital bertoken aman terbit dan siap diunduh/dicetak untuk presensi pos.</p>
+                    <h3 class="mt-3 text-sm font-bold text-zinc-900 dark:text-zinc-100">Verifikasi &amp; Kartu QR</h3>
+                    <p class="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Setelah disetujui, kartu digital bertoken aman terbit dan siap diunduh/dicetak.</p>
                 </div>
             </div>
         </div>

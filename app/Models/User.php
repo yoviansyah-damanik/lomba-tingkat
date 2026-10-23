@@ -27,7 +27,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'username', 'password', 'phone_number', 'avatar_path', 'is_active', 'scout_id', 'institution', 'position', 'id_number', 'qr_token', 'qr_generated_at', 'participant_id'])]
+#[Fillable(['name', 'username', 'password', 'must_change_password', 'phone_number', 'avatar_path', 'is_active', 'scout_id', 'institution', 'position', 'id_number', 'qr_token', 'qr_generated_at', 'participant_id'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
@@ -44,8 +44,27 @@ class User extends Authenticatable implements PasskeyUser
         return [
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'must_change_password' => 'boolean',
             'qr_generated_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Menghasilkan ID unik resmi Aparatur / Pengguna Sistem: A-{6 digit acak}
+     */
+    public static function generateOfficialIdNumber(): string
+    {
+        do {
+            $digits = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $code = 'A-' . $digits;
+        } while (
+            static::where('id_number', $code)->exists()
+            || Participant::where('id_number', $code)->exists()
+            || Chaperone::where('id_number', $code)->exists()
+            || ScoutGroup::where('registration_code', $code)->exists()
+        );
+
+        return $code;
     }
 
     protected static function boot(): void
@@ -53,23 +72,20 @@ class User extends Authenticatable implements PasskeyUser
         parent::boot();
 
         static::saving(function (User $user) {
-            // Username selalu huruf kecil tanpa spasi agar login konsisten
+            // Username dipertahankan persis (case-sensitive), hanya spasi tepi dibuang
             if ($user->username !== null) {
-                $user->username = Str::lower(trim($user->username));
+                $user->username = trim($user->username);
             }
         });
 
         static::creating(function (User $user) {
             if (empty($user->id_number)) {
-                do {
-                    $code = 'ID-' . strtoupper(Str::random(8));
-                } while (static::where('id_number', $code)->exists());
-                $user->id_number = $code;
+                $user->id_number = static::generateOfficialIdNumber();
             }
 
             // Username aparatur/peserta/bindamping otomatis mengikuti ID
             if (empty($user->username)) {
-                $user->username = Str::lower($user->id_number);
+                $user->username = $user->id_number;
             }
 
             if (empty($user->qr_token)) {

@@ -18,6 +18,19 @@ class Participant extends Model
 {
     use HasFactory, HasUuids;
 
+    /**
+     * Berkas persyaratan per peserta: nama input => [kolom, label]
+     */
+    public const DOCUMENTS = [
+        'doc_kta' => ['doc_kta_path', 'Scan Kartu Tanda Anggota (KTA)'],
+        'doc_bpjs' => ['doc_bpjs_path', 'Scan BPJS'],
+        'doc_health_certificate' => ['doc_health_certificate_path', 'Scan Surat Keterangan Sehat'],
+        'doc_birth_certificate' => ['doc_birth_certificate_path', 'Scan Akta Kelahiran'],
+        'doc_family_card' => ['doc_family_card_path', 'Scan Kartu Keluarga (KK)'],
+        'doc_sku' => ['doc_sku_path', 'Scan SKU'],
+        'doc_skk' => ['doc_skk_path', 'Scan SKK'],
+    ];
+
     protected $fillable = [
         'patrol_id',
         'full_name',
@@ -45,6 +58,13 @@ class Participant extends Model
         'scout_siaga',
         'scout_penggalang',
         'photo_path',
+        'doc_kta_path',
+        'doc_bpjs_path',
+        'doc_health_certificate_path',
+        'doc_birth_certificate_path',
+        'doc_family_card_path',
+        'doc_sku_path',
+        'doc_skk_path',
         'id_number',
         'qr_token',
         'qr_generated_at',
@@ -64,14 +84,29 @@ class Participant extends Model
         ];
     }
 
+    /**
+     * Menghasilkan ID unik resmi Peserta: P-{6 digit acak}
+     */
+    public static function generateIdNumber(): string
+    {
+        do {
+            $digits = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $code = 'P-' . $digits;
+        } while (
+            static::where('id_number', $code)->exists()
+            || User::where('id_number', $code)->exists()
+            || Chaperone::where('id_number', $code)->exists()
+            || ScoutGroup::where('registration_code', $code)->exists()
+        );
+
+        return $code;
+    }
+
     protected static function booted(): void
     {
         static::creating(function (Participant $participant) {
             if (empty($participant->id_number)) {
-                do {
-                    $code = 'ID-' . strtoupper(Str::random(8));
-                } while (static::where('id_number', $code)->exists());
-                $participant->id_number = $code;
+                $participant->id_number = static::generateIdNumber();
             }
 
             if (empty($participant->qr_token)) {

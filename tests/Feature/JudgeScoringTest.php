@@ -364,6 +364,8 @@ class JudgeScoringTest extends TestCase
             userId: $this->judge1->id
         );
 
+        $this->admin->assignRole('superadmin');
+
         $response = $this->actingAs($this->admin)->get(route('admin.assessments.index'));
         $response->assertOk();
         $response->assertSee('Audit Penilaian & Log Sistem');

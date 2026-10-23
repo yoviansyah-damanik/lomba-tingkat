@@ -76,6 +76,7 @@
                         <div class="flex items-center gap-2 self-start sm:self-center">
                             @if($scoutGroup->canDownloadDocuments())
                             <a href="{{ route('digital-cards.patrol.batch', $patrol->id) }}" target="_blank"
+                                data-loading="Menyiapkan ID Card Regu (.ZIP)..."
                                 class="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
                                 <flux:icon name="qr-code" class="size-3.5" />
                                 ID Card Regu (.ZIP / .PNG)
@@ -84,6 +85,7 @@
 
                             @if($scoutGroup->canDownloadDocuments())
                             <a href="{{ route('scout-group.patrols.form-01', $patrol->id) }}" target="_blank"
+                                data-loading="Mencetak FORM 01 Regu {{ $patrol->patrol_name }} (PDF)..."
                                 class="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-amber-800 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-amber-300">
                                 <flux:icon name="printer" class="size-3.5" />
                                 Cetak FORM : 01

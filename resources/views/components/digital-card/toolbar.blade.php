@@ -1,8 +1,6 @@
 @props([
     'title' => 'ID Card B2 (79 x 126 mm)',
     'subtitle' => null,
-    'backUrl' => 'javascript:window.history.back()',
-    'backLabel' => 'Kembali',
     'batchUrl' => null,
     'batchLabel' => 'Lihat & Simpan Seluruh Kartu (ZIP)',
     'downloadFilename' => 'KARTU_DIGITAL',
@@ -20,7 +18,6 @@
         @if ($batchUrl)
             <flux:button :href="$batchUrl" icon="squares-2x2" size="sm">{{ $batchLabel }}</flux:button>
         @endif
-        <flux:button :href="$backUrl" icon="arrow-left" size="sm">{{ $backLabel }}</flux:button>
         <flux:button
             id="btn-save-png"
             variant="primary"
@@ -29,11 +26,4 @@
             onclick="window.saveCardAsPng('{{ $downloadFilename }}')"
         >Simpan .PNG</flux:button>
     </div>
-</div>
-
-<div data-digital-card {{ $attributes->merge(['class' => 'w-[79mm] h-[126mm] bg-white rounded-[5mm] overflow-hidden shadow-2xl relative flex flex-col border border-slate-300 break-inside-avoid select-none']) }}>
-    {{-- Watermark Logo Background --}}
-    <img src="{{ asset('logo.png') }}" alt="Watermark" class="absolute inset-0 m-auto w-[65mm] opacity-[0.045] pointer-events-none select-none z-0">
-
-    {{ $slot }}
 </div>

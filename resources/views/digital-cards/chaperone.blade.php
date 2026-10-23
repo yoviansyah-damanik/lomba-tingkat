@@ -5,8 +5,8 @@
 @endphp
 
 <x-digital-card.layout :title="'KARTU PEMBINA PENDAMPING (B2) - ' . $chaperone->full_name" :body-class="$bodyBg">
-    {{-- Toolbar Cetak & Aksi --}}
-    <x-digital-card.toolbar :subtitle="$scoutGroup?->school_name . ' • ' . $chaperone->full_name" :batch-url="$scoutGroup ? route('digital-cards.chaperone.batch', $scoutGroup->id) : null" :batch-label="'Cetak Seluruh Bindamping (A4)'" :download-filename="'KARTU_BINDAMPING_' . Str::slug($chaperone->full_name)" />
+    {{-- Toolbar Aksi --}}
+    <x-digital-card.toolbar :subtitle="$scoutGroup?->school_name . ' • ' . $chaperone->full_name" :batch-url="$scoutGroup ? route('digital-cards.chaperone.batch', $scoutGroup->id) : null" :batch-label="'Kartu Seluruh Bindamping'" :download-filename="'KARTU_BINDAMPING_' . Str::slug($chaperone->full_name)" />
 
     {{-- KARTU UKURAN RESMI B2 --}}
     <x-digital-card.card data-card-name="{{ $chaperone->full_name }}" data-card-id="{{ $chaperone->id_number }}">

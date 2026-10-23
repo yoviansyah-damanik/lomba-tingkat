@@ -87,11 +87,19 @@ class LivewireLoginTest extends TestCase
         $this->assertSame($user->id, session('login.id'));
     }
 
-    public function test_username_login_is_case_insensitive_and_needs_no_email(): void
+    public function test_username_login_is_case_sensitive_and_needs_no_email(): void
     {
-        $user = User::factory()->create(['username' => 'pembina.satu']);
+        $user = User::factory()->create(['username' => 'Pembina.Satu']);
 
         $this->assertFalse(Schema::hasColumn('users', 'email'));
+
+        Livewire::test(Login::class)
+            ->set('username', 'pembina.satu')
+            ->set('password', 'password')
+            ->call('login')
+            ->assertNoRedirect();
+
+        $this->assertGuest();
 
         Livewire::test(Login::class)
             ->set('username', '  Pembina.Satu ')

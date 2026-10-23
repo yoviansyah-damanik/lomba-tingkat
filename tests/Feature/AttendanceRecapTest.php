@@ -377,7 +377,7 @@ class AttendanceRecapTest extends TestCase
     public function test_attendance_recap_pdf_is_inline_by_default_and_attachment_on_download(): void
     {
         $inline = $this->actingAs($this->admin)->get(
-            route('attendance.recap.pdf', ['session_id' => $this->session->id])
+            route('attendance.recap.pdf', ['session_id' => $this->session->id, 'raw' => 1])
         );
 
         $inline->assertOk()->assertHeader('Content-Type', 'application/pdf');

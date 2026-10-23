@@ -222,16 +222,6 @@
                         <flux:input wire:model="name" label="Nama Lengkap & Gelar" placeholder="Contoh: Kak Ahmad Siregar, S.Pd" required />
                     </div>
 
-                    {{-- ID (username otomatis) & Password --}}
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <flux:input :value="$editingId ? $idNumber : 'Dibuat otomatis saat disimpan'" type="text" label="ID / Username Login" readonly disabled />
-                        </div>
-                        <div>
-                            <flux:input wire:model="password" type="password" label="{{ $editingId ? 'Ganti Password (Opsional)' : 'Password' }}" placeholder="{{ $editingId ? 'Kosongkan jika tetap' : 'Minimal 8 karakter' }}" />
-                        </div>
-                    </div>
-
                     {{-- NTA & Kontak --}}
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
@@ -283,14 +273,6 @@
                         @error('avatar')
                             <span class="text-rose-500 text-[11px] mt-1 block">{{ $message }}</span>
                         @enderror
-                    </div>
-
-                    {{-- Status Aktif --}}
-                    <div class="pt-2">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" wire:model="is_active" class="rounded text-amber-600 focus:ring-amber-500">
-                            <span class="text-xs font-medium text-zinc-700 dark:text-zinc-300">Akun aparatur aktif dan dapat login ke sistem</span>
-                        </label>
                     </div>
 
                     {{-- Actions --}}

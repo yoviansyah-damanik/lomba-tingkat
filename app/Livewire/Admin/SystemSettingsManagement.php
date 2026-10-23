@@ -36,6 +36,11 @@ class SystemSettingsManagement extends Component
     public string $judge_chair_nta = '';
     public string $kwarcab_chair_name = '';
     public string $kwarcab_chair_nta = '';
+    public ?int $registration_fee_per_patrol = null;
+    public string $payment_bank_name = '';
+    public string $payment_account_number = '';
+    public string $payment_account_holder = '';
+    public string $payment_instructions = '';
 
     protected function rules(): array
     {
@@ -59,6 +64,11 @@ class SystemSettingsManagement extends Component
             'judge_chair_nta' => 'nullable|string|max:150',
             'kwarcab_chair_name' => 'nullable|string|max:150',
             'kwarcab_chair_nta' => 'nullable|string|max:150',
+            'registration_fee_per_patrol' => 'nullable|integer|min:0',
+            'payment_bank_name' => 'nullable|string|max:100',
+            'payment_account_number' => 'nullable|string|max:50',
+            'payment_account_holder' => 'nullable|string|max:150',
+            'payment_instructions' => 'nullable|string|max:2000',
         ];
     }
 
@@ -69,6 +79,8 @@ class SystemSettingsManagement extends Component
         'end_date.required' => 'Tanggal selesai kegiatan wajib ditentukan.',
         'end_date.after_or_equal' => 'Tanggal selesai harus sama atau setelah tanggal mulai.',
         'registration_end_at.after_or_equal' => 'Batas akhir registrasi harus setelah waktu mulai registrasi.',
+        'registration_fee_per_patrol.integer' => 'Biaya pendaftaran per regu harus berupa angka bulat positif.',
+        'registration_fee_per_patrol.min' => 'Biaya pendaftaran tidak boleh bernilai negatif.',
     ];
 
     public function mount(): void
@@ -96,6 +108,11 @@ class SystemSettingsManagement extends Component
             $this->judge_chair_nta = $event->judge_chair_nta ?? '';
             $this->kwarcab_chair_name = $event->kwarcab_chair_name ?? '';
             $this->kwarcab_chair_nta = $event->kwarcab_chair_nta ?? '';
+            $this->registration_fee_per_patrol = $event->registration_fee_per_patrol;
+            $this->payment_bank_name = $event->payment_bank_name ?? '';
+            $this->payment_account_number = $event->payment_account_number ?? '';
+            $this->payment_account_holder = $event->payment_account_holder ?? '';
+            $this->payment_instructions = $event->payment_instructions ?? '';
         }
     }
 
@@ -119,6 +136,11 @@ class SystemSettingsManagement extends Component
             'judge_chair_nta',
             'kwarcab_chair_name',
             'kwarcab_chair_nta',
+            'registration_fee_per_patrol',
+            'payment_bank_name',
+            'payment_account_number',
+            'payment_account_holder',
+            'payment_instructions',
         ]);
 
         $event->fill([
@@ -141,6 +163,11 @@ class SystemSettingsManagement extends Component
             'judge_chair_nta' => $validated['judge_chair_nta'] ?: null,
             'kwarcab_chair_name' => $validated['kwarcab_chair_name'] ?: null,
             'kwarcab_chair_nta' => $validated['kwarcab_chair_nta'] ?: null,
+            'registration_fee_per_patrol' => ($validated['registration_fee_per_patrol'] !== null && $validated['registration_fee_per_patrol'] !== '') ? (int) $validated['registration_fee_per_patrol'] : null,
+            'payment_bank_name' => $validated['payment_bank_name'] ?: null,
+            'payment_account_number' => $validated['payment_account_number'] ?: null,
+            'payment_account_holder' => $validated['payment_account_holder'] ?: null,
+            'payment_instructions' => $validated['payment_instructions'] ?: null,
         ]);
 
         $event->save();

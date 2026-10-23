@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use App\Concerns\PasswordValidationRules;
 use Flux\Flux;
@@ -54,7 +54,9 @@ new #[Title('Security settings')] class extends Component {
     public function mount(DisableTwoFactorAuthentication $disableTwoFactorAuthentication): void
     {
         /* @chisel-2fa */
-        $this->canManageTwoFactor = Features::canManageTwoFactorAuthentication();
+        $showExtras = (bool) config('registration.show_2fa_passkeys');
+
+        $this->canManageTwoFactor = $showExtras && Features::canManageTwoFactorAuthentication();
 
         if ($this->canManageTwoFactor) {
             if (Fortify::confirmsTwoFactorAuthentication() && is_null(auth()->user()->two_factor_confirmed_at)) {
@@ -67,7 +69,7 @@ new #[Title('Security settings')] class extends Component {
         /* @end-chisel-2fa */
 
         /* @chisel-passkeys */
-        $this->canManagePasskeys = Features::canManagePasskeys();
+        $this->canManagePasskeys = $showExtras && Features::canManagePasskeys();
 
         if ($this->canManagePasskeys) {
             $this->loadPasskeys();
@@ -95,6 +97,7 @@ new #[Title('Security settings')] class extends Component {
 
         Auth::user()->update([
             'password' => $validated['password'],
+            'must_change_password' => false,
         ]);
 
         $this->reset('current_password', 'password', 'password_confirmation');
@@ -188,6 +191,24 @@ new #[Title('Security settings')] class extends Component {
     @include('partials.settings-heading')
 
     <flux:heading level="2" class="sr-only">{{ __('Security settings') }}</flux:heading>
+
+    @if(auth()->user()->must_change_password)
+        <div class="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950/40">
+            <div class="flex items-start gap-3">
+                <div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-600 text-white font-bold shadow-xs">
+                    <flux:icon name="key" class="size-5" />
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-amber-900 dark:text-amber-200">
+                        Wajib Mengubah Kata Sandi Pertama Kali
+                    </h3>
+                    <p class="mt-0.5 text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                        Akun Anda saat ini menggunakan kata sandi default sistem (ID akun: <strong class="font-mono">{{ auth()->user()->id_number }}</strong>). Masukkan ID tersebut pada kolom <em>Current password</em> dan tentukan kata sandi baru Anda untuk dapat mengakses sistem.
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endif
 
     <x-pages::settings.layout :heading="__('Update password')" :subheading="__('Ensure your account is using a long, random password to stay secure')">
         <form method="POST" wire:submit="updatePassword" class="mt-6 space-y-6">

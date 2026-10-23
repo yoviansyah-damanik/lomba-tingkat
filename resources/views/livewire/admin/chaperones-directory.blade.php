@@ -291,6 +291,7 @@
                                         <a
                                             href="{{ route('admin.scout-groups.chaperones.print', ['scoutGroupId' => $chaperone->scout_group_id, 'chaperoneId' => $chaperone->id]) }}"
                                             target="_blank"
+                                            data-loading="Mencetak Form Biodata Bindamping (PDF)..."
                                             class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-semibold text-amber-700 shadow-2xs hover:bg-amber-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-amber-400 dark:hover:bg-zinc-700"
                                             title="Cetak Formulir Biodata Resmi Bindamping"
                                         >
@@ -305,6 +306,7 @@
                                     <a
                                         href="{{ route('digital-cards.chaperone', $chaperone->id) }}"
                                         target="_blank"
+                                        data-loading="Memuat Kartu Digital Bindamping..."
                                         class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-semibold text-zinc-700 shadow-2xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
                                         title="Simpan Kartu Tanda Pengenal Bindamping (.PNG)"
                                     >

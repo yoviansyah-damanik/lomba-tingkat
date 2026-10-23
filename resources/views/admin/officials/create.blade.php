@@ -45,31 +45,7 @@
                         >
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                            ID / Username Login
-                        </label>
-                        <input
-                            type="text"
-                            value="Dibuat otomatis saat disimpan"
-                            readonly
-                            disabled
-                            class="w-full rounded-xl border border-zinc-300 bg-zinc-100 px-3.5 py-2 text-xs sm:text-sm font-mono text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-400"
-                        >
-                    </div>
 
-                    <div>
-                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                            Kata Sandi (Minimal 8 karakter) <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="password"
-                            name="password"
-                            required
-                            placeholder="••••••••"
-                            class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
-                        >
-                    </div>
 
                     <div>
                         <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">

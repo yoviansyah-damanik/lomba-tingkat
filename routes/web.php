@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\PublicPageController;
+use App\Http\Controllers\ZipExportController;
 use Illuminate\Support\Facades\Route;
 
 // Public Information & Landing Routes (Modul 1 - Livewire 4)
@@ -40,6 +41,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/register/scout-group', [ScoutGroupRegistrationController::class, 'create'])->name('register.scout-group');
     Route::post('/register/scout-group', [ScoutGroupRegistrationController::class, 'store'])->name('register.scout-group.store');
 });
+Route::get('/register/scout-group/success', [ScoutGroupRegistrationController::class, 'success'])->name('register.scout-group.success')->middleware('auth');
 
 Route::middleware(['auth', 'role'])->group(function () {
     Route::get('dashboard', \App\Livewire\Dashboard::class)->name('dashboard');
@@ -66,12 +68,20 @@ Route::middleware(['auth', 'role'])->group(function () {
         Route::get('/scout-groups/{scoutGroupId}/patrols/{patrolId}/id-cards', [DigitalCardController::class, 'adminPatrolBatchCards'])->name('scout-groups.patrols.id-cards');
         Route::get('/scout-groups/{scoutGroupId}/chaperones/id-cards', [DigitalCardController::class, 'chaperoneBatchCards'])->name('scout-groups.chaperones.id-cards');
         Route::get('/scout-groups/{scoutGroupId}/id-cards', [DigitalCardController::class, 'scoutGroupBatchCards'])->name('scout-groups.id-cards');
+        Route::get('/scout-groups/{id}/registration-certificate', [AdminVerificationController::class, 'registrationCertificatePrint'])->name('scout-groups.registration-certificate');
+        Route::get('/scout-groups/{id}/download-zip', [ZipExportController::class, 'downloadScoutGroupZip'])->name('scout-groups.download-zip');
+        Route::get('/scout-groups/{id}/download-zip-stream', [ZipExportController::class, 'streamScoutGroupZip'])->name('scout-groups.download-zip-stream');
+        Route::get('/scout-groups/download-zip-file/{token}', [ZipExportController::class, 'downloadZipFile'])->name('scout-groups.download-zip-file');
 
-        // Direktori Peserta Terverifikasi (Livewire 4 SPA)
+        // Direktori & Detail Peserta Terverifikasi
         Route::get('/participants', \App\Livewire\Admin\ParticipantsDirectory::class)->name('participants.index');
+        Route::get('/participants/{id}', [AdminVerificationController::class, 'participantShow'])->name('participants.show');
+        Route::get('/scout-groups/{scoutGroupId}/participants/{participantId}', [AdminVerificationController::class, 'participantShow'])->name('scout-groups.participants.show');
 
-        // Direktori Pembina Pendamping Terverifikasi (Livewire 4 SPA)
+        // Direktori & Detail Pembina Pendamping Terverifikasi
         Route::get('/chaperones', \App\Livewire\Admin\ChaperonesDirectory::class)->name('chaperones.index');
+        Route::get('/chaperones/{id}', [AdminVerificationController::class, 'chaperoneShow'])->name('chaperones.show');
+        Route::get('/scout-groups/{scoutGroupId}/chaperones/{chaperoneId}', [AdminVerificationController::class, 'chaperoneShow'])->name('scout-groups.chaperones.show');
     });
 
     // Admin routes group (Full management, registration verification actions, officials, competitions, schedules)
@@ -82,6 +92,7 @@ Route::middleware(['auth', 'role'])->group(function () {
         Route::post('/scout-groups/{id}/verify', [AdminVerificationController::class, 'verify'])->name('scout-groups.verify');
         Route::post('/scout-groups/{id}/revision', [AdminVerificationController::class, 'requestRevision'])->name('scout-groups.revision');
         Route::post('/scout-groups/{id}/reject', [AdminVerificationController::class, 'reject'])->name('scout-groups.reject');
+        Route::post('/scout-groups/{id}/cancel-verification', [AdminVerificationController::class, 'cancelVerification'])->name('scout-groups.cancel-verification');
 
         // Phase 5: Manajemen Mata Lomba & Rubrik Penilaian (Livewire 4 SPA)
         Route::get('/competitions', \App\Livewire\Admin\CompetitionsManagement::class)->name('competitions.index');
@@ -111,14 +122,14 @@ Route::middleware(['auth', 'role'])->group(function () {
 
         // Phase 11: Manajemen Publikasi Pengumuman (Livewire 4 SPA)
         Route::get('/announcements', \App\Livewire\Admin\AnnouncementsManagement::class)->name('announcements.index');
-    });
 
-    // Superadmin: aparatur, audit penilaian, tata kelola pengguna & peran, konfigurasi sistem
-    Route::middleware('role:superadmin')->prefix('admin')->name('admin.')->group(function () {
-        // Aparatur Panitia & Dewan Juri (Livewire 4 SPA)
+        // Aparatur Panitia & Dewan Juri (Admin & Superadmin)
         Route::get('/officials', \App\Livewire\Admin\OfficialsManagement::class)->name('officials.index');
         Route::resource('officials', AdminOfficialController::class)->except(['show', 'index']);
+    });
 
+    // Superadmin: audit penilaian, tata kelola pengguna & peran, konfigurasi sistem
+    Route::middleware('role:superadmin')->prefix('admin')->name('admin.')->group(function () {
         // Audit Penilaian Juri & Jejak Rekam Sistem (Livewire 4 SPA)
         Route::get('/assessments', \App\Livewire\Admin\AssessmentsAudit::class)->name('assessments.index');
 
@@ -175,6 +186,7 @@ Route::middleware(['auth', 'role'])->group(function () {
         Route::get('/', \App\Livewire\Portal\ScoutGroupDashboard::class)->name('index');
         Route::get('/profile', [ScoutGroupPortalController::class, 'profile'])->name('profile');
         Route::post('/profile', [ScoutGroupPortalController::class, 'profileUpdate'])->name('profile.update');
+        Route::get('/registration-certificate', [ScoutGroupPortalController::class, 'registrationCertificatePrint'])->name('registration-certificate');
 
         // Patrols & participants (Livewire 4 SPA)
         Route::get('/patrols', \App\Livewire\Portal\PatrolsManagement::class)->name('patrols');

@@ -315,6 +315,7 @@
                                         <a
                                             href="{{ route('admin.scout-groups.participants.print', ['scoutGroupId' => $participant->patrol->scout_group_id, 'participantId' => $participant->id]) }}"
                                             target="_blank"
+                                            data-loading="Mencetak Form Biodata Peserta (PDF)..."
                                             class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-semibold text-amber-700 shadow-2xs hover:bg-amber-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-amber-400 dark:hover:bg-zinc-700"
                                             title="Cetak Formulir Biodata Resmi Peserta"
                                         >
@@ -329,6 +330,7 @@
                                     <a
                                         href="{{ route('digital-cards.participant', $participant->id) }}"
                                         target="_blank"
+                                        data-loading="Memuat Kartu Digital Peserta..."
                                         class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-semibold text-zinc-700 shadow-2xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
                                         title="Simpan Kartu Tanda Peserta B2 (.PNG)"
                                     >
@@ -519,6 +521,7 @@
                                 <a
                                     href="{{ route('digital-cards.participant', $p->id) }}"
                                     target="_blank"
+                                    data-loading="Memuat Kartu Digital Peserta..."
                                     class="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-amber-700"
                                 >
                                     <flux:icon name="qr-code" class="size-4" />
@@ -535,9 +538,10 @@
                     <div>
                         @if($p->patrol?->scout_group_id)
                             @if($p->patrol?->scoutGroup?->canDownloadDocuments())
-                            <a
+                                <a
                                 href="{{ route('admin.scout-groups.participants.print', ['scoutGroupId' => $p->patrol->scout_group_id, 'participantId' => $p->id]) }}"
                                 target="_blank"
+                                data-loading="Mencetak Form Biodata Peserta (PDF)..."
                                 class="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 shadow-2xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-amber-400"
                             >
                                 <flux:icon name="printer" class="size-4" />

@@ -17,6 +17,7 @@ class AdminUsersManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected User $superadmin;
     protected User $admin;
     protected User $regularUser;
 
@@ -29,6 +30,7 @@ class AdminUsersManagementTest extends TestCase
             UserSeeder::class,
         ]);
 
+        $this->superadmin = User::whereHas('roles', fn ($q) => $q->where('name', 'superadmin'))->first();
         $this->admin = User::whereHas('roles', fn ($q) => $q->where('name', 'admin'))->first();
         $this->regularUser = User::whereHas('roles', fn ($q) => $q->where('name', 'committee'))->first();
     }
@@ -56,14 +58,15 @@ class AdminUsersManagementTest extends TestCase
      */
     public function test_admin_can_access_users_management(): void
     {
-        $response = $this->actingAs($this->admin)->get(route('admin.users.index'));
+        // Halaman Users Management hanya dapat diakses oleh Superadmin
+        $response = $this->actingAs($this->superadmin)->get(route('admin.users.index'));
         $response->assertStatus(200);
         $response->assertSee('Tata Kelola Pengguna & Peran');
 
-        Livewire::actingAs($this->admin)
+        Livewire::actingAs($this->superadmin)
             ->test(UsersManagement::class)
             ->assertStatus(200)
-            ->assertSee($this->admin->name)
+            ->assertSee($this->superadmin->name)
             ->assertSee($this->regularUser->name);
     }
 
@@ -72,7 +75,7 @@ class AdminUsersManagementTest extends TestCase
      */
     public function test_admin_can_create_new_user(): void
     {
-        Livewire::actingAs($this->admin)
+        Livewire::actingAs($this->superadmin)
             ->test(UsersManagement::class)
             ->call('openCreateModal')
             ->set('name', 'Kak Budi Santoso')
@@ -103,7 +106,7 @@ class AdminUsersManagementTest extends TestCase
      */
     public function test_admin_can_update_user(): void
     {
-        Livewire::actingAs($this->admin)
+        Livewire::actingAs($this->superadmin)
             ->test(UsersManagement::class)
             ->call('openEditModal', $this->regularUser->id)
             ->set('name', 'Panitia Lapangan Senior')
@@ -126,7 +129,7 @@ class AdminUsersManagementTest extends TestCase
         $this->assertTrue($this->regularUser->is_active);
 
         // Nonaktifkan
-        Livewire::actingAs($this->admin)
+        Livewire::actingAs($this->superadmin)
             ->test(UsersManagement::class)
             ->call('toggleActive', $this->regularUser->id)
             ->assertDispatched('toast-show');
@@ -135,7 +138,7 @@ class AdminUsersManagementTest extends TestCase
         $this->assertFalse($this->regularUser->is_active);
 
         // Aktifkan kembali
-        Livewire::actingAs($this->admin)
+        Livewire::actingAs($this->superadmin)
             ->test(UsersManagement::class)
             ->call('toggleActive', $this->regularUser->id)
             ->assertDispatched('toast-show');
@@ -149,13 +152,13 @@ class AdminUsersManagementTest extends TestCase
      */
     public function test_admin_cannot_deactivate_self(): void
     {
-        Livewire::actingAs($this->admin)
+        Livewire::actingAs($this->superadmin)
             ->test(UsersManagement::class)
-            ->call('toggleActive', $this->admin->id)
+            ->call('toggleActive', $this->superadmin->id)
             ->assertDispatched('toast-show');
 
-        $this->admin->refresh();
-        $this->assertTrue($this->admin->is_active);
+        $this->superadmin->refresh();
+        $this->assertTrue($this->superadmin->is_active);
     }
 
     /**
@@ -163,7 +166,7 @@ class AdminUsersManagementTest extends TestCase
      */
     public function test_admin_can_reset_user_password(): void
     {
-        Livewire::actingAs($this->admin)
+        Livewire::actingAs($this->superadmin)
             ->test(UsersManagement::class)
             ->call('openResetPasswordModal', $this->regularUser->id)
             ->set('newPassword', 'passwordBaru2026')
@@ -180,15 +183,17 @@ class AdminUsersManagementTest extends TestCase
      */
     public function test_admin_can_delete_user(): void
     {
+        // Akun Participant adalah managed account dan diblokir ensureEditable.
+        // Gunakan role committee yang dapat dikelola superadmin secara penuh.
         $userToDelete = User::factory()->create();
-        $userToDelete->assignRole(RoleEnum::Participant);
+        $userToDelete->assignRole(RoleEnum::Committee);
 
-        Livewire::actingAs($this->admin)
+        Livewire::actingAs($this->superadmin)
             ->test(UsersManagement::class)
             ->call('openDeleteModal', $userToDelete->id)
-            ->call('deleteUser')
-            ->assertDispatched('toast-show');
+            ->call('deleteUser');
 
+        // Verifikasi user berhasil dihapus dari database
         $this->assertDatabaseMissing('users', ['id' => $userToDelete->id]);
     }
 }

@@ -52,7 +52,7 @@ class ScoutGroupRegistrationTest extends TestCase
         $response->assertSee('tidak memerlukan email');
     }
 
-    public function test_scout_group_can_register_and_create_contingent_account(): void
+    public function test_scout_group_can_register_and_create_contingent_account_with_auto_generated_credentials(): void
     {
         $response = $this->post(route('register.scout-group.store'), [
             'school_name' => 'SMP Negeri 2 Padangsidimpuan',
@@ -61,24 +61,15 @@ class ScoutGroupRegistrationTest extends TestCase
             'address' => 'Jl. Merdeka No. 10',
             'pic_name' => 'Kak Marwan Daulay, S.Pd',
             'phone_number' => '081299887766',
-            'username' => 'gudep02',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
             'terms' => '1',
         ]);
 
         $response->assertSessionHasNoErrors();
-        $response->assertRedirect(route('scout-group.index'));
+        $response->assertRedirect(route('register.scout-group.success'));
+        $response->assertSessionHas('newly_registered_credentials');
 
-        // Pastikan user terbuat dan memiliki role scout_group
-        $user = User::where('username', 'gudep02')->first();
-        $this->assertNotNull($user);
-        $this->assertTrue($user->hasRole(RoleEnum::ScoutGroup));
-        $this->assertEquals('Kak Marwan Daulay, S.Pd', $user->name);
-        $this->assertEquals('081299887766', $user->phone_number);
-
-        // Pastikan entitas ScoutGroup terbuat dengan nomor ganjil putra dan genap putri otomatis
-        $scoutGroup = ScoutGroup::where('user_id', $user->id)->first();
+        // Pastikan entitas ScoutGroup terbuat dengan format ID resmi G-{no_gudep}
+        $scoutGroup = ScoutGroup::where('school_name', 'SMP Negeri 2 Padangsidimpuan')->first();
         $this->assertNotNull($scoutGroup);
         $this->assertEquals('SMP Negeri 2 Padangsidimpuan', $scoutGroup->school_name);
         $this->assertEquals('01-093 & 01-094', $scoutGroup->group_number);
@@ -86,10 +77,26 @@ class ScoutGroupRegistrationTest extends TestCase
         $this->assertEquals('01-094', $scoutGroup->female_group_number);
         $this->assertStringContainsString('Kwarran Padangsidimpuan Utara', $scoutGroup->address);
         $this->assertEquals(RegistrationStatusEnum::Draft, $scoutGroup->verification_status);
-        $this->assertStringStartsWith('GDP-PSP-', $scoutGroup->registration_code);
+        $this->assertEquals('G-01093.01094', $scoutGroup->registration_code);
+
+        // Pastikan user terbuat dengan username dan ID yang sinkron dengan ID Gudep
+        $user = $scoutGroup->user;
+        $this->assertNotNull($user);
+        $this->assertTrue($user->hasRole(RoleEnum::ScoutGroup));
+        $this->assertEquals('Kak Marwan Daulay, S.Pd', $user->name);
+        $this->assertEquals('081299887766', $user->phone_number);
+        $this->assertEquals('G-01093.01094', $user->username);
+        $this->assertEquals('G-01093.01094', $user->id_number);
 
         // Pastikan user langsung login
         $this->assertAuthenticatedAs($user);
+
+        // Akses halaman sukses menampilkan kredensial dan opsi ubah kata sandi
+        $successResponse = $this->get(route('register.scout-group.success'));
+        $successResponse->assertOk();
+        $successResponse->assertSee('Pendaftaran Pangkalan Berhasil');
+        $successResponse->assertSee('G-01093.01094');
+        $successResponse->assertSee('Ubah Kata Sandi Sekarang');
     }
 
     public function test_registration_fails_when_registration_deadline_has_passed(): void
@@ -106,9 +113,6 @@ class ScoutGroupRegistrationTest extends TestCase
             'address' => 'Jl. Imam Bonjol No. 12',
             'pic_name' => 'Kak Syahrul Siregar',
             'phone_number' => '081211223344',
-            'username' => 'gudep04',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
             'terms' => '1',
         ]);
 
@@ -131,9 +135,6 @@ class ScoutGroupRegistrationTest extends TestCase
             'address' => 'Jl. Raja Inal Siregar',
             'pic_name' => 'Kak Budianto',
             'phone_number' => '081255667788',
-            'username' => 'gudep05',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
             'terms' => '1',
         ]);
 
@@ -141,10 +142,8 @@ class ScoutGroupRegistrationTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_registration_validation_fails_for_duplicate_email(): void
+    public function test_registration_username_is_exactly_the_gudep_id(): void
     {
-        User::factory()->create(['username' => 'terdaftar']);
-
         $response = $this->post(route('register.scout-group.store'), [
             'school_name' => 'SMP Negeri 3 Padangsidimpuan',
             'group_number' => '03.001 - 03.002',
@@ -152,14 +151,16 @@ class ScoutGroupRegistrationTest extends TestCase
             'address' => 'Jl. Imam Bonjol',
             'pic_name' => 'Kak Syahrul Siregar',
             'phone_number' => '081211223344',
-            'username' => 'terdaftar',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
             'terms' => '1',
         ]);
 
-        $response->assertSessionHasErrors(['username']);
-        $this->assertGuest();
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect(route('register.scout-group.success'));
+
+        $createdUser = User::where('name', 'Kak Syahrul Siregar')->first();
+        $this->assertNotNull($createdUser);
+        $this->assertSame('G-03001.03002', $createdUser->username);
+        $this->assertSame($createdUser->id_number, $createdUser->username);
     }
 
     public function test_registration_requires_terms_acceptance(): void
@@ -171,9 +172,6 @@ class ScoutGroupRegistrationTest extends TestCase
             'address' => 'Jl. Raja Inal Siregar',
             'pic_name' => 'Kak Fauzi Lubis',
             'phone_number' => '081244556677',
-            'username' => 'mtsn1',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
             // terms tidak disertakan
         ]);
 
@@ -191,9 +189,6 @@ class ScoutGroupRegistrationTest extends TestCase
             'address' => 'Jl. Sudirman No. 1',
             'pic_name' => 'Kak Syahrul',
             'phone_number' => '081234567890',
-            'username' => 'smpn1',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
             'terms' => '1',
         ]);
 
@@ -237,30 +232,44 @@ class ScoutGroupRegistrationTest extends TestCase
 
         $this->actingAs($user);
 
+        $fakePhoto = \Illuminate\Http\UploadedFile::fake()->image('photo.jpg');
+
+        $baseChaperonePayload = [
+            'birth_place' => 'Padangsidimpuan',
+            'birth_date' => '1990-01-01',
+            'religion' => 'Islam',
+            'blood_type' => 'O',
+            'scout_id' => '02.17.001.001',
+            'home_address' => 'Jl. Merdeka No. 1',
+            'city' => 'Padangsidimpuan',
+            'postal_code' => '22711',
+            'photo' => $fakePhoto,
+        ];
+
         // 1. Tambah Bindamping Putra berhasil
-        $resMale = $this->post(route('scout-group.chaperones.store'), [
+        $resMale = $this->post(route('scout-group.chaperones.store'), array_merge($baseChaperonePayload, [
             'full_name' => 'Kak Rahmat Hidayat, S.Pd',
             'gender' => 'male',
             'phone_number' => '081377889901',
-        ]);
+        ]));
         $resMale->assertSessionHasNoErrors();
         $this->assertEquals(1, $scoutGroup->chaperones()->where('gender', 'male')->count());
         $this->assertEquals('Kak Rahmat Hidayat, S.Pd', $scoutGroup->fresh()->maleChaperone?->full_name);
 
         // 2. Tambah Bindamping Putra kedua ditolak (karena sudah ada)
-        $resMale2 = $this->post(route('scout-group.chaperones.store'), [
+        $resMale2 = $this->post(route('scout-group.chaperones.store'), array_merge($baseChaperonePayload, [
             'full_name' => 'Kak Syarifuddin, S.Pd',
             'gender' => 'male',
             'phone_number' => '081377889902',
-        ]);
+        ]));
         $resMale2->assertSessionHasErrors(['gender']);
 
         // 3. Tambah Bindamping Putri berhasil
-        $resFemale = $this->post(route('scout-group.chaperones.store'), [
+        $resFemale = $this->post(route('scout-group.chaperones.store'), array_merge($baseChaperonePayload, [
             'full_name' => 'Kak Sri Wahyuni, S.Pd',
             'gender' => 'female',
             'phone_number' => '081377889903',
-        ]);
+        ]));
         $resFemale->assertSessionHasNoErrors();
         $this->assertEquals(1, $scoutGroup->chaperones()->where('gender', 'female')->count());
         $this->assertEquals('Kak Sri Wahyuni, S.Pd', $scoutGroup->fresh()->femaleChaperone?->full_name);
@@ -276,9 +285,6 @@ class ScoutGroupRegistrationTest extends TestCase
             'address' => 'Jl. BM Muda',
             'pic_name' => 'Kak Ridwan',
             'phone_number' => '081233445566',
-            'username' => 'smpn7',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
             'terms' => '1',
         ]);
 
@@ -301,9 +307,6 @@ class ScoutGroupRegistrationTest extends TestCase
             'address' => 'Jl. Sabungan No. 3',
             'pic_name' => 'Kak Zulham Efendi',
             'phone_number' => '081299112233',
-            'username' => 'smpn8',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
             'terms' => '1',
         ]);
 
@@ -358,9 +361,6 @@ class ScoutGroupRegistrationTest extends TestCase
             'address' => 'Jl. Sudirman No. 5',
             'pic_name' => 'Kak Rahmat',
             'phone_number' => '081211112222',
-            'username' => 'gudep05',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
             'terms' => '1',
         ])->assertSessionHasNoErrors();
 

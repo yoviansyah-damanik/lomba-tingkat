@@ -10,7 +10,6 @@ new #[Title('Profile settings')] class extends Component {
     use ProfileValidationRules;
 
     public string $name = '';
-    public string $username = '';
 
     /**
      * Mount the component.
@@ -18,7 +17,6 @@ new #[Title('Profile settings')] class extends Component {
     public function mount(): void
     {
         $this->name = Auth::user()->name;
-        $this->username = Auth::user()->username;
     }
 
     /**
@@ -30,7 +28,8 @@ new #[Title('Profile settings')] class extends Component {
 
         abort_if($user->isManagedAccount(), 403);
 
-        $validated = $this->validate($this->profileRules($user->id), \App\Models\User::usernameMessages());
+        // Username tidak dapat diubah mandiri; hanya nama yang divalidasi
+        $validated = $this->validate(['name' => $this->nameRules()]);
 
         $user->fill($validated);
         $user->save();
@@ -58,11 +57,11 @@ new #[Title('Profile settings')] class extends Component {
             </div>
         </x-pages::settings.layout>
     @else
-    <x-pages::settings.layout :heading="__('Profile')" :subheading="__('Update your name and username')">
+    <x-pages::settings.layout :heading="__('Profile')" :subheading="__('Update your name')">
         <form wire:submit="updateProfileInformation" class="my-6 w-full space-y-6">
             <flux:input wire:model="name" :label="__('Name')" type="text" required autofocus autocomplete="name" />
 
-            <flux:input wire:model="username" label="Username" type="text" required autocomplete="username" />
+            <flux:input :value="Auth::user()->username" label="Username" type="text" readonly disabled />
 
             <div class="flex items-center gap-4">
                 <div class="flex items-center justify-end">
@@ -74,7 +73,6 @@ new #[Title('Profile settings')] class extends Component {
             </div>
         </form>
 
-        <livewire:pages::settings.delete-user-form />
     </x-pages::settings.layout>
     @endif
 </section>

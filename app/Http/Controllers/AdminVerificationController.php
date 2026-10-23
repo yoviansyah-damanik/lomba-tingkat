@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\RegistrationStatusEnum;
+use App\Models\AuditLog;
+use App\Models\Chaperone;
 use App\Models\Participant;
 use App\Models\ScoutGroup;
 use App\Services\ContingentAccountService;
@@ -52,7 +54,7 @@ class AdminVerificationController extends Controller
      */
     public function show(string $id): View
     {
-        $scoutGroup = ScoutGroup::with(['patrols.participants', 'chaperones', 'verifier'])->findOrFail($id);
+        $scoutGroup = ScoutGroup::with(['patrols.participants', 'chaperones', 'verifier', 'user'])->findOrFail($id);
 
         return view('admin.scout-groups.show', compact('scoutGroup'));
     }
@@ -62,7 +64,17 @@ class AdminVerificationController extends Controller
      */
     public function verify(Request $request, string $id): RedirectResponse
     {
+        if ($request->user()->isSuperadmin()) {
+            return redirect()->route('admin.scout-groups.show', $id)
+                ->with('error', 'Superadmin tidak berwenang melakukan aksi verifikasi. Gunakan fitur Batalkan Verifikasi jika diperlukan.');
+        }
+
         $scoutGroup = ScoutGroup::findOrFail($id);
+
+        if ($scoutGroup->verification_status === RegistrationStatusEnum::Verified) {
+            return redirect()->route('admin.scout-groups.show', $scoutGroup->id)
+                ->with('error', 'Status kontingen telah terverifikasi. Keputusan verifikasi tidak dapat diubah.');
+        }
 
         $scoutGroup->update([
             'verification_status' => RegistrationStatusEnum::Verified,
@@ -87,11 +99,21 @@ class AdminVerificationController extends Controller
      */
     public function requestRevision(Request $request, string $id): RedirectResponse
     {
+        if ($request->user()->isSuperadmin()) {
+            return redirect()->route('admin.scout-groups.show', $id)
+                ->with('error', 'Superadmin tidak berwenang melakukan aksi verifikasi. Gunakan fitur Batalkan Verifikasi jika diperlukan.');
+        }
+
+        $scoutGroup = ScoutGroup::findOrFail($id);
+
+        if ($scoutGroup->verification_status === RegistrationStatusEnum::Verified) {
+            return redirect()->route('admin.scout-groups.show', $scoutGroup->id)
+                ->with('error', 'Status kontingen telah terverifikasi. Keputusan verifikasi tidak dapat diubah.');
+        }
+
         $validated = $request->validate([
             'revision_notes' => ['required', 'string', 'min:5'],
         ]);
-
-        $scoutGroup = ScoutGroup::findOrFail($id);
 
         $scoutGroup->update([
             'verification_status' => RegistrationStatusEnum::NeedsRevision,
@@ -101,6 +123,9 @@ class AdminVerificationController extends Controller
         ]);
 
         $scoutGroup->patrols()->update(['status' => RegistrationStatusEnum::NeedsRevision]);
+        Participant::whereIn('patrol_id', $scoutGroup->patrols()->pluck('id'))
+            ->update(['status' => RegistrationStatusEnum::NeedsRevision]);
+        $scoutGroup->chaperones()->update(['status' => RegistrationStatusEnum::NeedsRevision]);
 
         return redirect()->route('admin.scout-groups.show', $scoutGroup->id)
             ->with('warning', "Pendaftaran {$scoutGroup->school_name} dikembalikan ke Gugus Depan dengan catatan perbaikan.");
@@ -111,11 +136,21 @@ class AdminVerificationController extends Controller
      */
     public function reject(Request $request, string $id): RedirectResponse
     {
+        if ($request->user()->isSuperadmin()) {
+            return redirect()->route('admin.scout-groups.show', $id)
+                ->with('error', 'Superadmin tidak berwenang melakukan aksi verifikasi. Gunakan fitur Batalkan Verifikasi jika diperlukan.');
+        }
+
+        $scoutGroup = ScoutGroup::findOrFail($id);
+
+        if ($scoutGroup->verification_status === RegistrationStatusEnum::Verified) {
+            return redirect()->route('admin.scout-groups.show', $scoutGroup->id)
+                ->with('error', 'Status kontingen telah terverifikasi. Keputusan verifikasi tidak dapat diubah.');
+        }
+
         $validated = $request->validate([
             'revision_notes' => ['required', 'string', 'min:5'],
         ]);
-
-        $scoutGroup = ScoutGroup::findOrFail($id);
 
         $scoutGroup->update([
             'verification_status' => RegistrationStatusEnum::Rejected,
@@ -124,50 +159,172 @@ class AdminVerificationController extends Controller
             'verified_at' => now(),
         ]);
 
+        $scoutGroup->patrols()->update(['status' => RegistrationStatusEnum::Rejected]);
+        Participant::whereIn('patrol_id', $scoutGroup->patrols()->pluck('id'))
+            ->update(['status' => RegistrationStatusEnum::Rejected]);
+        $scoutGroup->chaperones()->update(['status' => RegistrationStatusEnum::Rejected]);
+
         return redirect()->route('admin.scout-groups.show', $scoutGroup->id)
             ->with('error', "Pendaftaran {$scoutGroup->school_name} telah ditolak.");
     }
 
     /**
-     * Cetak lembar formulir biodata resmi pembina pendamping
+     * Membatalkan verifikasi kontingen dan mencabut seluruh akun digital (Khusus Superadmin)
      */
-    public function chaperonePrint(string $scoutGroupId, string $chaperoneId): View
+    public function cancelVerification(Request $request, string $id): RedirectResponse
+    {
+        if (! $request->user()->isSuperadmin()) {
+            abort(403, 'Hanya Superadmin yang berwenang membatalkan verifikasi kontingen.');
+        }
+
+        $validated = $request->validate([
+            'cancellation_reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $scoutGroup = ScoutGroup::with(['patrols.participants', 'chaperones'])->findOrFail($id);
+
+        if ($scoutGroup->verification_status !== RegistrationStatusEnum::Verified) {
+            return redirect()->route('admin.scout-groups.show', $scoutGroup->id)
+                ->with('error', 'Hanya kontingen dengan status terverifikasi yang dapat dibatalkan verifikasinya.');
+        }
+
+        // 1. Cabut dan hapus seluruh akun digital peserta dan bindamping
+        $revoked = app(ContingentAccountService::class)->revokeAccounts($scoutGroup);
+
+        $reason = ! empty($validated['cancellation_reason'])
+            ? 'Verifikasi dibatalkan oleh Superadmin: ' . $validated['cancellation_reason']
+            : 'Verifikasi dibatalkan oleh Superadmin.';
+
+        // 2. Batalkan status verifikasi pada kontingen, regu, peserta, dan bindamping
+        $scoutGroup->update([
+            'verification_status' => RegistrationStatusEnum::NeedsRevision,
+            'revision_notes' => $reason,
+            'verified_by' => null,
+            'verified_at' => null,
+        ]);
+
+        $scoutGroup->patrols()->update(['status' => RegistrationStatusEnum::NeedsRevision]);
+        Participant::whereIn('patrol_id', $scoutGroup->patrols()->pluck('id'))
+            ->update(['status' => RegistrationStatusEnum::NeedsRevision]);
+        $scoutGroup->chaperones()->update(['status' => RegistrationStatusEnum::NeedsRevision]);
+
+        AuditLog::log(
+            action: 'contingent_verification_cancelled',
+            modelType: ScoutGroup::class,
+            modelId: $scoutGroup->id,
+            oldValues: ['verification_status' => RegistrationStatusEnum::Verified->value],
+            newValues: ['verification_status' => RegistrationStatusEnum::NeedsRevision->value],
+            reason: $reason
+        );
+
+        return redirect()->route('admin.scout-groups.show', $scoutGroup->id)
+            ->with('warning', "Verifikasi kontingen {$scoutGroup->school_name} berhasil dibatalkan. Seluruh akun peserta ({$revoked['participants']}) dan bindamping ({$revoked['chaperones']}) telah dicabut dan status kontingen dikembalikan.");
+    }
+
+    public function __construct(
+        private readonly \App\Services\PdfService $pdf,
+    ) {}
+
+    /**
+     * Cetak lembar formulir biodata resmi pembina pendamping (PDF)
+     */
+    public function chaperonePrint(Request $request, string $scoutGroupId, string $chaperoneId): \Illuminate\Http\Response
     {
         $scoutGroup = ScoutGroup::findOrFail($scoutGroupId);
-        abort_unless($scoutGroup->canDownloadDocuments(), 403, ScoutGroup::DOWNLOAD_LOCKED_MESSAGE);
-
         $chaperone = $scoutGroup->chaperones()->findOrFail($chaperoneId);
+        $chaperone->setRelation('scoutGroup', $scoutGroup);
 
-        return view('portal.scout-group.chaperones.print', compact('scoutGroup', 'chaperone'));
+        $filename = 'Form_03_Biodata_' . \Illuminate\Support\Str::slug($chaperone->full_name) . '.pdf';
+
+        return $this->pdf->response(
+            'portal.scout-group.chaperones.print',
+            compact('scoutGroup', 'chaperone'),
+            $filename,
+            $request->boolean('download')
+        );
     }
 
     /**
-     * Cetak lembar formulir biodata resmi peserta lomba
+     * Cetak lembar formulir biodata resmi peserta lomba (PDF)
      */
-    public function participantPrint(string $scoutGroupId, string $participantId): View
+    public function participantPrint(Request $request, string $scoutGroupId, string $participantId): \Illuminate\Http\Response
     {
         $scoutGroup = ScoutGroup::findOrFail($scoutGroupId);
-        abort_unless($scoutGroup->canDownloadDocuments(), 403, ScoutGroup::DOWNLOAD_LOCKED_MESSAGE);
-
         $participant = Participant::whereHas('patrol', function ($q) use ($scoutGroupId) {
             $q->where('scout_group_id', $scoutGroupId);
         })->with('patrol')->findOrFail($participantId);
 
-        return view('portal.scout-group.participants.print', compact('scoutGroup', 'participant'));
+        $filename = 'Form_02_Biodata_' . \Illuminate\Support\Str::slug($participant->full_name) . '.pdf';
+
+        return $this->pdf->response(
+            'portal.scout-group.participants.print',
+            compact('scoutGroup', 'participant'),
+            $filename,
+            $request->boolean('download')
+        );
     }
 
     /**
-     * Cetak formulir rekap pendaftaran kontingen (FORM : 01)
+     * Cetak formulir rekap pendaftaran kontingen (FORM : 01) (PDF)
      */
-    public function form01Print(string $scoutGroupId, string $patrolId): View
+    public function form01Print(Request $request, string $scoutGroupId, string $patrolId): \Illuminate\Http\Response
     {
-        $scoutGroup = ScoutGroup::with(['chaperones', 'patrols'])->findOrFail($scoutGroupId);
-        abort_unless($scoutGroup->canDownloadDocuments(), 403, ScoutGroup::DOWNLOAD_LOCKED_MESSAGE);
-
+        $scoutGroup = ScoutGroup::with(['chaperones', 'patrols.participants'])->findOrFail($scoutGroupId);
         $patrol = $scoutGroup->patrols()->with('participants')->findOrFail($patrolId);
-        $chaperone = $patrol->chaperone();
+        $patrol->setRelation('scoutGroup', $scoutGroup);
+
+        $chaperone = $patrol->isBoys()
+            ? $scoutGroup->chaperones->firstWhere('gender', 'male')
+            : $scoutGroup->chaperones->firstWhere('gender', 'female');
         $orderedParticipants = $patrol->orderedParticipants();
 
-        return view('portal.scout-group.patrols.form-01', compact('scoutGroup', 'patrol', 'chaperone', 'orderedParticipants'));
+        $filename = 'Form_01_Rekap_Regu_' . \Illuminate\Support\Str::slug($patrol->patrol_name) . '.pdf';
+
+        return $this->pdf->response(
+            'portal.scout-group.patrols.form-01',
+            compact('scoutGroup', 'patrol', 'chaperone', 'orderedParticipants'),
+            $filename,
+            $request->boolean('download')
+        );
+    }
+
+    /**
+     * Cetak dokumen resmi Bukti Registrasi Kontingen Gugusdepan (PDF) untuk Administrator
+     */
+    public function registrationCertificatePrint(Request $request, string $id): \Illuminate\Http\Response
+    {
+        $scoutGroup = ScoutGroup::with(['patrols.participants', 'chaperones', 'user', 'verifier'])->findOrFail($id);
+        $filename = 'Bukti_Registrasi_' . \Illuminate\Support\Str::slug($scoutGroup->school_name) . '.pdf';
+
+        return $this->pdf->response(
+            'admin.scout-groups.registration-certificate',
+            compact('scoutGroup'),
+            $filename,
+            $request->boolean('download')
+        );
+    }
+
+    /**
+     * Halaman detail lengkap data peserta untuk Administrator / Panitia / Juri
+     */
+    public function participantShow(Request $request, string $id, ?string $participantId = null): View
+    {
+        $targetId = $participantId ?? $id;
+        $participant = Participant::with(['patrol.scoutGroup'])->findOrFail($targetId);
+        $scoutGroup = $participant->patrol?->scoutGroup;
+
+        return view('admin.participants.show', compact('participant', 'scoutGroup'));
+    }
+
+    /**
+     * Halaman detail lengkap data pembina pendamping untuk Administrator / Panitia / Juri
+     */
+    public function chaperoneShow(Request $request, string $id, ?string $chaperoneId = null): View
+    {
+        $targetId = $chaperoneId ?? $id;
+        $chaperone = Chaperone::with('scoutGroup')->findOrFail($targetId);
+        $scoutGroup = $chaperone->scoutGroup;
+
+        return view('admin.chaperones.show', compact('chaperone', 'scoutGroup'));
     }
 }

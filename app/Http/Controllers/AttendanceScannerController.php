@@ -381,7 +381,7 @@ class AttendanceScannerController extends Controller
 
         return view('reports.pdf-preview', [
             'title' => 'Rekapitulasi Presensi & Kehadiran',
-            'pdfUrl' => route('attendance.recap.pdf', $query),
+            'pdfUrl' => route('attendance.recap.pdf', array_merge($query, ['raw' => 1])),
             'downloadUrl' => route('attendance.recap.pdf', array_merge($query, ['download' => 1])),
             'backUrl' => route('attendance.recap'),
         ]);

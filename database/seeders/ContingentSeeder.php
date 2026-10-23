@@ -5,12 +5,14 @@ namespace Database\Seeders;
 use App\Enums\PatrolGenderEnum;
 use App\Enums\PatrolRoleEnum;
 use App\Enums\RegistrationStatusEnum;
+use App\Enums\RoleEnum;
 use App\Models\Chaperone;
 use App\Models\Participant;
 use App\Models\Patrol;
 use App\Models\ScoutGroup;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 /**
  * Seeder data kontingen contoh: Gugus Depan, Regu Putra & Putri, Peserta, dan Bindamping
@@ -359,5 +361,53 @@ class ContingentSeeder extends Seeder
                 'status' => RegistrationStatusEnum::Submitted,
             ]
         );
+
+        // 5. Akun contoh untuk pengujian & dev (bindamping putra, bindamping putri, dan peserta)
+        $defaultPassword = Hash::make('password123');
+
+        $maleChaperone = Chaperone::where('scout_group_id', $scoutGroup->id)->where('gender', 'male')->first();
+        if ($maleChaperone) {
+            $userPutra = User::firstOrCreate(
+                ['username' => 'bindamping'],
+                [
+                    'name' => $maleChaperone->full_name,
+                    'password' => $defaultPassword,
+                    'phone_number' => $maleChaperone->phone_number,
+                    'is_active' => true,
+                ]
+            );
+            $userPutra->assignRole(RoleEnum::Chaperone);
+            $maleChaperone->update(['user_id' => $userPutra->id]);
+        }
+
+        $femaleChaperone = Chaperone::where('scout_group_id', $scoutGroup->id)->where('gender', 'female')->first();
+        if ($femaleChaperone) {
+            $userPutri = User::firstOrCreate(
+                ['username' => 'bindamping.putri'],
+                [
+                    'name' => $femaleChaperone->full_name,
+                    'password' => $defaultPassword,
+                    'phone_number' => $femaleChaperone->phone_number,
+                    'is_active' => true,
+                ]
+            );
+            $userPutri->assignRole(RoleEnum::Chaperone);
+            $femaleChaperone->update(['user_id' => $userPutri->id]);
+        }
+
+        $firstParticipant = Participant::whereHas('patrol', fn ($q) => $q->where('scout_group_id', $scoutGroup->id))->first();
+        if ($firstParticipant) {
+            $userPeserta = User::firstOrCreate(
+                ['username' => 'peserta'],
+                [
+                    'name' => $firstParticipant->full_name,
+                    'password' => $defaultPassword,
+                    'phone_number' => $firstParticipant->phone ?: '081234567895',
+                    'participant_id' => $firstParticipant->id,
+                    'is_active' => true,
+                ]
+            );
+            $userPeserta->assignRole(RoleEnum::Participant);
+        }
     }
 }

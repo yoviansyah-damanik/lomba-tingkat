@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
+use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -36,6 +38,18 @@ class FortifyServiceProvider extends ServiceProvider
     private function configureActions(): void
     {
         Fortify::createUsersUsing(CreateNewUser::class);
+
+        // Username dicocokkan persis (case-sensitive) karena basis data membandingkan tanpa membedakan huruf
+        Fortify::authenticateUsing(function (Request $request) {
+            $username = trim((string) $request->input(Fortify::username()));
+            $user = User::where(Fortify::username(), $username)->first();
+
+            if ($user && hash_equals((string) $user->username, $username) && Hash::check((string) $request->input('password'), $user->password)) {
+                return $user;
+            }
+
+            return null;
+        });
     }
 
     /**

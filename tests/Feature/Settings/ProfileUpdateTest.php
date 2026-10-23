@@ -21,12 +21,12 @@ class ProfileUpdateTest extends TestCase
     public function test_profile_information_can_be_updated(): void
     {
         $user = User::factory()->create();
+        $username = $user->username;
 
         $this->actingAs($user);
 
         $response = Livewire::test('pages::settings.profile')
             ->set('name', 'Test User')
-            ->set('username', 'test')
             ->call('updateProfileInformation');
 
         $response->assertHasNoErrors();
@@ -34,74 +34,29 @@ class ProfileUpdateTest extends TestCase
         $user->refresh();
 
         $this->assertEquals('Test User', $user->name);
-        $this->assertEquals('test', $user->username);
+        $this->assertEquals($username, $user->username);
     }
 
-    public function test_username_must_be_unique_and_valid(): void
+    public function test_username_cannot_be_changed_from_profile(): void
     {
-        User::factory()->create(['username' => 'terpakai']);
         $user = User::factory()->create();
+        $username = $user->username;
 
         $this->actingAs($user);
 
         Livewire::test('pages::settings.profile')
             ->set('name', 'Test User')
-            ->set('username', 'terpakai')
-            ->call('updateProfileInformation')
-            ->assertHasErrors(['username' => 'unique']);
+            ->call('updateProfileInformation');
 
-        Livewire::test('pages::settings.profile')
-            ->set('name', 'Test User')
-            ->set('username', 'ada spasi')
-            ->call('updateProfileInformation')
-            ->assertHasErrors(['username' => 'regex']);
+        $this->assertSame($username, $user->refresh()->username);
     }
 
-    public function test_username_is_stored_lowercase(): void
+    public function test_profile_page_has_no_delete_account_option(): void
     {
-        $user = User::factory()->create();
+        $this->actingAs(User::factory()->create());
 
-        $this->actingAs($user);
-
-        Livewire::test('pages::settings.profile')
-            ->set('name', 'Test User')
-            ->set('username', 'Nama.Pengguna')
-            ->call('updateProfileInformation')
-            ->assertHasNoErrors();
-
-        $this->assertSame('nama.pengguna', $user->refresh()->username);
-    }
-
-    public function test_user_can_delete_their_account(): void
-    {
-        $user = User::factory()->create();
-
-        $this->actingAs($user);
-
-        $response = Livewire::test('pages::settings.delete-user-modal')
-            ->set('password', 'password')
-            ->call('deleteUser');
-
-        $response
-            ->assertHasNoErrors()
-            ->assertRedirect('/');
-
-        $this->assertNull($user->fresh());
-        $this->assertFalse(auth()->check());
-    }
-
-    public function test_correct_password_must_be_provided_to_delete_account(): void
-    {
-        $user = User::factory()->create();
-
-        $this->actingAs($user);
-
-        $response = Livewire::test('pages::settings.delete-user-modal')
-            ->set('password', 'wrong-password')
-            ->call('deleteUser');
-
-        $response->assertHasErrors(['password']);
-
-        $this->assertNotNull($user->fresh());
+        $this->get(route('profile.edit'))
+            ->assertOk()
+            ->assertDontSee(__('Delete account'));
     }
 }

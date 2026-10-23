@@ -5,8 +5,8 @@
 @endphp
 
 <x-digital-card.layout :title="'KARTU PESERTA (B2) - ' . $participant->full_name">
-    {{-- Toolbar Cetak & Aksi --}}
-    <x-digital-card.toolbar :subtitle="'Peserta: ' . $participant->full_name" :batch-url="$participant->patrol_id ? route('digital-cards.patrol.batch', $participant->patrol_id) : null" :batch-label="'Cetak Seluruh Regu (A4)'" :download-filename="'KARTU_B2_' . Str::slug($participant->full_name)" />
+    {{-- Toolbar Aksi --}}
+    <x-digital-card.toolbar :subtitle="'Peserta: ' . $participant->full_name" :batch-url="$participant->patrol_id ? route('digital-cards.patrol.batch', $participant->patrol_id) : null" :batch-label="'Kartu Seluruh Regu'" :download-filename="'KARTU_B2_' . Str::slug($participant->full_name)" />
 
     {{-- KARTU UKURAN RESMI B2 --}}
     <x-digital-card.card data-card-name="{{ $participant->full_name }}" data-card-id="{{ $participant->id_number }}">

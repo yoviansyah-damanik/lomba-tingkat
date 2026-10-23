@@ -41,6 +41,18 @@ class QrCodeService
     }
 
     /**
+     * QR tanda tangan digital pada formulir cetak; null bila belum terverifikasi atau token kosong
+     */
+    public function signatureDataUri(?string $token, bool $verified, int $size = 90): ?string
+    {
+        if (! $verified || empty($token)) {
+            return null;
+        }
+
+        return $this->generateDataUri(route('digital-cards.verify', $token), $size);
+    }
+
+    /**
      * Menyelesaikan (resolve) token QR menjadi entitas terakreditasi resmi
      */
     public function resolveToken(string $token): ?array
@@ -112,10 +124,11 @@ class QrCodeService
         $user = User::with('roles')->where('qr_token', $token)->first();
         if ($user) {
             $roles = $user->roles->pluck('label')->join(' & ');
+            $isPic = $user->isScoutGroup();
 
             return [
                 'type' => 'staff',
-                'title' => 'KARTU TANDA PANITIA / JURI',
+                'title' => $isPic ? 'KARTU PENANGGUNG JAWAB GUGUS DEPAN' : 'KARTU TANDA PANITIA / JURI',
                 'category_label' => $roles ?: 'Aparatur Penyelenggara',
                 'entity' => $user,
                 'id_number' => $user->id_number,

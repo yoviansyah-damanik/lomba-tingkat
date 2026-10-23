@@ -22,6 +22,11 @@ class Event extends Model
         'registration_start_at',
         'registration_end_at',
         'is_registration_open',
+        'registration_fee_per_patrol',
+        'payment_bank_name',
+        'payment_account_number',
+        'payment_account_holder',
+        'payment_instructions',
         'location',
         'description',
         'contact_email',
@@ -57,8 +62,75 @@ class Event extends Model
             'registration_start_at' => 'datetime',
             'registration_end_at' => 'datetime',
             'is_registration_open' => 'boolean',
+            'registration_fee_per_patrol' => 'integer',
             'is_active' => 'boolean',
             'hide_patrol_identities' => 'boolean',
+        ];
+    }
+
+    /**
+     * Mengambil biaya pendaftaran per regu (prioritas kolom database, fallback ke konfigurasi/env)
+     */
+    public function getFeePerPatrol(): int
+    {
+        return $this->registration_fee_per_patrol ?? (int) config('registration.fee_per_patrol', 250000);
+    }
+
+    /**
+     * Format rupiah biaya pendaftaran per regu
+     */
+    public function getFormattedFeePerPatrol(): string
+    {
+        return 'Rp ' . number_format($this->getFeePerPatrol(), 0, ',', '.');
+    }
+
+    /**
+     * Mengambil nama bank tujuan pembayaran
+     */
+    public function getPaymentBank(): string
+    {
+        return $this->payment_bank_name ?? config('registration.payment_bank', 'Bank Sumut');
+    }
+
+    /**
+     * Mengambil nomor rekening resmi Kwarcab
+     */
+    public function getPaymentAccountNumber(): string
+    {
+        return $this->payment_account_number ?? config('registration.payment_account_number', '101-02-04-001234-5');
+    }
+
+    /**
+     * Mengambil nama pemilik rekening resmi Kwarcab
+     */
+    public function getPaymentAccountHolder(): string
+    {
+        return $this->payment_account_holder ?? config('registration.payment_account_holder', 'Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan');
+    }
+
+    /**
+     * Mengambil petunjuk / instruksi pembayaran
+     */
+    public function getPaymentInstructions(): string
+    {
+        return $this->payment_instructions ?? config('registration.payment_instructions', 'Pembayaran biaya pendaftaran kontingen dihitung per regu yang didaftarkan. Harap mencantumkan nama pangkalan pada struk/berita transfer.');
+    }
+
+    /**
+     * Helper statis mengambil seluruh konfigurasi pembayaran event aktif
+     */
+    public static function activePaymentConfig(): array
+    {
+        $event = static::where('is_active', true)->first() ?? static::first();
+        $feePerPatrol = $event ? $event->getFeePerPatrol() : (int) config('registration.fee_per_patrol', 250000);
+
+        return [
+            'fee_per_patrol' => $feePerPatrol,
+            'formatted_fee_per_patrol' => 'Rp ' . number_format($feePerPatrol, 0, ',', '.'),
+            'bank_name' => $event ? $event->getPaymentBank() : config('registration.payment_bank', 'Bank Sumut'),
+            'account_number' => $event ? $event->getPaymentAccountNumber() : config('registration.payment_account_number', '101-02-04-001234-5'),
+            'account_holder' => $event ? $event->getPaymentAccountHolder() : config('registration.payment_account_holder', 'Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan'),
+            'instructions' => $event ? $event->getPaymentInstructions() : config('registration.payment_instructions', 'Pembayaran biaya pendaftaran kontingen dihitung per regu yang didaftarkan.'),
         ];
     }
 

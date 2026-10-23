@@ -11,7 +11,7 @@
 @endphp
 
 <x-digital-card.layout :title="'KARTU APARATUR (B2) - ' . $staff->name" :body-class="$bodyBg">
-    {{-- Toolbar Cetak & Aksi --}}
+    {{-- Toolbar Aksi --}}
     <x-digital-card.toolbar :subtitle="'Aparatur: ' . $staff->name" :download-filename="'KARTU_APARATUR_' . Str::slug($staff->name)" />
 
     {{-- KARTU UKURAN RESMI B2 --}}

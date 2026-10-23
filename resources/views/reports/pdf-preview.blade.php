@@ -16,9 +16,11 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <a href="{{ $backUrl }}" class="rounded-xl border border-zinc-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">
-                Kembali
-            </a>
+            @if($backUrl)
+                <a href="{{ $backUrl }}" class="rounded-xl border border-zinc-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">
+                    Kembali
+                </a>
+            @endif
             <a href="{{ $downloadUrl }}" class="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-4 py-1.5 text-xs font-bold text-white shadow-xs transition-colors hover:bg-amber-700">
                 <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"/></svg>
                 <span>Unduh PDF</span>

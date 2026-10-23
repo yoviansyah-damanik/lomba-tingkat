@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\RegistrationStatusEnum;
 use App\Enums\RoleEnum;
 use App\Models\Chaperone;
 use App\Models\Participant;
@@ -133,7 +134,10 @@ class RoleAuthorizationTest extends TestCase
         $gudepUser = User::factory()->create(['is_active' => true]);
         $gudepUser->assignRole(RoleEnum::ScoutGroup);
 
-        $scoutGroup = ScoutGroup::factory()->create(['user_id' => $gudepUser->id]);
+        $scoutGroup = ScoutGroup::factory()->create([
+            'user_id' => $gudepUser->id,
+            'verification_status' => RegistrationStatusEnum::Verified,
+        ]);
         $patrol = Patrol::factory()->create(['scout_group_id' => $scoutGroup->id]);
         $participant = Participant::factory()->create(['patrol_id' => $patrol->id]);
         $chaperone = Chaperone::factory()->create(['scout_group_id' => $scoutGroup->id]);

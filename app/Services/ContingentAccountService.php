@@ -137,6 +137,61 @@ class ContingentAccountService
     }
 
     /**
+     * Cabut dan hapus seluruh akun peserta dan bindamping saat verifikasi dibatalkan
+     *
+     * @return array{chaperones: int, participants: int}
+     */
+    public function revokeAccounts(ScoutGroup $group): array
+    {
+        $revoked = ['chaperones' => 0, 'participants' => 0];
+
+        foreach ($group->chaperones()->get() as $chaperone) {
+            $user = $chaperone->user_id ? User::find($chaperone->user_id) : null;
+            if ($user?->isChaperone()) {
+                $user->delete();
+                $revoked['chaperones']++;
+            }
+            if ($chaperone->id_number) {
+                User::where('id_number', $chaperone->id_number)
+                    ->orWhere('username', $chaperone->id_number)
+                    ->delete();
+            }
+            $chaperone->update(['user_id' => null]);
+        }
+
+        foreach ($group->patrols()->with('participants')->get() as $patrol) {
+            foreach ($patrol->participants as $participant) {
+                $users = User::where('participant_id', $participant->id)
+                    ->when($participant->id_number, function ($q, $idNum) {
+                        $q->orWhere('id_number', $idNum)
+                            ->orWhere('username', $idNum);
+                    })
+                    ->get();
+
+                foreach ($users as $user) {
+                    if ($user->isParticipant()) {
+                        $user->delete();
+                        $revoked['participants']++;
+                    }
+                }
+            }
+        }
+
+        if ($revoked['chaperones'] + $revoked['participants'] > 0) {
+            AuditLog::log(
+                action: 'contingent_accounts_revoked',
+                modelType: ScoutGroup::class,
+                modelId: $group->id,
+                oldValues: null,
+                newValues: $revoked,
+                reason: 'Pencabutan seluruh akun digital karena pembatalan verifikasi kontingen '.$group->school_name
+            );
+        }
+
+        return $revoked;
+    }
+
+    /**
      * Hapus akun peserta yang ditautkan ke data peserta
      */
     public function deleteParticipantAccount(Participant $participant): void
@@ -156,6 +211,8 @@ class ContingentAccountService
         if ($user?->isChaperone()) {
             $user->delete();
         }
+
+        $chaperone->update(['user_id' => null]);
     }
 
     protected function participantPosition(Participant $participant): string
@@ -222,7 +279,7 @@ class ContingentAccountService
     protected function firstOrCreateUser(string $idNumber, string $name, ?string $phone, string $password, RoleEnum $role): User
     {
         $user = User::firstOrCreate(
-            ['username' => Str::lower($idNumber)],
+            ['username' => $idNumber],
             [
                 'id_number' => $idNumber,
                 'name' => $name,

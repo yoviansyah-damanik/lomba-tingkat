@@ -72,7 +72,8 @@
                             </div>
                             <div class="flex items-center gap-3">
                                 @if($scoutGroup->canDownloadDocuments())
-                                <a href="{{ route('scout-group.patrols.form-01', $patrol->id) }}" target="_blank"
+                                 <a href="{{ route('scout-group.patrols.form-01', $patrol->id) }}" target="_blank"
+                                    data-loading="Mencetak FORM 01 Regu {{ $patrol->patrol_name }} (PDF)..."
                                     class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-amber-800 shadow-xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-amber-300">
                                     <flux:icon name="printer" class="size-3.5" />
                                     Cetak FORM : 01
@@ -165,8 +166,28 @@
                 </form>
             </div>
         @else
-            <div class="rounded-xl border border-zinc-200 bg-zinc-100 p-4 text-center text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-800 dark:text-zinc-400">
-                Pendaftaran kontingen ini telah diajukan pada status: <strong>{{ $scoutGroup->verification_status?->label() }}</strong>.
+            <div class="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center rounded-lg border px-2.5 py-0.5 text-xs font-semibold {{ $scoutGroup->verification_status?->badgeClasses() }}">
+                            {{ $scoutGroup->verification_status?->label() }}
+                        </span>
+                        <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100">Status Pendaftaran Kontingen</h4>
+                    </div>
+                    <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                        @if($scoutGroup->canDownloadDocuments())
+                            Pendaftaran kontingen telah diverifikasi resmi oleh Administrator. Anda dapat mengunduh Bukti Registrasi resmi.
+                        @else
+                            Pendaftaran kontingen telah diajukan dan terkunci. Saat ini sedang dalam tahap antrean verifikasi Administrator Kwarcab.
+                        @endif
+                    </p>
+                </div>
+                @if($scoutGroup->canDownloadDocuments())
+                    <flux:button href="{{ route('scout-group.registration-certificate', ['download' => 1]) }}" variant="primary" icon="document-text"
+                        data-loading="Mencetak Bukti Registrasi (PDF)..." class="shrink-0">
+                        Unduh Bukti Registrasi (PDF)
+                    </flux:button>
+                @endif
             </div>
         @endif
     </div>

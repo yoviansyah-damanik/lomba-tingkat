@@ -162,6 +162,96 @@
             </div>
         </div>
 
+        {{-- Card: Biaya Pendaftaran & Rekening Pembayaran --}}
+        <div class="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900 space-y-4">
+            <div class="border-b border-zinc-100 dark:border-zinc-800 pb-3 flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
+                        Biaya Pendaftaran & Rekening Pembayaran
+                    </h3>
+                    <p class="text-xs text-zinc-400">
+                        Pengaturan nominal iuran pendaftaran per regu serta rekening resmi untuk transfer bukti bayar kontingen
+                    </p>
+                </div>
+                <span class="rounded-md bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-300">
+                    Keuangan & Biaya
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                        Biaya Pendaftaran Per Regu (Rp):
+                    </label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-xs font-semibold text-zinc-400">Rp</span>
+                        <input
+                            type="number"
+                            min="0"
+                            step="1000"
+                            wire:model="registration_fee_per_patrol"
+                            placeholder="Contoh: 250000"
+                            class="w-full rounded-xl border border-zinc-300 bg-white pl-10 pr-3.5 py-2 text-xs font-semibold text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                        />
+                    </div>
+                    <span class="text-[11px] text-zinc-400">Biaya yang dibebankan per satu regu (8 orang). Kosongkan jika gratis.</span>
+                    @error('registration_fee_per_patrol') <span class="block text-xs text-rose-500 mt-1">{{ $message }}</span> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                        Nama Bank / Lembaga Keuangan:
+                    </label>
+                    <input
+                        type="text"
+                        wire:model="payment_bank_name"
+                        placeholder="Contoh: Bank Mandiri / Bank Syariah Indonesia / Bank Sumut"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                    />
+                    @error('payment_bank_name') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                        Nomor Rekening / Virtual Account:
+                    </label>
+                    <input
+                        type="text"
+                        wire:model="payment_account_number"
+                        placeholder="Contoh: 106-00-1234567-8"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 font-mono"
+                    />
+                    @error('payment_account_number') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                        Atas Nama Rekening (Pemilik):
+                    </label>
+                    <input
+                        type="text"
+                        wire:model="payment_account_holder"
+                        placeholder="Contoh: Kwarcab Gerakan Pramuka Kota Padangsidimpuan"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                    />
+                    @error('payment_account_holder') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                        Petunjuk / Catatan Pembayaran:
+                    </label>
+                    <textarea
+                        wire:model="payment_instructions"
+                        rows="2"
+                        placeholder="Contoh: Cantumkan berita transfer: [Nama Pangkalan - Nama Regu]. Simpan bukti transfer dan unggah pada portal registrasi."
+                        class="w-full rounded-xl border border-zinc-300 bg-white p-3 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                    ></textarea>
+                    @error('payment_instructions') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
+                </div>
+            </div>
+        </div>
+
         {{-- Card 3: Kontak Narahubung & Status Sistem --}}
         <div class="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900 space-y-4">
             <div class="border-b border-zinc-100 dark:border-zinc-800 pb-3">

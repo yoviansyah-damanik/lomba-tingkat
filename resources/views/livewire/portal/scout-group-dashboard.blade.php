@@ -40,6 +40,12 @@
             </x-slot:description>
 
             <x-slot:actions>
+                @if($scoutGroup->canDownloadDocuments())
+                    <flux:button href="{{ route('scout-group.registration-certificate', ['download' => 1]) }}" variant="primary" icon="document-text"
+                        data-loading="Mencetak Bukti Registrasi (PDF)...">
+                        Bukti Registrasi (PDF)
+                    </flux:button>
+                @endif
                 @if($scoutGroup->isEditable())
                     <flux:button variant="subtle" icon="pencil-square" wire:click="openProfileModal">
                         Edit Profil
@@ -48,9 +54,11 @@
                         Periksa & Ajukan
                     </flux:button>
                 @else
-                    <span class="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-800/60">
-                        Data Terkunci (Dalam Verifikasi)
-                    </span>
+                    @if(! $scoutGroup->canDownloadDocuments())
+                        <span class="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-800/60">
+                            Data Terkunci (Dalam Verifikasi)
+                        </span>
+                    @endif
                 @endif
             </x-slot:actions>
         </x-heading-section>
@@ -110,7 +118,9 @@
                             Kelola Peserta &rarr;
                         </a>
                         @if($scoutGroup->canDownloadDocuments())
-                        <a href="{{ route('scout-group.patrols.form-01', $boysPatrol->id) }}" target="_blank" class="rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                        <a href="{{ route('scout-group.patrols.form-01', $boysPatrol->id) }}" target="_blank"
+                            data-loading="Mencetak FORM 01 Regu Putra (PDF)..."
+                            class="rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                             FORM 01
                         </a>
                         @endif
@@ -171,7 +181,9 @@
                             Kelola Peserta &rarr;
                         </a>
                         @if($scoutGroup->canDownloadDocuments())
-                        <a href="{{ route('scout-group.patrols.form-01', $girlsPatrol->id) }}" target="_blank" class="rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                        <a href="{{ route('scout-group.patrols.form-01', $girlsPatrol->id) }}" target="_blank"
+                            data-loading="Mencetak FORM 01 Regu Putri (PDF)..."
+                            class="rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                             FORM 01
                         </a>
                         @endif

@@ -140,6 +140,7 @@ class PwaAndWebPushTest extends TestCase
     public function test_admin_can_access_push_broadcast_management(): void
     {
         $admin = User::whereHas('roles', fn ($q) => $q->where('name', 'admin'))->first();
+        $admin->assignRole('superadmin');
 
         $response = $this->actingAs($admin)->get(route('admin.push-broadcast.index'));
         $response->assertStatus(200);
@@ -152,6 +153,7 @@ class PwaAndWebPushTest extends TestCase
     public function test_admin_can_send_push_broadcast(): void
     {
         $admin = User::whereHas('roles', fn ($q) => $q->where('name', 'admin'))->first();
+        $admin->assignRole('superadmin');
 
         // Buat dummy subscription
         PushSubscription::create([

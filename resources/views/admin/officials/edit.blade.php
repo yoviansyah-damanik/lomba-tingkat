@@ -52,30 +52,7 @@
                         >
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                            ID / Username Login
-                        </label>
-                        <input
-                            type="text"
-                            value="{{ $official->id_number }}"
-                            readonly
-                            disabled
-                            class="w-full rounded-xl border border-zinc-300 bg-zinc-100 px-3.5 py-2 text-xs sm:text-sm font-mono text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-400"
-                        >
-                    </div>
 
-                    <div>
-                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                            Kata Sandi Baru (Kosongkan jika tidak ingin mengubah)
-                        </label>
-                        <input
-                            type="password"
-                            name="password"
-                            placeholder="Biarkan kosong jika tidak diubah"
-                            class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
-                        >
-                    </div>
 
                     <div>
                         <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
@@ -129,21 +106,6 @@
                     </div>
                 </div>
 
-                <div class="pt-2">
-                    <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-                        Status Keaktifan Akun
-                    </label>
-                    <div class="flex items-center gap-4">
-                        <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                            <input type="radio" name="is_active" value="1" {{ old('is_active', $official->is_active) ? 'checked' : '' }} class="text-amber-600">
-                            Aktif (Dapat Login & Terakreditasi)
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                            <input type="radio" name="is_active" value="0" {{ !old('is_active', $official->is_active) ? 'checked' : '' }} class="text-zinc-600">
-                            Non-Aktif (Akses Dikunci)
-                        </label>
-                    </div>
-                </div>
             </div>
 
             <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 space-y-4">

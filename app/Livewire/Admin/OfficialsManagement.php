@@ -36,7 +36,6 @@ class OfficialsManagement extends Component
     // Field Form
     public string $name = '';
     public string $idNumber = '';
-    public string $password = '';
     public string $phone_number = '';
     public string $scout_id = '';
     public string $institution = 'Kwarcab Kota Padangsidimpuan';
@@ -139,7 +138,6 @@ class OfficialsManagement extends Component
         $this->editingId = $user->id;
         $this->name = $user->name;
         $this->idNumber = (string) $user->id_number;
-        $this->password = '';
         $this->phone_number = $user->phone_number ?? '';
         $this->scout_id = $user->scout_id ?? '';
         $this->institution = $user->institution ?? 'Kwarcab Kota Padangsidimpuan';
@@ -164,46 +162,58 @@ class OfficialsManagement extends Component
             'position' => ['nullable', 'string', 'max:100'],
             'selectedRoles' => ['required', 'array', 'min:1'],
             'selectedRoles.*' => ['in:committee,judge'],
-            'is_active' => ['boolean'],
             'avatar' => ['nullable', 'image', 'max:2048'],
         ];
 
-        if (! $this->editingId) {
-            $rules['password'] = ['required', 'string', 'min:8'];
-        } else {
-            $rules['password'] = ['nullable', 'string', 'min:8'];
-        }
-
         $validated = $this->validate($rules);
-
-        $data = [
-            'name' => $validated['name'],
-            'phone_number' => $validated['phone_number'] ?: null,
-            'scout_id' => $validated['scout_id'] ?: null,
-            'institution' => $validated['institution'] ?: 'Kwarcab Kota Padangsidimpuan',
-            'position' => $validated['position'] ?: null,
-            'is_active' => $validated['is_active'],
-        ];
-
-        if (! empty($validated['password'])) {
-            $data['password'] = Hash::make($validated['password']);
-        }
-
-        if ($this->avatar) {
-            $data['avatar_path'] = $this->avatar->store('avatars', 'public');
-        }
 
         if ($this->editingId) {
             $official = User::findOrFail($this->editingId);
+            $data = [
+                'name' => $validated['name'],
+                'phone_number' => $validated['phone_number'] ?: null,
+                'scout_id' => $validated['scout_id'] ?: null,
+                'institution' => $validated['institution'] ?: 'Kwarcab Kota Padangsidimpuan',
+                'position' => $validated['position'] ?: null,
+            ];
+
+            if ($this->avatar) {
+                if ($official->avatar_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($official->avatar_path)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($official->avatar_path);
+                }
+                $data['avatar_path'] = $this->avatar->store('avatars', 'public');
+            }
+
             $official->update($data);
 
-            $roleIds = Role::whereIn('name', $validated['selectedRoles'])->pluck('id')->toArray();
-            $official->roles()->sync($roleIds);
+            // Peran akun otomatis menyesuaikan dengan peran yang dipilih
+            $nonOfficialRoleIds = $official->roles()->whereNotIn('name', ['committee', 'judge'])->pluck('roles.id')->toArray();
+            $newRoleIds = Role::whereIn('name', $validated['selectedRoles'])->pluck('id')->toArray();
+            $official->roles()->sync(array_merge($nonOfficialRoleIds, $newRoleIds));
 
             Flux::toast(variant: 'success', heading: 'Berhasil', text: "Data aparatur {$official->name} berhasil diperbarui.");
         } else {
-            $data['qr_token'] = (string) Str::uuid();
-            $data['qr_generated_at'] = now();
+            // ID unik aparatur: A-{6 digit acak}
+            $officialIdNumber = User::generateOfficialIdNumber();
+
+            $data = [
+                'name' => $validated['name'],
+                'id_number' => $officialIdNumber,
+                'username' => $officialIdNumber,
+                'password' => Hash::make($officialIdNumber), // Password default mengikuti ID
+                'must_change_password' => true,             // Login pertama diminta ganti password
+                'phone_number' => $validated['phone_number'] ?: null,
+                'scout_id' => $validated['scout_id'] ?: null,
+                'institution' => $validated['institution'] ?: 'Kwarcab Kota Padangsidimpuan',
+                'position' => $validated['position'] ?: null,
+                'is_active' => true,                        // Akun otomatis dibuat dan aktif
+                'qr_token' => (string) Str::uuid(),
+                'qr_generated_at' => now(),
+            ];
+
+            if ($this->avatar) {
+                $data['avatar_path'] = $this->avatar->store('avatars', 'public');
+            }
 
             $official = User::create($data);
 
@@ -211,7 +221,7 @@ class OfficialsManagement extends Component
                 $official->assignRole($roleName);
             }
 
-            Flux::toast(variant: 'success', heading: 'Berhasil', text: "Aparatur {$official->name} berhasil didaftarkan.");
+            Flux::toast(variant: 'success', heading: 'Berhasil', text: "Aparatur {$official->name} berhasil didaftarkan dengan ID {$official->id_number}.");
         }
 
         $this->showModal = false;
@@ -232,15 +242,26 @@ class OfficialsManagement extends Component
     }
 
     /**
-     * Hapus aparatur
+     * Hapus aparatur beserta akunnya
      */
     public function deleteOfficial(string $id): void
     {
         $user = User::findOrFail($id);
         $name = $user->name;
+
+        if ($user->avatar_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->avatar_path)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar_path);
+        }
+
+        $user->roles()->detach();
         $user->delete();
 
-        Flux::toast(variant: 'danger', heading: 'Dihapus', text: "Aparatur {$name} berhasil dihapus.");
+        Flux::toast(variant: 'danger', heading: 'Dihapus', text: "Aparatur {$name} dan akunnya berhasil dihapus.");
+    }
+
+    public function delete(string $id): void
+    {
+        $this->deleteOfficial($id);
     }
 
     /**
@@ -251,7 +272,6 @@ class OfficialsManagement extends Component
         $this->editingId = null;
         $this->name = '';
         $this->idNumber = '';
-        $this->password = '';
         $this->phone_number = '';
         $this->scout_id = '';
         $this->institution = 'Kwarcab Kota Padangsidimpuan';

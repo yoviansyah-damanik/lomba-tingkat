@@ -192,7 +192,7 @@ class ReportsExportTest extends TestCase
     public function test_reports_are_served_as_pdf_with_preview_first(): void
     {
         foreach (['admin.reports.pdf.berita-acara' => 'berita-acara-', 'standings.pdf' => 'rekap-regu-berprestasi-'] as $route => $prefix) {
-            $inline = $this->actingAs($this->admin)->get(route($route));
+            $inline = $this->actingAs($this->admin)->get(route($route, ['raw' => 1]));
             $inline->assertOk()->assertHeader('Content-Type', 'application/pdf');
             $this->assertStringStartsWith('%PDF', $inline->getContent());
             $this->assertStringContainsString('inline; filename="'.$prefix, $inline->headers->get('Content-Disposition'));
@@ -205,6 +205,26 @@ class ReportsExportTest extends TestCase
             ->assertOk()
             ->assertSee('PRATINJAU PDF')
             ->assertSee(route('standings.pdf'), false);
+    }
+
+    /**
+     * URL PDF yang dibuka langsung menampilkan halaman pratinjau; ?raw=1 (isi iframe) dan ?download=1 tetap PDF
+     */
+    public function test_pdf_url_renders_preview_page_by_default(): void
+    {
+        $url = route('admin.scout-groups.patrols.form-01', [$this->scoutGroup->id, $this->patrol->id]);
+
+        $this->actingAs($this->admin)->get($url)
+            ->assertOk()
+            ->assertSee('PRATINJAU PDF')
+            ->assertSee('raw=1', false)
+            ->assertSee('download=1', false);
+
+        $this->actingAs($this->admin)->get($url.'?raw=1')
+            ->assertHeader('Content-Type', 'application/pdf');
+
+        $this->actingAs($this->admin)->get($url.'?download=1')
+            ->assertHeader('Content-Type', 'application/pdf');
     }
 
     /**

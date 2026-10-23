@@ -132,6 +132,32 @@
                         </div>
                     </div>
 
+                    @php
+                        $paymentConfig = \App\Models\Event::activePaymentConfig();
+                    @endphp
+
+                    {{-- Card Ketentuan Biaya Pendaftaran per Regu --}}
+                    <div class="rounded-2xl border border-amber-300/80 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Biaya Pendaftaran Kontingen</h4>
+                            <span class="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-900 dark:bg-amber-950/60 dark:text-amber-300">Per Regu</span>
+                        </div>
+                        <div class="my-3">
+                            <span class="text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 font-mono">{{ $paymentConfig['formatted_fee_per_patrol'] }}</span>
+                            <span class="text-xs text-zinc-500">/ regu</span>
+                            <p class="mt-1 text-[11px] text-zinc-500 leading-normal">
+                                Dihitung berdasarkan jumlah regu (Putra/Putri) yang didaftarkan. Pembayaran ditransfer ke rekening resmi Kwarcab saat pengajuan berkas di dasbor.
+                            </p>
+                        </div>
+
+                        <div class="rounded-xl border border-zinc-200 bg-zinc-50/70 p-3 text-xs dark:border-zinc-800 dark:bg-zinc-800/40 space-y-1">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">Rekening Resmi Kwarcab:</span>
+                            <div class="font-semibold text-zinc-900 dark:text-zinc-100 text-xs">{{ $paymentConfig['bank_name'] }}</div>
+                            <div class="font-mono font-bold text-amber-800 dark:text-amber-400 text-xs tracking-wide select-all">{{ $paymentConfig['account_number'] }}</div>
+                            <div class="text-[10px] text-zinc-600 dark:text-zinc-400 leading-tight">{{ $paymentConfig['account_holder'] }}</div>
+                        </div>
+                    </div>
+
                     {{-- Card Ketentuan Pangkalan --}}
                     <div class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
                         <h4 class="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Ketentuan Pangkalan</h4>
@@ -398,26 +424,21 @@
                                             <p class="mt-1 text-[11px] text-zinc-500">Digunakan Administrator untuk konfirmasi berkas verifikasi kontingen.</p>
                                         </div>
 
-                                        {{-- Username --}}
-                                        <div class="sm:col-span-2">
-                                            <flux:input name="username" label="Username Login Kontingen"
-                                                :value="old('username')" type="text" required autocomplete="username" autocapitalize="none"
-                                                placeholder="gudep.smpn2" />
-                                            <p class="mt-1 text-[11px] text-zinc-500">Username digunakan untuk masuk ke Dasbor Kontingen. Gunakan huruf, angka, titik, strip, atau garis bawah (minimal 3 karakter).</p>
-                                        </div>
-
-                                        {{-- Kata Sandi --}}
-                                        <div>
-                                            <flux:input name="password" :label="__('Kata Sandi Akun')" type="password"
-                                                required autocomplete="new-password" placeholder="Minimal 8 karakter"
-                                                viewable />
-                                        </div>
-
-                                        {{-- Konfirmasi Kata Sandi --}}
-                                        <div>
-                                            <flux:input name="password_confirmation" :label="__('Ulangi Kata Sandi')"
-                                                type="password" required autocomplete="new-password"
-                                                placeholder="Ketik ulang kata sandi" viewable />
+                                        {{-- Informasi Otomatisasi Kredensial Akun --}}
+                                        <div class="sm:col-span-2 rounded-xl border border-amber-300/80 bg-gradient-to-br from-amber-50/90 to-amber-100/50 p-4 dark:border-amber-500/30 dark:from-amber-950/40 dark:to-zinc-900/60 shadow-xs">
+                                            <div class="flex items-start gap-3">
+                                                <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-600 text-white shadow-xs">
+                                                    <flux:icon name="sparkles" class="size-4" />
+                                                </div>
+                                                <div class="text-xs">
+                                                    <strong class="block font-bold text-amber-950 dark:text-amber-200">
+                                                        Kredensial Akun Dibuat Otomatis oleh Sistem
+                                                    </strong>
+                                                    <p class="mt-0.5 text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                                                        Anda tidak perlu membuat username dan kata sandi secara manual. Sistem akan secara otomatis menerbitkan <strong>ID Gudep resmi unik</strong>, <strong>username</strong>, dan <strong>kata sandi aman</strong> segera setelah pendaftaran dikirim. Anda akan langsung diarahkan untuk melihat kredensial tersebut serta dapat langsung mengubah kata sandi.
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

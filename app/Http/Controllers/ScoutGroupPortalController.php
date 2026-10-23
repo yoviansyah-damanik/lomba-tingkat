@@ -14,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
@@ -23,6 +24,10 @@ use Illuminate\View\View;
  */
 class ScoutGroupPortalController extends Controller
 {
+    public function __construct(
+        private readonly \App\Services\PdfService $pdf,
+    ) {}
+
     /**
      * Daftar Kwartir Ranting resmi (sama dengan form registrasi)
      */
@@ -220,19 +225,30 @@ class ScoutGroupPortalController extends Controller
     }
 
     /**
-     * Cetak formulir rekap pendaftaran kontingen (FORM : 01)
+     * Cetak formulir rekap pendaftaran kontingen (FORM : 01) (PDF)
      */
-    public function form01Print(Request $request, string $patrolId): View
+    public function form01Print(Request $request, string $patrolId): \Illuminate\Http\Response
     {
         $scoutGroup = $this->getOrCreateScoutGroup($request);
         abort_unless($scoutGroup->canDownloadDocuments(), 403, ScoutGroup::DOWNLOAD_LOCKED_MESSAGE);
 
-        $scoutGroup->load(['chaperones', 'patrols']);
+        $scoutGroup->load(['chaperones', 'patrols.participants']);
         $patrol = $scoutGroup->patrols()->with('participants')->findOrFail($patrolId);
-        $chaperone = $patrol->chaperone();
+        $patrol->setRelation('scoutGroup', $scoutGroup);
+
+        $chaperone = $patrol->isBoys()
+            ? $scoutGroup->chaperones->firstWhere('gender', 'male')
+            : $scoutGroup->chaperones->firstWhere('gender', 'female');
         $orderedParticipants = $patrol->orderedParticipants();
 
-        return view('portal.scout-group.patrols.form-01', compact('scoutGroup', 'patrol', 'chaperone', 'orderedParticipants'));
+        $filename = 'Form_01_Rekap_Regu_' . \Illuminate\Support\Str::slug($patrol->patrol_name) . '.pdf';
+
+        return $this->pdf->response(
+            'portal.scout-group.patrols.form-01',
+            compact('scoutGroup', 'patrol', 'chaperone', 'orderedParticipants'),
+            $filename,
+            $request->boolean('download')
+        );
     }
 
     /**
@@ -278,6 +294,14 @@ class ScoutGroupPortalController extends Controller
 
         if ($request->hasFile('photo')) {
             $data['photo_path'] = $request->file('photo')->store('participants', 'public');
+        }
+
+        // Simpan 7 berkas persyaratan peserta jika diunggah
+        foreach (Participant::DOCUMENTS as $inputKey => [$column, $label]) {
+            unset($data[$inputKey]);
+            if ($request->hasFile($inputKey)) {
+                $data[$column] = $request->file($inputKey)->store('participants/documents', 'public');
+            }
         }
 
         $patrol->participants()->create(array_merge($data, [
@@ -329,6 +353,15 @@ class ScoutGroupPortalController extends Controller
             // Bagian 4 & 5: Riwayat kepramukaan (opsional)
             'scout_siaga' => ['nullable', 'array'],
             'scout_penggalang' => ['nullable', 'array'],
+
+            // Bagian 6: Berkas persyaratan peserta (KTA, BPJS, Surat Ket. Sehat, Akta Kelahiran, KK, SKU, SKK)
+            'doc_kta' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:4096'],
+            'doc_bpjs' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:4096'],
+            'doc_health_certificate' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:4096'],
+            'doc_birth_certificate' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:4096'],
+            'doc_family_card' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:4096'],
+            'doc_sku' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:4096'],
+            'doc_skk' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:4096'],
         ];
     }
 
@@ -338,6 +371,9 @@ class ScoutGroupPortalController extends Controller
             'required' => ':attribute wajib diisi.',
             'photo.image' => 'Pas foto harus berupa gambar JPG atau PNG.',
             'photo.max' => 'Ukuran pas foto maksimal 2MB.',
+            'file' => ':attribute harus berupa berkas yang valid.',
+            'mimes' => ':attribute harus berformat PDF, JPG, atau PNG.',
+            'max' => 'Ukuran :attribute maksimal :max KB.',
         ];
     }
 
@@ -371,6 +407,13 @@ class ScoutGroupPortalController extends Controller
             'formal_education.*.city' => 'Kota sekolah',
             'formal_education.*.graduation_year' => 'Tahun lulus',
             'formal_education.*.notes' => 'Keterangan pendidikan',
+            'doc_kta' => 'Scan KTA',
+            'doc_bpjs' => 'Scan BPJS',
+            'doc_health_certificate' => 'Scan Surat Keterangan Sehat',
+            'doc_birth_certificate' => 'Scan Akta Kelahiran',
+            'doc_family_card' => 'Scan Kartu Keluarga (KK)',
+            'doc_sku' => 'Scan SKU',
+            'doc_skk' => 'Scan SKK',
         ];
     }
 
@@ -429,7 +472,21 @@ class ScoutGroupPortalController extends Controller
         unset($data['photo']);
 
         if ($request->hasFile('photo')) {
+            if ($participant->photo_path && Storage::disk('public')->exists($participant->photo_path)) {
+                Storage::disk('public')->delete($participant->photo_path);
+            }
             $data['photo_path'] = $request->file('photo')->store('participants', 'public');
+        }
+
+        // Perbarui berkas persyaratan peserta jika diunggah berkas baru
+        foreach (Participant::DOCUMENTS as $inputKey => [$column, $label]) {
+            unset($data[$inputKey]);
+            if ($request->hasFile($inputKey)) {
+                if ($participant->$column && Storage::disk('public')->exists($participant->$column)) {
+                    Storage::disk('public')->delete($participant->$column);
+                }
+                $data[$column] = $request->file($inputKey)->store('participants/documents', 'public');
+            }
         }
 
         $participant->update($data);
@@ -438,9 +495,9 @@ class ScoutGroupPortalController extends Controller
     }
 
     /**
-     * Cetak formulir resmi biodata peserta
+     * Cetak formulir resmi biodata peserta (FORM : 02) (PDF)
      */
-    public function participantPrint(Request $request, string $id): View
+    public function participantPrint(Request $request, string $id): \Illuminate\Http\Response
     {
         $scoutGroup = $this->getOrCreateScoutGroup($request);
         abort_unless($scoutGroup->canDownloadDocuments(), 403, ScoutGroup::DOWNLOAD_LOCKED_MESSAGE);
@@ -449,7 +506,14 @@ class ScoutGroupPortalController extends Controller
             $q->where('scout_group_id', $scoutGroup->id);
         })->with('patrol')->findOrFail($id);
 
-        return view('portal.scout-group.participants.print', compact('scoutGroup', 'participant'));
+        $filename = 'Form_02_Biodata_' . \Illuminate\Support\Str::slug($participant->full_name) . '.pdf';
+
+        return $this->pdf->response(
+            'portal.scout-group.participants.print',
+            compact('scoutGroup', 'participant'),
+            $filename,
+            $request->boolean('download')
+        );
     }
 
     /**
@@ -466,6 +530,16 @@ class ScoutGroupPortalController extends Controller
         $participant = Participant::whereHas('patrol', function ($q) use ($scoutGroup) {
             $q->where('scout_group_id', $scoutGroup->id);
         })->findOrFail($id);
+
+        if ($participant->photo_path && Storage::disk('public')->exists($participant->photo_path)) {
+            Storage::disk('public')->delete($participant->photo_path);
+        }
+
+        foreach (Participant::DOCUMENTS as $inputKey => [$column, $label]) {
+            if ($participant->$column && Storage::disk('public')->exists($participant->$column)) {
+                Storage::disk('public')->delete($participant->$column);
+            }
+        }
 
         $participant->delete();
 
@@ -655,16 +729,43 @@ class ScoutGroupPortalController extends Controller
     }
 
     /**
-     * Cetak lembar formulir biodata resmi pembina pendamping
+     * Cetak lembar formulir biodata resmi pembina pendamping (FORM : 03) (PDF)
      */
-    public function chaperonePrint(Request $request, string $id): View
+    public function chaperonePrint(Request $request, string $id): \Illuminate\Http\Response
     {
         $scoutGroup = $this->getOrCreateScoutGroup($request);
         abort_unless($scoutGroup->canDownloadDocuments(), 403, ScoutGroup::DOWNLOAD_LOCKED_MESSAGE);
 
         $chaperone = $scoutGroup->chaperones()->findOrFail($id);
+        $chaperone->setRelation('scoutGroup', $scoutGroup);
 
-        return view('portal.scout-group.chaperones.print', compact('scoutGroup', 'chaperone'));
+        $filename = 'Form_03_Biodata_' . \Illuminate\Support\Str::slug($chaperone->full_name) . '.pdf';
+
+        return $this->pdf->response(
+            'portal.scout-group.chaperones.print',
+            compact('scoutGroup', 'chaperone'),
+            $filename,
+            $request->boolean('download')
+        );
+    }
+
+    /**
+     * Cetak dokumen resmi Bukti Registrasi Kontingen Gugusdepan (PDF)
+     */
+    public function registrationCertificatePrint(Request $request): \Illuminate\Http\Response
+    {
+        $scoutGroup = $this->getOrCreateScoutGroup($request);
+        abort_unless($scoutGroup->canDownloadDocuments(), 403, ScoutGroup::DOWNLOAD_LOCKED_MESSAGE);
+
+        $scoutGroup->load(['patrols.participants', 'chaperones', 'user', 'verifier']);
+        $filename = 'Bukti_Registrasi_' . \Illuminate\Support\Str::slug($scoutGroup->school_name) . '.pdf';
+
+        return $this->pdf->response(
+            'admin.scout-groups.registration-certificate',
+            compact('scoutGroup'),
+            $filename,
+            $request->boolean('download')
+        );
     }
 
     /**
@@ -720,10 +821,39 @@ class ScoutGroupPortalController extends Controller
             return back()->withErrors(['error' => 'Gugus Depan wajib mendaftarkan minimal 1 Pembina Pendamping (Bindamping).']);
         }
 
-        // Kunci status menjadi Submitted
-        $scoutGroup->update([
-            'verification_status' => RegistrationStatusEnum::Submitted,
+        // Validasi unggah berkas pangkalan jika disertakan
+        $request->validate([
+            'mandate_letter' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'payment_proof' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+        ], [
+            'mandate_letter.file' => 'Berkas Surat Tugas / Mandat harus valid.',
+            'mandate_letter.mimes' => 'Surat Tugas / Mandat harus berformat PDF, JPG, atau PNG.',
+            'mandate_letter.max' => 'Ukuran Surat Tugas / Mandat maksimal 5MB.',
+            'payment_proof.file' => 'Berkas Bukti Bayar harus valid.',
+            'payment_proof.mimes' => 'Bukti Bayar harus berformat PDF, JPG, atau PNG.',
+            'payment_proof.max' => 'Ukuran Bukti Bayar maksimal 5MB.',
         ]);
+
+        $groupUpdates = [
+            'verification_status' => RegistrationStatusEnum::Submitted,
+        ];
+
+        if ($request->hasFile('mandate_letter')) {
+            if ($scoutGroup->mandate_letter_path && Storage::disk('public')->exists($scoutGroup->mandate_letter_path)) {
+                Storage::disk('public')->delete($scoutGroup->mandate_letter_path);
+            }
+            $groupUpdates['mandate_letter_path'] = $request->file('mandate_letter')->store('scout-groups/documents', 'public');
+        }
+
+        if ($request->hasFile('payment_proof')) {
+            if ($scoutGroup->payment_proof_path && Storage::disk('public')->exists($scoutGroup->payment_proof_path)) {
+                Storage::disk('public')->delete($scoutGroup->payment_proof_path);
+            }
+            $groupUpdates['payment_proof_path'] = $request->file('payment_proof')->store('scout-groups/documents', 'public');
+        }
+
+        // Kunci status menjadi Submitted
+        $scoutGroup->update($groupUpdates);
 
         $scoutGroup->patrols()->update(['status' => RegistrationStatusEnum::Submitted]);
         Participant::whereIn('patrol_id', $scoutGroup->patrols()->pluck('id'))

@@ -305,6 +305,14 @@ class ContingentRegistrationTest extends TestCase
             'national_identity_number' => '1277010101850001',
             'gender' => 'male',
             'phone_number' => '08126111222',
+            'birth_place' => 'Padangsidimpuan',
+            'birth_date' => '1985-01-01',
+            'religion' => 'Islam',
+            'blood_type' => 'O',
+            'home_address' => 'Jl. Merdeka No. 10',
+            'city' => 'Padangsidimpuan',
+            'postal_code' => '22727',
+            'photo' => \Illuminate\Http\UploadedFile::fake()->image('foto_chaperone.jpg', 300, 400),
         ]);
 
         $res->assertRedirect();
@@ -353,6 +361,7 @@ class ContingentRegistrationTest extends TestCase
             'postal_code' => '22727',
             'home_phone' => '0634-21999',
             'phone_number' => '081266554433',
+            'photo' => \Illuminate\Http\UploadedFile::fake()->image('foto_bindamping.jpg', 300, 400),
             'formal_education' => [
                 ['level' => 'SD', 'school_name' => 'SDN 1 Padangsidimpuan', 'city' => 'Padangsidimpuan', 'graduation_year' => '2000', 'notes' => 'Lulus'],
                 ['level' => 'SMP', 'school_name' => 'SMPN 1 Padangsidimpuan', 'city' => 'Padangsidimpuan', 'graduation_year' => '2003', 'notes' => 'Lulus'],
@@ -392,26 +401,35 @@ class ContingentRegistrationTest extends TestCase
         $updateRes = $this->actingAs($this->scoutGroupUser)->put(route('scout-group.chaperones.update', $chaperone->id), [
             'full_name' => 'Kak Mahran Harahap, S.Pd, M.Pd',
             'gender' => 'male',
-            'phone_number' => '081266554433',
+            'birth_place' => 'Padangsidimpuan',
+            'birth_date' => '1988-06-12',
+            'religion' => 'Islam',
             'blood_type' => 'AB',
+            'scout_id' => '02.21.10.055',
+            'national_identity_number' => '1277011206880001',
+            'home_address' => 'Jl. Merdeka No. 45',
+            'city' => 'Kota Padangsidimpuan',
+            'postal_code' => '22727',
+            'phone_number' => '081266554433',
         ]);
         $updateRes->assertRedirect(route('scout-group.chaperones'));
         $this->assertEquals('Kak Mahran Harahap, S.Pd, M.Pd', $chaperone->fresh()->full_name);
         $this->assertEquals('AB', $chaperone->fresh()->blood_type);
 
-        // 5. Cetak lembar formulir biodata bindamping (oleh Gudep)
-        $printRes = $this->actingAs($this->scoutGroupUser)->get(route('scout-group.chaperones.print', $chaperone->id));
+        // 5. Cetak lembar formulir biodata bindamping (oleh Gudep dalam format PDF)
+        $scoutGroup->update(['verification_status' => RegistrationStatusEnum::Verified]);
+        $printRes = $this->actingAs($this->scoutGroupUser)->get(route('scout-group.chaperones.print', $chaperone->id).'?raw=1');
         $printRes->assertOk();
-        $printRes->assertSee('BIODATA PEMBINA PENDAMPING (BINDAMPING)');
-        $printRes->assertSee('Kak Mahran Harahap, S.Pd, M.Pd');
-        $printRes->assertSee('PENDIDIKAN FORMAL');
-        $printRes->assertSee('KEPRAMUKAAN');
-        $printRes->assertSee('KURSUS/PELATIHAN KEPRAMUKAAN');
+        $printRes->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringContainsString('Form_03_Biodata_', (string) $printRes->headers->get('Content-Disposition'));
+        $this->assertStringStartsWith('%PDF', $printRes->getContent());
 
-        // 6. Cetak lembar formulir biodata bindamping (oleh Admin)
-        $adminPrintRes = $this->actingAs($this->adminUser)->get(route('admin.scout-groups.chaperones.print', [$scoutGroup->id, $chaperone->id]));
+        // 6. Cetak lembar formulir biodata bindamping (oleh Admin dalam format PDF)
+        $adminPrintRes = $this->actingAs($this->adminUser)->get(route('admin.scout-groups.chaperones.print', [$scoutGroup->id, $chaperone->id]).'?raw=1');
         $adminPrintRes->assertOk();
-        $adminPrintRes->assertSee('BIODATA PEMBINA PENDAMPING (BINDAMPING)');
+        $adminPrintRes->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringContainsString('Form_03_Biodata_', (string) $adminPrintRes->headers->get('Content-Disposition'));
+        $this->assertStringStartsWith('%PDF', $adminPrintRes->getContent());
     }
 
     /**
@@ -536,6 +554,7 @@ class ContingentRegistrationTest extends TestCase
         $this->assertNotNull($scoutGroup->verified_at);
 
         // 2. Admin Meminta Revisi (Needs Revision)
+        $scoutGroup->update(['verification_status' => RegistrationStatusEnum::Submitted]);
         $revisionRes = $this->actingAs($this->adminUser)->post(route('admin.scout-groups.revision', $scoutGroup->id), [
             'revision_notes' => 'Tolong lengkapi NTA Pramuka pada seluruh peserta dan bindamping.',
         ]);
@@ -548,6 +567,7 @@ class ContingentRegistrationTest extends TestCase
         $this->assertTrue($scoutGroup->isEditable());
 
         // 3. Admin Menolak Pendaftaran (Reject)
+        $scoutGroup->update(['verification_status' => RegistrationStatusEnum::Submitted]);
         $rejectRes = $this->actingAs($this->adminUser)->post(route('admin.scout-groups.reject', $scoutGroup->id), [
             'revision_notes' => 'Tidak memenuhi persyaratan usia penggalang SMP/MTs.',
         ]);
@@ -659,20 +679,20 @@ class ContingentRegistrationTest extends TestCase
         $this->assertEquals('Muhammad Zaki Harahap', $participant->full_name);
         $this->assertEquals('H. Zulkifli Harahap', $participant->parent_name);
 
-        // 5. Cetak lembar resmi oleh Gudep
-        $printRes = $this->actingAs($this->scoutGroupUser)->get(route('scout-group.participants.print', $participant->id));
+        // 5. Cetak lembar resmi oleh Gudep (dalam format PDF)
+        $scoutGroup->update(['verification_status' => RegistrationStatusEnum::Verified]);
+        $printRes = $this->actingAs($this->scoutGroupUser)->get(route('scout-group.participants.print', $participant->id).'?raw=1');
         $printRes->assertOk();
-        $printRes->assertSee('BIODATA PESERTA');
-        $printRes->assertSee('LOMBA TINGKAT III (LT III) TAHUN 2026');
-        $printRes->assertSee('KWARTIR CABANG GERAKAN PRAMUKA KOTA PADANGSIDIMPUAN');
-        $printRes->assertSee('Muhammad Zaki Harahap');
-        $printRes->assertSee('H. Zulkifli Harahap');
+        $printRes->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringContainsString('Form_02_Biodata_', (string) $printRes->headers->get('Content-Disposition'));
+        $this->assertStringStartsWith('%PDF', $printRes->getContent());
 
-        // 6. Cetak lembar resmi oleh Admin
-        $adminPrintRes = $this->actingAs($this->adminUser)->get(route('admin.scout-groups.participants.print', [$scoutGroup->id, $participant->id]));
+        // 6. Cetak lembar resmi oleh Admin (dalam format PDF)
+        $adminPrintRes = $this->actingAs($this->adminUser)->get(route('admin.scout-groups.participants.print', [$scoutGroup->id, $participant->id]).'?raw=1');
         $adminPrintRes->assertOk();
-        $adminPrintRes->assertSee('BIODATA PESERTA');
-        $adminPrintRes->assertSee('Muhammad Zaki Harahap');
+        $adminPrintRes->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringContainsString('Form_02_Biodata_', (string) $adminPrintRes->headers->get('Content-Disposition'));
+        $this->assertStringStartsWith('%PDF', $adminPrintRes->getContent());
     }
 
     /**
@@ -732,34 +752,20 @@ class ContingentRegistrationTest extends TestCase
             'status' => RegistrationStatusEnum::Draft,
         ]);
 
-        // 1. Gudep mencetak FORM : 01
-        $gudepRes = $this->actingAs($this->scoutGroupUser)->get(route('scout-group.patrols.form-01', $patrol->id));
+        // 1. Gudep mencetak FORM : 01 (dalam format PDF)
+        $scoutGroup->update(['verification_status' => RegistrationStatusEnum::Verified]);
+        $gudepRes = $this->actingAs($this->scoutGroupUser)->get(route('scout-group.patrols.form-01', $patrol->id).'?raw=1');
         $gudepRes->assertOk();
-        $gudepRes->assertSee('FORM : 01');
-        $gudepRes->assertSee('PENDAFTARAN GUGUSDEPAN');
-        $gudepRes->assertSee('KOTA PADANGSIDIMPUAN');
-        $gudepRes->assertSee('01-093');
-        $gudepRes->assertSee('Kak Rahmat Hidayat, S.Pd');
-        $gudepRes->assertSee('081234567890');
-        $gudepRes->assertSee('DAFTAR NAMA PESERTA');
-        $gudepRes->assertSee('RAJAWALI');
-        $gudepRes->assertSee('PA');
-        $gudepRes->assertSee('Pemimpin Regu');
-        $gudepRes->assertSee('Fahri Siregar');
-        $gudepRes->assertSee('Terap');
-        $gudepRes->assertSee('15/05/2011');
-        $gudepRes->assertSee('VIII-A');
-        $gudepRes->assertSee('Wapinru');
-        $gudepRes->assertSee('Rizky Harahap');
-        $gudepRes->assertSee('Rakit');
-        $gudepRes->assertSee('Pembina Gugusdepan');
+        $gudepRes->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringContainsString('Form_01_Rekap_Regu_', (string) $gudepRes->headers->get('Content-Disposition'));
+        $this->assertStringStartsWith('%PDF', $gudepRes->getContent());
 
-        // 2. Admin mencetak FORM : 01
-        $adminRes = $this->actingAs($this->adminUser)->get(route('admin.scout-groups.patrols.form-01', [$scoutGroup->id, $patrol->id]));
+        // 2. Admin mencetak FORM : 01 (dalam format PDF)
+        $adminRes = $this->actingAs($this->adminUser)->get(route('admin.scout-groups.patrols.form-01', [$scoutGroup->id, $patrol->id]).'?raw=1');
         $adminRes->assertOk();
-        $adminRes->assertSee('FORM : 01');
-        $adminRes->assertSee('Kak Rahmat Hidayat, S.Pd');
-        $adminRes->assertSee('Fahri Siregar');
+        $adminRes->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringContainsString('Form_01_Rekap_Regu_', (string) $adminRes->headers->get('Content-Disposition'));
+        $this->assertStringStartsWith('%PDF', $adminRes->getContent());
     }
 
     /**
@@ -940,5 +946,265 @@ class ContingentRegistrationTest extends TestCase
             ->assertOk()
             ->assertSee('name="parent_phone" required', false)
             ->assertSee('name="photo" required', false);
+    }
+
+    /**
+     * Menguji upload berkas persyaratan peserta (7 dokumen) dan berkas pangkalan (Surat Tugas + Bukti Bayar)
+     */
+    public function test_upload_participant_documents_and_scout_group_administrative_documents(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $scoutGroup = ScoutGroup::factory()->create([
+            'user_id' => $this->scoutGroupUser->id,
+            'verification_status' => RegistrationStatusEnum::Draft,
+        ]);
+
+        $patrol = Patrol::create([
+            'scout_group_id' => $scoutGroup->id,
+            'patrol_name' => 'Garuda Perkasa',
+            'gender_category' => PatrolGenderEnum::Boys,
+            'status' => RegistrationStatusEnum::Draft,
+        ]);
+
+        Chaperone::create([
+            'scout_group_id' => $scoutGroup->id,
+            'full_name' => 'Kak Pembina',
+            'gender' => 'male',
+            'phone_number' => '08123456789',
+            'birth_place' => 'Padangsidimpuan',
+            'birth_date' => '1990-01-01',
+            'religion' => 'Islam',
+            'blood_type' => 'O',
+            'scout_id' => '02.21.01.001',
+            'home_address' => 'Jl. Pramuka',
+            'city' => 'Padangsidimpuan',
+            'postal_code' => '22727',
+            'status' => RegistrationStatusEnum::Draft,
+        ]);
+
+        // 1. Simpan peserta beserta 7 berkas persyaratan
+        $fileKta = \Illuminate\Http\UploadedFile::fake()->create('kta.pdf', 500, 'application/pdf');
+        $fileBpjs = \Illuminate\Http\UploadedFile::fake()->create('bpjs.pdf', 500, 'application/pdf');
+        $fileSehat = \Illuminate\Http\UploadedFile::fake()->create('surat_sehat.pdf', 500, 'application/pdf');
+        $fileAkta = \Illuminate\Http\UploadedFile::fake()->create('akta.pdf', 500, 'application/pdf');
+        $fileKk = \Illuminate\Http\UploadedFile::fake()->create('kk.pdf', 500, 'application/pdf');
+        $fileSku = \Illuminate\Http\UploadedFile::fake()->create('sku.pdf', 500, 'application/pdf');
+        $fileSkk = \Illuminate\Http\UploadedFile::fake()->create('skk.pdf', 500, 'application/pdf');
+
+        $payload = $this->participantPayload([
+            'full_name' => 'Ahmad Fauzi',
+            'doc_kta' => $fileKta,
+            'doc_bpjs' => $fileBpjs,
+            'doc_health_certificate' => $fileSehat,
+            'doc_birth_certificate' => $fileAkta,
+            'doc_family_card' => $fileKk,
+            'doc_sku' => $fileSku,
+            'doc_skk' => $fileSkk,
+        ]);
+
+        $res = $this->actingAs($this->scoutGroupUser)->post(route('scout-group.participants.store', $patrol->id), $payload);
+        $res->assertRedirect(route('scout-group.patrols'));
+
+        $participant = Participant::where('full_name', 'Ahmad Fauzi')->first();
+        $this->assertNotNull($participant);
+
+        // Verifikasi seluruh path berkas tersimpan di database dan storage
+        $this->assertNotNull($participant->doc_kta_path);
+        $this->assertNotNull($participant->doc_bpjs_path);
+        $this->assertNotNull($participant->doc_health_certificate_path);
+        $this->assertNotNull($participant->doc_birth_certificate_path);
+        $this->assertNotNull($participant->doc_family_card_path);
+        $this->assertNotNull($participant->doc_sku_path);
+        $this->assertNotNull($participant->doc_skk_path);
+
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($participant->doc_kta_path);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($participant->doc_bpjs_path);
+
+        // 2. Update peserta dengan berkas KTA baru (berkas lama harus terhapus)
+        $oldKtaPath = $participant->doc_kta_path;
+        $newFileKta = \Illuminate\Http\UploadedFile::fake()->create('kta_baru.pdf', 600, 'application/pdf');
+
+        $updatePayload = $this->participantPayload([
+            'full_name' => 'Ahmad Fauzi Updated',
+            'doc_kta' => $newFileKta,
+        ]);
+
+        $updateRes = $this->actingAs($this->scoutGroupUser)->put(route('scout-group.participants.update', $participant->id), $updatePayload);
+        $updateRes->assertRedirect(route('scout-group.patrols'));
+
+        $participant->refresh();
+        $this->assertNotEquals($oldKtaPath, $participant->doc_kta_path);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertMissing($oldKtaPath);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($participant->doc_kta_path);
+
+        // 3. Uji pengunggahan Berkas Administrasi Pangkalan & Submit via Livewire
+        $mandateLetter = \Illuminate\Http\UploadedFile::fake()->create('surat_tugas.pdf', 1024, 'application/pdf');
+        $paymentProof = \Illuminate\Http\UploadedFile::fake()->image('bukti_transfer.jpg', 600, 800);
+
+        \Livewire\Livewire::actingAs($this->scoutGroupUser)
+            ->test(\App\Livewire\Portal\ReviewRegistration::class)
+            ->set('mandate_letter', $mandateLetter)
+            ->set('payment_proof', $paymentProof)
+            ->call('submitRegistration')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('scout-group.index'));
+
+        $scoutGroup->refresh();
+        $this->assertNotNull($scoutGroup->mandate_letter_path);
+        $this->assertNotNull($scoutGroup->payment_proof_path);
+        $this->assertEquals(RegistrationStatusEnum::Submitted, $scoutGroup->verification_status);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($scoutGroup->mandate_letter_path);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($scoutGroup->payment_proof_path);
+
+        // 4. Hapus peserta dan pastikan file berkas dan foto dibersihkan dari storage
+        // Buka kunci status untuk pengujian destroy
+        $scoutGroup->update(['verification_status' => RegistrationStatusEnum::Draft]);
+        $allDocPaths = [
+            $participant->photo_path,
+            $participant->doc_kta_path,
+            $participant->doc_bpjs_path,
+            $participant->doc_health_certificate_path,
+            $participant->doc_birth_certificate_path,
+            $participant->doc_family_card_path,
+            $participant->doc_sku_path,
+            $participant->doc_skk_path,
+        ];
+
+        $delRes = $this->actingAs($this->scoutGroupUser)->delete(route('scout-group.participants.destroy', $participant->id));
+        $delRes->assertRedirect();
+        $this->assertDatabaseMissing('participants', ['id' => $participant->id]);
+
+        foreach ($allDocPaths as $path) {
+            if ($path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->assertMissing($path);
+            }
+        }
+    }
+
+    /**
+     * Menguji tombol ajukan di review pendaftaran memunculkan modal jika persyaratan belum lengkap
+     */
+    public function test_review_registration_shows_incomplete_modal_when_requirements_are_missing(): void
+    {
+        $scoutGroup = ScoutGroup::factory()->create([
+            'user_id' => $this->scoutGroupUser->id,
+            'school_name' => 'SMP N 1',
+            'group_number' => '01-093',
+            'verification_status' => RegistrationStatusEnum::Draft,
+        ]);
+
+        // Skenario 1: Belum ada regu, belum ada bindamping, belum ada berkas
+        \Livewire\Livewire::actingAs($this->scoutGroupUser)
+            ->test(\App\Livewire\Portal\ReviewRegistration::class)
+            ->call('attemptSubmit')
+            ->assertSet('showIncompleteModal', true)
+            ->assertSet('showSubmitModal', false)
+            ->assertSee('Persyaratan Belum Lengkap')
+            ->assertSee('Belum Ada Regu Terdaftar')
+            ->assertSee('Belum Ada Bindamping Terdaftar')
+            ->assertSee('Surat Tugas / Mandat Belum Diunggah')
+            ->assertSee('Bukti Pembayaran Belum Diunggah');
+
+        // Skenario 2: Tambah regu tanpa peserta, modal harus memperingatkan regu masih kosong
+        $patrol = Patrol::create([
+            'scout_group_id' => $scoutGroup->id,
+            'patrol_name' => 'Harimau',
+            'gender_category' => PatrolGenderEnum::Boys,
+            'status' => RegistrationStatusEnum::Draft,
+        ]);
+
+        \Livewire\Livewire::actingAs($this->scoutGroupUser)
+            ->test(\App\Livewire\Portal\ReviewRegistration::class)
+            ->call('attemptSubmit')
+            ->assertSet('showIncompleteModal', true)
+            ->assertSee('Anggota Regu Masih Kosong');
+
+        // Skenario 3: Lengkapi seluruh persyaratan (peserta, bindamping, surat tugas, bukti bayar)
+        Participant::factory()->create([
+            'patrol_id' => $patrol->id,
+            'full_name' => 'Budi Santoso',
+            'gender' => 'male',
+            'role_in_patrol' => 'patrol_leader',
+        ]);
+
+        Chaperone::factory()->create([
+            'scout_group_id' => $scoutGroup->id,
+            'gender' => 'male',
+        ]);
+
+        $mandateLetter = \Illuminate\Http\UploadedFile::fake()->create('mandat.pdf', 100, 'application/pdf');
+        $paymentProof = \Illuminate\Http\UploadedFile::fake()->image('bukti.jpg', 300, 300);
+
+        \Livewire\Livewire::actingAs($this->scoutGroupUser)
+            ->test(\App\Livewire\Portal\ReviewRegistration::class)
+            ->set('mandate_letter', $mandateLetter)
+            ->set('payment_proof', $paymentProof)
+            ->call('attemptSubmit')
+            ->assertSet('showIncompleteModal', false)
+            ->assertSet('showSubmitModal', true)
+            ->assertSee('Konfirmasi Pengajuan Pendaftaran')
+            ->call('submitRegistration')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('scout-group.index'));
+
+        $scoutGroup->refresh();
+        $this->assertEquals(RegistrationStatusEnum::Submitted, $scoutGroup->verification_status);
+    }
+
+    /**
+     * Memastikan Bukti Registrasi (PDF) hanya dapat diunduh oleh Gudep saat telah terverifikasi
+     */
+    public function test_registration_certificate_pdf_access_and_permissions(): void
+    {
+        $scoutGroup = ScoutGroup::factory()->create([
+            'user_id' => $this->scoutGroupUser->id,
+            'verification_status' => RegistrationStatusEnum::Draft,
+        ]);
+
+        // 1. Gudep tidak dapat mengunduh saat berstatus Draft (403)
+        $draftRes = $this->actingAs($this->scoutGroupUser)->get(route('scout-group.registration-certificate').'?raw=1');
+        $draftRes->assertForbidden();
+
+        // 2. Dasbor & Review tidak menampilkan tombol unduh saat belum terverifikasi
+        $dashDraft = $this->actingAs($this->scoutGroupUser)->get(route('scout-group.index'));
+        $dashDraft->assertOk()->assertDontSee(route('scout-group.registration-certificate', ['download' => 1]));
+
+        // 3. Verifikasi kontingen
+        $scoutGroup->update(['verification_status' => RegistrationStatusEnum::Verified]);
+
+        // 4. Gudep sukses mengunduh Bukti Registrasi dalam format PDF
+        $verifiedRes = $this->actingAs($this->scoutGroupUser)->get(route('scout-group.registration-certificate').'?raw=1');
+        $verifiedRes->assertOk();
+        $verifiedRes->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringContainsString('Bukti_Registrasi_', (string) $verifiedRes->headers->get('Content-Disposition'));
+        $this->assertStringStartsWith('%PDF', $verifiedRes->getContent());
+
+        // 5. Admin juga dapat mengunduh Bukti Registrasi
+        $adminRes = $this->actingAs($this->adminUser)->get(route('admin.scout-groups.registration-certificate', $scoutGroup->id).'?raw=1');
+        $adminRes->assertOk();
+        $adminRes->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF', $adminRes->getContent());
+
+        // 6. Tombol tampil di dasbor gudep dan review registration
+        $dashRes = $this->actingAs($this->scoutGroupUser)->get(route('scout-group.index'));
+        $dashRes->assertOk()->assertSee(route('scout-group.registration-certificate', ['download' => 1]));
+
+        $reviewRes = $this->actingAs($this->scoutGroupUser)->get(route('scout-group.review'));
+        $reviewRes->assertOk()->assertSee(route('scout-group.registration-certificate', ['download' => 1]));
+    }
+
+    /**
+     * Memastikan alur streaming real-time ekspor ZIP kontingen mengembalikan stream SSE
+     */
+    public function test_admin_can_stream_zip_export(): void
+    {
+        $scoutGroup = ScoutGroup::factory()->create([
+            'verification_status' => RegistrationStatusEnum::Verified,
+        ]);
+
+        $streamRes = $this->actingAs($this->adminUser)->get(route('admin.scout-groups.download-zip-stream', $scoutGroup->id));
+        $streamRes->assertOk();
+        $this->assertStringContainsString('text/event-stream', (string) $streamRes->headers->get('Content-Type'));
     }
 }

@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <title>Rekapitulasi Presensi</title>
     <style>
-        @page { size: A4 portrait; margin: 1.5cm; }
+        @page { size: A4 portrait; margin: 15mm 15mm 28mm 15mm; }
         body { font-family: 'DejaVu Sans', sans-serif; font-size: 9px; color: #18181b; margin: 0; }
-        table { border-collapse: collapse; width: 100%; }
+        table { border-collapse: collapse; width: 100%; page-break-inside: auto; }
+        tr { page-break-inside: avoid; page-break-after: auto; }
+        thead { display: table-header-group; }
         .title { text-align: center; margin-top: 14px; font-size: 12px; font-weight: bold; text-transform: uppercase; text-decoration: underline; }
         .subtitle { text-align: center; margin-top: 3px; font-size: 9px; color: #3f3f46; }
         .stats { margin-top: 10px; border: 1px solid #a1a1aa; background: #fafafa; }

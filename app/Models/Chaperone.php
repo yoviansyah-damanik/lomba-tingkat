@@ -55,14 +55,29 @@ class Chaperone extends Model
         ];
     }
 
+    /**
+     * Menghasilkan ID unik resmi Bindamping: B-{6 digit acak}
+     */
+    public static function generateIdNumber(): string
+    {
+        do {
+            $digits = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $code = 'B-' . $digits;
+        } while (
+            static::where('id_number', $code)->exists()
+            || User::where('id_number', $code)->exists()
+            || Participant::where('id_number', $code)->exists()
+            || ScoutGroup::where('registration_code', $code)->exists()
+        );
+
+        return $code;
+    }
+
     protected static function booted(): void
     {
         static::creating(function (Chaperone $chaperone) {
             if (empty($chaperone->id_number)) {
-                do {
-                    $code = 'ID-' . strtoupper(Str::random(8));
-                } while (static::where('id_number', $code)->exists());
-                $chaperone->id_number = $code;
+                $chaperone->id_number = static::generateIdNumber();
             }
 
             if (empty($chaperone->qr_token)) {

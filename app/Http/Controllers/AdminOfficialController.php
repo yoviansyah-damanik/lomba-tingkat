@@ -76,7 +76,6 @@ class AdminOfficialController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'password' => ['required', 'string', 'min:8'],
             'phone_number' => ['nullable', 'string', 'max:30'],
             'scout_id' => ['nullable', 'string', 'max:50'],
             'institution' => ['nullable', 'string', 'max:150'],
@@ -86,9 +85,14 @@ class AdminOfficialController extends Controller
             'avatar' => ['nullable', 'image', 'max:2048'],
         ]);
 
+        $officialIdNumber = User::generateOfficialIdNumber();
+
         $userData = [
             'name' => $validated['name'],
-            'password' => Hash::make($validated['password']),
+            'id_number' => $officialIdNumber,
+            'username' => $officialIdNumber,
+            'password' => Hash::make($officialIdNumber), // Password default mengikuti ID
+            'must_change_password' => true,             // Login pertama diminta ganti password
             'phone_number' => $validated['phone_number'] ?? null,
             'scout_id' => $validated['scout_id'] ?? null,
             'institution' => $validated['institution'] ?? 'Kwarcab Kota Padangsidimpuan',
@@ -108,7 +112,7 @@ class AdminOfficialController extends Controller
             $user->assignRole($roleName);
         }
 
-        return redirect()->route('admin.officials.index')->with('success', "Aparatur {$user->name} berhasil didaftarkan.");
+        return redirect()->route('admin.officials.index')->with('success', "Aparatur {$user->name} berhasil didaftarkan dengan ID {$user->id_number}.");
     }
 
     /**
@@ -130,14 +134,12 @@ class AdminOfficialController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'password' => ['nullable', 'string', 'min:8'],
             'phone_number' => ['nullable', 'string', 'max:30'],
             'scout_id' => ['nullable', 'string', 'max:50'],
             'institution' => ['nullable', 'string', 'max:150'],
             'position' => ['nullable', 'string', 'max:100'],
             'roles' => ['required', 'array', 'min:1'],
             'roles.*' => ['in:committee,judge'],
-            'is_active' => ['required', 'boolean'],
             'avatar' => ['nullable', 'image', 'max:2048'],
         ]);
 
@@ -147,23 +149,41 @@ class AdminOfficialController extends Controller
             'scout_id' => $validated['scout_id'] ?? null,
             'institution' => $validated['institution'] ?? 'Kwarcab Kota Padangsidimpuan',
             'position' => $validated['position'] ?? null,
-            'is_active' => (bool) $validated['is_active'],
         ];
 
-        if (! empty($validated['password'])) {
-            $updateData['password'] = Hash::make($validated['password']);
-        }
-
         if ($request->hasFile('avatar')) {
+            if ($official->avatar_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($official->avatar_path)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($official->avatar_path);
+            }
             $updateData['avatar_path'] = $request->file('avatar')->store('avatars', 'public');
         }
 
         $official->update($updateData);
 
-        // Sync roles (committee and/or judge)
-        $roleIds = Role::whereIn('name', $validated['roles'])->pluck('id')->toArray();
-        $official->roles()->sync($roleIds);
+        // Peran user otomatis menyesuaikan dengan peran yang dipilih
+        $nonOfficialRoleIds = $official->roles()->whereNotIn('name', ['committee', 'judge'])->pluck('roles.id')->toArray();
+        $newRoleIds = Role::whereIn('name', $validated['roles'])->pluck('id')->toArray();
+        $official->roles()->sync(array_merge($nonOfficialRoleIds, $newRoleIds));
 
         return redirect()->route('admin.officials.index')->with('success', "Data aparatur {$official->name} berhasil diperbarui.");
+    }
+
+    /**
+     * Hapus aparatur beserta akunnya
+     */
+    public function destroy(string $id): RedirectResponse
+    {
+        $official = User::findOrFail($id);
+        $name = $official->name;
+
+        if ($official->avatar_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($official->avatar_path)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($official->avatar_path);
+        }
+
+        // Hapus penugasan peran dan hapus akun otomatis
+        $official->roles()->detach();
+        $official->delete();
+
+        return redirect()->route('admin.officials.index')->with('success', "Aparatur {$name} dan akunnya berhasil dihapus.");
     }
 }

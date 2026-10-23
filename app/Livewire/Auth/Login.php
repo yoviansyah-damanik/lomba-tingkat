@@ -50,9 +50,12 @@ class Login extends Component
         }
 
         $provider = Auth::guard(config('fortify.guard'))->getProvider();
-        $user = $provider->retrieveByCredentials([Fortify::username() => Str::lower(trim($this->username))]);
+        $user = $provider->retrieveByCredentials([Fortify::username() => trim($this->username)]);
 
-        if (! $user || ! $provider->validateCredentials($user, ['password' => $this->password])) {
+        // Basis data membandingkan tanpa membedakan huruf besar/kecil, maka username dicocokkan persis di sini
+        $exactUsername = $user && hash_equals((string) $user->username, trim($this->username));
+
+        if (! $exactUsername || ! $provider->validateCredentials($user, ['password' => $this->password])) {
             RateLimiter::hit($throttleKey);
             $this->reset('password');
             $this->toast('danger', 'Gagal Masuk', 'Username atau kata sandi tidak sesuai.');

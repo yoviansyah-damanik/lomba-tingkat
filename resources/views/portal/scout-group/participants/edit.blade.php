@@ -745,17 +745,205 @@
                 </div>
             </div>
 
+            {{-- 6. UNGGAH BERKAS PERSYARATAN PESERTA --}}
+            <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:p-8">
+                <div class="flex items-center justify-between border-b border-zinc-100 pb-4 mb-6 dark:border-zinc-800">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Bagian 6</span>
+                        <h2 class="text-base font-bold text-zinc-900 dark:text-zinc-100">Berkas Persyaratan Peserta</h2>
+                        <p class="text-xs text-zinc-500 mt-0.5">Unggah atau perbarui berkas dokumen persyaratan peserta dalam format PDF atau gambar (JPG/PNG), maksimal 4MB per berkas.</p>
+                    </div>
+                    <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                        7 Berkas Persyaratan
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                    {{-- 1. Scan KTA --}}
+                    <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                                1. Scan Kartu Tanda Anggota (KTA) Pramuka
+                            </label>
+                            @if($participant->doc_kta_path)
+                                <a href="{{ asset('storage/' . $participant->doc_kta_path) }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
+                                    <flux:icon name="document-check" class="size-3.5" />
+                                    Lihat Berkas
+                                </a>
+                            @else
+                                <span class="text-[10px] text-zinc-400">Belum diunggah</span>
+                            @endif
+                        </div>
+                        <p class="text-[11px] text-zinc-500 mb-2">Kartu Tanda Anggota Pramuka resmi peserta.</p>
+                        <input
+                            type="file"
+                            name="doc_kta"
+                            accept=".pdf,image/png,image/jpeg,image/jpg"
+                            class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
+                        >
+                        @error('doc_kta') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- 2. Scan BPJS --}}
+                    <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                                2. Scan Kartu BPJS / Asuransi Kesehatan
+                            </label>
+                            @if($participant->doc_bpjs_path)
+                                <a href="{{ asset('storage/' . $participant->doc_bpjs_path) }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
+                                    <flux:icon name="document-check" class="size-3.5" />
+                                    Lihat Berkas
+                                </a>
+                            @else
+                                <span class="text-[10px] text-zinc-400">Belum diunggah</span>
+                            @endif
+                        </div>
+                        <p class="text-[11px] text-zinc-500 mb-2">Kartu BPJS Kesehatan aktif atau asuransi sejenis.</p>
+                        <input
+                            type="file"
+                            name="doc_bpjs"
+                            accept=".pdf,image/png,image/jpeg,image/jpg"
+                            class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
+                        >
+                        @error('doc_bpjs') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- 3. Scan Surat Keterangan Sehat --}}
+                    <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                                3. Scan Surat Keterangan Sehat
+                            </label>
+                            @if($participant->doc_health_certificate_path)
+                                <a href="{{ asset('storage/' . $participant->doc_health_certificate_path) }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
+                                    <flux:icon name="document-check" class="size-3.5" />
+                                    Lihat Berkas
+                                </a>
+                            @else
+                                <span class="text-[10px] text-zinc-400">Belum diunggah</span>
+                            @endif
+                        </div>
+                        <p class="text-[11px] text-zinc-500 mb-2">Surat keterangan berbadan sehat dari dokter/puskesmas.</p>
+                        <input
+                            type="file"
+                            name="doc_health_certificate"
+                            accept=".pdf,image/png,image/jpeg,image/jpg"
+                            class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
+                        >
+                        @error('doc_health_certificate') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- 4. Scan Akta Kelahiran --}}
+                    <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                                4. Scan Akta Kelahiran
+                            </label>
+                            @if($participant->doc_birth_certificate_path)
+                                <a href="{{ asset('storage/' . $participant->doc_birth_certificate_path) }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
+                                    <flux:icon name="document-check" class="size-3.5" />
+                                    Lihat Berkas
+                                </a>
+                            @else
+                                <span class="text-[10px] text-zinc-400">Belum diunggah</span>
+                            @endif
+                        </div>
+                        <p class="text-[11px] text-zinc-500 mb-2">Akta kelahiran resmi untuk verifikasi batas usia penggalang.</p>
+                        <input
+                            type="file"
+                            name="doc_birth_certificate"
+                            accept=".pdf,image/png,image/jpeg,image/jpg"
+                            class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
+                        >
+                        @error('doc_birth_certificate') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- 5. Scan Kartu Keluarga --}}
+                    <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                                5. Scan Kartu Keluarga (KK)
+                            </label>
+                            @if($participant->doc_family_card_path)
+                                <a href="{{ asset('storage/' . $participant->doc_family_card_path) }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
+                                    <flux:icon name="document-check" class="size-3.5" />
+                                    Lihat Berkas
+                                </a>
+                            @else
+                                <span class="text-[10px] text-zinc-400">Belum diunggah</span>
+                            @endif
+                        </div>
+                        <p class="text-[11px] text-zinc-500 mb-2">Kartu Keluarga orang tua / wali peserta.</p>
+                        <input
+                            type="file"
+                            name="doc_family_card"
+                            accept=".pdf,image/png,image/jpeg,image/jpg"
+                            class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
+                        >
+                        @error('doc_family_card') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- 6. Scan SKU --}}
+                    <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                                6. Scan Syarat Kecakapan Umum (SKU)
+                            </label>
+                            @if($participant->doc_sku_path)
+                                <a href="{{ asset('storage/' . $participant->doc_sku_path) }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
+                                    <flux:icon name="document-check" class="size-3.5" />
+                                    Lihat Berkas
+                                </a>
+                            @else
+                                <span class="text-[10px] text-zinc-400">Belum diunggah</span>
+                            @endif
+                        </div>
+                        <p class="text-[11px] text-zinc-500 mb-2">Buku SKU / surat pengesahan pelantikan SKU tingkat Ramu/Rakit/Terap.</p>
+                        <input
+                            type="file"
+                            name="doc_sku"
+                            accept=".pdf,image/png,image/jpeg,image/jpg"
+                            class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
+                        >
+                        @error('doc_sku') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- 7. Scan SKK --}}
+                    <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30 md:col-span-2">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                                7. Scan Syarat Kecakapan Khusus (SKK)
+                            </label>
+                            @if($participant->doc_skk_path)
+                                <a href="{{ asset('storage/' . $participant->doc_skk_path) }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
+                                    <flux:icon name="document-check" class="size-3.5" />
+                                    Lihat Berkas
+                                </a>
+                            @else
+                                <span class="text-[10px] text-zinc-400">Belum diunggah</span>
+                            @endif
+                        </div>
+                        <p class="text-[11px] text-zinc-500 mb-2">Surat keterangan / sertifikat Tanda Kecakapan Khusus (TKK) yang dimiliki peserta.</p>
+                        <input
+                            type="file"
+                            name="doc_skk"
+                            accept=".pdf,image/png,image/jpeg,image/jpg"
+                            class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
+                        >
+                        @error('doc_skk') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+            </div>
+
             {{-- Action Buttons --}}
             <div class="flex items-center justify-end gap-3 pt-2">
-                <a href="{{ route('scout-group.patrols') }}" class="rounded-xl border border-zinc-300 px-5 py-2.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300">
+                <flux:button href="{{ route('scout-group.patrols') }}" variant="subtle">
                     Batal
-                </a>
-                <button
-                    type="submit"
-                    class="rounded-xl bg-amber-600 px-6 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-amber-700"
-                >
+                </flux:button>
+                <flux:button type="submit" variant="primary" icon="check">
                     Perbarui Biodata Peserta
-                </button>
+                </flux:button>
             </div>
         </form>
     </div>

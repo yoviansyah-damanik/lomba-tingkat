@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 use Throwable;
@@ -66,7 +67,7 @@ class ScoutGroupRegistrationController extends Controller
             ])->withInput();
         }
 
-        // 2. Validasi input formulir akun & pangkalan
+        // 2. Validasi input formulir identitas pangkalan & penanggung jawab
         $validated = $request->validate([
             // Identitas Pangkalan Sekolah
             'school_name' => ['required', 'string', 'max:255'],
@@ -77,8 +78,6 @@ class ScoutGroupRegistrationController extends Controller
             // Akun Penanggung Jawab / Pembina (PIC Kontingen)
             'pic_name' => ['required', 'string', 'max:255'],
             'phone_number' => ['required', 'string', 'max:30'],
-            'username' => User::usernameRules(),
-            'password' => ['required', 'string', 'confirmed', Password::defaults()],
 
             // Pernyataan & Pakta Integritas
             'terms' => ['accepted'],
@@ -89,35 +88,38 @@ class ScoutGroupRegistrationController extends Controller
             'address.required' => 'Alamat lengkap pangkalan wajib diisi.',
             'pic_name.required' => 'Nama lengkap pembina penanggung jawab (PIC) wajib diisi.',
             'phone_number.required' => 'Nomor WhatsApp / HP penanggung jawab wajib diisi.',
-            ...User::usernameMessages(),
-            'password.required' => 'Kata sandi wajib diisi.',
-            'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
             'terms.accepted' => 'Anda wajib menyetujui pernyataan keabsahan data pangkalan.',
         ]);
 
         $fullAddress = trim($validated['address']) . ', ' . $validated['kwarran'] . ', Kota Padangsidimpuan';
 
-        $scoutGroup = DB::transaction(function () use ($validated, $fullAddress) {
-            // Buat akun penanggung jawab
+        // 3. Format nomor gudep dan buat ID unik Gudep (G-{no_gudep})
+        $groupNumberData = ScoutGroup::formatGroupNumbers($validated['group_number']);
+        $gudepId = ScoutGroup::generateGudepId($groupNumberData);
+
+        // 4. Username persis sama dengan ID Gudep (case-sensitive); kata sandi acak aman
+        $username = $gudepId;
+
+        $plainPassword = Str::password(10, letters: true, numbers: true, symbols: false, spaces: false);
+
+        $scoutGroup = DB::transaction(function () use ($validated, $fullAddress, $groupNumberData, $gudepId, $username, $plainPassword) {
+            // Buat akun penanggung jawab dengan kredensial tergenerasi otomatis
             $user = User::create([
                 'name' => $validated['pic_name'],
-                'username' => $validated['username'],
+                'username' => $username,
+                'id_number' => $gudepId,
                 'phone_number' => $validated['phone_number'],
-                'password' => Hash::make($validated['password']),
+                'password' => Hash::make($plainPassword),
                 'is_active' => true,
             ]);
 
             // Tetapkan hak akses pangkalan Gudep
             $user->assignRole(RoleEnum::ScoutGroup);
 
-            // Buat entitas pangkalan Gugus Depan
-            $registrationCode = ScoutGroup::generateRegistrationCode();
-
-            $groupNumberData = ScoutGroup::formatGroupNumbers($validated['group_number']);
-
+            // Buat entitas pangkalan Gugus Depan dengan ID resmi
             return ScoutGroup::create([
                 'user_id' => $user->id,
-                'registration_code' => $registrationCode,
+                'registration_code' => $gudepId,
                 'school_name' => $validated['school_name'],
                 'group_number' => $groupNumberData['combined'],
                 'male_group_number' => $groupNumberData['male'],
@@ -137,13 +139,39 @@ class ScoutGroupRegistrationController extends Controller
             Log::warning('Gagal mengantrekan notifikasi pendaftaran gudep: '.$e->getMessage());
         }
 
-        // Login otomatis dan arahkan langsung ke Dasbor Kontingen Gudep
+        // Login otomatis dan tetapkan konfirmasi password agar dapat langsung ubah password
         Auth::login($scoutGroup->user);
         $request->session()->regenerate();
+        $request->session()->put('auth.password_confirmed_at', time());
 
-        return redirect()->route('scout-group.index')->with(
-            'status',
-            "Akun pangkalan {$scoutGroup->school_name} berhasil dibuat dengan kode {$scoutGroup->registration_code}! Silakan lanjutkan pengisian regu penggalang, anggota peserta, dan pembina pendamping (bindamping) di dasbor Anda."
-        );
+        // Simpan kredensial terbuat di flash session untuk ditampilkan pada halaman sukses
+        $request->session()->flash('newly_registered_credentials', [
+            'school_name' => $scoutGroup->school_name,
+            'gudep_id' => $gudepId,
+            'username' => $username,
+            'password' => $plainPassword,
+            'pic_name' => $validated['pic_name'],
+        ]);
+
+        return redirect()->route('register.scout-group.success');
+    }
+
+    /**
+     * Menampilkan informasi kredensial yang dibuat sistem dan mengarahkan untuk mengubah password
+     */
+    public function success(Request $request): View|RedirectResponse
+    {
+        $credentials = $request->session()->get('newly_registered_credentials');
+
+        if (! $credentials) {
+            return redirect()->route('scout-group.index');
+        }
+
+        // Pertahankan sesi flash jika pengguna me-refresh halaman
+        $request->session()->reflash();
+
+        return view('pages.auth.register-success', [
+            'credentials' => $credentials,
+        ]);
     }
 }

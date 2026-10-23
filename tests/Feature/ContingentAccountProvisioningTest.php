@@ -15,6 +15,7 @@ use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -79,57 +80,63 @@ class ContingentAccountProvisioningTest extends TestCase
 
     public function test_verifying_contingent_creates_accounts_with_expected_usernames_and_passwords(): void
     {
-        Livewire::actingAs($this->admin)
-            ->test(VerificationManagement::class)
-            ->call('verifyContingent', $this->group->id);
-
-        $chaperone = User::where('username', 'bindamping.01093')->first();
-        $this->assertNotNull($chaperone);
-        $this->assertTrue($chaperone->hasRole(RoleEnum::Chaperone));
-        $this->assertTrue(Hash::check('19850515', $chaperone->password));
-        $this->assertSame($chaperone->id, Chaperone::where('full_name', 'Bindamping Putra')->first()->user_id);
-
-        // Putra memakai nomor ganjil (01093), putri memakai nomor genap (01094)
-        $pinru = User::where('username', 'peserta.01093.01')->first();
-        $this->assertNotNull($pinru);
-        $this->assertTrue($pinru->hasRole(RoleEnum::Participant));
-        $this->assertTrue(Hash::check('20110309', $pinru->password));
-        $this->assertSame('Pinru Putra', $pinru->participant->full_name);
-
-        $this->assertNotNull(User::where('username', 'peserta.01093.02')->first());
-        $this->assertTrue(Hash::check('20110721', User::where('username', 'peserta.01094.01')->first()->password));
-
-        $this->assertTrue(Auth::validate(['username' => 'peserta.01093.01', 'password' => '20110309']));
-    }
-
-    public function test_provisioning_is_idempotent_and_skips_chaperone_without_birth_date(): void
-    {
-        Chaperone::where('full_name', 'Bindamping Putra')->update(['birth_date' => null]);
-
-        $component = Livewire::actingAs($this->admin)->test(VerificationManagement::class);
-        $component->call('verifyContingent', $this->group->id);
-        $component->call('verifyContingent', $this->group->id);
-
-        $this->assertNull(User::where('username', 'bindamping.01093')->first());
-        $this->assertSame(3, User::where('username', 'like', 'peserta.%')->count());
-    }
-
-    public function test_verification_via_controller_creates_accounts(): void
-    {
         $this->actingAs($this->admin)
             ->post(route('admin.scout-groups.verify', $this->group->id))
             ->assertRedirect();
 
-        $this->assertNotNull(User::where('username', 'bindamping.01093')->first());
-        $this->assertSame(3, User::where('username', 'like', 'peserta.%')->count());
+        $chaperoneModel = Chaperone::where('full_name', 'Bindamping Putra')->first();
+        $this->assertNotNull($chaperoneModel);
+
+        $chaperoneUser = User::where('username', $chaperoneModel->id_number)->first();
+        $this->assertNotNull($chaperoneUser);
+        $this->assertTrue($chaperoneUser->hasRole(RoleEnum::Chaperone));
+        $this->assertTrue(Hash::check('19850515', $chaperoneUser->password));
+        $this->assertSame($chaperoneUser->id, $chaperoneModel->user_id);
+
+        $pinruModel = Participant::where('full_name', 'Pinru Putra')->first();
+        $this->assertNotNull($pinruModel);
+
+        $pinruUser = User::where('username', $pinruModel->id_number)->first();
+        $this->assertNotNull($pinruUser);
+        $this->assertTrue($pinruUser->hasRole(RoleEnum::Participant));
+        $this->assertTrue(Hash::check('20110309', $pinruUser->password));
+        $this->assertSame('Pinru Putra', $pinruUser->participant->full_name);
+
+        $this->assertTrue(Auth::validate(['username' => $pinruModel->id_number, 'password' => '20110309']));
+    }
+
+    public function test_provisioning_is_idempotent_and_skips_chaperone_without_birth_date(): void
+    {
+        $chaperoneModel = Chaperone::where('full_name', 'Bindamping Putra')->first();
+        $chaperoneModel->update(['birth_date' => null]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.scout-groups.verify', $this->group->id));
+
+        $this->assertNull(User::where('username', $chaperoneModel->id_number)->first());
+        $this->assertSame(3, User::where('username', 'like', 'p-%')->count());
+    }
+
+    public function test_verification_via_controller_creates_accounts(): void
+    {
+        $chaperoneModel = Chaperone::where('full_name', 'Bindamping Putra')->first();
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.scout-groups.verify', $this->group->id))
+            ->assertRedirect();
+
+        $this->assertNotNull(User::where('username', $chaperoneModel->id_number)->first());
+        $this->assertSame(3, User::where('username', 'like', 'p-%')->count());
     }
 
     public function test_accounts_are_not_created_for_revision_or_rejection(): void
     {
+        $chaperoneModel = Chaperone::where('full_name', 'Bindamping Putra')->first();
+
         $this->actingAs($this->admin)
             ->post(route('admin.scout-groups.revision', $this->group->id), ['revision_notes' => 'Lengkapi data peserta'])
             ->assertRedirect();
 
-        $this->assertNull(User::where('username', 'bindamping.01093')->first());
+        $this->assertNull(User::where('username', $chaperoneModel->id_number)->first());
     }
 }

@@ -22,10 +22,11 @@ class UserSeeder extends Seeder
         // 1-2. Akun Superadmin & Administrator (juga dipakai pada production)
         $this->call(AdministratorSeeder::class);
 
-        // 3. Akun Panitia (Monitoring Operasional Lapangan). Username otomatis mengikuti ID
+        // 3. Akun Panitia (Monitoring Operasional Lapangan)
         $committee = User::firstOrCreate(
-            ['id_number' => 'ID-PANITIA1'],
+            ['username' => 'panitia'],
             [
+                'id_number' => 'ID-PANITIA1',
                 'name' => 'Panitia Lapangan',
                 'password' => $defaultPassword,
                 'phone_number' => '081234567891',
@@ -36,8 +37,9 @@ class UserSeeder extends Seeder
 
         // 4. Akun Juri Penilai
         $judge = User::firstOrCreate(
-            ['id_number' => 'ID-JURI0001'],
+            ['username' => 'juri'],
             [
+                'id_number' => 'ID-JURI0001',
                 'name' => 'Dewan Juri LT III',
                 'password' => $defaultPassword,
                 'phone_number' => '081234567892',
@@ -48,8 +50,9 @@ class UserSeeder extends Seeder
 
         // 5. Akun Panitia Merangkap Juri (Dual Role Operasional Sah)
         $dualRole = User::firstOrCreate(
-            ['id_number' => 'ID-PANJURI1'],
+            ['username' => 'panitia.juri'],
             [
+                'id_number' => 'ID-PANJURI1',
                 'name' => 'Panitia Merangkap Juri',
                 'password' => $defaultPassword,
                 'phone_number' => '081234567893',

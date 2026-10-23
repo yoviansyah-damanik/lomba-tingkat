@@ -31,7 +31,7 @@ class AdminSystemSettingsTest extends TestCase
             EventSeeder::class,
         ]);
 
-        $this->admin = User::whereHas('roles', fn ($q) => $q->where('name', 'admin'))->first();
+        $this->admin = User::whereHas('roles', fn ($q) => $q->where('name', 'superadmin'))->first();
         $this->regularUser = User::whereHas('roles', fn ($q) => $q->where('name', 'committee'))->first();
         $this->event = Event::first();
     }
@@ -136,4 +136,29 @@ class AdminSystemSettingsTest extends TestCase
         $this->assertSame(['name' => 'Hj. Rosmawati Harahap', 'nta' => null], $event->signatory('judge'));
         $this->assertSame(['name' => 'H. Syahrul Daulay', 'nta' => null], $event->signatory('kwarcab'));
     }
+
+    /**
+     * Memastikan admin dapat menyimpan konfigurasi biaya pendaftaran dan detail rekening pembayaran
+     */
+    public function test_admin_can_save_registration_fee_and_payment_info(): void
+    {
+        Livewire::actingAs($this->admin)
+            ->test(SystemSettingsManagement::class)
+            ->set('registration_fee_per_patrol', 250000)
+            ->set('payment_bank_name', 'Bank Mandiri')
+            ->set('payment_account_number', '106-00-1234567-8')
+            ->set('payment_account_holder', 'Kwarcab Padangsidimpuan')
+            ->set('payment_instructions', 'Transfer dengan berita nama pangkalan')
+            ->call('saveSettings')
+            ->assertHasNoErrors()
+            ->assertDispatched('toast-show');
+
+        $this->event->refresh();
+        $this->assertSame(250000, $this->event->registration_fee_per_patrol);
+        $this->assertSame('Bank Mandiri', $this->event->payment_bank_name);
+        $this->assertSame('106-00-1234567-8', $this->event->payment_account_number);
+        $this->assertSame('Kwarcab Padangsidimpuan', $this->event->payment_account_holder);
+        $this->assertSame('Transfer dengan berita nama pangkalan', $this->event->payment_instructions);
+    }
 }
+

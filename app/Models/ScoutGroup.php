@@ -36,6 +36,8 @@ class ScoutGroup extends Model
         'revision_notes',
         'verified_by',
         'verified_at',
+        'mandate_letter_path',
+        'payment_proof_path',
     ];
 
     /**
@@ -43,6 +45,15 @@ class ScoutGroup extends Model
      */
     protected static function booted(): void
     {
+        static::creating(function (ScoutGroup $group) {
+            if (empty($group->registration_code)) {
+                $group->registration_code = static::generateGudepId([
+                    'male' => $group->male_group_number ?? $group->group_number,
+                    'female' => $group->female_group_number ?? $group->group_number,
+                ]);
+            }
+        });
+
         // Pangkalan pada akun peserta/bindamping mengikuti nama dan nomor gudep
         static::updated(function (ScoutGroup $group) {
             if ($group->wasChanged(['school_name', 'group_number', 'male_group_number', 'female_group_number'])) {
@@ -236,17 +247,64 @@ class ScoutGroup extends Model
     }
 
     /**
-     * Menghasilkan kode unik registrasi pangkalan (format: GDP-PSP-XX)
+     * Menghasilkan ID unik Gugus Depan resmi: G-{no_gudep}, mis. G-01123.01124
      */
-    public static function generateRegistrationCode(): string
+    public static function generateGudepId(string|array $groupNumberData, ?string $ignoreId = null): string
     {
-        $count = static::count() + 1;
-        do {
-            $code = 'GDP-PSP-'.str_pad((string) $count, 2, '0', STR_PAD_LEFT);
-            $count++;
-        } while (static::where('registration_code', $code)->exists());
+        if (is_string($groupNumberData)) {
+            $formatted = static::formatGroupNumbers($groupNumberData);
+        } else {
+            $formatted = $groupNumberData;
+        }
+
+        $male = $formatted['male'] ?? '';
+        $female = $formatted['female'] ?? '';
+
+        $maleDigits = preg_replace('/\D/', '', (string) $male);
+        $femaleDigits = preg_replace('/\D/', '', (string) $female);
+
+        if (! empty($maleDigits) && ! empty($femaleDigits)) {
+            $noGudep = "{$maleDigits}.{$femaleDigits}";
+        } elseif (! empty($maleDigits)) {
+            $noGudep = $maleDigits;
+        } elseif (! empty($femaleDigits)) {
+            $noGudep = $femaleDigits;
+        } else {
+            $noGudep = str_pad((string) (static::count() + 1), 5, '0', STR_PAD_LEFT);
+        }
+
+        $baseId = "G-{$noGudep}";
+        $code = $baseId;
+        $suffix = 2;
+
+        while (
+            static::where('registration_code', $code)
+                ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
+                ->exists()
+            || User::where('id_number', $code)->exists()
+            || Participant::where('id_number', $code)->exists()
+            || Chaperone::where('id_number', $code)->exists()
+        ) {
+            $code = "{$baseId}-{$suffix}";
+            $suffix++;
+        }
 
         return $code;
+    }
+
+    /**
+     * Menghasilkan kode unik registrasi pangkalan resmi (G-{no_gudep})
+     */
+    public static function generateRegistrationCode(?string $groupNumber = null): string
+    {
+        if ($groupNumber !== null) {
+            return static::generateGudepId($groupNumber);
+        }
+
+        $count = static::count() + 1;
+        $dummy = '01-' . str_pad((string) $count, 3, '0', STR_PAD_LEFT);
+
+        return static::generateGudepId($dummy);
     }
 
     /**

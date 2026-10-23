@@ -183,10 +183,9 @@ class DigitalCardTest extends TestCase
         $response->assertSee('Padangsidimpuan Utara');
         $response->assertSee('NTA:');
         $response->assertDontSee('Darah');
-        $response->assertDontSee('KTA');
-        $response->assertSee('LEMBAR IDENTITAS PESERTA LT III');
-        $response->assertSee('Simpan Semua .PNG (ZIP)');
-        $response->assertSee('Simpan Lembar .PNG');
+        $response->assertSee('ID Card Regu Rajawali');
+        $response->assertSee('Simpan Semua (.ZIP)');
+        $response->assertSee('Simpan .PNG');
     }
 
     /**
@@ -199,9 +198,9 @@ class DigitalCardTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Kak Budi Santoso');
-        $response->assertSee('LEMBAR IDENTITAS KARTU PEMBINA PENDAMPING LT III');
-        $response->assertSee('Simpan Semua .PNG (ZIP)');
-        $response->assertSee('Simpan Lembar .PNG');
+        $response->assertSee('ID Card Pembina Pendamping');
+        $response->assertSee('Simpan Semua (.ZIP)');
+        $response->assertSee('Simpan .PNG');
     }
 
     /**
@@ -214,10 +213,10 @@ class DigitalCardTest extends TestCase
             ->get(route('digital-cards.scout-group.batch', $this->scoutGroup->id));
 
         $gudepResponse->assertOk()
-            ->assertSee('ID Card Kontingen Format B2 (A4 Batch)')
+            ->assertSee('ID Card Kontingen')
             ->assertSee('Rizky Ramadhan')
             ->assertSee('Kak Budi Santoso')
-            ->assertSee('Simpan Semua .PNG (ZIP)');
+            ->assertSee('Simpan Semua (.ZIP)');
 
         // Akses oleh Administrator
         $adminResponse = $this->actingAs($this->admin)
@@ -226,7 +225,7 @@ class DigitalCardTest extends TestCase
         $adminResponse->assertOk()
             ->assertSee('Rizky Ramadhan')
             ->assertSee('Kak Budi Santoso')
-            ->assertSee('Simpan Semua .PNG (ZIP)');
+            ->assertSee('Simpan Semua (.ZIP)');
 
         // Pengguna pangkalan lain dilarang mengakses
         $otherUser = User::factory()->create();
@@ -295,11 +294,9 @@ class DigitalCardTest extends TestCase
         $createResponse = $this->actingAs($this->admin)->get(route('admin.officials.create'));
         $createResponse->assertOk();
 
-        // 3. Simpan official baru
+        // 3. Simpan official baru (username & password otomatis digenerate mengikuti ID resmi)
         $storeResponse = $this->actingAs($this->admin)->post(route('admin.officials.store'), [
             'name' => 'Kak Hasan Basri, S.Pd',
-            'username' => 'hasan',
-            'password' => 'secret12345',
             'phone_number' => '085211223344',
             'scout_id' => '02.17.009.99',
             'institution' => 'Kwarcab Padangsidimpuan',
@@ -309,12 +306,16 @@ class DigitalCardTest extends TestCase
 
         $storeResponse->assertRedirect(route('admin.officials.index'));
         $this->assertDatabaseHas('users', [
-            'username' => 'hasan',
             'name' => 'Kak Hasan Basri, S.Pd',
+            'is_active' => true,
         ]);
 
-        $newOfficial = User::where('username', 'hasan')->first();
+        $newOfficial = User::where('name', 'Kak Hasan Basri, S.Pd')->first();
         $this->assertNotNull($newOfficial);
+        $this->assertMatchesRegularExpression('/^A-\d{6}$/', $newOfficial->username);
+        $this->assertMatchesRegularExpression('/^A-\d{6}$/', $newOfficial->id_number);
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check($newOfficial->id_number, $newOfficial->password));
+        $this->assertTrue($newOfficial->must_change_password);
         $this->assertNotNull($newOfficial->qr_token);
         $this->assertTrue($newOfficial->isCommittee());
         $this->assertTrue($newOfficial->isJudge());

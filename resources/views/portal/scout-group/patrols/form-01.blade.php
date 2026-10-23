@@ -5,104 +5,76 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FORM 01 - REKAP PENDAFTARAN GUGUSDEPAN - REGU {{ strtoupper($patrol->patrol_name) }} ({{ $scoutGroup->school_name }})</title>
     <style>
-        * {
+        body, body * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+            font-family: DejaVu Sans, Arial, Helvetica, sans-serif;
             color: #000;
         }
 
+        @page {
+            size: A4 portrait;
+            margin: 15mm 15mm 28mm 15mm;
+        }
+
         body {
-            background-color: #f3f4f6;
-            padding: 24px 0;
-        }
-
-        .no-print-toolbar {
-            max-width: 800px;
-            margin: 0 auto 16px auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #fff;
-            padding: 12px 20px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 16px;
-            font-size: 13px;
-            font-weight: 600;
-            border-radius: 6px;
-            cursor: pointer;
-            text-decoration: none;
-            border: 1px solid transparent;
-        }
-
-        .btn-primary {
-            background-color: #b45309;
-            color: #fff;
-        }
-
-        .btn-primary:hover {
-            background-color: #92400e;
-        }
-
-        .btn-secondary {
-            background-color: #e5e7eb;
-            color: #374151;
-            border-color: #d1d5db;
+            background-color: #fff;
+            padding: 0;
+            margin: 0;
         }
 
         .sheet {
             background: #fff;
-            width: 210mm;
-            min-height: 297mm;
-            margin: 0 auto;
-            padding: 12mm 16mm;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            position: relative;
+            width: 100%;
+            padding: 0;
         }
 
         .form-code {
             font-weight: bold;
             font-size: 11pt;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .sheet-title {
             text-align: center;
-            font-size: 11.5pt;
+            font-size: 11pt;
             font-weight: bold;
             line-height: 1.35;
             text-transform: uppercase;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
         }
 
         table.form-grid {
             width: 100%;
             border-collapse: collapse;
-            font-size: 9pt;
+            font-size: 8.5pt;
             margin-bottom: 0;
+            page-break-inside: auto;
+        }
+
+        table.form-grid tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+        }
+
+        table.form-grid thead {
+            display: table-header-group;
         }
 
         table.form-grid th, table.form-grid td {
             border: 1px solid #000;
-            padding: 4px 6px;
+            padding: 3.5px 5px;
             vertical-align: middle;
         }
 
         .section-bar {
-            background-color: #d1d5db;
+            background-color: #e5e7eb;
             font-weight: bold;
             text-align: center;
             text-transform: uppercase;
-            font-size: 10.5pt;
-            padding: 5px !important;
+            font-size: 10pt;
+            padding: 4px !important;
             letter-spacing: 0.5px;
         }
 
@@ -111,64 +83,30 @@
         .font-bold { font-weight: bold; }
         .uppercase { text-transform: uppercase; }
 
-        .signature-block {
-            margin-top: 18px;
-            float: right;
-            width: 300px;
-            text-align: left;
-            font-size: 9.5pt;
-            line-height: 1.4;
+        table.sig-table {
+            width: 100%;
+            margin-top: 14px;
+            border-collapse: collapse;
         }
 
-        @media print {
-            body {
-                background: none;
-                padding: 0;
-            }
-            .no-print-toolbar {
-                display: none !important;
-            }
-            .sheet {
-                box-shadow: none;
-                margin: 0;
-                width: 100%;
-                min-height: auto;
-                padding: 8mm 12mm;
-            }
-            @page {
-                size: A4 portrait;
-                margin: 6mm;
-            }
+        table.sig-table td {
+            vertical-align: top;
+            font-size: 9pt;
+            line-height: 1.4;
         }
     </style>
 </head>
 <body>
 
-    <div class="no-print-toolbar">
-        <div>
-            <strong>FORM : 01 &bull; Rekap Pendaftaran Gugusdepan</strong>
-            <span style="font-size: 12px; color: #6b7280; display: block;">
-                Regu {{ $patrol->patrol_name }} ({{ $patrol->gender_category?->label() }}) &bull; {{ $scoutGroup->school_name }}
-            </span>
-        </div>
-        <div style="display: flex; gap: 8px;">
-            <a href="javascript:window.history.back()" class="btn btn-secondary">&larr; Kembali</a>
-            <button onclick="window.print()" class="btn btn-primary">Cetak FORM : 01 (Ctrl+P)</button>
-        </div>
-    </div>
-
     <div class="sheet">
+        <x-report.kop />
+
         {{-- Kode Formulir --}}
         <div class="form-code">
             FORM : 01
         </div>
 
-        {{-- Judul Formulir Resmi --}}
-        <div class="sheet-title">
-            PENDAFTARAN GUGUSDEPAN<br>
-            LOMBA TINGKAT III (LT III) TAHUN 2026<br>
-            KWARTIR CABANG GERAKAN PRAMUKA KOTA PADANGSIDIMPUAN
-        </div>
+        <div class="sheet-title">PENDAFTARAN GUGUSDEPAN</div>
 
         {{-- Tabel Bagian Atas: Data Pangkalan & Bindamping --}}
         <table class="form-grid" style="margin-bottom: 8px;">
@@ -182,7 +120,7 @@
             </tr>
             <tr>
                 <td class="font-bold">Gugusdepan</td>
-                <td>{{ $patrol->group_number }} &nbsp;/&nbsp; {{ $scoutGroup->school_name }}</td>
+                <td>{{ $patrol->group_number ?: ($scoutGroup->male_group_number ?: $scoutGroup->group_number) }} &nbsp;/&nbsp; {{ $scoutGroup->school_name }}</td>
             </tr>
             <tr>
                 <td class="font-bold">Alamat Gudep</td>
@@ -190,7 +128,7 @@
             </tr>
             <tr>
                 <td class="font-bold">Nama Bindamping</td>
-                <td class="font-bold">{{ $chaperone?->full_name ?: '-' }} @if($chaperone?->id_number) <span style="font-size: 8.5pt; color: #444; font-family: monospace;">[{{ $chaperone->id_number }}]</span> @endif</td>
+                <td class="font-bold">{{ $chaperone?->full_name ?: '-' }} @if($chaperone?->id_number) <span style="font-size: 8pt; color: #444; font-family: monospace;">[{{ $chaperone->id_number }}]</span> @endif</td>
             </tr>
             <tr>
                 <td class="font-bold">HP Bindamping</td>
@@ -201,8 +139,8 @@
         {{-- Tabel Bagian Bawah: Daftar Nama Peserta --}}
         <table class="form-grid">
             <colgroup>
-                <col style="width: 4%;">
-                <col style="width: 24%;">
+                <col style="width: 6%;">
+                <col style="width: 22%;">
                 <col style="width: 36%;">
                 <col style="width: 14%;">
                 <col style="width: 14%;">
@@ -215,19 +153,19 @@
                     </th>
                 </tr>
                 <tr>
-                    <td colspan="4" class="font-bold" style="padding: 5px 8px;">
+                    <td colspan="4" class="font-bold" style="padding: 4px 6px;">
                         NAMA REGU : &nbsp;&nbsp;<span class="uppercase font-bold" style="letter-spacing: 0.5px;">{{ $patrol->patrol_name }}</span>
                     </td>
-                    <td colspan="2" class="font-bold text-center" style="padding: 5px 8px;">
+                    <td colspan="2" class="font-bold text-center" style="padding: 4px 6px;">
                         PA/PI *) &nbsp;: &nbsp;<span class="uppercase font-bold">{{ $patrol->isBoys() ? 'PA' : 'PI' }}</span>
                     </td>
                 </tr>
                 <tr class="font-bold text-center" style="background-color: #fafafa;">
-                    <th colspan="2" style="border: 1px solid #000; padding: 6px;">JABATAN DALAM REGU</th>
-                    <th style="border: 1px solid #000; padding: 6px;">NAMA PESERTA & NO. ID</th>
-                    <th style="border: 1px solid #000; padding: 6px;">TINGKAT SKU</th>
-                    <th style="border: 1px solid #000; padding: 6px;">TANGGAL LAHIR</th>
-                    <th style="border: 1px solid #000; padding: 6px;">KELAS</th>
+                    <th colspan="2" style="border: 1px solid #000; padding: 5px;">JABATAN DALAM REGU</th>
+                    <th style="border: 1px solid #000; padding: 5px;">NAMA PESERTA & NO. ID</th>
+                    <th style="border: 1px solid #000; padding: 5px;">TINGKAT SKU</th>
+                    <th style="border: 1px solid #000; padding: 5px;">TANGGAL LAHIR</th>
+                    <th style="border: 1px solid #000; padding: 5px;">KELAS</th>
                 </tr>
             </thead>
             <tbody>
@@ -251,7 +189,7 @@
                         $p = $participants->get($row - 1);
                     @endphp
                     <tr>
-                        <td class="text-center font-bold" style="width: 28px;">{{ $row }}</td>
+                        <td class="text-center font-bold">{{ $row }}</td>
                         <td class="font-bold">{{ $standardRoles[$row] }}</td>
                         <td>
                             {{ $p?->full_name ?? '' }}
@@ -267,7 +205,7 @@
 
                 {{-- 2 Baris Cadangan / Blank Sesuai Format Fisik --}}
                 <tr>
-                    <td class="text-center" style="height: 22px;"></td>
+                    <td class="text-center" style="height: 20px;"></td>
                     <td></td>
                     <td></td>
                     <td class="text-center"></td>
@@ -275,7 +213,7 @@
                     <td class="text-center"></td>
                 </tr>
                 <tr>
-                    <td class="text-center" style="height: 22px;"></td>
+                    <td class="text-center" style="height: 20px;"></td>
                     <td></td>
                     <td></td>
                     <td class="text-center"></td>
@@ -285,16 +223,20 @@
             </tbody>
         </table>
 
-        {{-- Bagian Tanda Tangan Pembina Gugusdepan --}}
-        <div class="signature-block">
-            Padangsidimpuan, &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Oktober 2026<br>
-            <br>
-            <strong>Pembina Gugusdepan</strong><br>
-            <div style="height: 60px;"></div>
-            ..................................................................<br>
-            <span style="font-size: 9pt;">NTA ........................</span>
-        </div>
-        <div style="clear: both;"></div>
+        {{-- Bagian Tanda Tangan Pembina Pendamping --}}
+        @php
+            // QR sebagai tanda tangan digital Pembina Pendamping, hanya setelah kontingen diverifikasi
+            $chaperoneQr = app(\App\Services\QrCodeService::class)->signatureDataUri($chaperone?->qr_token, $scoutGroup->isVerified());
+        @endphp
+        <table class="sig-table">
+            <tr>
+                <td style="width: 58%;"></td>
+                <td style="width: 42%; text-align: center;">
+                    Padangsidimpuan, {{ now()->timezone('Asia/Jakarta')->translatedFormat('d F Y') }}<br><strong>Pembina Pendamping</strong>
+                    <x-report.signatory :space="64" :name="$chaperone?->full_name" :nta="$chaperone?->scout_id" :qr="$chaperoneQr" />
+                </td>
+            </tr>
+        </table>
     </div>
 
 </body>
