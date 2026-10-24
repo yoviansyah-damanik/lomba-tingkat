@@ -222,9 +222,7 @@ class MyAttendanceService
             })->get(),
             'chaperone' => $query->where(function ($q) use ($model) {
                 $q->where('chaperone_id', $model->id)
-                    ->orWhereIn('patrol_id', $model->scoutGroup?->patrols()
-                        ->where('gender_category', $model->gender === 'male' ? 'boys' : 'girls')
-                        ->pluck('id') ?? []);
+                    ->orWhereIn('patrol_id', $model->patrols()->pluck('id'));
             })->get(),
             default => $query->where('user_id', $model->id)->get(),
         };

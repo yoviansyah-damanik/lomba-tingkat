@@ -24,7 +24,7 @@ class TeamAssessment extends Component
 
     /**
      * Regu yang dapat dilihat: regu milik peserta, regu putra dan putri gugus depan,
-     * atau regu gugus depan sesuai gender bindamping
+     * atau regu yang didampingi bindamping
      */
     #[Computed]
     public function patrols(): Collection
@@ -45,11 +45,8 @@ class TeamAssessment extends Component
         }
 
         if ($user->isChaperone() && $chaperone = $user->chaperone) {
-            $gender = $chaperone->gender === 'female' ? 'girls' : 'boys';
-
             return Patrol::with('scoutGroup')
-                ->where('scout_group_id', $chaperone->scout_group_id)
-                ->where('gender_category', $gender)
+                ->where('chaperone_id', $chaperone->id)
                 ->orderBy('patrol_name')
                 ->get();
         }

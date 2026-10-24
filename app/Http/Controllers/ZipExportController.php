@@ -87,9 +87,7 @@ class ZipExportController extends Controller
 
             // Form 01 – Rekap Regu (PDF)
             try {
-                $chaperone = $patrol->isBoys()
-                    ? $scoutGroup->chaperones->firstWhere('gender', 'male')
-                    : $scoutGroup->chaperones->firstWhere('gender', 'female');
+                $chaperone = $patrol->chaperone;
                 $orderedParticipants = $patrol->orderedParticipants();
                 $form01Pdf = $this->pdf->render('portal.scout-group.patrols.form-01', [
                     'scoutGroup'          => $scoutGroup,
@@ -267,9 +265,7 @@ class ZipExportController extends Controller
                 $send($pct, "Mencetak FORM 01 Regu {$patrol->patrol_name} ({$genderLabel})...");
 
                 try {
-                    $chaperone = $patrol->isBoys()
-                        ? $scoutGroup->chaperones->firstWhere('gender', 'male')
-                        : $scoutGroup->chaperones->firstWhere('gender', 'female');
+                    $chaperone = $patrol->chaperone;
                     $orderedParticipants = $patrol->orderedParticipants();
                     $form01Pdf = $this->pdf->render('portal.scout-group.patrols.form-01', [
                         'scoutGroup'          => $scoutGroup,

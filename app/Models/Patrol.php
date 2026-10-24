@@ -28,6 +28,7 @@ class Patrol extends Model
         'patrol_name',
         'gender_category',
         'draw_number',
+        'chaperone_id',
         'status',
     ];
 
@@ -202,15 +203,11 @@ class Patrol extends Model
     }
 
     /**
-     * Pembina Pendamping yang mendampingi regu ini sesuai kategori gender
+     * Pembina Pendamping (bindamping) yang dipilih mendampingi regu ini; harus sekategori dan segudep
      */
-    public function chaperone(): ?Chaperone
+    public function chaperone(): BelongsTo
     {
-        if (! $this->scoutGroup) {
-            return null;
-        }
-
-        return $this->isBoys() ? $this->scoutGroup->maleChaperone : $this->scoutGroup->femaleChaperone;
+        return $this->belongsTo(Chaperone::class);
     }
 
     /**

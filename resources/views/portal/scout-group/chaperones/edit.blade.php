@@ -230,6 +230,8 @@
                 </div>
             </div>
 
+            @include('portal.scout-group.chaperones.partials.patrol-assignment', ['gender' => $chaperone->gender, 'selected' => $chaperone->patrols->pluck('id')->all()])
+
             {{-- Tabel 1: PENDIDIKAN FORMAL --}}
             <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:p-8">
                 <div class="border-b border-zinc-100 pb-4 dark:border-zinc-800">

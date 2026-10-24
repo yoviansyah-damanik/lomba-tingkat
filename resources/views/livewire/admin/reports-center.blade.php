@@ -202,7 +202,7 @@
                     Ekspor Klasemen Akumulasi Prestasi
                 </h4>
                 <p class="text-xs text-zinc-400 mt-0.5">
-                    Pilih kategori regu untuk mengunduh rekap ranking kejuaraan
+                    Pilih kategori regu untuk mengunduh rekap ranking dan total poin kejuaraan
                 </p>
             </div>
 
@@ -226,7 +226,7 @@
 
         <div class="text-[11px] text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
             <flux:icon name="information-circle" class="size-4 text-amber-500 shrink-0" />
-            <span>Peringkat umum ditentukan jumlah medali secara berurutan: Prestasi Tinggi terbanyak, lalu Prestasi Baik terbanyak, lalu Prestasi Cukup terbanyak.</span>
+            <span>Peringkat umum ditentukan total poin (bobot per peringkat lomba: 1=100, 2=80, 3=70, dst.). Bila total poin sama, penentunya jumlah Prestasi Tinggi terbanyak, lalu Prestasi Baik, lalu Prestasi Cukup.</span>
         </div>
     </div>
 </div>

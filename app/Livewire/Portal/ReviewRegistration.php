@@ -83,7 +83,7 @@ class ReviewRegistration extends Component
     public function missingRequirements(): array
     {
         $group = $this->scoutGroup;
-        $group->loadMissing(['patrols.participants', 'chaperones']);
+        $group->loadMissing(['patrols.participants', 'patrols.chaperone', 'chaperones']);
         $missing = [];
 
         // 1. Profil Pangkalan
@@ -177,6 +177,21 @@ class ReviewRegistration extends Component
                         'badge_color' => 'red',
                     ];
                 }
+            }
+
+            // Setiap regu wajib didampingi bindamping sekategori
+            $unassigned = $group->patrols->filter(fn ($p) => ! $p->chaperone_id || $p->chaperone?->gender !== ($p->isBoys() ? 'male' : 'female'));
+            if ($unassigned->isNotEmpty() && $group->chaperones->isNotEmpty()) {
+                $names = $unassigned->map(fn ($p) => 'Regu '.$p->patrol_name)->join(', ');
+                $missing[] = [
+                    'category' => 'Pembina Pendamping',
+                    'title' => 'Regu Belum Memiliki Bindamping Pendamping',
+                    'description' => "{$names} belum ditetapkan bindamping pendamping sekategori. Pilih bindamping pada kartu regu.",
+                    'action_url' => route('scout-group.patrols'),
+                    'action_label' => 'Tetapkan Bindamping',
+                    'icon' => 'identification',
+                    'badge_color' => 'red',
+                ];
             }
         }
 

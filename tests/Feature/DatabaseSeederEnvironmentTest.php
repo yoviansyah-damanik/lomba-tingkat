@@ -28,8 +28,8 @@ class DatabaseSeederEnvironmentTest extends TestCase
 
         // Data resmi Juknis tetap ada di production
         $this->assertSame(1, Event::count());
-        $this->assertSame(23, \App\Models\Competition::count());
-        $this->assertSame(46, \App\Models\CompetitionSchedule::count());
+        $this->assertSame(17, \App\Models\Competition::count());
+        $this->assertSame(34, \App\Models\CompetitionSchedule::count());
         $this->assertGreaterThan(0, \App\Models\AssessmentCriterion::count());
         $this->assertGreaterThan(0, \App\Models\AttendanceSession::count());
         $this->assertGreaterThan(0, \App\Models\Announcement::count());
@@ -53,14 +53,14 @@ class DatabaseSeederEnvironmentTest extends TestCase
 
         $this->assertGreaterThan(2, User::count());
         $this->assertSame(1, Event::count());
-        $this->assertSame(0, Patrol::where('status', 'verified')->count());
-        $this->assertSame(24, Patrol::where('status', 'submitted')->count());
-        $this->assertSame(0, \App\Models\ScoutGroup::where('verification_status', 'verified')->count());
+        $this->assertSame(4, Patrol::where('status', 'verified')->count());
+        $this->assertSame(25, Patrol::where('status', 'submitted')->count());
+        $this->assertSame(1, \App\Models\ScoutGroup::where('verification_status', 'verified')->count());
         $this->assertTrue(Hash::check('password123', User::where('username', 'admin')->first()->password));
 
-        // Seluruh ID seed mengikuti format resmi: A- aparatur, G- gudep, P- peserta, B- bindamping
+        // Seluruh ID seed mengikuti format resmi: A- aparatur, G- gudep, P- peserta, B- bindamping (akun contoh bisa ber-ID aparatur)
         foreach (User::all() as $user) {
-            $pattern = $user->isScoutGroup() ? '/^G-\d{5}\.\d{5}$/' : '/^A-\d{6}$/';
+            $pattern = $user->isScoutGroup() ? '/^G-\d{5}\.\d{5}$/' : '/^[ABP]-\d{6}$/';
             $this->assertMatchesRegularExpression($pattern, (string) $user->id_number, "ID akun {$user->username}");
         }
         foreach (\App\Models\ScoutGroup::all() as $group) {
@@ -87,8 +87,8 @@ class DatabaseSeederEnvironmentTest extends TestCase
 
         $this->seed(DatabaseSeeder::class);
 
-        $this->assertSame(0, Patrol::where('status', 'verified')->count());
-        $this->assertSame(24, Patrol::where('status', 'submitted')->count());
-        $this->assertSame(0, \App\Models\ScoutGroup::where('verification_status', 'verified')->count());
+        $this->assertSame(4, Patrol::where('status', 'verified')->count());
+        $this->assertSame(25, Patrol::where('status', 'submitted')->count());
+        $this->assertSame(1, \App\Models\ScoutGroup::where('verification_status', 'verified')->count());
     }
 }

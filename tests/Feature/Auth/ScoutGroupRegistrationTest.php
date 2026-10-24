@@ -210,7 +210,7 @@ class ScoutGroupRegistrationTest extends TestCase
         $this->assertEquals('01-094', $girlsPatrol->group_number);
     }
 
-    public function test_contingent_can_have_distinct_male_and_female_chaperones_only(): void
+    public function test_contingent_can_register_multiple_chaperones_per_gender_assigned_to_patrols(): void
     {
         $user = User::factory()->create();
         $user->assignRole(RoleEnum::ScoutGroup);
@@ -228,8 +228,9 @@ class ScoutGroupRegistrationTest extends TestCase
         ]);
 
         // Bindamping hanya dapat didaftarkan setelah regu putra/putri yang bersangkutan ada
-        \App\Models\Patrol::factory()->create(['scout_group_id' => $scoutGroup->id, 'gender_category' => \App\Enums\PatrolGenderEnum::Boys]);
-        \App\Models\Patrol::factory()->create(['scout_group_id' => $scoutGroup->id, 'gender_category' => \App\Enums\PatrolGenderEnum::Girls]);
+        $boysPatrol = \App\Models\Patrol::factory()->create(['scout_group_id' => $scoutGroup->id, 'gender_category' => \App\Enums\PatrolGenderEnum::Boys]);
+        $boysPatrol2 = \App\Models\Patrol::factory()->create(['scout_group_id' => $scoutGroup->id, 'gender_category' => \App\Enums\PatrolGenderEnum::Boys]);
+        $girlsPatrol = \App\Models\Patrol::factory()->create(['scout_group_id' => $scoutGroup->id, 'gender_category' => \App\Enums\PatrolGenderEnum::Girls]);
 
         $this->actingAs($user);
 
@@ -252,28 +253,37 @@ class ScoutGroupRegistrationTest extends TestCase
             'full_name' => 'Kak Rahmat Hidayat, S.Pd',
             'gender' => 'male',
             'phone_number' => '081377889901',
+            'patrol_ids' => [$boysPatrol->id, $boysPatrol2->id, $girlsPatrol->id],
         ]));
         $resMale->assertSessionHasNoErrors();
         $this->assertEquals(1, $scoutGroup->chaperones()->where('gender', 'male')->count());
-        $this->assertEquals('Kak Rahmat Hidayat, S.Pd', $scoutGroup->fresh()->maleChaperone?->full_name);
+        $this->assertEquals('Kak Rahmat Hidayat, S.Pd', $boysPatrol->fresh()->chaperone?->full_name);
+        // Satu bindamping mendampingi beberapa regu sekategori; regu putri diabaikan
+        $this->assertEquals($boysPatrol->fresh()->chaperone_id, $boysPatrol2->fresh()->chaperone_id);
+        $this->assertNull($girlsPatrol->fresh()->chaperone_id);
 
-        // 2. Tambah Bindamping Putra kedua ditolak (karena sudah ada)
+        // 2. Bindamping Putra kedua diperbolehkan (tanpa batas) dan mengambil alih regu yang dipilih
         $resMale2 = $this->post(route('scout-group.chaperones.store'), array_merge($baseChaperonePayload, [
             'full_name' => 'Kak Syarifuddin, S.Pd',
             'gender' => 'male',
             'phone_number' => '081377889902',
+            'patrol_ids' => [$boysPatrol2->id],
         ]));
-        $resMale2->assertSessionHasErrors(['gender']);
+        $resMale2->assertSessionHasNoErrors();
+        $this->assertEquals(2, $scoutGroup->chaperones()->where('gender', 'male')->count());
+        $this->assertEquals('Kak Syarifuddin, S.Pd', $boysPatrol2->fresh()->chaperone?->full_name);
+        $this->assertEquals('Kak Rahmat Hidayat, S.Pd', $boysPatrol->fresh()->chaperone?->full_name);
 
         // 3. Tambah Bindamping Putri berhasil
         $resFemale = $this->post(route('scout-group.chaperones.store'), array_merge($baseChaperonePayload, [
             'full_name' => 'Kak Sri Wahyuni, S.Pd',
             'gender' => 'female',
             'phone_number' => '081377889903',
+            'patrol_ids' => [$girlsPatrol->id],
         ]));
         $resFemale->assertSessionHasNoErrors();
         $this->assertEquals(1, $scoutGroup->chaperones()->where('gender', 'female')->count());
-        $this->assertEquals('Kak Sri Wahyuni, S.Pd', $scoutGroup->fresh()->femaleChaperone?->full_name);
+        $this->assertEquals('Kak Sri Wahyuni, S.Pd', $girlsPatrol->fresh()->chaperone?->full_name);
     }
 
     public function test_registration_automatically_formats_group_number_when_input_without_symbols(): void
@@ -325,11 +335,12 @@ class ScoutGroupRegistrationTest extends TestCase
             'gender_category' => \App\Enums\PatrolGenderEnum::Boys,
         ]);
         $this->fillPatrolRoster($patrol);
-        $scoutGroup->chaperones()->create([
+        $chaperone = $scoutGroup->chaperones()->create([
             'full_name' => 'Kak Zulham Efendi',
             'gender' => 'male',
             'phone_number' => '081299112233',
         ]);
+        $patrol->update(['chaperone_id' => $chaperone->id]);
 
         $this->actingAs($user)->post(route('scout-group.submit'))->assertRedirect(route('scout-group.index'));
         $this->assertEquals(RegistrationStatusEnum::Submitted, $scoutGroup->fresh()->verification_status);

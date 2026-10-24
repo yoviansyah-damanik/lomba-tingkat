@@ -41,6 +41,9 @@ class StandingsLeaderboard extends Component
     public ?float $modalFinalScore = null;
     public string $modalNotes = '';
 
+    // Modal rincian poin regu
+    public ?string $detailPatrolId = null;
+
     public function mount(StandingsService $standingsService): void
     {
         if (! $this->selectedCompetitionId) {
@@ -150,6 +153,52 @@ class StandingsLeaderboard extends Component
             $this->search,
             $this->canUnmask
         );
+    }
+
+    public function openPatrolDetail(string $patrolId): void
+    {
+        $this->detailPatrolId = $patrolId;
+    }
+
+    public function closePatrolDetail(): void
+    {
+        $this->detailPatrolId = null;
+    }
+
+    /**
+     * Rincian poin regu terpilih: posisi klasemen (mengikuti mode sensor) dan poin per lomba
+     *
+     * @return array{standing: array, rows: Collection}|null
+     */
+    #[Computed]
+    public function patrolDetail(): ?array
+    {
+        if (! $this->detailPatrolId) {
+            return null;
+        }
+
+        $standing = $this->patrolStandings->firstWhere('id', $this->detailPatrolId);
+
+        if (! $standing) {
+            return null;
+        }
+
+        $rows = CompetitionScore::with('competition')
+            ->where('patrol_id', $this->detailPatrolId)
+            ->get()
+            ->map(fn (CompetitionScore $score) => [
+                'competition' => $score->competition?->title ?? '-',
+                'code' => $score->competition?->code,
+                'final_score' => $score->final_score,
+                'rank' => $score->rank,
+                'predicate_label' => $score->predicateLabel(),
+                'predicate_classes' => $score->predicateBadgeClasses(),
+                'points' => CompetitionScore::rankWeight($score->rank, $score->predicate),
+            ])
+            ->sortBy('code')
+            ->values();
+
+        return ['standing' => $standing, 'rows' => $rows];
     }
 
     /**

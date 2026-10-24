@@ -3,7 +3,7 @@
 
     <x-heading-section
         title="Pengelolaan Regu & Anggota Peserta"
-        description="Bentuk regu penggalang putra dan putri, tentukan Pinru/Wapinru, dan daftarkan anggota regu."
+        description="Bentuk regu penggalang putra dan putri (boleh lebih dari satu regu per kategori), tentukan Pinru/Wapinru, dan daftarkan anggota regu."
         badge="Administrasi Kontingen"
         badge-icon="user-group"
         badge-color="amber"
@@ -26,8 +26,8 @@
         </x-slot:actions>
     </x-heading-section>
 
-    {{-- Form Bentuk Regu Baru jika belum lengkap 2 regu (Putra & Putri) --}}
-    @if($scoutGroup->isEditable() && $scoutGroup->patrols->count() < 2)
+    {{-- Form Bentuk Regu Baru --}}
+    @if($scoutGroup->isEditable())
         <div id="form-buat-regu" class="rounded-2xl border border-amber-300/80 bg-gradient-to-r from-amber-50 to-white p-5 shadow-sm dark:border-amber-500/20 dark:from-zinc-900 dark:to-zinc-900">
             <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-3">
                 Bentuk Regu Baru
@@ -52,12 +52,8 @@
                         required
                         class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs sm:text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                     >
-                        @if(!$scoutGroup->boysPatrol)
-                            <option value="boys">Penggalang Putra</option>
-                        @endif
-                        @if(!$scoutGroup->girlsPatrol)
-                            <option value="girls">Penggalang Putri</option>
-                        @endif
+                        <option value="boys">Penggalang Putra</option>
+                        <option value="girls">Penggalang Putri</option>
                     </select>
                     @error('gender_category') <p class="mt-1 text-xs text-rose-500">{{ $message }}</p> @enderror
                 </div>
@@ -92,6 +88,14 @@
                         <h3 class="mt-1 text-lg font-bold text-zinc-900 dark:text-zinc-100">
                             Regu {{ $patrol->patrol_name }}
                         </h3>
+                        <p class="mt-1 text-xs text-zinc-500">
+                            Bindamping:
+                            @if($patrol->chaperone)
+                                <span class="font-semibold text-zinc-700 dark:text-zinc-300">{{ $patrol->chaperone->full_name }}</span>
+                            @else
+                                <span class="italic text-amber-600 dark:text-amber-400">belum ditetapkan (pilih regu saat mendaftarkan bindamping)</span>
+                            @endif
+                        </p>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2 self-start sm:self-center">

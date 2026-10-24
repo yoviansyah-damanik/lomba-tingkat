@@ -187,9 +187,9 @@ class ContingentRegistrationTest extends TestCase
     }
 
     /**
-     * Menguji pembentukan regu putra & putri dengan batasan kuota maksimal 1 regu per kategori
+     * Menguji pembentukan regu putra & putri tanpa batas jumlah regu per kategori, nama regu unik per gudep
      */
-    public function test_scout_group_can_create_patrols_with_quota_limits(): void
+    public function test_scout_group_can_create_multiple_patrols_per_category_with_unique_names(): void
     {
         $scoutGroup = ScoutGroup::factory()->create(['user_id' => $this->scoutGroupUser->id]);
 
@@ -219,13 +219,21 @@ class ContingentRegistrationTest extends TestCase
             'gender_category' => PatrolGenderEnum::Girls->value,
         ]);
 
-        // Coba buat regu putra kedua (harus ditolak karena pangkalan maksimal 1 regu putra)
-        $resBoysDuplicate = $this->actingAs($this->scoutGroupUser)->post(route('scout-group.patrols.store'), [
+        // Regu putra kedua diperbolehkan
+        $resBoysSecond = $this->actingAs($this->scoutGroupUser)->post(route('scout-group.patrols.store'), [
             'patrol_name' => 'Garuda',
             'gender_category' => 'boys',
         ]);
-        $resBoysDuplicate->assertSessionHasErrors('gender_category');
-        $this->assertDatabaseMissing('patrols', ['patrol_name' => 'Garuda']);
+        $resBoysSecond->assertRedirect(route('scout-group.patrols'));
+        $this->assertEquals(2, $scoutGroup->patrols()->where('gender_category', PatrolGenderEnum::Boys->value)->count());
+
+        // Nama regu yang sama dalam satu gudep ditolak
+        $resDuplicate = $this->actingAs($this->scoutGroupUser)->post(route('scout-group.patrols.store'), [
+            'patrol_name' => 'Garuda',
+            'gender_category' => 'boys',
+        ]);
+        $resDuplicate->assertSessionHasErrors('patrol_name');
+        $this->assertEquals(1, $scoutGroup->patrols()->where('patrol_name', 'Garuda')->count());
     }
 
     /**
@@ -451,7 +459,7 @@ class ContingentRegistrationTest extends TestCase
         // Buat regu lengkap (8 peserta, Pinru & Wapinru) dan bindamping sesuai gender regu
         $patrol = Patrol::factory()->create(['scout_group_id' => $scoutGroup->id, 'gender_category' => PatrolGenderEnum::Boys]);
         $this->fillPatrolRoster($patrol);
-        Chaperone::factory()->create(['scout_group_id' => $scoutGroup->id, 'gender' => 'male']);
+        $patrol->update(['chaperone_id' => Chaperone::factory()->create(['scout_group_id' => $scoutGroup->id, 'gender' => 'male'])->id]);
 
         // Submit sekarang harus berhasil
         $successSubmit = $this->actingAs($this->scoutGroupUser)->post(route('scout-group.submit'));
@@ -793,13 +801,10 @@ class ContingentRegistrationTest extends TestCase
             'gender_category' => PatrolGenderEnum::Boys->value,
         ]);
 
-        // 2. Refresh komponen - sekarang regu putra sudah ada, gender_category harus otomatis beralih ke 'girls'
-        $component->call('syncAvailableGenderCategory');
-        $this->assertEquals('girls', $component->get('gender_category'));
-
-        // 3. Buat regu putri (meskipun client tidak mengubah dropdown atau jika nilai default tertinggal)
+        // 2. Buat regu putri; kategori dipilih langsung karena satu gudep boleh memiliki beberapa regu per gender
         $component
             ->set('patrol_name', 'Mawar')
+            ->set('gender_category', 'girls')
             ->call('storePatrol')
             ->assertHasNoErrors();
 
@@ -809,11 +814,22 @@ class ContingentRegistrationTest extends TestCase
             'gender_category' => PatrolGenderEnum::Girls->value,
         ]);
 
-        // 4. Pastikan pangkalan sekarang memiliki 2 regu lengkap (1 putra & 1 putri)
+        // 3. Regu putra kedua diperbolehkan, nama ganda ditolak
+        $component
+            ->set('patrol_name', 'Elang')
+            ->set('gender_category', 'boys')
+            ->call('storePatrol')
+            ->assertHasNoErrors();
+        $component
+            ->set('patrol_name', 'Elang')
+            ->set('gender_category', 'boys')
+            ->call('storePatrol')
+            ->assertHasErrors(['patrol_name']);
+
         $scoutGroup->refresh();
-        $this->assertNotNull($scoutGroup->boysPatrol);
-        $this->assertNotNull($scoutGroup->girlsPatrol);
-        $this->assertEquals(2, $scoutGroup->patrols()->count());
+        $this->assertCount(2, $scoutGroup->boysPatrols);
+        $this->assertCount(1, $scoutGroup->girlsPatrols);
+        $this->assertEquals(3, $scoutGroup->patrols()->count());
     }
 
     /**
@@ -985,7 +1001,7 @@ class ContingentRegistrationTest extends TestCase
             'status' => RegistrationStatusEnum::Draft,
         ]);
 
-        Chaperone::create([
+        $patrol->update(['chaperone_id' => Chaperone::create([
             'scout_group_id' => $scoutGroup->id,
             'full_name' => 'Kak Pembina',
             'gender' => 'male',
@@ -999,7 +1015,7 @@ class ContingentRegistrationTest extends TestCase
             'city' => 'Padangsidimpuan',
             'postal_code' => '22727',
             'status' => RegistrationStatusEnum::Draft,
-        ]);
+        ])->id]);
 
         // 1. Simpan peserta beserta 7 berkas persyaratan
         $fileKta = \Illuminate\Http\UploadedFile::fake()->create('kta.pdf', 500, 'application/pdf');
@@ -1144,10 +1160,10 @@ class ContingentRegistrationTest extends TestCase
         // Skenario 3: Lengkapi seluruh persyaratan (peserta, bindamping, surat tugas, bukti bayar)
         $this->fillPatrolRoster($patrol);
 
-        Chaperone::factory()->create([
+        $patrol->update(['chaperone_id' => Chaperone::factory()->create([
             'scout_group_id' => $scoutGroup->id,
             'gender' => 'male',
-        ]);
+        ])->id]);
 
         $mandateLetter = \Illuminate\Http\UploadedFile::fake()->create('mandat.pdf', 100, 'application/pdf');
         $paymentProof = \Illuminate\Http\UploadedFile::fake()->image('bukti.jpg', 300, 300);

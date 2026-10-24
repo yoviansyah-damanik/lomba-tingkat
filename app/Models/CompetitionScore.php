@@ -55,6 +55,37 @@ class CompetitionScore extends Model
     }
 
     /**
+     * Nilai bobot (poin) per peringkat pada satu lomba; peringkat 21 ke atas memakai bobot terendah.
+     * Tabel: 1=100, 2=80, 3=70, 4=65, 5=60, 6=55, 7=54, 8=53, 9=52, 10=51, 11-20=50, 21-33=45.
+     */
+    public static function rankWeight(?int $rank, ?string $predicate = null): int
+    {
+        if ($rank === null || $rank < 1) {
+            return match ($predicate) {
+                'prestasi_tinggi' => 100,
+                'prestasi_baik' => 80,
+                'prestasi_cukup' => 70,
+                default => 0,
+            };
+        }
+
+        return match (true) {
+            $rank === 1 => 100,
+            $rank === 2 => 80,
+            $rank === 3 => 70,
+            $rank === 4 => 65,
+            $rank === 5 => 60,
+            $rank === 6 => 55,
+            $rank === 7 => 54,
+            $rank === 8 => 53,
+            $rank === 9 => 52,
+            $rank === 10 => 51,
+            $rank <= 20 => 50,
+            default => 45,
+        };
+    }
+
+    /**
      * Peserta individual (jika format lomba perorangan)
      */
     public function participant(): BelongsTo

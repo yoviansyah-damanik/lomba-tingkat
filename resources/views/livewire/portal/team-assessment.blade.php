@@ -61,10 +61,10 @@
                 color="amber"
             />
             <x-stat-card
-                label="Total Prestasi"
-                :value="$standing['total_medals'] ?? 0"
-                unit="prestasi"
-                description="Peringkat ditentukan jumlah Tinggi, lalu Baik, lalu Cukup"
+                label="Total Poin"
+                :value="$standing['total_points'] ?? 0"
+                unit="poin"
+                description="Peringkat umum menurut total poin; bila seri: Tinggi, lalu Baik, lalu Cukup"
                 icon="star"
                 color="indigo"
             />

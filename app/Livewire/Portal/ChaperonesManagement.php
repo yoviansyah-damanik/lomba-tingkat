@@ -64,12 +64,14 @@ class ChaperonesManagement extends Component
     public function render()
     {
         $scoutGroup = $this->scoutGroup;
-        $scoutGroup->load('chaperones');
+        $scoutGroup->load('chaperones.patrols');
 
         return view('livewire.portal.chaperones-management', [
             'scoutGroup' => $scoutGroup,
-            'maleChaperone' => $scoutGroup->maleChaperone,
-            'femaleChaperone' => $scoutGroup->femaleChaperone,
+            'chaperonesByGender' => [
+                'male' => $scoutGroup->chaperones->where('gender', 'male')->values(),
+                'female' => $scoutGroup->chaperones->where('gender', 'female')->values(),
+            ],
         ]);
     }
 }

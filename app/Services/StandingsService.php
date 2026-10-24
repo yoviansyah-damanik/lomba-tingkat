@@ -49,9 +49,11 @@ class StandingsService
             $silver = 0;
             $bronze = 0;
             $competitionsScored = 0;
+            $totalPoints = 0;
 
             foreach ($patrol->competitionScores as $score) {
                 $competitionsScored++;
+                $totalPoints += CompetitionScore::rankWeight($score->rank, $score->predicate);
 
                 match ($score->predicate) {
                     'prestasi_tinggi' => $gold++,
@@ -83,13 +85,18 @@ class StandingsService
                 'silver' => $silver,
                 'bronze' => $bronze,
                 'total_medals' => $gold + $silver + $bronze,
+                'total_points' => $totalPoints,
                 'competitions_scored' => $competitionsScored,
             ];
         });
 
-        // Peringkat umum menurut jumlah medali, berurutan: Prestasi Tinggi terbanyak, lalu Prestasi Baik terbanyak,
-        // lalu Prestasi Cukup terbanyak. Tidak ada sistem poin; nama regu hanya penentu urutan tampil bila seri penuh.
+        // Peringkat umum: total poin (bobot per peringkat lomba) terbanyak. Bila total poin sama, penentunya
+        // akumulasi pencapaian lomba secara berurut: Prestasi Tinggi terbanyak, lalu Baik, lalu Cukup.
+        // Nama regu hanya menentukan urutan tampil bila seri penuh.
         $sortCallback = function ($a, $b) {
+            if ($a['total_points'] !== $b['total_points']) {
+                return $b['total_points'] <=> $a['total_points'];
+            }
             if ($a['gold'] !== $b['gold']) {
                 return $b['gold'] <=> $a['gold'];
             }

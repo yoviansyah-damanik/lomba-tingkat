@@ -144,143 +144,17 @@
 
                 {{-- Bagian 2: Regu Penggalang & Daftar Seluruh Peserta --}}
                 <div class="space-y-5 pt-2">
-                    @php
-                        $boysPatrol = $selectedGroup->patrols->firstWhere('gender_category', \App\Enums\PatrolGenderEnum::Boys);
-                        $girlsPatrol = $selectedGroup->patrols->firstWhere('gender_category', \App\Enums\PatrolGenderEnum::Girls);
-                    @endphp
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                        {{-- REGU PENGGALANG PUTRA --}}
-                        <div class="rounded-2xl border border-blue-200/90 bg-white p-4 sm:p-5 shadow-sm dark:border-blue-900/50 dark:bg-zinc-900/90 dark:shadow-md dark:shadow-blue-950/20 flex flex-col justify-between">
-                            <div>
-                                {{-- Header Regu Putra --}}
-                                <div class="flex items-center justify-between border-b border-blue-100 pb-3.5 dark:border-blue-900/40">
-                                    <div class="flex items-center gap-2.5">
-                                        <span class="flex size-8 sm:size-9 items-center justify-center rounded-xl bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 dark:border dark:border-blue-800/60">
-                                            <flux:icon name="user-group" class="size-4 sm:size-5" />
-                                        </span>
-                                        <div>
-                                            <span class="block text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">
-                                                Regu Penggalang Putra
-                                            </span>
-                                            <h5 class="text-sm sm:text-base font-extrabold text-zinc-900 dark:text-zinc-100">
-                                                {{ $boysPatrol ? 'Regu ' . $boysPatrol->patrol_name : 'Belum Terdaftar' }}
-                                            </h5>
-                                        </div>
-                                    </div>
-                                    @if($boysPatrol)
-                                        <span class="inline-flex items-center rounded-lg bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-950/80 dark:text-blue-300 dark:border dark:border-blue-800/60">
-                                            {{ $boysPatrol->participants->count() }} Anggota
-                                        </span>
-                                    @endif
-                                </div>
-
-                                {{-- Tabel / Daftar Peserta Putra --}}
-                                @if($boysPatrol && $boysPatrol->participants->isNotEmpty())
-                                    <div class="mt-3 divide-y divide-zinc-100 dark:divide-zinc-800/80">
-                                        @foreach($boysPatrol->participants as $index => $participant)
-                                            <div class="py-2.5 px-2 -mx-2 rounded-xl flex items-center justify-between gap-2.5 text-xs transition-colors hover:bg-blue-50/40 dark:hover:bg-blue-950/30">
-                                                <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                                                    <span class="flex size-6 shrink-0 items-center justify-center rounded-lg bg-zinc-100 font-mono text-[11px] font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:border dark:border-zinc-700/60">
-                                                        {{ $index + 1 }}
-                                                    </span>
-                                                    <div class="min-w-0 flex-1">
-                                                        <span class="block font-bold text-zinc-900 dark:text-zinc-100 truncate text-xs sm:text-sm">
-                                                            {{ $participant->full_name }}
-                                                        </span>
-                                                        <span class="text-[11px] text-zinc-500 dark:text-zinc-400 block truncate">
-                                                            <span>NTA: <strong class="font-mono text-zinc-700 dark:text-zinc-200">{{ $participant->scout_id ?: ($participant->id_number ?: '-') }}</strong></span>
-                                                            <span class="text-zinc-300 dark:text-zinc-600">&bull;</span>
-                                                            <span class="text-zinc-600 dark:text-zinc-300 font-medium">Penggalang {{ $participant->highestSkuLevel() }}</span>
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                <div class="shrink-0">
-                                                    <span class="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-bold {{ $participant->role_in_patrol?->badgeClasses() ?? 'border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-400' }}" title="{{ $participant->role_in_patrol?->label() ?? 'Anggota Regu' }}">
-                                                        @if($participant->role_in_patrol?->iconName())
-                                                            <flux:icon name="{{ $participant->role_in_patrol->iconName() }}" class="size-3 stroke-[2.5]" />
-                                                        @endif
-                                                        <span>{{ $participant->role_in_patrol?->shortLabel() ?? 'Anggota' }}</span>
-                                                        <span class="sr-only">({{ $participant->role_in_patrol?->label() ?? 'Anggota Regu' }})</span>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                @else
-                                    <div class="py-8 text-center text-xs text-zinc-500 dark:text-zinc-400">
-                                        Belum ada data anggota regu putra pada pangkalan ini.
-                                    </div>
-                                @endif
+                    <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                        @foreach(['boys' => 'isBoys', 'girls' => 'isGirls'] as $category => $check)
+                            @php $categoryPatrols = $selectedGroup->patrols->filter(fn ($p) => $p->{$check}())->values(); @endphp
+                            <div class="space-y-5" wire:key="roster-{{ $category }}">
+                                @forelse($categoryPatrols as $patrol)
+                                    @include('livewire.public.partials.patrol-roster-card', ['patrol' => $patrol, 'category' => $category])
+                                @empty
+                                    @include('livewire.public.partials.patrol-roster-card', ['patrol' => null, 'category' => $category])
+                                @endforelse
                             </div>
-                        </div>
-
-                        {{-- REGU PENGGALANG PUTRI --}}
-                        <div class="rounded-2xl border border-rose-200/90 bg-white p-4 sm:p-5 shadow-sm dark:border-rose-900/50 dark:bg-zinc-900/90 dark:shadow-md dark:shadow-rose-950/20 flex flex-col justify-between">
-                            <div>
-                                {{-- Header Regu Putri --}}
-                                <div class="flex items-center justify-between border-b border-rose-100 pb-3.5 dark:border-rose-900/40">
-                                    <div class="flex items-center gap-2.5">
-                                        <span class="flex size-8 sm:size-9 items-center justify-center rounded-xl bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 dark:border dark:border-rose-800/60">
-                                            <flux:icon name="user-group" class="size-4 sm:size-5" />
-                                        </span>
-                                        <div>
-                                            <span class="block text-[10px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400">
-                                                Regu Penggalang Putri
-                                            </span>
-                                            <h5 class="text-sm sm:text-base font-extrabold text-zinc-900 dark:text-zinc-100">
-                                                {{ $girlsPatrol ? 'Regu ' . $girlsPatrol->patrol_name : 'Belum Terdaftar' }}
-                                            </h5>
-                                        </div>
-                                    </div>
-                                    @if($girlsPatrol)
-                                        <span class="inline-flex items-center rounded-lg bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 dark:border dark:border-rose-800/60">
-                                            {{ $girlsPatrol->participants->count() }} Anggota
-                                        </span>
-                                    @endif
-                                </div>
-
-                                {{-- Tabel / Daftar Peserta Putri --}}
-                                @if($girlsPatrol && $girlsPatrol->participants->isNotEmpty())
-                                    <div class="mt-3 divide-y divide-zinc-100 dark:divide-zinc-800/80">
-                                        @foreach($girlsPatrol->participants as $index => $participant)
-                                            <div class="py-2.5 px-2 -mx-2 rounded-xl flex items-center justify-between gap-2.5 text-xs transition-colors hover:bg-rose-50/40 dark:hover:bg-rose-950/30">
-                                                <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                                                    <span class="flex size-6 shrink-0 items-center justify-center rounded-lg bg-zinc-100 font-mono text-[11px] font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:border dark:border-zinc-700/60">
-                                                        {{ $index + 1 }}
-                                                    </span>
-                                                    <div class="min-w-0 flex-1">
-                                                        <span class="block font-bold text-zinc-900 dark:text-zinc-100 truncate text-xs sm:text-sm">
-                                                            {{ $participant->full_name }}
-                                                        </span>
-                                                        <span class="text-[11px] text-zinc-500 dark:text-zinc-400 block truncate">
-                                                            <span>NTA: <strong class="font-mono text-zinc-700 dark:text-zinc-200">{{ $participant->scout_id ?: ($participant->id_number ?: '-') }}</strong></span>
-                                                            <span class="text-zinc-300 dark:text-zinc-600">&bull;</span>
-                                                            <span class="text-zinc-600 dark:text-zinc-300 font-medium">Penggalang {{ $participant->highestSkuLevel() }}</span>
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                <div class="shrink-0">
-                                                    <span class="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-bold {{ $participant->role_in_patrol?->badgeClasses() ?? 'border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-400' }}" title="{{ $participant->role_in_patrol?->label() ?? 'Anggota Regu' }}">
-                                                        @if($participant->role_in_patrol?->iconName())
-                                                            <flux:icon name="{{ $participant->role_in_patrol->iconName() }}" class="size-3 stroke-[2.5]" />
-                                                        @endif
-                                                        <span>{{ $participant->role_in_patrol?->shortLabel() ?? 'Anggota' }}</span>
-                                                        <span class="sr-only">({{ $participant->role_in_patrol?->label() ?? 'Anggota Regu' }})</span>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                @else
-                                    <div class="py-8 text-center text-xs text-zinc-500 dark:text-zinc-400">
-                                        Belum ada data anggota regu putri pada pangkalan ini.
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
+                        @endforeach
                     </div>
                 </div>
 

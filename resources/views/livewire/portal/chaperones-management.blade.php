@@ -3,7 +3,7 @@
 
     <x-heading-section
         title="Pembina Pendamping (Bindamping)"
-        description="Daftarkan pembina pendamping resmi yang mendampingi kontingen selama kegiatan LT III Kwarcab Padangsidimpuan."
+        description="Daftarkan pembina pendamping resmi yang mendampingi regu selama kegiatan LT III Kwarcab Padangsidimpuan. Satu bindamping dapat mendampingi beberapa regu sekategori."
         badge="Administrasi Kontingen"
         badge-icon="user-group"
         badge-color="amber"
@@ -19,226 +19,115 @@
         </x-slot:actions>
     </x-heading-section>
 
-    {{-- 2 Slot Resmi Bindamping Putra & Putri --}}
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {{-- Slot 1: Bindamping Putra --}}
-        <div class="rounded-2xl border {{ $maleChaperone ? 'border-blue-200 bg-white dark:border-blue-900/50' : 'border-dashed border-blue-300 bg-blue-50/40 dark:border-blue-900/40 dark:bg-blue-950/20' }} p-6 shadow-sm dark:bg-zinc-900 flex flex-col justify-between">
-            <div>
-                <div class="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
-                    <div class="flex items-center gap-2">
-                        <span class="inline-flex size-3 rounded-full bg-blue-600"></span>
-                        <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100">
-                            Pembina Pendamping Putra
-                        </h3>
-                    </div>
-                    <span class="rounded-md font-mono text-[11px] font-bold border border-blue-200 bg-blue-50 px-2 py-0.5 text-blue-800 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300">
-                        Gudep {{ $scoutGroup->male_group_number ?? $scoutGroup->group_number }}
+    @php
+        $categories = [
+            'male' => ['label' => 'Putra', 'patrolLabel' => 'Regu Putra', 'dot' => 'bg-blue-600', 'badge' => 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300', 'empty' => 'border-blue-300 bg-blue-50/40 dark:border-blue-900/40 dark:bg-blue-950/20', 'icon' => 'text-blue-400', 'card' => 'border-blue-200 dark:border-blue-900/50'],
+            'female' => ['label' => 'Putri', 'patrolLabel' => 'Regu Putri', 'dot' => 'bg-rose-600', 'badge' => 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300', 'empty' => 'border-rose-300 bg-rose-50/40 dark:border-rose-900/40 dark:bg-rose-950/20', 'icon' => 'text-rose-400', 'card' => 'border-rose-200 dark:border-rose-900/50'],
+        ];
+    @endphp
+
+    {{-- Bindamping per kategori: tanpa batas jumlah, ditetapkan per regu pada halaman Regu --}}
+    @foreach($categories as $gender => $cat)
+        @php $list = $chaperonesByGender[$gender]; @endphp
+        <section class="space-y-4" wire:key="chaperone-category-{{ $gender }}">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 pb-3 dark:border-zinc-800">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="inline-flex size-3 rounded-full {{ $cat['dot'] }}"></span>
+                    <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100">Pembina Pendamping {{ $cat['label'] }}</h3>
+                    <span class="rounded-md border px-2 py-0.5 font-mono text-[11px] font-bold {{ $cat['badge'] }}">
+                        Gudep {{ $scoutGroup->{$gender.'_group_number'} ?? $scoutGroup->group_number }}
                     </span>
+                    <span class="text-xs text-zinc-400">{{ $list->count() }} orang</span>
                 </div>
 
-                @if($maleChaperone)
-                    <div class="mt-4 flex items-start gap-4">
-                        <div class="size-16 rounded-xl border border-zinc-200 bg-zinc-100 overflow-hidden shrink-0 dark:border-zinc-700 dark:bg-zinc-800 flex items-center justify-center">
-                            @if($maleChaperone->photo_path)
-                                <img src="{{ asset('storage/' . $maleChaperone->photo_path) }}" class="size-full object-cover" alt="Foto">
-                            @else
-                                <flux:icon name="user" class="size-8 text-zinc-400" />
-                            @endif
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h4 class="font-bold text-sm text-zinc-900 dark:text-zinc-100 truncate">
-                                {{ $maleChaperone->full_name }}
-                            </h4>
-                            <div class="mt-1 space-y-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-                                <p>No. WhatsApp: <strong class="text-zinc-800 dark:text-zinc-200">{{ $maleChaperone->phone_number }}</strong></p>
-                                <p>NTA Pramuka: <span class="font-mono">{{ $maleChaperone->scout_id ?: '-' }}</span></p>
-                                <p>ID: <span class="font-mono font-bold text-amber-700 dark:text-amber-400">{{ $maleChaperone->id_number ?: '-' }}</span></p>
-                            </div>
-                            <div class="mt-2.5">
-                                <span class="inline-flex items-center rounded-lg border px-2 py-0.5 text-[11px] font-semibold {{ $maleChaperone->status?->badgeClasses() ?? 'bg-zinc-100 text-zinc-700' }}">
-                                    {{ $maleChaperone->status?->label() ?? 'Draft' }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                @else
-                    <div class="py-8 text-center">
-                        <flux:icon name="user-plus" class="size-10 text-blue-400 mx-auto mb-2 opacity-80" />
-                        <p class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Belum Ada Bindamping Putra</p>
-                        <p class="text-[11px] text-zinc-400 mt-0.5">Maksimal 1 orang pembina pendamping putra per pangkalan</p>
-                    </div>
+                @if($scoutGroup->isEditable() && $this->canRegister($gender))
+                    <flux:button href="{{ route('scout-group.chaperones.create', ['gender' => $gender]) }}" wire:navigate size="sm" variant="primary" icon="plus">
+                        Tambah Bindamping {{ $cat['label'] }}
+                    </flux:button>
                 @endif
             </div>
 
-            <div class="mt-5 pt-4 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
-                @if($maleChaperone)
-                    <div class="flex items-center gap-2">
-                        <flux:button href="{{ route('scout-group.chaperones.show', $maleChaperone->id) }}" wire:navigate variant="subtle" size="xs" icon="eye" title="Lihat detail lengkap bindamping">
-                            Detail
-                        </flux:button>
-                        <span class="text-zinc-300">&bull;</span>
-                        @if($scoutGroup->canDownloadDocuments())
-                        <a href="{{ route('scout-group.chaperones.print', $maleChaperone->id) }}" target="_blank"
-                            data-loading="Mencetak Biodata Bindamping (Putra) (PDF)..."
-                            class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-400">
-                            <flux:icon name="printer" class="size-3.5" />
-                            Biodata
-                        </a>
-                        @endif
-                        <span class="text-zinc-300">&bull;</span>
-                        @if($scoutGroup->canDownloadDocuments())
-                        <a href="{{ route('digital-cards.chaperone', $maleChaperone->id) }}" target="_blank"
-                            data-loading="Memuat Kartu Digital Bindamping (Putra)..."
-                            class="inline-flex items-center gap-1 text-xs font-semibold text-zinc-700 hover:text-zinc-900 dark:text-zinc-300">
-                            <flux:icon name="qr-code" class="size-3.5" />
-                            Kartu
-                        </a>
-                        @endif
-                        @if($scoutGroup->isEditable())
-                            <span class="text-zinc-300">&bull;</span>
-                            <a href="{{ route('scout-group.chaperones.edit', $maleChaperone->id) }}" wire:navigate
-                                class="text-xs font-semibold text-zinc-700 hover:text-zinc-900 dark:text-zinc-300">
-                                Edit
-                            </a>
-                        @endif
-                    </div>
-                    @if($scoutGroup->isEditable())
-                        <div class="flex items-center gap-2">
-                            <button
-                                type="button"
-                                wire:click="deleteChaperone('{{ $maleChaperone->id }}')"
-                                wire:confirm="Hapus Bindamping Putra ini?"
-                                class="text-xs font-medium text-red-600 hover:underline dark:text-red-400 cursor-pointer">
-                                Hapus
-                            </button>
-                        </div>
+            @if($list->isEmpty())
+                <div class="rounded-2xl border border-dashed p-8 text-center {{ $cat['empty'] }}">
+                    <flux:icon name="user-plus" class="mx-auto mb-2 size-10 opacity-80 {{ $cat['icon'] }}" />
+                    <p class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Belum Ada Bindamping {{ $cat['label'] }}</p>
+                    @if($scoutGroup->isEditable() && ! $this->canRegister($gender))
+                        <p class="mx-auto mt-1 max-w-md text-[11px] text-zinc-500 dark:text-zinc-400">Tambahkan <strong>{{ $cat['patrolLabel'] }}</strong> terlebih dahulu. Bindamping {{ $cat['label'] }} didaftarkan setelah {{ $cat['patrolLabel'] }} ada.</p>
+                        <flux:button href="{{ route('scout-group.patrols') }}" wire:navigate size="xs" variant="subtle" icon="user-group" class="mt-3">Kelola Regu</flux:button>
+                    @else
+                        <p class="mt-0.5 text-[11px] text-zinc-400">Minimal 1 bindamping {{ strtolower($cat['label']) }} bila ada {{ strtolower($cat['patrolLabel']) }}</p>
                     @endif
-                @else
-                    @if($scoutGroup->isEditable())
-                        @if($this->canRegister('male'))
-                            <a href="{{ route('scout-group.chaperones.create', ['gender' => 'male']) }}" wire:navigate
-                                class="w-full inline-flex justify-center items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700">
-                                + Daftarkan Bindamping Putra
-                            </a>
-                        @else
-                            <div class="w-full space-y-2 text-center">
-                                <p class="text-[11px] text-zinc-500 dark:text-zinc-400">Tambahkan <strong>Regu Putra</strong> terlebih dahulu. Bindamping Putra didaftarkan setelah Regu Putra ada.</p>
-                                <flux:button href="{{ route('scout-group.patrols') }}" wire:navigate size="xs" variant="subtle" icon="user-group">Kelola Regu</flux:button>
-                            </div>
-                        @endif
-                    @endif
-                @endif
-            </div>
-        </div>
-
-        {{-- Slot 2: Bindamping Putri --}}
-        <div class="rounded-2xl border {{ $femaleChaperone ? 'border-rose-200 bg-white dark:border-rose-900/50' : 'border-dashed border-rose-300 bg-rose-50/40 dark:border-rose-900/40 dark:bg-rose-950/20' }} p-6 shadow-sm dark:bg-zinc-900 flex flex-col justify-between">
-            <div>
-                <div class="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
-                    <div class="flex items-center gap-2">
-                        <span class="inline-flex size-3 rounded-full bg-rose-600"></span>
-                        <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100">
-                            Pembina Pendamping Putri
-                        </h3>
-                    </div>
-                    <span class="rounded-md font-mono text-[11px] font-bold border border-rose-200 bg-rose-50 px-2 py-0.5 text-rose-800 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300">
-                        Gudep {{ $scoutGroup->female_group_number ?? $scoutGroup->group_number }}
-                    </span>
                 </div>
+            @else
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    @foreach($list as $chaperone)
+                        <div wire:key="chaperone-{{ $chaperone->id }}" class="flex flex-col justify-between rounded-2xl border bg-white p-6 shadow-sm dark:bg-zinc-900 {{ $cat['card'] }}">
+                            <div class="flex items-start gap-4">
+                                <div class="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800">
+                                    @if($chaperone->photo_path)
+                                        <img src="{{ asset('storage/' . $chaperone->photo_path) }}" class="size-full object-cover" alt="Foto">
+                                    @else
+                                        <flux:icon name="user" class="size-8 text-zinc-400" />
+                                    @endif
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <h4 class="truncate text-sm font-bold text-zinc-900 dark:text-zinc-100">{{ $chaperone->full_name }}</h4>
+                                    <div class="mt-1 space-y-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                                        <p>No. WhatsApp: <strong class="text-zinc-800 dark:text-zinc-200">{{ $chaperone->phone_number }}</strong></p>
+                                        <p>NTA Pramuka: <span class="font-mono">{{ $chaperone->scout_id ?: '-' }}</span></p>
+                                        <p>ID: <span class="font-mono font-bold text-amber-700 dark:text-amber-400">{{ $chaperone->id_number ?: '-' }}</span></p>
+                                    </div>
+                                    <div class="mt-2.5 flex flex-wrap items-center gap-1.5">
+                                        <span class="inline-flex items-center rounded-lg border px-2 py-0.5 text-[11px] font-semibold {{ $chaperone->status?->badgeClasses() ?? 'bg-zinc-100 text-zinc-700' }}">
+                                            {{ $chaperone->status?->label() ?? 'Draft' }}
+                                        </span>
+                                        @forelse($chaperone->patrols as $patrol)
+                                            <span class="rounded-md bg-zinc-100 px-2 py-0.5 text-[11px] font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">Regu {{ $patrol->patrol_name }}</span>
+                                        @empty
+                                            <span class="text-[11px] italic text-amber-600 dark:text-amber-400">Belum mendampingi regu</span>
+                                        @endforelse
+                                    </div>
+                                </div>
+                            </div>
 
-                @if($femaleChaperone)
-                    <div class="mt-4 flex items-start gap-4">
-                        <div class="size-16 rounded-xl border border-zinc-200 bg-zinc-100 overflow-hidden shrink-0 dark:border-zinc-700 dark:bg-zinc-800 flex items-center justify-center">
-                            @if($femaleChaperone->photo_path)
-                                <img src="{{ asset('storage/' . $femaleChaperone->photo_path) }}" class="size-full object-cover" alt="Foto">
-                            @else
-                                <flux:icon name="user" class="size-8 text-zinc-400" />
-                            @endif
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h4 class="font-bold text-sm text-zinc-900 dark:text-zinc-100 truncate">
-                                {{ $femaleChaperone->full_name }}
-                            </h4>
-                            <div class="mt-1 space-y-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-                                <p>No. WhatsApp: <strong class="text-zinc-800 dark:text-zinc-200">{{ $femaleChaperone->phone_number }}</strong></p>
-                                <p>NTA Pramuka: <span class="font-mono">{{ $femaleChaperone->scout_id ?: '-' }}</span></p>
-                                <p>ID: <span class="font-mono font-bold text-amber-700 dark:text-amber-400">{{ $femaleChaperone->id_number ?: '-' }}</span></p>
+                            <div class="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <flux:button href="{{ route('scout-group.chaperones.show', $chaperone->id) }}" wire:navigate variant="subtle" size="xs" icon="eye" title="Lihat detail lengkap bindamping">
+                                        Detail
+                                    </flux:button>
+                                    @if($scoutGroup->canDownloadDocuments())
+                                        <flux:button href="{{ route('scout-group.chaperones.print', $chaperone->id) }}" target="_blank" variant="subtle" size="xs" icon="printer"
+                                            data-loading="Mencetak Biodata Bindamping ({{ $cat['label'] }}) (PDF)...">
+                                            Biodata
+                                        </flux:button>
+                                        <flux:button href="{{ route('digital-cards.chaperone', $chaperone->id) }}" target="_blank" variant="subtle" size="xs" icon="qr-code"
+                                            data-loading="Memuat Kartu Digital Bindamping ({{ $cat['label'] }})...">
+                                            Kartu
+                                        </flux:button>
+                                    @endif
+                                    @if($scoutGroup->isEditable())
+                                        <flux:button href="{{ route('scout-group.chaperones.edit', $chaperone->id) }}" wire:navigate variant="subtle" size="xs" icon="pencil-square">
+                                            Edit
+                                        </flux:button>
+                                    @endif
+                                </div>
+                                @if($scoutGroup->isEditable())
+                                    <flux:button
+                                        type="button"
+                                        wire:click="deleteChaperone('{{ $chaperone->id }}')"
+                                        wire:confirm="Hapus Bindamping {{ $cat['label'] }} ini? Regu yang didampingi akan kembali tanpa bindamping."
+                                        variant="danger"
+                                        size="xs"
+                                        icon="trash"
+                                    >
+                                        Hapus
+                                    </flux:button>
+                                @endif
                             </div>
-                            <div class="mt-2.5">
-                                <span class="inline-flex items-center rounded-lg border px-2 py-0.5 text-[11px] font-semibold {{ $femaleChaperone->status?->badgeClasses() ?? 'bg-zinc-100 text-zinc-700' }}">
-                                    {{ $femaleChaperone->status?->label() ?? 'Draft' }}
-                                </span>
-                            </div>
                         </div>
-                    </div>
-                @else
-                    <div class="py-8 text-center">
-                        <flux:icon name="user-plus" class="size-10 text-rose-400 mx-auto mb-2 opacity-80" />
-                        <p class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Belum Ada Bindamping Putri</p>
-                        <p class="text-[11px] text-zinc-400 mt-0.5">Maksimal 1 orang pembina pendamping putri per pangkalan</p>
-                    </div>
-                @endif
-            </div>
-
-            <div class="mt-5 pt-4 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
-                @if($femaleChaperone)
-                    <div class="flex items-center gap-2">
-                        <flux:button href="{{ route('scout-group.chaperones.show', $femaleChaperone->id) }}" wire:navigate variant="subtle" size="xs" icon="eye" title="Lihat detail lengkap bindamping">
-                            Detail
-                        </flux:button>
-                        <span class="text-zinc-300">&bull;</span>
-                        @if($scoutGroup->canDownloadDocuments())
-                        <a href="{{ route('scout-group.chaperones.print', $femaleChaperone->id) }}" target="_blank"
-                            data-loading="Mencetak Biodata Bindamping (Putri) (PDF)..."
-                            class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-400">
-                            <flux:icon name="printer" class="size-3.5" />
-                            Biodata
-                        </a>
-                        @endif
-                        <span class="text-zinc-300">&bull;</span>
-                        @if($scoutGroup->canDownloadDocuments())
-                        <a href="{{ route('digital-cards.chaperone', $femaleChaperone->id) }}" target="_blank"
-                            data-loading="Memuat Kartu Digital Bindamping (Putri)..."
-                            class="inline-flex items-center gap-1 text-xs font-semibold text-zinc-700 hover:text-zinc-900 dark:text-zinc-300">
-                            <flux:icon name="qr-code" class="size-3.5" />
-                            Kartu
-                        </a>
-                        @endif
-                        @if($scoutGroup->isEditable())
-                            <span class="text-zinc-300">&bull;</span>
-                            <a href="{{ route('scout-group.chaperones.edit', $femaleChaperone->id) }}" wire:navigate
-                                class="text-xs font-semibold text-zinc-700 hover:text-zinc-900 dark:text-zinc-300">
-                                Edit
-                            </a>
-                        @endif
-                    </div>
-                    @if($scoutGroup->isEditable())
-                        <div class="flex items-center gap-2">
-                            <button
-                                type="button"
-                                wire:click="deleteChaperone('{{ $femaleChaperone->id }}')"
-                                wire:confirm="Hapus Bindamping Putri ini?"
-                                class="text-xs font-medium text-red-600 hover:underline dark:text-red-400 cursor-pointer">
-                                Hapus
-                            </button>
-                        </div>
-                    @endif
-                @else
-                    @if($scoutGroup->isEditable())
-                        @if($this->canRegister('female'))
-                            <a href="{{ route('scout-group.chaperones.create', ['gender' => 'female']) }}" wire:navigate
-                                class="w-full inline-flex justify-center items-center gap-1.5 rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-rose-700">
-                                + Daftarkan Bindamping Putri
-                            </a>
-                        @else
-                            <div class="w-full space-y-2 text-center">
-                                <p class="text-[11px] text-zinc-500 dark:text-zinc-400">Tambahkan <strong>Regu Putri</strong> terlebih dahulu. Bindamping Putri didaftarkan setelah Regu Putri ada.</p>
-                                <flux:button href="{{ route('scout-group.patrols') }}" wire:navigate size="xs" variant="subtle" icon="user-group">Kelola Regu</flux:button>
-                            </div>
-                        @endif
-                    @endif
-                @endif
-            </div>
-        </div>
-    </div>
+                    @endforeach
+                </div>
+            @endif
+        </section>
+    @endforeach
 </div>

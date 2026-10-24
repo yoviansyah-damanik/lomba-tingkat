@@ -365,6 +365,14 @@ class ContingentSeeder extends Seeder
             ]
         );
 
+        // Bindamping mendampingi seluruh regu sekategori
+        foreach (['male' => 'boys', 'female' => 'girls'] as $gender => $category) {
+            $chaperone = Chaperone::where('scout_group_id', $scoutGroup->id)->where('gender', $gender)->first();
+            if ($chaperone) {
+                $scoutGroup->syncChaperonePatrols($chaperone, $scoutGroup->patrols()->where('gender_category', $category)->pluck('id')->all());
+            }
+        }
+
         // 5. Akun contoh untuk pengujian & dev (bindamping putra, bindamping putri, dan peserta)
         $defaultPassword = Hash::make('password123');
 

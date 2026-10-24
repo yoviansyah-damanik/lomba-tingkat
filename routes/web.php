@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [PublicPageController::class, 'home'])->name('home');
 Route::get('/announcements', \App\Livewire\Public\AnnouncementsList::class)->name('announcements');
 Route::get('/announcements/{slug}', [PublicPageController::class, 'announcementShow'])->name('announcements.show');
+Route::get('/announcements/{slug}/files/{index}', [PublicPageController::class, 'announcementDownload'])->whereNumber('index')->name('announcements.download');
 Route::get('/competitions', \App\Livewire\Public\CompetitionsCatalog::class)->name('competitions');
 Route::get('/schedules', \App\Livewire\Public\SchedulesCalendar::class)->name('schedules');
 Route::get('/schedules/calendar.ics', [\App\Http\Controllers\ScheduleCalendarController::class, 'all'])->name('schedules.calendar.all');

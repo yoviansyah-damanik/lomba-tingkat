@@ -142,14 +142,14 @@ class PublicInformationTest extends TestCase
      */
     public function test_competition_model_handles_participant_range_and_validation(): void
     {
-        // 1. Kelompok tetap (Pionering: tepat 6 peserta)
+        // 1. Kelompok tetap (Pionering: tepat 4 peserta)
         $pionering = Competition::where('code', 'PION-08')->first();
         $this->assertNotNull($pionering);
         $this->assertTrue($pionering->isGroup());
-        $this->assertEquals('Kelompok (Tepat 6 Peserta)', $pionering->participantRangeLabel());
-        $this->assertTrue($pionering->validateParticipantCount(6));
+        $this->assertEquals('Kelompok (Tepat 4 Peserta)', $pionering->participantRangeLabel());
+        $this->assertTrue($pionering->validateParticipantCount(4));
+        $this->assertFalse($pionering->validateParticipantCount(3));
         $this->assertFalse($pionering->validateParticipantCount(5));
-        $this->assertFalse($pionering->validateParticipantCount(7));
 
         // 2. Regu utuh (Baris Berbaris Tongkat: tepat 8 peserta)
         $bbt = Competition::where('code', 'BBT-18')->first();
@@ -159,7 +159,7 @@ class PublicInformationTest extends TestCase
         $this->assertFalse($bbt->validateParticipantCount(7));
 
         // 3. Individu (Pidato: 1 peserta)
-        $speech = Competition::where('code', 'PID-22')->first();
+        $speech = Competition::where('code', 'PID-20')->first();
         $this->assertNotNull($speech);
         $this->assertTrue($speech->isIndividual());
         $this->assertEquals('Individu (1 Peserta)', $speech->participantRangeLabel());

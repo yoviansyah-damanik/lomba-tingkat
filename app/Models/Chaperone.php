@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 /**
@@ -149,6 +150,14 @@ class Chaperone extends Model
     public function scoutGroup(): BelongsTo
     {
         return $this->belongsTo(ScoutGroup::class);
+    }
+
+    /**
+     * Regu yang didampingi bindamping ini (dapat lebih dari satu regu sekategori)
+     */
+    public function patrols(): HasMany
+    {
+        return $this->hasMany(Patrol::class);
     }
 
     /**

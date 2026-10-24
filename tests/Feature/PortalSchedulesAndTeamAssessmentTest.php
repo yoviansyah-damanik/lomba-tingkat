@@ -44,38 +44,38 @@ class PortalSchedulesAndTeamAssessmentTest extends TestCase
 
     public function test_schedules_are_ordered_and_keep_finished_sessions_visible(): void
     {
-        // Sabtu 28 November 2026 pukul 12.30: sesi Jumat 27 November dan sesi pagi 28 November sudah lewat
-        $this->travelTo(now()->setDate(2026, 11, 28)->setTime(12, 30));
+        // Minggu 15 November 2026 pukul 12.30: sesi Sabtu 14 November dan sesi pagi 15 November sudah lewat
+        $this->travelTo(now()->setDate(2026, 11, 15)->setTime(12, 30));
 
         $admin = User::where('username', 'admin')->first();
         $html = $this->actingAs($admin)->get(route('agenda.index', ['tanggal' => 'all']))->assertOk()->getContent();
 
         // Sesi yang sudah lewat tetap tampil, berurutan dari yang paling awal
-        $this->assertStringContainsString('Jumat, 27 November 2026', $html);
-        $this->assertLessThan(strpos($html, 'Sabtu, 28 November 2026'), strpos($html, 'Jumat, 27 November 2026'));
-        $this->assertLessThan(strpos($html, 'Minggu, 29 November 2026'), strpos($html, 'Sabtu, 28 November 2026'));
+        $this->assertStringContainsString('Sabtu, 14 November 2026', $html);
+        $this->assertLessThan(strpos($html, 'Minggu, 15 November 2026'), strpos($html, 'Sabtu, 14 November 2026'));
+        $this->assertLessThan(strpos($html, 'Senin, 16 November 2026'), strpos($html, 'Minggu, 15 November 2026'));
     }
 
     public function test_date_filter_defaults_to_today_when_it_is_a_schedule_day(): void
     {
         $admin = User::where('username', 'admin')->first();
 
-        // Hari ini adalah hari lomba (Sabtu 28 November): filter tanggal otomatis aktif
-        $this->travelTo(now()->setDate(2026, 11, 28)->setTime(9, 0));
+        // Hari ini adalah hari lomba (Minggu 15 November): filter tanggal otomatis aktif
+        $this->travelTo(now()->setDate(2026, 11, 15)->setTime(9, 0));
         $html = $this->actingAs($admin)->get(route('agenda.index'))->assertOk()->getContent();
-        $this->assertStringContainsString('Sabtu, 28 November 2026', $html);
-        $this->assertStringNotContainsString('Jumat, 27 November 2026', $html);
-        $this->assertStringNotContainsString('Minggu, 29 November 2026', $html);
+        $this->assertStringContainsString('Minggu, 15 November 2026', $html);
+        $this->assertStringNotContainsString('Sabtu, 14 November 2026', $html);
+        $this->assertStringNotContainsString('Senin, 16 November 2026', $html);
 
         // Pilihan tanggal lain dan "semua tanggal" dapat dipilih
         Livewire::actingAs($admin)->test(\App\Livewire\Portal\UpcomingSchedules::class)
-            ->assertSet('date', '2026-11-28')
-            ->call('filterDate', '2026-11-27')
-            ->assertSee('Jumat, 27 November 2026')
-            ->assertDontSee('Sabtu, 28 November 2026')
+            ->assertSet('date', '2026-11-15')
+            ->call('filterDate', '2026-11-14')
+            ->assertSee('Sabtu, 14 November 2026')
+            ->assertDontSee('Minggu, 15 November 2026')
             ->call('filterDate', 'all')
-            ->assertSee('Jumat, 27 November 2026')
-            ->assertSee('Minggu, 29 November 2026');
+            ->assertSee('Sabtu, 14 November 2026')
+            ->assertSee('Senin, 16 November 2026');
 
         // Bukan hari lomba: tampil semua tanggal
         $this->travelTo(now()->setDate(2026, 10, 1));

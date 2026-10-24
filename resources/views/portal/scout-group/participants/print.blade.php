@@ -527,7 +527,7 @@
         {{-- Kolom Tanda Tangan --}}
         @php
             $qrService = app(\App\Services\QrCodeService::class);
-            $signChaperone = $scoutGroup->chaperones->firstWhere('gender', $participant->patrol?->isBoys() ? 'male' : 'female');
+            $signChaperone = $participant->patrol?->chaperone;
             $isVerifiedGroup = $scoutGroup->isVerified();
             $chaperoneQr = $qrService->signatureDataUri($signChaperone?->qr_token, $isVerifiedGroup);
             $participantQr = $qrService->signatureDataUri($participant->qr_token, $isVerifiedGroup);

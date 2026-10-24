@@ -12,7 +12,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Model pangkalan Gugus Depan resmi
@@ -118,19 +117,19 @@ class ScoutGroup extends Model
     }
 
     /**
-     * Regu Penggalang Putra
+     * Seluruh Regu Penggalang Putra (gudep dapat mengirim lebih dari satu)
      */
-    public function boysPatrol(): HasOne
+    public function boysPatrols(): HasMany
     {
-        return $this->hasOne(Patrol::class)->where('gender_category', PatrolGenderEnum::Boys->value);
+        return $this->hasMany(Patrol::class)->where('gender_category', PatrolGenderEnum::Boys->value);
     }
 
     /**
-     * Regu Penggalang Putri
+     * Seluruh Regu Penggalang Putri (gudep dapat mengirim lebih dari satu)
      */
-    public function girlsPatrol(): HasOne
+    public function girlsPatrols(): HasMany
     {
-        return $this->hasOne(Patrol::class)->where('gender_category', PatrolGenderEnum::Girls->value);
+        return $this->hasMany(Patrol::class)->where('gender_category', PatrolGenderEnum::Girls->value);
     }
 
     /**
@@ -201,7 +200,47 @@ class ScoutGroup extends Model
             }
         }
 
+        // Bindamping pendamping wajib dipilih dan sekategori (putra untuk regu putra, putri untuk regu putri)
+        $chaperone = $patrol->chaperone_id ? $this->chaperones->firstWhere('id', $patrol->chaperone_id) : null;
+        if (! $chaperone) {
+            $problems[] = 'belum memiliki bindamping pendamping.';
+        } elseif ($chaperone->gender !== ($patrol->isBoys() ? 'male' : 'female')) {
+            $problems[] = 'bindamping pendamping harus sekategori dengan regu.';
+        }
+
         return $problems;
+    }
+
+    /**
+     * Kategori bindamping yang belum terdaftar padahal gudep memiliki regu kategori tersebut (minimal 1 per kategori)
+     *
+     * @return array<int, string> daftar gender 'male'/'female' yang masih kurang
+     */
+    public function missingChaperoneGenders(): array
+    {
+        return array_values(array_filter(
+            $this->requiredChaperoneGenders(),
+            fn (string $gender) => ! $this->chaperones()->where('gender', $gender)->exists()
+        ));
+    }
+
+    /**
+     * Sinkronkan regu yang didampingi sebuah bindamping: hanya regu sekategori milik gudep ini yang diterima,
+     * regu yang tidak lagi dipilih dilepas, regu terpilih dialihkan ke bindamping ini
+     *
+     * @param  array<int, string>  $patrolIds
+     */
+    public function syncChaperonePatrols(Chaperone $chaperone, array $patrolIds): void
+    {
+        $category = $chaperone->gender === 'female' ? PatrolGenderEnum::Girls : PatrolGenderEnum::Boys;
+
+        $validIds = $this->patrols()
+            ->where('gender_category', $category->value)
+            ->whereIn('id', $patrolIds)
+            ->pluck('id');
+
+        $this->patrols()->where('chaperone_id', $chaperone->id)->whereNotIn('id', $validIds)->update(['chaperone_id' => null]);
+        $this->patrols()->whereIn('id', $validIds)->update(['chaperone_id' => $chaperone->id]);
     }
 
     /**
@@ -260,22 +299,6 @@ class ScoutGroup extends Model
     }
 
     public const DOWNLOAD_LOCKED_MESSAGE = 'ID Card dan formulir hanya dapat diunduh setelah pendaftaran kontingen diverifikasi Administrator.';
-
-    /**
-     * Pembina Pendamping Putra (Bindamping Putra)
-     */
-    public function maleChaperone(): HasOne
-    {
-        return $this->hasOne(Chaperone::class)->where('gender', 'male');
-    }
-
-    /**
-     * Pembina Pendamping Putri (Bindamping Putri)
-     */
-    public function femaleChaperone(): HasOne
-    {
-        return $this->hasOne(Chaperone::class)->where('gender', 'female');
-    }
 
     /**
      * Otomatis memformat nomor Gudep ganjil (putra) dan menghitung nomor genap (putri)

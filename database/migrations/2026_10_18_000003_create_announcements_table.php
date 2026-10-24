@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('category')->default('general'); // general, schedule, technical, urgent
             $table->text('summary')->nullable();
             $table->longText('content');
-            $table->string('attachment_path')->nullable();
+            $table->json('attachments')->nullable(); // [{path, name, size}] berkas unduhan
             $table->boolean('is_published')->default(true);
             $table->timestamp('published_at')->nullable();
             $table->timestamps();

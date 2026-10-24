@@ -65,6 +65,7 @@ class ParticipantsPage extends Component
             ->where('verification_status', \App\Enums\RegistrationStatusEnum::Verified)
             ->with([
                 'patrols.participants',
+                'patrols.chaperone',
                 'chaperones',
             ])
             ->when($this->search, function (Builder $query) {
@@ -103,8 +104,7 @@ class ParticipantsPage extends Component
         return ScoutGroup::where('verification_status', \App\Enums\RegistrationStatusEnum::Verified)
             ->with([
                 'patrols.participants',
-                'boysPatrol.participants',
-                'girlsPatrol.participants',
+                'patrols.chaperone',
                 'chaperones',
             ])->find($this->selectedScoutGroupId);
     }

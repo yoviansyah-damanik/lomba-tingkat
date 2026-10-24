@@ -13,6 +13,7 @@ use App\Models\CompetitionSchedule;
 use App\Models\JudgeAssignment;
 use App\Models\Participant;
 use App\Models\Patrol;
+use App\Services\ContingentAccountService;
 use App\Models\ScoutGroup;
 use App\Models\User;
 use App\Services\AssessmentScoringService;
@@ -54,6 +55,16 @@ class SampleContestSeeder extends Seeder
         ['school' => 'SMP Swasta Tri Dharma Padangsidimpuan', 'kwarran' => 'Kwarran Padangsidimpuan Tenggara', 'boys' => 'Beruang', 'girls' => 'Lavender'],
     ];
 
+    /** @var array<int, array{boys?: array<int, string>, girls?: array<int, string>}> Regu tambahan (indeks GROUPS) untuk gudep yang mengirim lebih dari satu regu sekategori */
+    private const EXTRA_PATROLS = [
+        0 => ['boys' => ['Garuda Muda'], 'girls' => ['Melati Putih']],
+        3 => ['girls' => ['Dahlia Putih']],
+        5 => ['boys' => ['Cendrawasih Muda', 'Cendrawasih Jaya']],
+    ];
+
+    /** Indeks GROUPS gudep contoh yang sudah terverifikasi */
+    private const VERIFIED_GROUP = 0;
+
     private const JUDGES = [
         ['id' => 'A-300002', 'name' => 'Drs. Ahmad Fauzi Lubis'],
         ['id' => 'A-300003', 'name' => 'Hj. Rosmawati Harahap, S.Pd'],
@@ -82,6 +93,7 @@ class SampleContestSeeder extends Seeder
             $judges = $this->seedJudges();
             $this->seedCommittees();
             $this->seedContingents();
+            $this->verifySampleContingent();
             $this->seedScoredSchedules($judges);
         } finally {
             mt_srand(); // kembalikan generator acak global agar tidak memengaruhi proses lain
@@ -160,15 +172,22 @@ class SampleContestSeeder extends Seeder
 
             $this->seedPatrol($group, PatrolGenderEnum::Boys, $row['boys'], $number, $male);
             $this->seedPatrol($group, PatrolGenderEnum::Girls, $row['girls'], $number, $female);
+
+            foreach (self::EXTRA_PATROLS[$i]['boys'] ?? [] as $v => $name) {
+                $this->seedPatrol($group, PatrolGenderEnum::Boys, $name, $number, $male, $v + 1);
+            }
+            foreach (self::EXTRA_PATROLS[$i]['girls'] ?? [] as $v => $name) {
+                $this->seedPatrol($group, PatrolGenderEnum::Girls, $name, $number, $female, $v + 1);
+            }
             $this->seedChaperones($group, $number);
         }
     }
 
-    private function seedPatrol(ScoutGroup $group, PatrolGenderEnum $gender, string $patrolName, int $groupNumber, string $gudepNumber): void
+    private function seedPatrol(ScoutGroup $group, PatrolGenderEnum $gender, string $patrolName, int $groupNumber, string $gudepNumber, int $variant = 0): void
     {
         $patrol = Patrol::firstOrCreate(
-            ['scout_group_id' => $group->id, 'gender_category' => $gender],
-            ['patrol_name' => $patrolName, 'status' => RegistrationStatusEnum::Submitted]
+            ['scout_group_id' => $group->id, 'patrol_name' => $patrolName],
+            ['gender_category' => $gender, 'status' => RegistrationStatusEnum::Submitted]
         );
 
         $isBoys = $gender === PatrolGenderEnum::Boys;
@@ -180,12 +199,12 @@ class SampleContestSeeder extends Seeder
                 1 => PatrolRoleEnum::AssistantPatrolLeader,
                 default => PatrolRoleEnum::Member,
             };
-            $fullName = $names[($groupNumber * 3 + $m * 5) % count($names)].' '.self::SURNAMES[($groupNumber + $m * 7) % count(self::SURNAMES)];
+            $fullName = $names[($groupNumber * 3 + $m * 5 + $variant * 7) % count($names)].' '.self::SURNAMES[($groupNumber + $m * 7 + $variant * 3) % count(self::SURNAMES)];
 
             Participant::firstOrCreate(
                 ['patrol_id' => $patrol->id, 'full_name' => $fullName],
                 [
-                    'scout_id' => sprintf('02.21.%02d.%03d', $groupNumber, ($isBoys ? 0 : 20) + $m + 1),
+                    'scout_id' => sprintf('02.21.%02d.%03d', $groupNumber, ($isBoys ? 0 : 20) + ($variant * 40) + $m + 1),
                     'role_in_patrol' => $role,
                     'class_grade' => $m % 2 === 0 ? 'VIII' : 'VII',
                     'gender' => $isBoys ? 'male' : 'female',
@@ -211,7 +230,7 @@ class SampleContestSeeder extends Seeder
         foreach (['male' => 'Putra', 'female' => 'Putri'] as $gender => $label) {
             $names = $gender === 'male' ? self::MALE_NAMES : self::FEMALE_NAMES;
 
-            Chaperone::firstOrCreate(
+            $chaperone = Chaperone::firstOrCreate(
                 ['scout_group_id' => $group->id, 'gender' => $gender],
                 [
                     'full_name' => 'Kak '.$names[($groupNumber + 11) % count($names)].' '.self::SURNAMES[($groupNumber + 3) % count(self::SURNAMES)].', S.Pd',
@@ -224,7 +243,30 @@ class SampleContestSeeder extends Seeder
                     'status' => RegistrationStatusEnum::Submitted,
                 ]
             );
+
+            // Satu bindamping mendampingi seluruh regu sekategori
+            $group->syncChaperonePatrols($chaperone, $group->patrols()->where('gender_category', $gender === 'male' ? 'boys' : 'girls')->pluck('id')->all());
         }
+    }
+
+    /**
+     * Satu gudep contoh (indeks VERIFIED_GROUP di GROUPS, memiliki beberapa regu sekategori) sudah diverifikasi
+     * Administrator beserta akun peserta/bindamping, sehingga nilainya langsung masuk klasemen
+     */
+    private function verifySampleContingent(): void
+    {
+        $group = ScoutGroup::find($this->sampleGroupIds[self::VERIFIED_GROUP] ?? null);
+
+        if (! $group || $group->verification_status === RegistrationStatusEnum::Verified) {
+            return;
+        }
+
+        $group->update(['verification_status' => RegistrationStatusEnum::Verified, 'verified_at' => now(), 'revision_notes' => null]);
+        $group->patrols()->update(['status' => RegistrationStatusEnum::Verified]);
+        Participant::whereIn('patrol_id', $group->patrols()->pluck('id'))->update(['status' => RegistrationStatusEnum::Verified]);
+        $group->chaperones()->update(['status' => RegistrationStatusEnum::Verified]);
+
+        app(ContingentAccountService::class)->provision($group);
     }
 
     /**
@@ -295,7 +337,7 @@ class SampleContestSeeder extends Seeder
             return $schedule;
         }
 
-        $start = Carbon::parse('2026-11-27 07:00', 'Asia/Jakarta')->addMinutes($slot * 100);
+        $start = Carbon::parse('2026-11-14 07:00', 'Asia/Jakarta')->addMinutes($slot * 100);
 
         return CompetitionSchedule::create([
             'competition_id' => $competition->id,

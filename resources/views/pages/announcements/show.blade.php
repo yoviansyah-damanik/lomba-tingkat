@@ -33,19 +33,28 @@
                 {{ $announcement->content }}
             </div>
 
-            {{-- Attachment if any --}}
-            @if($announcement->attachment_path)
-                <div class="mt-8 rounded-xl border border-amber-300/60 bg-amber-50/60 p-4 dark:border-amber-500/20 dark:bg-amber-950/40">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2 text-xs font-medium text-amber-900 dark:text-amber-200">
-                            <svg class="size-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                            <span>Lampiran Dokumen Resmi</span>
-                        </div>
-                        <a href="{{ asset($announcement->attachment_path) }}" target="_blank" class="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700">
-                            Unduh Lampiran
-                        </a>
-                    </div>
-                </div>
+            {{-- Berkas unduhan --}}
+            @php $files = $announcement->attachmentFiles(); @endphp
+            @if($files)
+                <section class="mt-8 rounded-xl border border-amber-300/60 bg-amber-50/60 p-4 dark:border-amber-500/20 dark:bg-amber-950/40" aria-label="Berkas unduhan">
+                    <h2 class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-900 dark:text-amber-200">
+                        <flux:icon name="paper-clip" class="size-4 text-amber-600" />
+                        Berkas Unduhan ({{ count($files) }})
+                    </h2>
+                    <ul class="mt-3 space-y-2">
+                        @foreach($files as $index => $file)
+                            <li class="flex items-center justify-between gap-3 rounded-lg bg-white/80 px-3 py-2 dark:bg-zinc-900/60">
+                                <div class="min-w-0">
+                                    <span class="block truncate text-xs font-semibold text-zinc-900 dark:text-zinc-100">{{ $file['name'] }}</span>
+                                    <span class="text-[11px] text-zinc-500">{{ strtoupper(pathinfo($file['name'], PATHINFO_EXTENSION)) }} &bull; {{ \App\Models\Announcement::formatFileSize((int) $file['size']) }}</span>
+                                </div>
+                                <flux:button href="{{ route('announcements.download', [$announcement->slug, $index]) }}" size="sm" variant="primary" icon="arrow-down-tray" class="shrink-0">
+                                    Unduh
+                                </flux:button>
+                            </li>
+                        @endforeach
+                    </ul>
+                </section>
             @endif
         </article>
 

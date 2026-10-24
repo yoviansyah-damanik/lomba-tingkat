@@ -86,6 +86,46 @@ class ChaperoneFollowsPatrolTest extends TestCase
         $this->assertSame(1, Chaperone::where('gender', 'male')->count());
     }
 
+    public function test_chaperone_is_synced_to_selected_same_gender_patrols_only(): void
+    {
+        $boysA = Patrol::factory()->create(['scout_group_id' => $this->group->id, 'gender_category' => PatrolGenderEnum::Boys]);
+        $boysB = Patrol::factory()->create(['scout_group_id' => $this->group->id, 'gender_category' => PatrolGenderEnum::Boys]);
+        $girls = Patrol::factory()->create(['scout_group_id' => $this->group->id, 'gender_category' => PatrolGenderEnum::Girls]);
+
+        $this->actingAs($this->user)
+            ->post(route('scout-group.chaperones.store'), $this->chaperonePayload('male') + ['patrol_ids' => [$boysA->id, $girls->id]])
+            ->assertSessionHasNoErrors();
+
+        $chaperone = Chaperone::where('gender', 'male')->firstOrFail();
+        $this->assertSame($chaperone->id, $boysA->fresh()->chaperone_id);
+        $this->assertNull($boysB->fresh()->chaperone_id);
+        $this->assertNull($girls->fresh()->chaperone_id);
+
+        // Ubah pilihan: regu A dilepas, regu B ditetapkan
+        $this->actingAs($this->user)
+            ->put(route('scout-group.chaperones.update', $chaperone->id), $this->chaperonePayload('male') + ['patrol_ids' => [$boysB->id]])
+            ->assertSessionHasNoErrors();
+
+        $this->assertNull($boysA->fresh()->chaperone_id);
+        $this->assertSame($chaperone->id, $boysB->fresh()->chaperone_id);
+    }
+
+    public function test_every_patrol_must_have_a_chaperone_before_submit(): void
+    {
+        $boysA = Patrol::factory()->create(['scout_group_id' => $this->group->id, 'gender_category' => PatrolGenderEnum::Boys]);
+        $boysB = Patrol::factory()->create(['scout_group_id' => $this->group->id, 'gender_category' => PatrolGenderEnum::Boys]);
+        $chaperone = Chaperone::factory()->create(['scout_group_id' => $this->group->id, 'gender' => 'male']);
+        $boysA->update(['chaperone_id' => $chaperone->id]);
+
+        $titles = fn () => collect(Livewire::actingAs($this->user)->test(ReviewRegistration::class)->get('missingRequirements'))->pluck('title');
+
+        $this->assertTrue($titles()->contains('Regu Belum Memiliki Bindamping Pendamping'));
+
+        $boysB->update(['chaperone_id' => $chaperone->id]);
+
+        $this->assertFalse($titles()->contains('Regu Belum Memiliki Bindamping Pendamping'));
+    }
+
     public function test_chaperones_page_tells_gudep_to_add_patrol_first(): void
     {
         $this->actingAs($this->user)

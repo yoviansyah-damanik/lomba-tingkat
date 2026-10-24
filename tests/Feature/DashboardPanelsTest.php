@@ -241,6 +241,7 @@ class DashboardPanelsTest extends TestCase
         $patrol = \App\Models\Patrol::factory()->create(['scout_group_id' => $group->id, 'gender_category' => 'boys']);
         $participant = \App\Models\Participant::factory()->create(['patrol_id' => $patrol->id]);
         $chaperone = \App\Models\Chaperone::factory()->create(['scout_group_id' => $group->id, 'gender' => 'male']);
+        $patrol->update(['chaperone_id' => $chaperone->id]);
 
         $participantUser = $this->account(RoleEnum::Participant);
         $participantUser->update(['participant_id' => $participant->id]);

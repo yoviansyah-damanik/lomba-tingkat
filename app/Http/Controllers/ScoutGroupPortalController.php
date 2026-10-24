@@ -60,20 +60,6 @@ class ScoutGroupPortalController extends Controller
     }
 
     /**
-     * Beranda portal Gugus Depan
-     */
-    public function index(Request $request): View
-    {
-        $scoutGroup = $this->getOrCreateScoutGroup($request);
-        $scoutGroup->load(['patrols.participants', 'chaperones']);
-
-        $boysPatrol = $scoutGroup->boysPatrol;
-        $girlsPatrol = $scoutGroup->girlsPatrol;
-
-        return view('portal.scout-group.index', compact('scoutGroup', 'boysPatrol', 'girlsPatrol'));
-    }
-
-    /**
      * Formulir profil pangkalan Gugus Depan
      */
     public function profile(Request $request): View
@@ -158,18 +144,7 @@ class ScoutGroupPortalController extends Controller
     }
 
     /**
-     * Kelola regu pangkalan
-     */
-    public function patrols(Request $request): View
-    {
-        $scoutGroup = $this->getOrCreateScoutGroup($request);
-        $scoutGroup->load('patrols.participants');
-
-        return view('portal.scout-group.patrols.index', compact('scoutGroup'));
-    }
-
-    /**
-     * Buat regu baru (Putra atau Putri)
+     * Buat regu baru (Putra atau Putri); jumlah regu tidak dibatasi, nama regu unik per gudep
      */
     public function patrolStore(Request $request): RedirectResponse
     {
@@ -180,15 +155,11 @@ class ScoutGroupPortalController extends Controller
         }
 
         $validated = $request->validate([
-            'patrol_name' => ['required', 'string', 'max:100'],
+            'patrol_name' => ['required', 'string', 'max:100', Rule::unique('patrols', 'patrol_name')->where('scout_group_id', $scoutGroup->id)],
             'gender_category' => ['required', 'in:boys,girls'],
+        ], [
+            'patrol_name.unique' => 'Nama regu sudah digunakan di gugusdepan Anda.',
         ]);
-
-        // Cek kuota: Maksimal 1 regu putra dan 1 regu putri per pangkalan
-        $existing = $scoutGroup->patrols()->where('gender_category', $validated['gender_category'])->first();
-        if ($existing) {
-            return back()->withErrors(['gender_category' => 'Pangkalan Anda sudah memiliki regu untuk kategori ini.']);
-        }
 
         $scoutGroup->patrols()->create([
             'patrol_name' => $validated['patrol_name'],
@@ -236,9 +207,7 @@ class ScoutGroupPortalController extends Controller
         $patrol = $scoutGroup->patrols()->with('participants')->findOrFail($patrolId);
         $patrol->setRelation('scoutGroup', $scoutGroup);
 
-        $chaperone = $patrol->isBoys()
-            ? $scoutGroup->chaperones->firstWhere('gender', 'male')
-            : $scoutGroup->chaperones->firstWhere('gender', 'female');
+        $chaperone = $patrol->chaperone;
         $orderedParticipants = $patrol->orderedParticipants();
 
         $filename = 'Form_01_Rekap_Regu_' . \Illuminate\Support\Str::slug($patrol->patrol_name) . '.pdf';
@@ -571,17 +540,6 @@ class ScoutGroupPortalController extends Controller
     }
 
     /**
-     * Kelola Pembina Pendamping (Bindamping)
-     */
-    public function chaperones(Request $request): View
-    {
-        $scoutGroup = $this->getOrCreateScoutGroup($request);
-        $scoutGroup->load('chaperones');
-
-        return view('portal.scout-group.chaperones.index', compact('scoutGroup'));
-    }
-
-    /**
      * Formulir pendaftaran biodata lengkap pembina pendamping
      */
     public function chaperoneCreate(Request $request): View|RedirectResponse
@@ -647,25 +605,26 @@ class ScoutGroupPortalController extends Controller
             'scout_experiences' => ['nullable', 'array'],
             'scout_trainings' => ['nullable', 'array'],
             'other_trainings' => ['nullable', 'array'],
+            'patrol_ids' => ['nullable', 'array'],
+            'patrol_ids.*' => ['string'],
         ]);
 
         if (! $scoutGroup->canRegisterChaperone($validated['gender'])) {
             return back()->withInput()->withErrors(['gender' => ScoutGroup::chaperoneRequiresPatrolMessage($validated['gender'])]);
         }
 
-        if ($scoutGroup->chaperones()->where('gender', $validated['gender'])->exists()) {
-            $label = $validated['gender'] === 'male' ? 'Pembina Pendamping Putra' : 'Pembina Pendamping Putri';
-            return back()->withInput()->withErrors(['gender' => "{$label} sudah terdaftar. Setiap pangkalan maksimal mendaftarkan 1 Bindamping Putra dan 1 Bindamping Putri."]);
-        }
-
         if ($request->hasFile('photo')) {
             $validated['photo_path'] = $request->file('photo')->store('chaperones', 'public');
         }
         unset($validated['photo']);
+        $patrolIds = $validated['patrol_ids'] ?? [];
+        unset($validated['patrol_ids']);
 
-        $scoutGroup->chaperones()->create(array_merge($validated, [
+        $chaperone = $scoutGroup->chaperones()->create(array_merge($validated, [
             'status' => RegistrationStatusEnum::Draft,
         ]));
+
+        $scoutGroup->syncChaperonePatrols($chaperone, $patrolIds);
 
         $label = $validated['gender'] === 'male' ? 'Bindamping Putra' : 'Bindamping Putri';
 
@@ -742,15 +701,12 @@ class ScoutGroupPortalController extends Controller
             'scout_experiences' => ['nullable', 'array'],
             'scout_trainings' => ['nullable', 'array'],
             'other_trainings' => ['nullable', 'array'],
+            'patrol_ids' => ['nullable', 'array'],
+            'patrol_ids.*' => ['string'],
         ]);
 
         // Kategori bindamping tidak dapat diubah: selalu mengikuti data tersimpan
         $validated['gender'] = $chaperone->gender;
-
-        if ($validated['gender'] !== $chaperone->gender && $scoutGroup->chaperones()->where('gender', $validated['gender'])->where('id', '!=', $chaperone->id)->exists()) {
-            $label = $validated['gender'] === 'male' ? 'Pembina Pendamping Putra' : 'Pembina Pendamping Putri';
-            return back()->withInput()->withErrors(['gender' => "{$label} sudah terdaftar."]);
-        }
 
         if ($request->hasFile('photo')) {
             if ($chaperone->photo_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($chaperone->photo_path)) {
@@ -759,8 +715,11 @@ class ScoutGroupPortalController extends Controller
             $validated['photo_path'] = $request->file('photo')->store('chaperones', 'public');
         }
         unset($validated['photo']);
+        $patrolIds = $validated['patrol_ids'] ?? [];
+        unset($validated['patrol_ids']);
 
         $chaperone->update($validated);
+        $scoutGroup->syncChaperonePatrols($chaperone, $patrolIds);
 
         return redirect()->route('scout-group.chaperones')->with('success', 'Biodata resmi pembina pendamping berhasil diperbarui.');
     }
@@ -854,16 +813,14 @@ class ScoutGroupPortalController extends Controller
             return back()->withErrors(['error' => 'Gugus Depan wajib membentuk minimal 1 regu sebelum mengajukan pendaftaran.']);
         }
 
-        // Bindamping wajib sesuai regu: regu putra -> bindamping putra, regu putri -> bindamping putri
-        foreach ($scoutGroup->requiredChaperoneGenders() as $gender) {
-            if (! $scoutGroup->chaperones()->where('gender', $gender)->exists()) {
-                $label = $gender === 'male' ? 'Putra' : 'Putri';
+        // Bindamping wajib sesuai regu: tiap kategori yang punya regu minimal 1 bindamping sekategori
+        foreach ($scoutGroup->missingChaperoneGenders() as $gender) {
+            $label = $gender === 'male' ? 'Putra' : 'Putri';
 
-                return back()->withErrors(['error' => "Regu {$label} sudah terdaftar, sehingga Gugus Depan wajib mendaftarkan Pembina Pendamping (Bindamping) {$label}."]);
-            }
+            return back()->withErrors(['error' => "Regu {$label} sudah terdaftar, sehingga Gugus Depan wajib mendaftarkan Pembina Pendamping (Bindamping) {$label}."]);
         }
 
-        // Susunan regu: tepat 8 peserta serta Pinru dan Wapinru
+        // Susunan regu: tepat 8 peserta, Pinru dan Wapinru, serta bindamping pendamping tiap regu
         if ($problems = $scoutGroup->patrolRosterProblems()) {
             return back()->withErrors(['error' => implode(' ', $problems)]);
         }

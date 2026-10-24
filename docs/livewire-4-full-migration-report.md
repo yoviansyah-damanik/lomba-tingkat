@@ -42,7 +42,7 @@ Semua halaman publik utama (Public Information Hub) dan sub-halaman portal konti
 - **Chaperones (`/portal/scout-group/chaperones`)**:
   - Class: [`App\Livewire\Portal\ChaperonesManagement`](file:///d:/WebApps/lomba-tingkat/app/Livewire/Portal/ChaperonesManagement.php)
   - View: [`resources/views/livewire/portal/chaperones-management.blade.php`](file:///d:/WebApps/lomba-tingkat/resources/views/livewire/portal/chaperones-management.blade.php)
-  - Fitur: 2 Slot resmi (Putra & Putri), biodata lengkap, hapus reaktif, batch printing.
+  - Fitur: Daftar bindamping Putra & Putri (tanpa batas jumlah; lihat multi-patrol-per-category.md), biodata lengkap, hapus reaktif, batch printing.
 
 - **Review & Submit (`/portal/scout-group/review`)**:
   - Class: [`App\Livewire\Portal\ReviewRegistration`](file:///d:/WebApps/lomba-tingkat/app/Livewire/Portal/ReviewRegistration.php)

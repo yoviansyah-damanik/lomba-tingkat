@@ -114,13 +114,16 @@ class ScoutGroupDashboard extends Component
     public function render()
     {
         $group = $this->scoutGroup;
-        $group->load(['patrols.participants', 'chaperones']);
+        $group->load(['patrols.participants', 'patrols.chaperone', 'chaperones']);
 
         return view('livewire.portal.scout-group-dashboard', [
             'scoutGroup' => $group,
-            'boysPatrol' => $group->boysPatrol,
-            'girlsPatrol' => $group->girlsPatrol,
+            'boysPatrols' => $group->patrols->filter->isBoys()->values(),
+            'girlsPatrols' => $group->patrols->filter->isGirls()->values(),
             'activeEvent' => $this->activeEvent,
+            'participantsTotal' => $group->patrols->sum(fn ($patrol) => $patrol->participants->count()),
+            'participantsTarget' => max(1, $group->patrols->count()) * \App\Models\Patrol::REQUIRED_MEMBERS,
+            'requiredChaperoneGenders' => $group->requiredChaperoneGenders(),
         ]);
     }
 }

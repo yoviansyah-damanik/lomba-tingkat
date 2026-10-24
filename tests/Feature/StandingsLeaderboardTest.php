@@ -311,7 +311,7 @@ class StandingsLeaderboardTest extends TestCase
      * Memastikan peringkat umum ditentukan oleh jumlah perolehan medali (Prestasi Tinggi setara emas)
      * bukan berdasarkan akumulasi nilai numerik.
      */
-    public function test_standings_ranking_is_determined_by_medals_not_accumulated_scores(): void
+    public function test_standings_ranking_is_determined_by_total_points_not_accumulated_scores(): void
     {
         $standingsService = app(StandingsService::class);
 
@@ -392,9 +392,10 @@ class StandingsLeaderboardTest extends TestCase
             'final_score' => 80.0,
         ]);
 
-        // Patrol 2 memiliki total skor numerik tinggi: 85 + 95 = 180.00, tapi 0 Emas, 2 Perak
-        // Patrol 1 memiliki total skor numerik lebih rendah: 90 + 80 = 170.00, tapi 1 Emas, 1 Perunggu
-        // Karena 1 Emas (Prestasi Tinggi) mengalahkan perak berapapun, Patrol 1 harus tetap lebih unggul dari Patrol 2!
+        // Poin per peringkat lomba (1=100, 2=80, 3=70), bukan akumulasi nilai numerik:
+        // Patrol 1 (Elang): peringkat 1 dan 3 -> 100 + 70 = 170 poin
+        // Patrol 2 (Garuda): peringkat 2 dan 2 -> 80 + 80 = 160 poin (total nilai numerik 180 lebih tinggi, tetapi tidak dipakai)
+        // Patrol 3 (Singa): peringkat 1 pada satu lomba -> 100 poin
         $patrolStandings = $standingsService->getPatrolStandings('boys');
 
         $firstPatrol = $patrolStandings->firstWhere('id', $this->patrol->id);
@@ -402,21 +403,24 @@ class StandingsLeaderboardTest extends TestCase
 
         $thirdPatrol = $patrolStandings->firstWhere('id', $patrol3->id);
 
-        // Patrol 1: 1 Emas, 1 Perunggu -> Peringkat 1
+        // Patrol 1: 170 poin -> Peringkat 1
         $this->assertEquals(1, $firstPatrol['rank']);
         $this->assertEquals('Regu Berprestasi Tinggi Putra', $firstPatrol['general_rank_title']);
+        $this->assertEquals(170, $firstPatrol['total_points']);
         $this->assertEquals(1, $firstPatrol['gold']);
         $this->assertEquals(1, $firstPatrol['bronze']);
 
-        // Patrol 3: 1 Emas, 0 Perunggu -> Peringkat 2
-        $this->assertEquals(2, $thirdPatrol['rank']);
-        $this->assertEquals('Regu Berprestasi Baik Putra', $thirdPatrol['general_rank_title']);
-
-        // Patrol 2: 0 Emas, 2 Perak -> Peringkat 3 (Kalah dari peraih Emas meskipun total skor numerik lebih tinggi)
-        $this->assertEquals(3, $secondPatrol['rank']);
-        $this->assertEquals('Regu Berprestasi Cukup Putra', $secondPatrol['general_rank_title']);
+        // Patrol 2: 160 poin -> Peringkat 2 (lebih banyak poin dari peraih satu Emas)
+        $this->assertEquals(2, $secondPatrol['rank']);
+        $this->assertEquals('Regu Berprestasi Baik Putra', $secondPatrol['general_rank_title']);
+        $this->assertEquals(160, $secondPatrol['total_points']);
         $this->assertEquals(0, $secondPatrol['gold']);
         $this->assertEquals(2, $secondPatrol['silver']);
+
+        // Patrol 3: 100 poin -> Peringkat 3
+        $this->assertEquals(3, $thirdPatrol['rank']);
+        $this->assertEquals('Regu Berprestasi Cukup Putra', $thirdPatrol['general_rank_title']);
+        $this->assertEquals(100, $thirdPatrol['total_points']);
 
         // Uji juga label predikat pada skor
         $score = CompetitionScore::where('patrol_id', $this->patrol->id)
@@ -512,16 +516,17 @@ class StandingsLeaderboardTest extends TestCase
     }
 
     /**
-     * Peringkat umum: jumlah Prestasi Tinggi menjadi penentu utama, lalu Baik, lalu Cukup
-     * (Regu A 5/1/2 mengungguli Regu B 4/8/3 walau total prestasinya lebih sedikit)
+     * Peringkat umum menurut total poin; bila poin sama, penentunya jumlah Prestasi Tinggi, lalu Baik, lalu Cukup.
+     * Regu C (0/7/0) dan Regu D (0/0/8) sama-sama 560 poin: Baik terbanyak menang.
+     * Regu A (1/0/2) dan Regu B (0/3/0) sama-sama 240 poin: Tinggi terbanyak menang.
      */
-    public function test_general_ranking_is_decided_by_high_then_good_then_sufficient_counts(): void
+    public function test_ties_on_total_points_are_broken_by_high_then_good_then_sufficient_counts(): void
     {
         $counts = [
-            'Regu A' => [5, 1, 2],
-            'Regu B' => [4, 8, 3],
-            'Regu C' => [4, 5, 7],
-            'Regu D' => [3, 9, 6],
+            'Regu A' => [1, 0, 2],
+            'Regu B' => [0, 3, 0],
+            'Regu C' => [0, 7, 0],
+            'Regu D' => [0, 0, 8],
         ];
 
         $competitions = [];
@@ -573,12 +578,38 @@ class StandingsLeaderboardTest extends TestCase
             ->sortBy('rank')
             ->values();
 
-        $this->assertSame(['Regu A', 'Regu B', 'Regu C', 'Regu D'], $ranking->pluck('patrol_name')->all());
-        $this->assertSame([5, 4, 4, 3], $ranking->pluck('gold')->all());
+        $this->assertSame(['Regu C', 'Regu D', 'Regu A', 'Regu B'], $ranking->pluck('patrol_name')->all());
+        $this->assertSame([560, 560, 240, 240], $ranking->pluck('total_points')->all());
+        $this->assertSame([0, 0, 1, 0], $ranking->pluck('gold')->all());
 
         $this->assertSame('Regu Berprestasi Tinggi Putra', $ranking[0]['general_rank_title']);
         $this->assertSame('Regu Berprestasi Baik Putra', $ranking[1]['general_rank_title']);
         $this->assertSame('Regu Berprestasi Cukup Putra', $ranking[2]['general_rank_title']);
         $this->assertNull($ranking[3]['general_rank_title']);
+    }
+
+    /**
+     * Klik regu pada klasemen membuka modal rincian poin per lomba
+     */
+    public function test_clicking_a_patrol_opens_points_breakdown_modal(): void
+    {
+        CompetitionScore::create([
+            'competition_id' => $this->competition->id,
+            'patrol_id' => $this->patrol->id,
+            'final_score' => 88.5,
+            'rank' => 2,
+            'predicate' => 'prestasi_baik',
+            'is_locked' => true,
+        ]);
+
+        Livewire::actingAs($this->admin)->test(StandingsLeaderboard::class)
+            ->assertDontSee('Rincian Poin Regu')
+            ->call('openPatrolDetail', $this->patrol->id)
+            ->assertSee('Rincian Poin Regu Rajawali')
+            ->assertSee('PBB Berisyarat dan Koloni Tongkat')
+            ->assertSee('88.50')
+            ->assertSee('Prestasi Baik')
+            ->call('closePatrolDetail')
+            ->assertDontSee('Rincian Poin Regu');
     }
 }

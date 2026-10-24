@@ -81,6 +81,11 @@ return new class extends Migration
             $table->string('status')->default('draft');
             $table->timestamps();
         });
+
+        // 5. Bindamping pendamping per regu: satu bindamping dapat mendampingi beberapa regu sekategori
+        Schema::table('patrols', function (Blueprint $table) {
+            $table->foreignUuid('chaperone_id')->nullable()->constrained('chaperones')->nullOnDelete();
+        });
     }
 
     /**

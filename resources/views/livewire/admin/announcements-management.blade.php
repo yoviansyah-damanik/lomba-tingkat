@@ -78,6 +78,12 @@
                                 <p class="text-zinc-500 dark:text-zinc-400 text-[11px] line-clamp-1 mt-0.5">
                                     {{ $item->summary ?: Str::limit(strip_tags($item->content), 80) }}
                                 </p>
+                                @if($item->attachmentFiles())
+                                    <span class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400">
+                                        <flux:icon name="paper-clip" class="size-3" />
+                                        {{ count($item->attachmentFiles()) }} berkas unduhan
+                                    </span>
+                                @endif
                             </td>
 
                             <td class="py-3 px-4">
@@ -225,6 +231,43 @@
                         @error('content') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
                     </div>
 
+                    {{-- Berkas unduhan --}}
+                    <div class="rounded-xl border border-zinc-200 p-3.5 dark:border-zinc-800">
+                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Berkas Unduhan (Opsional):</label>
+                        <p class="mb-2 text-[11px] text-zinc-500">PDF, Word, Excel, PowerPoint, JPG/PNG, atau ZIP &bull; maks. 10 MB per berkas &bull; maks. 10 berkas.</p>
+
+                        @if($keptAttachments || $newFiles)
+                            <ul class="mb-2 space-y-1.5">
+                                @foreach($keptAttachments as $index => $file)
+                                    <li wire:key="kept-{{ $index }}-{{ $file['path'] }}" class="flex items-center justify-between gap-2 rounded-lg bg-zinc-50 px-3 py-1.5 text-xs dark:bg-zinc-800/60">
+                                        <span class="flex min-w-0 items-center gap-2">
+                                            <flux:icon name="paper-clip" class="size-4 shrink-0 text-zinc-400" />
+                                            <span class="truncate font-medium text-zinc-800 dark:text-zinc-200">{{ $file['name'] }}</span>
+                                            <span class="shrink-0 text-[11px] text-zinc-400">{{ \App\Models\Announcement::formatFileSize((int) $file['size']) }}</span>
+                                        </span>
+                                        <flux:button type="button" size="xs" variant="subtle" icon="x-mark" wire:click="removeAttachment({{ $index }})" title="Lepas berkas" />
+                                    </li>
+                                @endforeach
+                                @foreach($newFiles as $index => $upload)
+                                    <li wire:key="new-{{ $index }}" class="flex items-center justify-between gap-2 rounded-lg bg-amber-50 px-3 py-1.5 text-xs dark:bg-amber-950/30">
+                                        <span class="flex min-w-0 items-center gap-2">
+                                            <flux:icon name="arrow-up-tray" class="size-4 shrink-0 text-amber-600" />
+                                            <span class="truncate font-medium text-zinc-800 dark:text-zinc-200">{{ $upload->getClientOriginalName() }}</span>
+                                            <span class="shrink-0 text-[11px] text-amber-700 dark:text-amber-400">baru &bull; {{ \App\Models\Announcement::formatFileSize((int) $upload->getSize()) }}</span>
+                                        </span>
+                                        <flux:button type="button" size="xs" variant="subtle" icon="x-mark" wire:click="removeNewFile({{ $index }})" title="Batalkan berkas" />
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+
+                        <input type="file" wire:model="newFiles" multiple
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.zip"
+                            class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300">
+                        <div wire:loading wire:target="newFiles" class="mt-1 text-[11px] text-amber-700">Mengunggah berkas...</div>
+                        @error('newFiles') <span class="mt-1 block text-xs text-rose-500">{{ $message }}</span> @enderror
+                        @error('newFiles.*') <span class="mt-1 block text-xs text-rose-500">{{ $message }}</span> @enderror
+                    </div>
                     @if(! $selectedAnnouncementId)
                         <div class="rounded-xl border border-amber-200 bg-amber-50/60 p-3 dark:border-amber-900/60 dark:bg-amber-950/20 flex items-center justify-between">
                             <div class="flex items-center gap-2">

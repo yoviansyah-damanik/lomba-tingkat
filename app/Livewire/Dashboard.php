@@ -161,8 +161,7 @@ class Dashboard extends Component
         return match (true) {
             $user->isScoutGroup() => $this->scoutGroup?->patrols ?? collect(),
             $user->isParticipant() => collect([$this->participantData?->patrol])->filter(),
-            $user->isChaperone() && $user->chaperone => Patrol::where('scout_group_id', $user->chaperone->scout_group_id)
-                ->where('gender_category', $user->chaperone->gender === 'female' ? 'girls' : 'boys')->get(),
+            $user->isChaperone() && $user->chaperone => Patrol::where('chaperone_id', $user->chaperone->id)->get(),
             default => collect(),
         };
     }

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -23,7 +24,7 @@ class Announcement extends Model
         'category',
         'summary',
         'content',
-        'attachment_path',
+        'attachments',
         'is_published',
         'published_at',
     ];
@@ -33,6 +34,7 @@ class Announcement extends Model
         return [
             'is_published' => 'boolean',
             'published_at' => 'datetime',
+            'attachments' => 'array',
         ];
     }
 
@@ -48,6 +50,15 @@ class Announcement extends Model
                 $announcement->published_at = now();
             }
         });
+
+        // Berkas unduhan ikut dihapus dari penyimpanan saat pengumuman dihapus
+        static::deleting(function (Announcement $announcement) {
+            $paths = array_column($announcement->attachmentFiles(), 'path');
+
+            if ($paths) {
+                Storage::disk('public')->delete($paths);
+            }
+        });
     }
 
     /**
@@ -59,6 +70,28 @@ class Announcement extends Model
             ->whereNotNull('published_at')
             ->where('published_at', '<=', now())
             ->latest('published_at');
+    }
+
+    /**
+     * Berkas unduhan pengumuman, berurutan sesuai indeks yang dipakai rute unduh
+     *
+     * @return array<int, array{path: string, name: string, size: int}>
+     */
+    public function attachmentFiles(): array
+    {
+        return array_values(array_filter((array) $this->attachments, fn ($file) => is_array($file) && ! empty($file['path'])));
+    }
+
+    /**
+     * Ukuran berkas dalam format mudah dibaca (B, KB, MB)
+     */
+    public static function formatFileSize(int $bytes): string
+    {
+        return match (true) {
+            $bytes >= 1048576 => number_format($bytes / 1048576, 1, ',', '.').' MB',
+            $bytes >= 1024 => number_format($bytes / 1024, 0, ',', '.').' KB',
+            default => $bytes.' B',
+        };
     }
 
     /**

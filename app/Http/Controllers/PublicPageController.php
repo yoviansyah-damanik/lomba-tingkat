@@ -7,7 +7,9 @@ use App\Models\Competition;
 use App\Models\CompetitionSchedule;
 use App\Models\Event;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Controller untuk menangani halaman publik dan informasi kegiatan LT III
@@ -65,6 +67,19 @@ class PublicPageController extends Controller
         $recentAnnouncements = Announcement::published()->where('id', '!=', $announcement->id)->take(3)->get();
 
         return view('pages.announcements.show', compact('announcement', 'recentAnnouncements'));
+    }
+
+    /**
+     * Unduh berkas lampiran pengumuman yang sudah terbit, memakai nama berkas aslinya
+     */
+    public function announcementDownload(string $slug, int $index): StreamedResponse
+    {
+        $announcement = Announcement::published()->where('slug', $slug)->firstOrFail();
+        $file = $announcement->attachmentFiles()[$index] ?? abort(404);
+
+        abort_unless(Storage::disk('public')->exists($file['path']), 404);
+
+        return Storage::disk('public')->download($file['path'], $file['name']);
     }
 
     /**

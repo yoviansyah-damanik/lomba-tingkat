@@ -7,6 +7,7 @@ use App\Models\Participant;
 use App\Models\Patrol;
 use App\Models\ScoutGroup;
 use Flux\Flux;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -45,31 +46,12 @@ class PatrolsManagement extends Component
 
     public function mount(): void
     {
-        $this->syncAvailableGenderCategory();
-    }
-
-    /**
-     * Sinkronisasi kategori regu yang masih tersedia untuk pangkalan
-     */
-    public function syncAvailableGenderCategory(): void
-    {
-        $group = $this->scoutGroup;
-        $hasBoys = (bool) $group->boysPatrol;
-        $hasGirls = (bool) $group->girlsPatrol;
-
-        if ($hasBoys && ! $hasGirls) {
-            $this->gender_category = 'girls';
-        } elseif ($hasGirls && ! $hasBoys) {
-            $this->gender_category = 'boys';
-        } elseif (! $hasBoys) {
-            $this->gender_category = 'boys';
-        }
+        $this->gender_category = 'boys';
     }
 
     public function openCreateModal(): void
     {
         $this->resetValidation();
-        $this->syncAvailableGenderCategory();
         $this->patrol_name = '';
         $this->showCreateModal = true;
     }
@@ -84,31 +66,16 @@ class PatrolsManagement extends Component
             return;
         }
 
-        // Koreksi otomatis jika gender_category tidak sinkron dengan kuota pangkalan
-        $hasBoys = (bool) $group->boysPatrol;
-        $hasGirls = (bool) $group->girlsPatrol;
-
-        if ($hasBoys && ! $hasGirls && $this->gender_category !== 'girls') {
-            $this->gender_category = 'girls';
-        } elseif ($hasGirls && ! $hasBoys && $this->gender_category !== 'boys') {
-            $this->gender_category = 'boys';
-        }
-
         $validated = $this->validate([
-            'patrol_name' => ['required', 'string', 'max:100'],
+            'patrol_name' => ['required', 'string', 'max:100', Rule::unique('patrols', 'patrol_name')->where('scout_group_id', $group->id)],
             'gender_category' => ['required', 'in:boys,girls'],
         ], [
             'patrol_name.required' => 'Nama regu wajib diisi.',
             'patrol_name.max' => 'Nama regu maksimal 100 karakter.',
+            'patrol_name.unique' => 'Nama regu sudah digunakan di gugusdepan Anda.',
             'gender_category.required' => 'Kategori regu wajib dipilih.',
             'gender_category.in' => 'Kategori regu tidak valid.',
         ]);
-
-        $existing = $group->patrols()->where('gender_category', $validated['gender_category'])->first();
-        if ($existing) {
-            $this->addError('gender_category', 'Pangkalan Anda sudah memiliki regu untuk kategori ini.');
-            return;
-        }
 
         $patrol = $group->patrols()->create([
             'patrol_name' => $validated['patrol_name'],
@@ -119,9 +86,7 @@ class PatrolsManagement extends Component
         $this->patrol_name = '';
         $this->showCreateModal = false;
 
-        // Reset relasi cache agar render menampilkan data terbaru
         unset($this->scoutGroup);
-        $this->syncAvailableGenderCategory();
 
         session()->flash('success', "Regu {$patrol->patrol_name} ({$patrol->gender_category->label()}) berhasil dibentuk.");
         Flux::toast(variant: 'success', heading: 'Regu Berhasil Dibentuk', text: "Regu {$patrol->patrol_name} ({$patrol->gender_category->label()}) berhasil dibentuk.");
@@ -158,7 +123,6 @@ class PatrolsManagement extends Component
 
         // Reset relasi cache agar render menampilkan data terbaru
         unset($this->scoutGroup);
-        $this->syncAvailableGenderCategory();
 
         session()->flash('success', "Regu {$patrolName} ({$genderLabel}) beserta seluruh data pesertanya berhasil dihapus.");
         Flux::toast(variant: 'success', heading: 'Regu Dihapus', text: "Regu {$patrolName} ({$genderLabel}) berhasil dihapus.");
@@ -189,7 +153,7 @@ class PatrolsManagement extends Component
     public function render()
     {
         $scoutGroup = $this->scoutGroup;
-        $scoutGroup->load(['patrols.participants']);
+        $scoutGroup->load(['patrols.participants', 'patrols.chaperone', 'chaperones']);
 
         return view('livewire.portal.patrols-management', [
             'scoutGroup' => $scoutGroup,

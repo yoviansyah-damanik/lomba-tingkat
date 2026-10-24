@@ -78,6 +78,12 @@
                     <p class="mt-2 text-xs text-zinc-600 line-clamp-3 dark:text-zinc-400 leading-relaxed">
                         {{ $announcement->summary ?? Str::limit(strip_tags($announcement->content), 120) }}
                     </p>
+                    @if($announcement->attachmentFiles())
+                        <span class="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400">
+                            <flux:icon name="paper-clip" class="size-3" />
+                            {{ count($announcement->attachmentFiles()) }} berkas unduhan
+                        </span>
+                    @endif
                 </div>
                 <div class="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
                     <a href="{{ route('announcements.show', $announcement->slug) }}" wire:navigate class="text-xs font-semibold text-amber-700 hover:underline dark:text-amber-400">

@@ -114,6 +114,8 @@
             ];
         @endphp
 
+        <x-standings.rules />
+
         @foreach([$genderTab => $genderMap[$genderTab]] as $genderKey => [$genderTitle, $genderBadge])
             @php $group = $patrols->where('gender_category', $genderKey)->values(); @endphp
 
@@ -131,6 +133,7 @@
                             <th class="py-3 px-3.5 text-center w-12">Rank</th>
                             <th class="py-3 px-4">Nama Regu</th>
                             <th class="py-3 px-4">Pangkalan / Gudep</th>
+                            <th class="py-3 px-3 text-center">Total Poin</th>
                             <th class="py-3 px-3 text-center text-amber-600 dark:text-amber-400">Tinggi (🥇)</th>
                             <th class="py-3 px-3 text-center text-slate-500 dark:text-slate-300">Baik (🥈)</th>
                             <th class="py-3 px-3 text-center text-amber-700 dark:text-amber-500">Cukup (🥉)</th>
@@ -139,7 +142,7 @@
                     </thead>
                         <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800 font-medium">
                         @forelse($group as $item)
-                            <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition">
+                            <tr wire:key="standing-{{ $item['id'] }}" wire:click="openPatrolDetail('{{ $item['id'] }}')" title="Klik untuk melihat rincian poin" class="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition">
                                 <td class="py-3 px-3.5 text-center">
                                     <span class="font-extrabold text-xs {{ $item['rank'] <= 3 ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-500' }}">
                                         #{{ $item['rank'] }}
@@ -154,6 +157,9 @@
                                 <td class="py-3 px-4">
                                     <div class="font-semibold text-zinc-800 dark:text-zinc-200">{{ $item['school_name'] }}</div>
                                     <div class="text-[10px] text-zinc-500">Gudep: {{ $item['group_number'] }}</div>
+                                </td>
+                                <td class="py-3 px-3 text-center">
+                                    <span class="inline-block rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-mono text-xs font-extrabold text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300">{{ $item['total_points'] }}</span>
                                 </td>
                                 <td class="py-3 px-3 text-center font-extrabold text-amber-600 dark:text-amber-400 text-sm">
                                     {{ $item['gold'] }}
@@ -170,7 +176,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="py-8 text-center text-zinc-500">
+                                <td colspan="8" class="py-8 text-center text-zinc-500">
                                     Belum ada data regu terdaftar atau dinilai.
                                 </td>
                             </tr>
@@ -396,6 +402,86 @@
                     </div>
                 </div>
             @endif
+        </div>
+    @endif
+
+    {{-- ================= MODAL RINCIAN POIN REGU ================= --}}
+    @if($this->patrolDetail)
+        @php
+            $detail = $this->patrolDetail;
+            $standing = $detail['standing'];
+        @endphp
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs" wire:click.self="closePatrolDetail">
+            <div class="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
+                <div class="mb-4 flex items-start justify-between gap-3 border-b border-zinc-200 pb-3 dark:border-zinc-800">
+                    <div>
+                        <h3 class="flex items-center gap-2 text-base font-bold text-zinc-900 dark:text-zinc-100">
+                            <flux:icon name="chart-bar" class="size-5 text-amber-600" />
+                            Rincian Poin Regu {{ $standing['patrol_name'] }}
+                        </h3>
+                        <p class="mt-0.5 text-xs text-zinc-500">
+                            {{ $standing['school_name'] }} &bull; Gudep {{ $standing['group_number'] }} &bull; Peringkat #{{ $standing['rank'] }} {{ $standing['gender_category'] === 'boys' ? 'Putra' : 'Putri' }}
+                        </p>
+                    </div>
+                    <flux:button type="button" wire:click="closePatrolDetail" variant="subtle" size="sm" icon="x-mark" />
+                </div>
+
+                <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-center dark:border-emerald-900/50 dark:bg-emerald-950/40">
+                        <div class="font-mono text-xl font-extrabold text-emerald-800 dark:text-emerald-300">{{ $standing['total_points'] }}</div>
+                        <div class="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-400">Total Poin</div>
+                    </div>
+                    <div class="rounded-xl border border-zinc-200 p-3 text-center dark:border-zinc-800">
+                        <div class="text-xl font-extrabold text-amber-600 dark:text-amber-400">{{ $standing['gold'] }}</div>
+                        <div class="text-[10px] font-bold uppercase text-zinc-500">Tinggi</div>
+                    </div>
+                    <div class="rounded-xl border border-zinc-200 p-3 text-center dark:border-zinc-800">
+                        <div class="text-xl font-extrabold text-slate-500 dark:text-slate-300">{{ $standing['silver'] }}</div>
+                        <div class="text-[10px] font-bold uppercase text-zinc-500">Baik</div>
+                    </div>
+                    <div class="rounded-xl border border-zinc-200 p-3 text-center dark:border-zinc-800">
+                        <div class="text-xl font-extrabold text-amber-700 dark:text-amber-500">{{ $standing['bronze'] }}</div>
+                        <div class="text-[10px] font-bold uppercase text-zinc-500">Cukup</div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+                    <table class="w-full border-collapse text-left text-xs">
+                        <thead class="border-b border-zinc-200 bg-zinc-50 text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:border-zinc-800 dark:bg-zinc-800/60">
+                            <tr>
+                                <th class="px-3 py-2.5">Mata Lomba</th>
+                                <th class="px-3 py-2.5 text-center">Nilai Akhir</th>
+                                <th class="px-3 py-2.5 text-center">Peringkat</th>
+                                <th class="px-3 py-2.5 text-center">Predikat</th>
+                                <th class="px-3 py-2.5 text-center">Poin</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
+                            @forelse($detail['rows'] as $row)
+                                <tr wire:key="detail-{{ $loop->index }}">
+                                    <td class="px-3 py-2.5 font-semibold text-zinc-900 dark:text-zinc-100">{{ $row['competition'] }}</td>
+                                    <td class="px-3 py-2.5 text-center font-mono">{{ $row['final_score'] !== null ? number_format((float) $row['final_score'], 2) : '-' }}</td>
+                                    <td class="px-3 py-2.5 text-center font-bold">{{ $row['rank'] ? '#'.$row['rank'] : '-' }}</td>
+                                    <td class="px-3 py-2.5 text-center">
+                                        <span class="rounded-md border px-2 py-0.5 text-[10px] font-bold {{ $row['predicate_classes'] }}">{{ $row['predicate_label'] }}</span>
+                                    </td>
+                                    <td class="px-3 py-2.5 text-center font-mono font-extrabold text-emerald-800 dark:text-emerald-300">{{ $row['points'] }}</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="5" class="py-6 text-center text-zinc-500">Belum ada nilai lomba untuk regu ini.</td></tr>
+                            @endforelse
+                        </tbody>
+                        @if($detail['rows']->isNotEmpty())
+                            <tfoot class="border-t border-zinc-200 bg-zinc-50 font-bold dark:border-zinc-800 dark:bg-zinc-800/60">
+                                <tr>
+                                    <td colspan="4" class="px-3 py-2.5 text-right">Total Poin</td>
+                                    <td class="px-3 py-2.5 text-center font-mono text-emerald-800 dark:text-emerald-300">{{ $detail['rows']->sum('points') }}</td>
+                                </tr>
+                            </tfoot>
+                        @endif
+                    </table>
+                </div>
+            </div>
         </div>
     @endif
 

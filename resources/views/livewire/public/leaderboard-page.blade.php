@@ -85,7 +85,7 @@
         <x-stat-card
             label="Prestasi Disahkan"
             value="{{ $summary['total_medals'] ?? 0 }}"
-            description="Tinggi, Baik, Cukup"
+            description="Tinggi, Baik, Cukup (penentu bila total poin sama)"
             icon="trophy"
             color="amber"
         />
@@ -210,6 +210,8 @@
                 </div>
             @endif
 
+            <x-standings.rules />
+
             <div class="text-[11px] text-zinc-500 dark:text-zinc-400 flex flex-wrap items-center gap-2">
                 <span>🥇 Prestasi Tinggi</span>
                 <span>&bull;</span>
@@ -253,6 +255,7 @@
                                     <th class="py-3 px-4 text-center w-14">Rank</th>
                                     <th class="py-3 px-4">Nama Regu</th>
                                     <th class="py-3 px-4">Pangkalan Sekolah</th>
+                                    <th class="py-3 px-3 text-center">Total Poin</th>
                                     <th class="py-3 px-3 text-center">Prestasi Tinggi</th>
                                     <th class="py-3 px-3 text-center">Prestasi Baik</th>
                                     <th class="py-3 px-3 text-center">Prestasi Cukup</th>
@@ -276,6 +279,9 @@
                                         </td>
                                         <td class="py-3 px-4 text-zinc-600 dark:text-zinc-300">
                                             {{ $item['school_name'] }}
+                                        </td>
+                                        <td class="py-3 px-3 text-center">
+                                            <span class="inline-block rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-mono text-xs font-extrabold text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300">{{ $item['total_points'] }}</span>
                                         </td>
                                         <td class="py-3 px-3 text-center">
                                             <span class="inline-flex min-w-6 items-center justify-center rounded-md bg-amber-100 px-1.5 py-0.5 font-mono text-xs font-extrabold text-amber-900 dark:bg-amber-950/60 dark:text-amber-300">
@@ -310,7 +316,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="py-8 text-center text-zinc-500">
+                                        <td colspan="9" class="py-8 text-center text-zinc-500">
                                             Belum ada data regu penggalang putra.
                                         </td>
                                     </tr>
@@ -344,6 +350,7 @@
                                     <th class="py-3 px-4 text-center w-14">Rank</th>
                                     <th class="py-3 px-4">Nama Regu</th>
                                     <th class="py-3 px-4">Pangkalan Sekolah</th>
+                                    <th class="py-3 px-3 text-center">Total Poin</th>
                                     <th class="py-3 px-3 text-center">Prestasi Tinggi</th>
                                     <th class="py-3 px-3 text-center">Prestasi Baik</th>
                                     <th class="py-3 px-3 text-center">Prestasi Cukup</th>
@@ -367,6 +374,9 @@
                                         </td>
                                         <td class="py-3 px-4 text-zinc-600 dark:text-zinc-300">
                                             {{ $item['school_name'] }}
+                                        </td>
+                                        <td class="py-3 px-3 text-center">
+                                            <span class="inline-block rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-mono text-xs font-extrabold text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300">{{ $item['total_points'] }}</span>
                                         </td>
                                         <td class="py-3 px-3 text-center">
                                             <span class="inline-flex min-w-6 items-center justify-center rounded-md bg-amber-100 px-1.5 py-0.5 font-mono text-xs font-extrabold text-amber-900 dark:bg-amber-950/60 dark:text-amber-300">
@@ -401,7 +411,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="py-8 text-center text-zinc-500">
+                                        <td colspan="9" class="py-8 text-center text-zinc-500">
                                             Belum ada data regu penggalang putri.
                                         </td>
                                     </tr>

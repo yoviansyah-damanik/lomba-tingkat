@@ -101,9 +101,7 @@ class AdminVerificationController extends Controller
         $patrol = $scoutGroup->patrols()->with('participants')->findOrFail($patrolId);
         $patrol->setRelation('scoutGroup', $scoutGroup);
 
-        $chaperone = $patrol->isBoys()
-            ? $scoutGroup->chaperones->firstWhere('gender', 'male')
-            : $scoutGroup->chaperones->firstWhere('gender', 'female');
+        $chaperone = $patrol->chaperone;
         $orderedParticipants = $patrol->orderedParticipants();
 
         $filename = 'Form_01_Rekap_Regu_' . \Illuminate\Support\Str::slug($patrol->patrol_name) . '.pdf';

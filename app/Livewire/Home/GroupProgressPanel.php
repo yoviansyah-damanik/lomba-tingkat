@@ -31,8 +31,7 @@ class GroupProgressPanel extends Component
         $group->loadMissing(['patrols.participants', 'chaperones']);
 
         $rosterProblems = $group->patrolRosterProblems();
-        $required = $group->requiredChaperoneGenders();
-        $missingChaperones = collect($required)->reject(fn ($gender) => $group->chaperones->contains('gender', $gender));
+        $chaperoneReady = $group->chaperones->isNotEmpty() && $group->missingChaperoneGenders() === [] && $group->patrols->every(fn ($p) => $p->chaperone_id);
 
         return [
             [
@@ -49,7 +48,7 @@ class GroupProgressPanel extends Component
             ],
             [
                 'label' => 'Pembina pendamping sesuai regu',
-                'done' => $group->chaperones->isNotEmpty() && $missingChaperones->isEmpty(),
+                'done' => $chaperoneReady,
                 'detail' => $group->chaperones->count().' bindamping terdaftar',
                 'url' => route('scout-group.chaperones'),
             ],

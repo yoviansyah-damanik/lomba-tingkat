@@ -1,242 +1,242 @@
+@php
+    use App\Enums\PatrolRoleEnum;
+    use App\Enums\RegistrationStatusEnum;
+
+    $isEditable = $scoutGroup->isEditable();
+
+    $genders = [
+        'boys' => [
+            'label' => 'Putra',
+            'number' => $scoutGroup->male_group_number,
+            'patrols' => $boysPatrols,
+            'chaperone' => $scoutGroup->chaperones->firstWhere('gender', 'male'),
+            'chaperoneGender' => 'male',
+            'accent' => 'text-blue-700 dark:text-blue-400',
+            'chip' => 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300',
+            'bar' => '[&::-moz-progress-bar]:bg-blue-600 [&::-webkit-progress-value]:bg-blue-600',
+            'ring' => 'border-blue-200/70 dark:border-blue-900/40',
+        ],
+        'girls' => [
+            'label' => 'Putri',
+            'number' => $scoutGroup->female_group_number,
+            'patrols' => $girlsPatrols,
+            'chaperone' => $scoutGroup->chaperones->firstWhere('gender', 'female'),
+            'chaperoneGender' => 'female',
+            'accent' => 'text-rose-700 dark:text-rose-400',
+            'chip' => 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300',
+            'bar' => '[&::-moz-progress-bar]:bg-rose-600 [&::-webkit-progress-value]:bg-rose-600',
+            'ring' => 'border-rose-200/70 dark:border-rose-900/40',
+        ],
+    ];
+@endphp
+
 <div class="flex h-full w-full flex-1 flex-col gap-6">
     <x-official-header />
 
-    @if($activeEvent && $activeEvent->registration_end_at && $scoutGroup->isEditable())
-        <div class="flex items-center justify-between rounded-2xl border border-amber-300/80 bg-amber-50/80 p-4 text-xs text-amber-950 dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-200 shadow-xs">
+    {{-- Batas waktu pengisian --}}
+    @if($activeEvent && $activeEvent->registration_end_at && $isEditable)
+        <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300/80 bg-amber-50/80 p-4 text-xs text-amber-950 shadow-xs dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-200">
             <div class="flex items-center gap-3">
-                <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-600 text-white font-bold">
+                <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-600 text-white">
                     <flux:icon name="clock" class="size-4" />
                 </div>
                 <div>
-                    <span class="block font-bold">Batas Waktu Pengisian Regu, Peserta, & Bindamping:</span>
+                    <span class="block font-bold">Batas waktu pengisian regu, peserta, dan bindamping</span>
                     <span class="text-[11px] text-amber-900/80 dark:text-amber-300/80">
-                        {{ $activeEvent->registration_end_at->translatedFormat('d F Y, H:i') }} WIB
-                        &bull; Sisa waktu: <strong>{{ (int) ceil(now()->diffInDays($activeEvent->registration_end_at)) }} hari lagi</strong>. Pastikan seluruh berkas telah diajukan sebelum batas waktu ditutup.
+                        {{ $activeEvent->registration_end_at->translatedFormat('d F Y, H:i') }} WIB &bull;
+                        sisa <strong>{{ (int) ceil(now()->diffInDays($activeEvent->registration_end_at)) }} hari</strong>. Ajukan seluruh berkas sebelum batas waktu ditutup.
                     </span>
                 </div>
             </div>
-            <a href="{{ route('scout-group.review') }}" wire:navigate class="hidden sm:inline-flex rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700">
+            <flux:button href="{{ route('scout-group.review') }}" wire:navigate size="sm" variant="primary" icon="clipboard-document-check">
                 Periksa Kelengkapan
-            </a>
+            </flux:button>
         </div>
     @endif
 
-    {{-- Contingent Status Card --}}
-    <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <x-heading-section
-            title="Portal Gugus Depan — {{ $scoutGroup->school_name }}"
-            badge="{{ $scoutGroup->registration_code }}"
-            badge-color="amber"
-        >
-            <x-slot:badge-extra>
-                <span class="inline-flex items-center rounded-lg border px-2.5 py-0.5 text-xs font-semibold {{ $scoutGroup->verification_status?->badgeClasses() }}">
-                    {{ $scoutGroup->verification_status?->label() }}
-                </span>
-            </x-slot:badge-extra>
+    {{-- Identitas pangkalan --}}
+    <section class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 dark:border-zinc-800 dark:bg-zinc-900" aria-labelledby="gudep-title">
+        <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div class="min-w-0 space-y-3">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-0.5 font-mono text-xs font-bold text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-300">
+                        {{ $scoutGroup->registration_code }}
+                    </span>
+                    <span class="inline-flex items-center rounded-lg border px-2.5 py-0.5 text-xs font-semibold {{ $scoutGroup->verification_status?->badgeClasses() }}">
+                        {{ $scoutGroup->verification_status?->label() }}
+                    </span>
+                </div>
 
-            <x-slot:description>
-                Nomor Gudep: <span class="font-medium text-zinc-700 dark:text-zinc-300">{{ $scoutGroup->group_number }}</span> &bull;
-                PIC: <span class="font-medium text-zinc-700 dark:text-zinc-300">{{ $scoutGroup->contact_person }} ({{ $scoutGroup->contact_phone }})</span>
-            </x-slot:description>
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Portal Gugus Depan</p>
+                    <h1 id="gudep-title" class="text-xl font-extrabold tracking-tight text-zinc-900 sm:text-2xl dark:text-zinc-100">
+                        {{ $scoutGroup->school_name }}
+                    </h1>
+                </div>
 
-            <x-slot:actions>
+                <dl class="grid grid-cols-1 gap-x-6 gap-y-2 text-xs sm:grid-cols-2">
+                    <div class="flex items-center gap-2">
+                        <flux:icon name="hashtag" class="size-4 shrink-0 text-zinc-400" />
+                        <dt class="sr-only">Nomor Gudep</dt>
+                        <dd class="flex flex-wrap gap-1.5">
+                            <span class="rounded px-1.5 py-0.5 font-mono font-bold {{ $genders['boys']['chip'] }}">Putra {{ $scoutGroup->male_group_number ?: '-' }}</span>
+                            <span class="rounded px-1.5 py-0.5 font-mono font-bold {{ $genders['girls']['chip'] }}">Putri {{ $scoutGroup->female_group_number ?: '-' }}</span>
+                        </dd>
+                    </div>
+                    <div class="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
+                        <flux:icon name="user" class="size-4 shrink-0 text-zinc-400" />
+                        <dt class="sr-only">Penanggung jawab</dt>
+                        <dd><span class="font-semibold text-zinc-800 dark:text-zinc-200">{{ $scoutGroup->contact_person }}</span> &bull; {{ $scoutGroup->contact_phone }}</dd>
+                    </div>
+                    <div class="flex items-start gap-2 text-zinc-600 sm:col-span-2 dark:text-zinc-400">
+                        <flux:icon name="map-pin" class="mt-0.5 size-4 shrink-0 text-zinc-400" />
+                        <dt class="sr-only">Alamat</dt>
+                        <dd>{{ $scoutGroup->address ?: '-' }}</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <div class="flex shrink-0 flex-wrap gap-2">
                 @if($scoutGroup->canDownloadDocuments())
                     <flux:button href="{{ route('scout-group.registration-certificate', ['download' => 1]) }}" variant="primary" icon="document-text"
                         data-loading="Mencetak Bukti Registrasi (PDF)...">
                         Bukti Registrasi (PDF)
                     </flux:button>
                 @endif
-                @if($scoutGroup->isEditable())
-                    <flux:button variant="subtle" icon="pencil-square" wire:click="openProfileModal">
-                        Edit Profil
-                    </flux:button>
-                    <flux:button href="{{ route('scout-group.review') }}" wire:navigate variant="primary" icon="arrow-right">
-                        Periksa & Ajukan
-                    </flux:button>
-                @else
-                    @if(! $scoutGroup->canDownloadDocuments())
-                        <span class="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-800/60">
-                            Data Terkunci (Dalam Verifikasi)
-                        </span>
-                    @endif
+                @if($isEditable)
+                    <flux:button variant="subtle" icon="pencil-square" wire:click="openProfileModal">Edit Profil</flux:button>
+                    <flux:button href="{{ route('scout-group.review') }}" wire:navigate variant="primary" icon="arrow-right">Periksa &amp; Ajukan</flux:button>
+                @elseif(! $scoutGroup->canDownloadDocuments())
+                    <flux:badge icon="lock-closed" color="zinc">Data terkunci (dalam verifikasi)</flux:badge>
                 @endif
-            </x-slot:actions>
-        </x-heading-section>
+            </div>
+        </div>
 
-        {{-- Revision Notes Alert if any --}}
-        @if($scoutGroup->verification_status === \App\Enums\RegistrationStatusEnum::NeedsRevision && $scoutGroup->revision_notes)
-            <div class="mt-4 rounded-xl border border-orange-300 bg-orange-50/80 p-4 text-xs text-orange-900 dark:border-orange-500/30 dark:bg-orange-950/40 dark:text-orange-200">
-                <strong class="font-bold flex items-center gap-1.5">
+        @if($scoutGroup->verification_status === RegistrationStatusEnum::NeedsRevision && $scoutGroup->revision_notes)
+            <div class="mt-5 rounded-xl border border-orange-300 bg-orange-50/80 p-4 text-xs text-orange-900 dark:border-orange-500/30 dark:bg-orange-950/40 dark:text-orange-200">
+                <strong class="flex items-center gap-1.5 font-bold">
                     <flux:icon name="exclamation-triangle" class="size-4 text-orange-600" />
-                    Catatan Perbaikan dari Administrator:
+                    Catatan perbaikan dari Administrator
                 </strong>
-                <p class="mt-1 leading-relaxed pl-5.5">{{ $scoutGroup->revision_notes }}</p>
+                <p class="mt-1.5 pl-5 leading-relaxed">{{ $scoutGroup->revision_notes }}</p>
             </div>
         @endif
+    </section>
+
+    {{-- Ringkasan angka --}}
+    <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <x-stat-card label="Regu Terdaftar" :value="$scoutGroup->patrols->count()" unit="regu" description="Putra {{ $boysPatrols->count() }} &bull; Putri {{ $girlsPatrols->count() }}" icon="user-group" color="emerald" />
+        <x-stat-card label="Peserta" :value="$participantsTotal" :unit="'/ '.$participantsTarget" description="Wajib 8 peserta per regu" icon="users" color="indigo" />
+        <x-stat-card label="Bindamping" :value="$scoutGroup->chaperones->count()" :unit="'/ '.max(1, count($requiredChaperoneGenders))" description="Sesuai regu putra/putri" icon="user-circle" color="blue" />
+        <x-stat-card label="Berkas Administrasi" :value="collect([$scoutGroup->mandate_letter_path, $scoutGroup->payment_proof_path])->filter()->count()" unit="/ 2" description="Surat tugas &amp; bukti bayar" icon="document-check" color="amber" />
     </div>
 
-    {{-- Summary Grid: Regu Putra, Regu Putri, Bindamping --}}
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
-        {{-- Regu Putra --}}
-        <div class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <div class="flex items-center justify-between border-b border-zinc-100 pb-3 dark:border-zinc-800">
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-400">Regu Putra</span>
-                    <span class="rounded bg-blue-100 px-1.5 py-0.5 font-mono text-[11px] font-bold text-blue-800 dark:bg-blue-950/60 dark:text-blue-300">
-                        Gudep {{ $scoutGroup->male_group_number }}
-                    </span>
+    {{-- Regu putra & putri --}}
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        @foreach($genders as $category => $cat)
+            <section wire:key="dashboard-patrols-{{ $category }}" class="flex flex-col rounded-2xl border {{ $cat['ring'] }} bg-white p-5 shadow-sm dark:bg-zinc-900" aria-label="Regu {{ $cat['label'] }}">
+                <div class="flex items-center justify-between gap-2 border-b border-zinc-100 pb-3 dark:border-zinc-800">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h2 class="text-sm font-bold uppercase tracking-wider {{ $cat['accent'] }}">Regu {{ $cat['label'] }}</h2>
+                        <span class="rounded px-1.5 py-0.5 font-mono text-[11px] font-bold {{ $cat['chip'] }}">Gudep {{ $cat['number'] ?: '-' }}</span>
+                    </div>
+                    <flux:badge size="sm" :color="$cat['patrols']->isEmpty() ? 'zinc' : 'emerald'">
+                        {{ $cat['patrols']->isEmpty() ? 'Belum ada' : $cat['patrols']->count().' regu' }}
+                    </flux:badge>
                 </div>
-                @if($boysPatrol)
-                    <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                        Terdaftar
-                    </span>
-                @else
-                    <span class="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
-                        Kosong
-                    </span>
-                @endif
-            </div>
 
-            <div class="mt-4">
-                @if($boysPatrol)
-                    <h3 class="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                        Regu {{ $boysPatrol->patrol_name }}
-                    </h3>
-                    <p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                        Anggota: <span class="font-bold text-zinc-800 dark:text-zinc-200">{{ $boysPatrol->participants->count() }} / 8</span> peserta
-                    </p>
-
-                    <div class="mt-3 flex items-center gap-2">
-                        <div class="h-1.5 flex-1 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
-                            <div class="h-full bg-blue-600 rounded-full" style="width: {{ ($boysPatrol->participants->count() / 8) * 100 }}%"></div>
-                        </div>
-                        <span class="text-[11px] font-medium text-zinc-500">{{ round(($boysPatrol->participants->count() / 8) * 100) }}%</span>
-                    </div>
-
-                    <div class="mt-4 flex flex-wrap gap-2">
-                        <a href="{{ route('scout-group.patrols') }}" wire:navigate class="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
-                            Kelola Peserta &rarr;
-                        </a>
-                        @if($scoutGroup->canDownloadDocuments())
-                        <a href="{{ route('scout-group.patrols.form-01', $boysPatrol->id) }}" target="_blank"
-                            data-loading="Mencetak FORM 01 Regu Putra (PDF)..."
-                            class="rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                            FORM 01
-                        </a>
-                        @endif
-                    </div>
-                @else
-                    <div class="py-6 text-center text-xs text-zinc-400">
-                        Regu putra belum didaftarkan.
-                    </div>
-                    @if($scoutGroup->isEditable())
-                        <div class="mt-2 text-center">
-                            <a href="{{ route('scout-group.patrols') }}" wire:navigate class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
-                                + Daftarkan Regu Putra
-                            </a>
-                        </div>
-                    @endif
-                @endif
-            </div>
-        </div>
-
-        {{-- Regu Putri --}}
-        <div class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <div class="flex items-center justify-between border-b border-zinc-100 pb-3 dark:border-zinc-800">
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-semibold uppercase tracking-wider text-rose-700 dark:text-rose-400">Regu Putri</span>
-                    <span class="rounded bg-rose-100 px-1.5 py-0.5 font-mono text-[11px] font-bold text-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
-                        Gudep {{ $scoutGroup->female_group_number }}
-                    </span>
-                </div>
-                @if($girlsPatrol)
-                    <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                        Terdaftar
-                    </span>
-                @else
-                    <span class="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
-                        Kosong
-                    </span>
-                @endif
-            </div>
-
-            <div class="mt-4">
-                @if($girlsPatrol)
-                    <h3 class="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                        Regu {{ $girlsPatrol->patrol_name }}
-                    </h3>
-                    <p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                        Anggota: <span class="font-bold text-zinc-800 dark:text-zinc-200">{{ $girlsPatrol->participants->count() }} / 8</span> peserta
-                    </p>
-
-                    <div class="mt-3 flex items-center gap-2">
-                        <div class="h-1.5 flex-1 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
-                            <div class="h-full bg-rose-600 rounded-full" style="width: {{ ($girlsPatrol->participants->count() / 8) * 100 }}%"></div>
-                        </div>
-                        <span class="text-[11px] font-medium text-zinc-500">{{ round(($girlsPatrol->participants->count() / 8) * 100) }}%</span>
-                    </div>
-
-                    <div class="mt-4 flex flex-wrap gap-2">
-                        <a href="{{ route('scout-group.patrols') }}" wire:navigate class="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
-                            Kelola Peserta &rarr;
-                        </a>
-                        @if($scoutGroup->canDownloadDocuments())
-                        <a href="{{ route('scout-group.patrols.form-01', $girlsPatrol->id) }}" target="_blank"
-                            data-loading="Mencetak FORM 01 Regu Putri (PDF)..."
-                            class="rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                            FORM 01
-                        </a>
-                        @endif
-                    </div>
-                @else
-                    <div class="py-6 text-center text-xs text-zinc-400">
-                        Regu putri belum didaftarkan.
-                    </div>
-                    @if($scoutGroup->isEditable())
-                        <div class="mt-2 text-center">
-                            <a href="{{ route('scout-group.patrols') }}" wire:navigate class="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700">
-                                + Daftarkan Regu Putri
-                            </a>
-                        </div>
-                    @endif
-                @endif
-            </div>
-        </div>
-
-        {{-- Bindamping --}}
-        <div class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <div class="flex items-center justify-between border-b border-zinc-100 pb-3 dark:border-zinc-800">
-                <span class="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">Pembina Pendamping</span>
-                <span class="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
-                    {{ $scoutGroup->chaperones->count() }} Orang
-                </span>
-            </div>
-
-            <div class="mt-4 space-y-2">
-                @forelse($scoutGroup->chaperones as $chaperone)
-                    <div class="flex items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50 p-2.5 dark:border-zinc-800 dark:bg-zinc-800/40">
-                        <div>
-                            <div class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{{ $chaperone->name }}</div>
-                            <div class="text-[11px] text-zinc-500">
-                                {{ $chaperone->gender === 'male' ? 'Bindamping Putra' : 'Bindamping Putri' }}
+                <div class="mt-4 flex-1 space-y-3">
+                    @forelse($cat['patrols'] as $patrol)
+                        @php
+                            $count = $patrol->participants->count();
+                            $hasLeader = $patrol->participants->contains(fn ($p) => $p->role_in_patrol === PatrolRoleEnum::PatrolLeader);
+                            $hasAssistant = $patrol->participants->contains(fn ($p) => $p->role_in_patrol === PatrolRoleEnum::AssistantPatrolLeader);
+                            $complete = $scoutGroup->rosterProblemsFor($patrol) === [];
+                        @endphp
+                        <article wire:key="dashboard-patrol-{{ $patrol->id }}" class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="min-w-0">
+                                    <h3 class="truncate text-base font-bold text-zinc-900 dark:text-zinc-100">Regu {{ $patrol->patrol_name }}</h3>
+                                    <p class="text-[11px] text-zinc-500">
+                                        Bindamping: <span class="font-semibold text-zinc-700 dark:text-zinc-300">{{ $patrol->chaperone?->full_name ?? 'belum ditetapkan' }}</span>
+                                    </p>
+                                </div>
+                                <flux:badge size="sm" :color="$complete ? 'emerald' : 'amber'" :icon="$complete ? 'check-circle' : 'exclamation-circle'">
+                                    {{ $complete ? 'Lengkap' : 'Belum lengkap' }}
+                                </flux:badge>
                             </div>
-                        </div>
-                        <span class="text-[11px] font-mono text-zinc-400">{{ $chaperone->phone }}</span>
-                    </div>
-                @empty
-                    <div class="py-6 text-center text-xs text-zinc-400">
-                        Belum ada bindamping terdaftar.
-                    </div>
-                @endforelse
 
-                <div class="pt-2">
-                    <a href="{{ route('scout-group.chaperones') }}" wire:navigate class="block text-center rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
-                        Kelola Bindamping &rarr;
-                    </a>
+                            <div class="mt-3 flex items-center gap-3">
+                                <progress value="{{ $count }}" max="{{ \App\Models\Patrol::REQUIRED_MEMBERS }}"
+                                    class="h-1.5 flex-1 overflow-hidden rounded-full [&::-webkit-progress-bar]:bg-zinc-100 dark:[&::-webkit-progress-bar]:bg-zinc-800 {{ $cat['bar'] }}"></progress>
+                                <span class="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">{{ $count }}/{{ \App\Models\Patrol::REQUIRED_MEMBERS }} peserta</span>
+                            </div>
+
+                            <div class="mt-2 flex flex-wrap gap-1.5 text-[10px] font-semibold">
+                                <span class="rounded-md px-1.5 py-0.5 {{ $hasLeader ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800' }}">Pinru {{ $hasLeader ? '✓' : '—' }}</span>
+                                <span class="rounded-md px-1.5 py-0.5 {{ $hasAssistant ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800' }}">Wapinru {{ $hasAssistant ? '✓' : '—' }}</span>
+                            </div>
+
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                <flux:button href="{{ route('scout-group.patrols') }}" wire:navigate variant="subtle" size="xs" icon-trailing="arrow-right">Kelola Peserta</flux:button>
+                                @if($scoutGroup->canDownloadDocuments())
+                                    <flux:button href="{{ route('scout-group.patrols.form-01', $patrol->id) }}" target="_blank" variant="subtle" size="xs" icon="printer"
+                                        data-loading="Mencetak FORM 01 Regu {{ $patrol->patrol_name }} (PDF)...">FORM 01</flux:button>
+                                @endif
+                            </div>
+                        </article>
+                    @empty
+                        <div class="flex h-full min-h-32 flex-col items-center justify-center rounded-xl border border-dashed border-zinc-300 p-6 text-center dark:border-zinc-700">
+                            <flux:icon name="user-group" class="mb-2 size-8 text-zinc-300 dark:text-zinc-600" />
+                            <p class="text-xs text-zinc-500">Regu {{ strtolower($cat['label']) }} belum didaftarkan.</p>
+                        </div>
+                    @endforelse
                 </div>
-            </div>
-        </div>
+
+                @if($isEditable)
+                    <flux:button href="{{ route('scout-group.patrols') }}" wire:navigate variant="primary" size="sm" icon="plus" class="mt-4 w-full">
+                        Daftarkan Regu {{ $cat['label'] }}
+                    </flux:button>
+                @endif
+            </section>
+        @endforeach
     </div>
+
+    {{-- Pembina pendamping: satu slot per gender, mengikuti regu --}}
+    <section class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900" aria-labelledby="chaperone-title">
+        <div class="flex items-center justify-between gap-2 border-b border-zinc-100 pb-3 dark:border-zinc-800">
+            <h2 id="chaperone-title" class="text-sm font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Pembina Pendamping</h2>
+            <span class="text-[11px] text-zinc-500">Pendaftaran bindamping ada di menu Bindamping</span>
+        </div>
+
+        <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+            @foreach($genders as $cat)
+                @php
+                    $chaperone = $cat['chaperone'];
+                    $canRegister = in_array($cat['chaperoneGender'], $requiredChaperoneGenders, true);
+                @endphp
+                <div wire:key="dashboard-chaperone-{{ $cat['chaperoneGender'] }}" class="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+                    <div class="min-w-0">
+                        <p class="text-[11px] font-semibold uppercase tracking-wider {{ $cat['accent'] }}">Bindamping {{ $cat['label'] }}</p>
+                        @if($chaperone)
+                            <p class="truncate text-sm font-bold text-zinc-900 dark:text-zinc-100">{{ $chaperone->full_name }}</p>
+                            <p class="font-mono text-[11px] text-zinc-500">{{ $chaperone->phone_number }}</p>
+                        @elseif($canRegister)
+                            <p class="text-sm font-semibold text-amber-700 dark:text-amber-400">Belum didaftarkan</p>
+                            <p class="text-[11px] text-zinc-500">Wajib karena Regu {{ $cat['label'] }} sudah ada.</p>
+                        @else
+                            <p class="text-sm font-semibold text-zinc-400">Menunggu Regu {{ $cat['label'] }}</p>
+                            <p class="text-[11px] text-zinc-500">Daftarkan regu terlebih dahulu.</p>
+                        @endif
+                    </div>
+
+                    @if($chaperone)
+                        <flux:button href="{{ route('scout-group.chaperones.show', $chaperone->id) }}" wire:navigate size="xs" variant="subtle" icon="eye">Detail</flux:button>
+                    @endif
+                </div>
+            @endforeach
+        </div>
+    </section>
 
     {{-- Modal Edit Profil Pangkalan --}}
     <flux:modal wire:model="showProfileModal" class="max-w-xl">
@@ -255,13 +255,9 @@
                 <flux:input wire:model="contact_phone" label="Nomor HP / WhatsApp PIC *" placeholder="08123456789" />
             </div>
 
-            <div class="flex items-center justify-end gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
-                <flux:button type="button" variant="subtle" wire:click="$set('showProfileModal', false)">
-                    Batal
-                </flux:button>
-                <flux:button type="submit" variant="primary">
-                    Simpan Profil
-                </flux:button>
+            <div class="flex items-center justify-end gap-2 border-t border-zinc-200 pt-3 dark:border-zinc-800">
+                <flux:button type="button" variant="subtle" wire:click="$set('showProfileModal', false)">Batal</flux:button>
+                <flux:button type="submit" variant="primary">Simpan Profil</flux:button>
             </div>
         </form>
     </flux:modal>

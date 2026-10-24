@@ -10,7 +10,7 @@ class DatabaseSeeder extends Seeder
      * Seed the application's database.
      *
      * - semua lingkungan : peran, akun Superadmin & Administrator, serta data resmi Juknis LT-III 2026
-     *                      (kegiatan, 23 mata lomba beserta rubrik, jadwal sesi, sesi presensi, dan pengumuman)
+     *                      (kegiatan, 17 mata lomba beserta rubrik, jadwal sesi, sesi presensi, dan pengumuman)
      * - local/dev        : ditambah akun contoh (panitia, juri, gudep) dan data sampel lengkap (gudep, penilaian,
      *                      biodata beserta unggahan berkas gudep/peserta/bindamping)
      * - production       : hanya data resmi di atas, tanpa akun atau data contoh
