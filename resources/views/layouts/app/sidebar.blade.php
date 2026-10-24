@@ -11,166 +11,21 @@
             </flux:sidebar.header>
 
             <flux:sidebar.nav>
-                <flux:sidebar.group :heading="__('Utama')" class="grid">
-                    <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
-                        {{ __('Dashboard') }}
-                    </flux:sidebar.item>
-                    <flux:sidebar.item icon="calendar-days" :href="route('agenda.index')" :current="request()->routeIs('agenda.*')" wire:navigate>
-                        {{ __('Jadwal Kegiatan') }}
-                    </flux:sidebar.item>
-                </flux:sidebar.group>
-
-                @auth
-                    {{-- Navigasi Khusus Administrator --}}
-                    @if(auth()->user()->isAdmin())
-                        <flux:sidebar.group :heading="__('Administrator')" class="grid">
-                            <flux:sidebar.item icon="shield-check" :href="route('admin.scout-groups.index')" :current="request()->routeIs('admin.scout-groups.*')" wire:navigate>
-                                {{ __('Verifikasi Pendaftaran') }}
+                {{-- Menu dikelompokkan menurut fungsi; definisi tunggal di App\Support\Navigation --}}
+                @foreach (\App\Support\Navigation::groupsFor(auth()->user()) as $group)
+                    <flux:sidebar.group :heading="__($group['heading'])" class="grid">
+                        @foreach ($group['items'] as $item)
+                            <flux:sidebar.item
+                                :icon="$item['icon']"
+                                :href="$item['href']"
+                                :current="request()->routeIs(...$item['active'])"
+                                wire:navigate
+                            >
+                                {{ __($item['label']) }}
                             </flux:sidebar.item>
-                            <flux:sidebar.item icon="academic-cap" :href="route('admin.participants.index')" :current="request()->routeIs('admin.participants.*')" wire:navigate>
-                                {{ __('Direktori Peserta') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="user-circle" :href="route('admin.chaperones.index')" :current="request()->routeIs('admin.chaperones.*')" wire:navigate>
-                                {{ __('Pembina Pendamping') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="trophy" :href="route('admin.competitions.index')" :current="request()->routeIs('admin.competitions.*')" wire:navigate>
-                                {{ __('Mata Lomba & Rubrik') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="calendar" :href="route('admin.schedules.index')" :current="request()->routeIs('admin.schedules.*')" wire:navigate>
-                                {{ __('Jadwal & Penugasan Juri') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="qr-code" :href="route('attendance.index')" :current="request()->routeIs('attendance.index') || request()->routeIs('attendance.scanner')" wire:navigate>
-                                {{ __('Scan Presensi Pos') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="clipboard-document-list" :href="route('attendance.recap')" :current="request()->routeIs('attendance.recap*')" wire:navigate>
-                                {{ __('Rekapitulasi Presensi') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="pencil-square" :href="route('judge.index')" :current="request()->routeIs('judge.*')" wire:navigate>
-                                {{ __('Cockpit Penjurian') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="chart-bar" :href="route('admin.standings.index')" :current="request()->routeIs('admin.standings.*') || request()->routeIs('standings')" wire:navigate>
-                                {{ __('Rekap Nilai & Klasemen') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="document-text" :href="route('admin.reports.index')" :current="request()->routeIs('admin.reports.*')" wire:navigate>
-                                {{ __('Pusat Laporan & Ekspor') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="megaphone" :href="route('admin.announcements.index')" :current="request()->routeIs('admin.announcements.*')" wire:navigate>
-                                {{ __('Pengumuman Kegiatan') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="user-group" :href="route('admin.officials.index')" :current="request()->routeIs('admin.officials.*')" wire:navigate>
-                                {{ __('Aparatur Panitia & Juri') }}
-                            </flux:sidebar.item>
-                        </flux:sidebar.group>
-                    @endif
-
-                    {{-- Navigasi Khusus Superadmin --}}
-                    @if(auth()->user()->isSuperadmin())
-                        <flux:sidebar.group :heading="__('Superadmin')" class="grid">
-                            <flux:sidebar.item icon="clipboard-document-check" :href="route('admin.assessments.index')" :current="request()->routeIs('admin.assessments.*')" wire:navigate>
-                                {{ __('Audit Penilaian & Log') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="user-group" :href="route('admin.users.index')" :current="request()->routeIs('admin.users.*')" wire:navigate>
-                                {{ __('Pengguna & Hak Akses') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="bell" :href="route('admin.push-broadcast.index')" :current="request()->routeIs('admin.push-broadcast.*')" wire:navigate>
-                                {{ __('Siaran Notifikasi (PWA)') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="cog-6-tooth" :href="route('admin.settings.system')" :current="request()->routeIs('admin.settings.system')" wire:navigate>
-                                {{ __('Konfigurasi Sistem') }}
-                            </flux:sidebar.item>
-                        </flux:sidebar.group>
-                    @endif
-
-                    {{-- Navigasi Khusus Panitia (Monitor Operasional) --}}
-                    @if(auth()->user()->isCommittee())
-                        <flux:sidebar.group :heading="__('Operasional Lapangan')" class="grid">
-                            <flux:sidebar.item icon="academic-cap" :href="route('admin.participants.index')" :current="request()->routeIs('admin.participants.*')" wire:navigate>
-                                {{ __('Direktori Peserta') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="user-circle" :href="route('admin.chaperones.index')" :current="request()->routeIs('admin.chaperones.*')" wire:navigate>
-                                {{ __('Pembina Pendamping') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="shield-check" :href="route('admin.scout-groups.index')" :current="request()->routeIs('admin.scout-groups.*')" wire:navigate>
-                                {{ __('Pangkalan Gugusdepan') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="qr-code" :href="route('attendance.index')" :current="request()->routeIs('attendance.index') || request()->routeIs('attendance.scanner')" wire:navigate>
-                                {{ __('Scanner Presensi Kehadiran') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="clipboard-document-list" :href="route('attendance.recap')" :current="request()->routeIs('attendance.recap*')" wire:navigate>
-                                {{ __('Rekapitulasi Presensi') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="chart-bar" :href="route('standings')" :current="request()->routeIs('standings') || request()->routeIs('admin.standings.*')" wire:navigate>
-                                {{ __('Rekap Nilai & Klasemen') }}
-                            </flux:sidebar.item>
-                        </flux:sidebar.group>
-                    @endif
-
-                    {{-- Navigasi Khusus Juri (Penilaian) --}}
-                    @if(auth()->user()->isJudge())
-                        <flux:sidebar.group :heading="__('Dewan Juri')" class="grid">
-                            <flux:sidebar.item icon="pencil-square" :href="route('judge.index')" :current="request()->routeIs('judge.*')" wire:navigate>
-                                {{ __('Cockpit Penjurian') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="academic-cap" :href="route('admin.participants.index')" :current="request()->routeIs('admin.participants.*')" wire:navigate>
-                                {{ __('Direktori Peserta') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="qr-code" :href="route('attendance.index')" :current="request()->routeIs('attendance.index') || request()->routeIs('attendance.scanner')" wire:navigate>
-                                {{ __('Scanner Presensi Lomba') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="clipboard-document-list" :href="route('attendance.recap')" :current="request()->routeIs('attendance.recap*')" wire:navigate>
-                                {{ __('Rekapitulasi Presensi') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="chart-bar" :href="route('standings', ['tab' => 'competitions'])" :current="request()->routeIs('standings') || request()->routeIs('admin.standings.*')" wire:navigate>
-                                {{ __('Rekap Nilai & Klasemen') }}
-                            </flux:sidebar.item>
-                        </flux:sidebar.group>
-                    @endif
-
-                    {{-- Navigasi Khusus Gugus Depan (Pangkalan Sekolah) --}}
-                    @if(auth()->user()->isScoutGroup())
-                        <flux:sidebar.group :heading="__('Kontingen Gudep')" class="grid">
-                            <flux:sidebar.item icon="user-group" :href="route('scout-group.index')" :current="request()->routeIs('scout-group.index') || request()->routeIs('scout-group.patrols*') || request()->routeIs('scout-group.participants*')" wire:navigate>
-                                {{ __('Regu & Peserta') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="identification" :href="route('scout-group.chaperones')" :current="request()->routeIs('scout-group.chaperones*')" wire:navigate>
-                                {{ __('Bindamping') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="clipboard-document-check" :href="route('scout-group.review')" :current="request()->routeIs('scout-group.review')" wire:navigate>
-                                {{ __('Periksa & Ajukan') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="trophy" :href="route('team-assessment.index')" :current="request()->routeIs('team-assessment.*')" wire:navigate>
-                                {{ __('Penilaian Regu') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="chart-bar" :href="route('standings')" :current="request()->routeIs('standings') || request()->routeIs('admin.standings.*')" wire:navigate>
-                                {{ __('Rekap Nilai & Klasemen') }}
-                            </flux:sidebar.item>
-                        </flux:sidebar.group>
-                    @endif
-
-                    {{-- Navigasi Khusus Peserta / Regu --}}
-                    @if(auth()->user()->isParticipant())
-                        <flux:sidebar.group :heading="__('Peserta Regu')" class="grid">
-                            <flux:sidebar.item icon="clipboard-document-check" :href="route('team-assessment.index')" :current="request()->routeIs('team-assessment.*')" wire:navigate>
-                                {{ __('Penilaian Regu') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="chart-bar" :href="route('standings')" :current="request()->routeIs('standings') || request()->routeIs('admin.standings.*')" wire:navigate>
-                                {{ __('Klasemen & Nilai') }}
-                            </flux:sidebar.item>
-                        </flux:sidebar.group>
-                    @endif
-
-                    {{-- Navigasi Khusus Bindamping --}}
-                    @if(auth()->user()->isChaperone())
-                        <flux:sidebar.group :heading="__('Bindamping')" class="grid">
-                            <flux:sidebar.item icon="clipboard-document-check" :href="route('team-assessment.index')" :current="request()->routeIs('team-assessment.*')" wire:navigate>
-                                {{ __('Penilaian Regu') }}
-                            </flux:sidebar.item>
-                            <flux:sidebar.item icon="chart-bar" :href="route('standings')" :current="request()->routeIs('standings') || request()->routeIs('admin.standings.*')" wire:navigate>
-                                {{ __('Klasemen & Nilai') }}
-                            </flux:sidebar.item>
-                        </flux:sidebar.group>
-                    @endif
-                @endauth
+                        @endforeach
+                    </flux:sidebar.group>
+                @endforeach
             </flux:sidebar.nav>
 
             <flux:spacer />

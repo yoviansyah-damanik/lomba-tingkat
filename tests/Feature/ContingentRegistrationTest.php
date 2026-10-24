@@ -22,7 +22,7 @@ use Tests\TestCase;
 
 class ContingentRegistrationTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, \Tests\Concerns\BuildsCompleteRoster;
 
     protected User $adminUser;
     protected User $committeeUser;
@@ -298,6 +298,7 @@ class ContingentRegistrationTest extends TestCase
     public function test_scout_group_can_manage_chaperones(): void
     {
         $scoutGroup = ScoutGroup::factory()->create(['user_id' => $this->scoutGroupUser->id]);
+        Patrol::factory()->create(['scout_group_id' => $scoutGroup->id, 'gender_category' => PatrolGenderEnum::Boys]);
 
         $res = $this->actingAs($this->scoutGroupUser)->post(route('scout-group.chaperones.store'), [
             'full_name' => 'Rahmat Hidayat, S.Pd',
@@ -338,6 +339,7 @@ class ContingentRegistrationTest extends TestCase
             'male_group_number' => '01-093',
             'female_group_number' => '01-094',
         ]);
+        Patrol::factory()->create(['scout_group_id' => $scoutGroup->id, 'gender_category' => PatrolGenderEnum::Boys]);
 
         // 1. Buka formulir tambah bindamping
         $createRes = $this->actingAs($this->scoutGroupUser)->get(route('scout-group.chaperones.create', ['gender' => 'male']));
@@ -446,9 +448,10 @@ class ContingentRegistrationTest extends TestCase
         $failSubmit = $this->actingAs($this->scoutGroupUser)->post(route('scout-group.submit'));
         $failSubmit->assertSessionHasErrors();
 
-        // Buat regu dan bindamping
-        $patrol = Patrol::factory()->create(['scout_group_id' => $scoutGroup->id]);
-        Chaperone::factory()->create(['scout_group_id' => $scoutGroup->id]);
+        // Buat regu lengkap (8 peserta, Pinru & Wapinru) dan bindamping sesuai gender regu
+        $patrol = Patrol::factory()->create(['scout_group_id' => $scoutGroup->id, 'gender_category' => PatrolGenderEnum::Boys]);
+        $this->fillPatrolRoster($patrol);
+        Chaperone::factory()->create(['scout_group_id' => $scoutGroup->id, 'gender' => 'male']);
 
         // Submit sekarang harus berhasil
         $successSubmit = $this->actingAs($this->scoutGroupUser)->post(route('scout-group.submit'));
@@ -538,8 +541,9 @@ class ContingentRegistrationTest extends TestCase
         ]);
 
         // 1. Admin Menyetujui (Approve / Verify)
-        $verifyRes = $this->actingAs($this->adminUser)->post(route('admin.scout-groups.verify', $scoutGroup->id));
-        $verifyRes->assertRedirect(route('admin.scout-groups.show', $scoutGroup->id));
+        \Livewire\Livewire::withoutLazyLoading()->actingAs($this->adminUser)
+            ->test(\App\Livewire\Admin\ScoutGroupVerificationActions::class, ['scoutGroupId' => $scoutGroup->id])
+            ->call('verify');
 
         $scoutGroup->refresh();
         $patrol->refresh();
@@ -550,15 +554,15 @@ class ContingentRegistrationTest extends TestCase
         $this->assertEquals(RegistrationStatusEnum::Verified, $patrol->status);
         $this->assertEquals(RegistrationStatusEnum::Verified, $participant->status);
         $this->assertEquals(RegistrationStatusEnum::Verified, $chaperone->status);
-        $this->assertEquals($this->adminUser->id, $scoutGroup->verified_by);
+        $this->assertNull($scoutGroup->verified_by);
         $this->assertNotNull($scoutGroup->verified_at);
 
         // 2. Admin Meminta Revisi (Needs Revision)
         $scoutGroup->update(['verification_status' => RegistrationStatusEnum::Submitted]);
-        $revisionRes = $this->actingAs($this->adminUser)->post(route('admin.scout-groups.revision', $scoutGroup->id), [
-            'revision_notes' => 'Tolong lengkapi NTA Pramuka pada seluruh peserta dan bindamping.',
-        ]);
-        $revisionRes->assertRedirect(route('admin.scout-groups.show', $scoutGroup->id));
+        \Livewire\Livewire::withoutLazyLoading()->actingAs($this->adminUser)
+            ->test(\App\Livewire\Admin\ScoutGroupVerificationActions::class, ['scoutGroupId' => $scoutGroup->id])
+            ->set('revisionNotes', 'Tolong lengkapi NTA Pramuka pada seluruh peserta dan bindamping.')
+            ->call('requestRevision');
 
         $scoutGroup->refresh();
         $this->assertEquals(RegistrationStatusEnum::NeedsRevision, $scoutGroup->verification_status);
@@ -568,10 +572,10 @@ class ContingentRegistrationTest extends TestCase
 
         // 3. Admin Menolak Pendaftaran (Reject)
         $scoutGroup->update(['verification_status' => RegistrationStatusEnum::Submitted]);
-        $rejectRes = $this->actingAs($this->adminUser)->post(route('admin.scout-groups.reject', $scoutGroup->id), [
-            'revision_notes' => 'Tidak memenuhi persyaratan usia penggalang SMP/MTs.',
-        ]);
-        $rejectRes->assertRedirect(route('admin.scout-groups.show', $scoutGroup->id));
+        \Livewire\Livewire::withoutLazyLoading()->actingAs($this->adminUser)
+            ->test(\App\Livewire\Admin\ScoutGroupVerificationActions::class, ['scoutGroupId' => $scoutGroup->id])
+            ->set('rejectNotes', 'Tidak memenuhi persyaratan usia penggalang SMP/MTs.')
+            ->call('reject');
 
         $scoutGroup->refresh();
         $this->assertEquals(RegistrationStatusEnum::Rejected, $scoutGroup->verification_status);
@@ -920,7 +924,7 @@ class ContingentRegistrationTest extends TestCase
             ->post(route('scout-group.participants.store', $patrol->id), $payload)
             ->assertSessionHasErrors($required);
 
-        foreach (['school_name', 'city', 'graduation_year'] as $column) {
+        foreach (['school_name', 'city'] as $column) {
             $payload = $this->participantPayload();
             $payload['formal_education'][1][$column] = '';
 
@@ -928,6 +932,20 @@ class ContingentRegistrationTest extends TestCase
                 ->post(route('scout-group.participants.store', $patrol->id), $payload)
                 ->assertSessionHasErrors("formal_education.1.$column");
         }
+
+        // Tahun lulus wajib untuk SD, tetapi boleh kosong untuk SMP (peserta masih bersekolah)
+        $payload = $this->participantPayload();
+        $payload['formal_education'][0]['graduation_year'] = '';
+        $this->actingAs($this->scoutGroupUser)
+            ->post(route('scout-group.participants.store', $patrol->id), $payload)
+            ->assertSessionHasErrors('formal_education.0.graduation_year');
+
+        $payload = $this->participantPayload();
+        $payload['formal_education'][1]['graduation_year'] = '';
+        $this->actingAs($this->scoutGroupUser)
+            ->post(route('scout-group.participants.store', $patrol->id), $payload)
+            ->assertSessionDoesntHaveErrors('formal_education.1.graduation_year');
+        Participant::query()->delete();
 
         $this->assertDatabaseCount('participants', 0);
 
@@ -1038,6 +1056,9 @@ class ContingentRegistrationTest extends TestCase
         \Illuminate\Support\Facades\Storage::disk('public')->assertMissing($oldKtaPath);
         \Illuminate\Support\Facades\Storage::disk('public')->assertExists($participant->doc_kta_path);
 
+        // Regu harus tepat 8 peserta (Pinru & Wapinru) sebelum diajukan; satu anggota sudah ada
+        $this->fillPatrolRoster($patrol, existingMembers: 1);
+
         // 3. Uji pengunggahan Berkas Administrasi Pangkalan & Submit via Livewire
         $mandateLetter = \Illuminate\Http\UploadedFile::fake()->create('surat_tugas.pdf', 1024, 'application/pdf');
         $paymentProof = \Illuminate\Http\UploadedFile::fake()->image('bukti_transfer.jpg', 600, 800);
@@ -1118,15 +1139,10 @@ class ContingentRegistrationTest extends TestCase
             ->test(\App\Livewire\Portal\ReviewRegistration::class)
             ->call('attemptSubmit')
             ->assertSet('showIncompleteModal', true)
-            ->assertSee('Anggota Regu Masih Kosong');
+            ->assertSee('Jumlah Anggota Regu Belum 8 Peserta');
 
         // Skenario 3: Lengkapi seluruh persyaratan (peserta, bindamping, surat tugas, bukti bayar)
-        Participant::factory()->create([
-            'patrol_id' => $patrol->id,
-            'full_name' => 'Budi Santoso',
-            'gender' => 'male',
-            'role_in_patrol' => 'patrol_leader',
-        ]);
+        $this->fillPatrolRoster($patrol);
 
         Chaperone::factory()->create([
             'scout_group_id' => $scoutGroup->id,

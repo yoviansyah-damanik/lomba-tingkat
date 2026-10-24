@@ -41,237 +41,66 @@
 
     {{-- Tampilan Ringkasan Berdasarkan Peran Pengguna --}}
     @if($user->isAdmin())
-        {{-- Panel Khusus Administrator --}}
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <x-stat-card
-                label="Verifikasi Berkas"
-                :value="$adminStats['pending_count']"
-                unit="Gudep Menunggu"
-                action-text="Buka Antrean Verifikasi"
-                href="{{ route('admin.scout-groups.index') }}"
-                color="amber"
-                icon="shield-check"
-            />
+        {{-- Statistik Administrator / Superadmin --}}
+        <section class="space-y-3" aria-label="Statistik penyelenggaraan">
+            <h3 class="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Pendaftaran Kontingen</h3>
+            <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <x-stat-card label="Gudep Terdaftar" :value="$adminStats['total_groups']" unit="Pangkalan" description="Seluruh status pendaftaran" color="indigo" icon="building-library" action-text="Direktori Pangkalan" href="{{ route('admin.gudep-directory') }}" />
+                <x-stat-card label="Menunggu Verifikasi" :value="$adminStats['pending_count']" unit="Gudep" action-text="Buka Antrean" href="{{ route('admin.scout-groups.index') }}" color="amber" icon="shield-check" />
+                <x-stat-card label="Terverifikasi" :value="$adminStats['verified_groups']" unit="Gudep" description="Kontingen sah" color="emerald" icon="check-badge" />
+                <x-stat-card label="Perlu Revisi / Ditolak" :value="$adminStats['revision_groups']" unit="Gudep" description="Menunggu perbaikan pangkalan" color="orange" icon="exclamation-triangle" />
+            </div>
 
-            <x-stat-card
-                label="Total Regu Terdaftar"
-                :value="$adminStats['total_patrols']"
-                unit="Regu Putra / Putri"
-                :description="'Dari ' . $adminStats['total_groups'] . ' pangkalan Gudep'"
-                color="emerald"
-                icon="user-group"
-            />
+            <h3 class="pt-2 text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Peserta & Pendamping</h3>
+            <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <x-stat-card label="Regu Terdaftar" :value="$adminStats['total_patrols']" unit="Regu" :description="$adminStats['boys_patrols'].' putra / '.$adminStats['girls_patrols'].' putri'" color="emerald" icon="user-group" />
+                <x-stat-card label="Peserta Penggalang" :value="$adminStats['total_participants']" unit="Orang" :description="$adminStats['boys_participants'].' putra / '.$adminStats['girls_participants'].' putri'" action-text="Direktori Peserta" href="{{ route('admin.participants.index') }}" color="indigo" icon="identification" />
+                <x-stat-card label="Pembina Pendamping" :value="$adminStats['total_chaperones']" unit="Orang" :description="$adminStats['male_chaperones'].' putra / '.$adminStats['female_chaperones'].' putri'" action-text="Direktori Bindamping" href="{{ route('admin.chaperones.index') }}" color="blue" icon="user-circle" />
+                <x-stat-card label="Aparatur" :value="$adminStats['officials_count']" unit="Panitia & Juri" :description="$adminStats['committee_count'].' panitia / '.$adminStats['judge_count'].' juri'" action-text="Kelola Aparatur" href="{{ route('admin.officials.index') }}" color="purple" icon="user-group" />
+            </div>
 
-            <x-stat-card
-                label="Peserta Penggalang"
-                :value="$adminStats['total_participants']"
-                unit="Orang Terdata"
-                action-text="Buka Direktori Peserta"
-                href="{{ route('admin.participants.index') }}"
-                color="indigo"
-                icon="identification"
-            />
-
-            <x-stat-card
-                label="Sesi Jadwal"
-                :value="$adminStats['total_schedules']"
-                unit="Sesi Terjadwal"
-                action-text="Lihat Jadwal & Arena"
-                href="{{ route('admin.schedules.index') }}"
-                color="amber"
-                icon="calendar"
-            />
-        </div>
-
-        {{-- Quick Navigation Actions for Admin --}}
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-4">
-            <a href="{{ route('admin.scout-groups.index') }}" wire:navigate class="flex items-center gap-3.5 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 transition hover:bg-amber-100/60 dark:border-amber-500/20 dark:bg-amber-950/30">
-                <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-600 text-white font-bold">
-                    <flux:icon name="shield-check" class="size-5" />
-                </div>
-                <div>
-                    <h4 class="text-xs font-bold text-amber-950 dark:text-amber-200">Verifikasi Berkas</h4>
-                    <p class="text-[11px] text-amber-800/80 dark:text-amber-300/80">Antrean pendaftaran kontingen</p>
-                </div>
-            </a>
-
-            @if(auth()->user()->isSuperadmin())
-            <a href="{{ route('admin.officials.index') }}" wire:navigate class="flex items-center gap-3.5 rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900">
-                <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                    <flux:icon name="user-group" class="size-5" />
-                </div>
-                <div>
-                    <h4 class="text-xs font-bold text-zinc-900 dark:text-zinc-100">Aparatur Panitia & Juri</h4>
-                    <p class="text-[11px] text-zinc-500">Kelola aparatur & kartu B2</p>
-                </div>
-            </a>
-            @endif
-
-            <a href="{{ route('admin.competitions.index') }}" wire:navigate class="flex items-center gap-3.5 rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900">
-                <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                    <flux:icon name="trophy" class="size-5" />
-                </div>
-                <div>
-                    <h4 class="text-xs font-bold text-zinc-900 dark:text-zinc-100">Mata Lomba & Rubrik</h4>
-                    <p class="text-[11px] text-zinc-500">Format lomba & kriteria penilaian</p>
-                </div>
-            </a>
-
-            <a href="{{ route('attendance.index') }}" wire:navigate class="flex items-center gap-3.5 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 transition hover:bg-emerald-100/60 dark:border-emerald-500/20 dark:bg-emerald-950/30">
-                <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white font-bold">
-                    <flux:icon name="qr-code" class="size-5" />
-                </div>
-                <div>
-                    <h4 class="text-xs font-bold text-emerald-950 dark:text-emerald-200">Presensi & Scanner</h4>
-                    <p class="text-[11px] text-emerald-800/80 dark:text-emerald-300/80">Monitor kehadiran pos arena</p>
-                </div>
-            </a>
-        </div>
+            <h3 class="pt-2 text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Perlombaan & Presensi</h3>
+            <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <x-stat-card label="Sesi Lomba" :value="$adminStats['total_schedules']" unit="Sesi" :description="$adminStats['completed_schedules'].' selesai · '.$adminStats['live_schedules'].' berlangsung'" action-text="Jadwal & Arena" href="{{ route('admin.schedules.index') }}" color="amber" icon="calendar" />
+                <x-stat-card label="Mata Lomba" :value="$adminStats['total_competitions']" unit="Cabang" action-text="Mata Lomba & Rubrik" href="{{ route('admin.competitions.index') }}" color="purple" icon="trophy" />
+                <x-stat-card label="Presensi Hari Ini" :value="$adminStats['attendances_today']" unit="Pemindaian" :description="$adminStats['active_sessions'].' sesi aktif'" action-text="Portal Presensi" href="{{ route('attendance.index') }}" color="emerald" icon="qr-code" />
+                <x-stat-card label="Izin Belum Kembali" :value="$adminStats['outstanding_permissions']" unit="Izin sementara" action-text="Permohonan Izin" href="{{ route('admin.permission-requests.index') }}" color="rose" icon="clipboard-document-check" />
+            </div>
+        </section>
 
     @elseif($user->isCommittee())
-        {{-- Panel Khusus Panitia (Monitor Operasional Lapangan) --}}
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <x-stat-card
-                label="Peran Operasional"
-                value="Pemantauan Lapangan"
-                description="Monitoring absensi pos & ketertiban lomba secara terpusat"
-                color="amber"
-                icon="eye"
-            />
-
-            <x-stat-card
-                label="Regu Sah Siap Tanding"
-                :value="$committeeStats['total_patrols_verified']"
-                unit="Regu Terverifikasi"
-                description="Kontingen resmi tersahkan Admin"
-                color="emerald"
-                icon="user-group"
-            />
-
-            <x-stat-card
-                label="Scanner Kehadiran"
-                :value="$committeeStats['active_sessions']"
-                unit="Sesi Aktif Siap Scan"
-                action-text="Buka Kamera Scanner"
-                href="{{ route('attendance.index') }}"
-                color="emerald"
-                icon="qr-code"
-            />
-        </div>
-
-        {{-- Quick Navigation Actions for Committee --}}
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <a href="{{ route('admin.participants.index') }}" wire:navigate class="flex items-center gap-3.5 rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-amber-400 dark:border-zinc-800 dark:bg-zinc-900">
-                <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
-                    <flux:icon name="academic-cap" class="size-5" />
-                </div>
-                <div>
-                    <h4 class="text-xs font-bold text-zinc-900 dark:text-zinc-100">Direktori Peserta</h4>
-                    <p class="text-[11px] text-zinc-500">Data & kartu digital peserta regu</p>
-                </div>
-            </a>
-
-            <a href="{{ route('admin.chaperones.index') }}" wire:navigate class="flex items-center gap-3.5 rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-amber-400 dark:border-zinc-800 dark:bg-zinc-900">
-                <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
-                    <flux:icon name="user-circle" class="size-5" />
-                </div>
-                <div>
-                    <h4 class="text-xs font-bold text-zinc-900 dark:text-zinc-100">Pembina Pendamping</h4>
-                    <p class="text-[11px] text-zinc-500">Data & kartu identitas pendamping</p>
-                </div>
-            </a>
-
-            <a href="{{ route('admin.scout-groups.index') }}" wire:navigate class="flex items-center gap-3.5 rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-amber-400 dark:border-zinc-800 dark:bg-zinc-900">
-                <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
-                    <flux:icon name="shield-check" class="size-5" />
-                </div>
-                <div>
-                    <h4 class="text-xs font-bold text-zinc-900 dark:text-zinc-100">Pangkalan Gugusdepan</h4>
-                    <p class="text-[11px] text-zinc-500">Daftar kontingen & berkas pendaftaran</p>
-                </div>
-            </a>
-        </div>
+        {{-- Statistik Panitia (monitor operasional lapangan) --}}
+        <section class="space-y-3" aria-label="Statistik operasional">
+            <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <x-stat-card label="Sesi Presensi Aktif" :value="$committeeStats['active_sessions']" unit="Sesi" :description="'Dari '.$committeeStats['total_sessions'].' sesi yang dapat diakses'" action-text="Buka Pemindai" href="{{ route('attendance.index') }}" color="emerald" icon="qr-code" />
+                <x-stat-card label="Presensi Hari Ini" :value="$committeeStats['attendances_today']" unit="Pemindaian" description="Seluruh sesi yang Anda akses" color="amber" icon="clipboard-document-list" />
+                <x-stat-card label="Sesi Lomba Hari Ini" :value="$committeeStats['schedules_today']" unit="Sesi" :description="$committeeStats['live_schedules'].' sedang berlangsung'" action-text="Lihat Jadwal" href="{{ route('agenda.index') }}" color="indigo" icon="calendar-days" />
+                <x-stat-card label="Regu Sah" :value="$committeeStats['total_patrols_verified']" unit="Regu terverifikasi" description="Kontingen resmi tersahkan" color="emerald" icon="user-group" />
+                <x-stat-card label="Peserta Terverifikasi" :value="$committeeStats['verified_participants']" unit="Orang" action-text="Direktori Peserta" href="{{ route('admin.participants.index') }}" color="blue" icon="academic-cap" />
+                <x-stat-card label="Pembina Terverifikasi" :value="$committeeStats['verified_chaperones']" unit="Orang" action-text="Direktori Bindamping" href="{{ route('admin.chaperones.index') }}" color="purple" icon="user-circle" />
+                <x-stat-card label="Verifikasi Identitas" value="Pindai QR" description="Periksa kartu peserta, bindamping, panitia, dan juri" action-text="Buka Verifikasi" href="{{ route('admin.identity-verification.index') }}" color="amber" icon="viewfinder-circle" />
+                <x-stat-card label="Rekap Presensi" value="Laporan Kehadiran" description="Rekap kehadiran per sesi" action-text="Buka Rekap" href="{{ route('attendance.recap') }}" color="indigo" icon="clipboard-document-check" />
+            </div>
+        </section>
 
     @elseif($user->isJudge())
-        {{-- Panel Khusus Juri --}}
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <x-stat-card
-                label="Rubrik Juknis Lomba"
-                :value="$judgeStats['total_competitions']"
-                unit="Mata Lomba"
-                action-text="Pelajari Standar Nilai"
-                href="{{ route('competitions') }}"
-                color="amber"
-                icon="document-text"
-            />
-
-            <x-stat-card
-                label="Jadwal Sesi Penjurian"
-                :value="$judgeStats['assigned_sessions']"
-                unit="Sesi Ditugaskan"
-                action-text="Buka Cockpit Penjurian"
-                href="{{ route('judge.index') }}"
-                color="indigo"
-                icon="clock"
-            />
-
-            <x-stat-card
-                label="Sistem Penilaian"
-                value="Blind Scoring Aktif"
-                description="Identitas nomor undian acak menggantikan nama sekolah"
-                color="emerald"
-                icon="shield-check"
-            />
-        </div>
-
-        {{-- Quick Navigation Actions for Judge --}}
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-4">
-            <a href="{{ route('judge.index') }}" wire:navigate class="flex items-center gap-3.5 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 transition hover:bg-amber-100/60 dark:border-amber-500/20 dark:bg-amber-950/30">
-                <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-600 text-white font-bold">
-                    <flux:icon name="pencil-square" class="size-5" />
-                </div>
-                <div>
-                    <h4 class="text-xs font-bold text-amber-950 dark:text-amber-200">Cockpit Penjurian</h4>
-                    <p class="text-[11px] text-amber-800/80 dark:text-amber-300/80">Input nilai rubrik blind scoring</p>
-                </div>
-            </a>
-
-            <a href="{{ route('admin.participants.index') }}" wire:navigate class="flex items-center gap-3.5 rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-amber-400 dark:border-zinc-800 dark:bg-zinc-900">
-                <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
-                    <flux:icon name="academic-cap" class="size-5" />
-                </div>
-                <div>
-                    <h4 class="text-xs font-bold text-zinc-900 dark:text-zinc-100">Direktori Peserta</h4>
-                    <p class="text-[11px] text-zinc-500">Pengecekan data peserta regu</p>
-                </div>
-            </a>
-
-            <a href="{{ route('admin.chaperones.index') }}" wire:navigate class="flex items-center gap-3.5 rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-amber-400 dark:border-zinc-800 dark:bg-zinc-900">
-                <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
-                    <flux:icon name="user-circle" class="size-5" />
-                </div>
-                <div>
-                    <h4 class="text-xs font-bold text-zinc-900 dark:text-zinc-100">Pembina Pendamping</h4>
-                    <p class="text-[11px] text-zinc-500">Daftar pembina pendamping</p>
-                </div>
-            </a>
-
-            <a href="{{ route('admin.scout-groups.index') }}" wire:navigate class="flex items-center gap-3.5 rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-amber-400 dark:border-zinc-800 dark:bg-zinc-900">
-                <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
-                    <flux:icon name="shield-check" class="size-5" />
-                </div>
-                <div>
-                    <h4 class="text-xs font-bold text-zinc-900 dark:text-zinc-100">Pangkalan Gugusdepan</h4>
-                    <p class="text-[11px] text-zinc-500">Daftar kontingen pangkalan sekolah</p>
-                </div>
-            </a>
-        </div>
+        {{-- Statistik Dewan Juri --}}
+        <section class="space-y-3" aria-label="Statistik penjurian">
+            <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <x-stat-card label="Sesi Ditugaskan" :value="$judgeStats['assigned_sessions']" unit="Sesi" :description="$judgeStats['completed_sessions'].' sesi selesai'" action-text="Buka Cockpit Penjurian" href="{{ route('judge.index') }}" color="indigo" icon="clock" />
+                <x-stat-card label="Lomba Akan Datang" :value="$judgeStats['upcoming_sessions']" unit="Sesi" description="Belum selesai" color="amber" icon="calendar-days" />
+                <x-stat-card label="Sesi Hari Ini" :value="$judgeStats['sessions_today']" unit="Sesi" description="Jadwal penjurian Anda hari ini" color="emerald" icon="calendar" />
+                <x-stat-card label="Nilai Final Saya" :value="$judgeStats['finalized_scores']" unit="Penilaian" :description="$judgeStats['draft_scores'].' masih draf'" color="emerald" icon="clipboard-document-check" />
+                <x-stat-card label="Rubrik Juknis Lomba" :value="$judgeStats['total_competitions']" unit="Mata Lomba" action-text="Pelajari Standar Nilai" href="{{ route('competitions') }}" color="amber" icon="document-text" />
+                <x-stat-card label="Presensi Pos Aktif" :value="$judgeStats['active_attendance_sessions']" unit="Sesi" action-text="Portal Presensi" href="{{ route('attendance.index') }}" color="blue" icon="qr-code" />
+                <x-stat-card label="Sistem Penilaian" value="Blind Scoring" description="Nomor undian acak menggantikan identitas regu" color="indigo" icon="shield-check" />
+                <x-stat-card label="Kartu Digital" value="ID Card Juri" description="Tunjukkan QR Code saat bertugas" action-text="Buka Kartu" href="{{ route('digital-card.index') }}" color="purple" icon="qr-code" />
+            </div>
+        </section>
 
     @elseif($user->isScoutGroup())
         @php
-            $patrolsCount = $scoutGroup?->patrols?->count() ?? 0;
-            $participantsCount = $scoutGroup ? $scoutGroup->patrols->sum(fn($p) => $p->participants->count()) : 0;
-            $chaperonesCount = $scoutGroup?->chaperones?->count() ?? 0;
+            $gs = $groupStats;
         @endphp
 
         {{-- Revision Notes Alert if any --}}
@@ -283,62 +112,38 @@
                 </strong>
                 <p class="mt-1.5 leading-relaxed pl-5.5">{{ $scoutGroup->revision_notes }}</p>
                 <div class="mt-3 pl-5.5">
-                    <a href="{{ route('scout-group.index') }}" wire:navigate class="inline-flex items-center rounded-lg bg-orange-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-700">
-                        Perbaiki Data Sekarang &rarr;
-                    </a>
+                    <flux:button href="{{ route('scout-group.index') }}" wire:navigate size="xs" variant="primary" icon-trailing="arrow-right">Perbaiki Data Sekarang</flux:button>
                 </div>
             </div>
         @endif
 
-        {{-- Panel Khusus Gugus Depan --}}
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <x-stat-card
-                label="Status Berkas"
-                action-text="Buka Portal Pangkalan"
-                href="{{ route('scout-group.index') }}"
-                color="amber"
-                icon="identification"
-            >
-                <div class="mt-2">
-                    <span class="inline-flex items-center rounded-lg border px-2.5 py-0.5 text-xs font-bold {{ $scoutGroup?->verification_status?->badgeClasses() ?? 'bg-zinc-100 text-zinc-700' }}">
-                        {{ $scoutGroup?->verification_status?->label() ?? 'Belum Terdaftar' }}
-                    </span>
-                </div>
-            </x-stat-card>
-
-            <x-stat-card
-                label="Regu Terdaftar"
-                :value="$patrolsCount"
-                unit="Regu (Putra/Putri)"
-                action-text="Kelola Regu"
-                href="{{ route('scout-group.patrols') }}"
-                color="emerald"
-                icon="user-group"
-            />
-
-            <x-stat-card
-                label="Anggota Peserta"
-                :value="$participantsCount"
-                unit="Peserta Penggalang"
-                description="Pinru, Wapinru & Anggota"
-                color="indigo"
-                icon="user"
-            />
-
-            <x-stat-card
-                label="Bindamping"
-                :value="$chaperonesCount"
-                unit="Orang Pembina"
-                action-text="Kelola Bindamping"
-                href="{{ route('scout-group.chaperones') }}"
-                color="blue"
-                icon="user-circle"
-            />
-        </div>
-
+        {{-- Statistik Gugus Depan --}}
+        <section class="space-y-3" aria-label="Statistik kontingen">
+            <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <x-stat-card label="Status Berkas" action-text="Buka Portal Pangkalan" href="{{ route('scout-group.index') }}" color="amber" icon="identification">
+                    <div class="mt-2">
+                        <span class="inline-flex items-center rounded-lg border px-2.5 py-0.5 text-xs font-bold {{ $scoutGroup?->verification_status?->badgeClasses() ?? 'bg-zinc-100 text-zinc-700 border-zinc-200' }}">
+                            {{ $scoutGroup?->verification_status?->label() ?? 'Belum Terdaftar' }}
+                        </span>
+                    </div>
+                </x-stat-card>
+                <x-stat-card label="Regu Terdaftar" :value="$gs['patrols'] ?? 0" unit="Regu" :description="($gs['boys_patrols'] ?? 0).' putra / '.($gs['girls_patrols'] ?? 0).' putri'" action-text="Kelola Regu" href="{{ route('scout-group.patrols') }}" color="emerald" icon="user-group" />
+                <x-stat-card label="Regu Lengkap" :value="($gs['full_patrols'] ?? 0).' / '.($gs['patrols'] ?? 0)" unit="Regu" description="8 peserta + Pinru & Wapinru" color="indigo" icon="check-circle" />
+                <x-stat-card label="Anggota Peserta" :value="($gs['participants'] ?? 0).' / '.($gs['participants_target'] ?? 0)" unit="Peserta" description="Terisi dari target 8 per regu" color="blue" icon="user" />
+                <x-stat-card label="Berkas Peserta Lengkap" :value="($gs['docs_complete'] ?? 0).' / '.($gs['participants'] ?? 0)" unit="Peserta" description="Pas foto + 7 dokumen" color="purple" icon="document-check" />
+                <x-stat-card label="Bindamping" :value="$gs['chaperones'] ?? 0" unit="Orang" action-text="Kelola Bindamping" href="{{ route('scout-group.chaperones') }}" color="blue" icon="user-circle" />
+                @include('livewire.partials.ranking-cards', ['rankings' => $rankings])
+                @include('livewire.partials.achievement-card', ['achievements' => $achievements])
+                <x-stat-card label="Nilai Lomba" :value="$gs['scored_competitions'] ?? 0" unit="Lomba dinilai" description="Nilai final regu Anda" action-text="Lihat Penilaian Regu" href="{{ route('team-assessment.index') }}" color="amber" icon="trophy" />
+                <x-stat-card label="Sesi Berikutnya" :value="isset($gs['next_schedule']) && $gs['next_schedule'] ? $gs['next_schedule']->start_time->timezone('Asia/Jakarta')->format('H:i') : '-'" :description="isset($gs['next_schedule']) && $gs['next_schedule'] ? $gs['next_schedule']->session_name : 'Belum ada sesi terjadwal'" action-text="Lihat Jadwal" href="{{ route('agenda.index') }}" color="emerald" icon="clock" />
+            </div>
+        </section>
     @else
         {{-- Panel Peserta & Bindamping --}}
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            @include('livewire.partials.ranking-cards', ['rankings' => $rankings])
+            @include('livewire.partials.achievement-card', ['achievements' => $achievements])
+
             @if($user->isParticipant())
                 <x-stat-card
                     label="Identitas Peserta Regu"
@@ -371,6 +176,27 @@
             />
         </div>
     @endif
+
+    {{-- Informasi penting menurut peran: tindak lanjut Administrator, kemajuan pendaftaran Gugus Depan --}}
+    @if($user->isAdmin())
+        <livewire:home.admin-attention-panel lazy />
+    @elseif($user->isScoutGroup())
+        <livewire:home.group-progress-panel lazy />
+    @endif
+
+    {{-- Khusus Dewan Juri: lomba yang akan datang pada penugasannya --}}
+    @if($user->isJudge())
+        <livewire:home.judge-upcoming-panel lazy />
+    @endif
+
+    {{-- Agenda dan pengumuman terbaru untuk seluruh peran --}}
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <livewire:home.agenda-panel lazy />
+        <livewire:home.announcements-panel lazy />
+    </div>
+
+    {{-- Pintasan menu per grup fungsi (sama dengan sidebar) --}}
+    <x-dashboard.shortcuts :groups="$menuGroups" />
 
     {{-- Seksi Informasi Kegiatan & Navigasi Cepat --}}
     <div class="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">

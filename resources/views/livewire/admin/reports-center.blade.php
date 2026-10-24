@@ -61,7 +61,7 @@
                         Berita Acara Penetapan Juara Umum & Peringkat Prestasi
                     </h3>
                     <p class="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5 leading-relaxed max-w-2xl">
-                        Format siap cetak (A4 PDF) mencantumkan peringkat regu putra dan regu putri (terpisah), perolehan medali, serta regu berprestasi tinggi putra & putri, serta ruang pengesahan tanda tangan Dewan Juri, Panitia, dan Pimpinan Kwarcab.
+                        Format siap cetak (A4 PDF) mencantumkan peringkat regu putra dan regu putri (terpisah), perolehan prestasi, serta regu berprestasi tinggi putra & putri, serta ruang pengesahan tanda tangan Dewan Juri, Panitia, dan Pimpinan Kwarcab.
                     </p>
                 </div>
             </div>
@@ -177,7 +177,7 @@
                             Rekap Nilai Seluruh Cabang Lomba
                         </h4>
                         <p class="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 leading-relaxed">
-                            Rincian skor akhir setiap regu per mata lomba, nama juri penilai, predikat medali (Emas, Perak, Perunggu), dan catatan dewan juri.
+                            Rincian skor akhir setiap regu per mata lomba, nama juri penilai, predikat prestasi (Tinggi, Baik, Cukup), dan catatan dewan juri.
                         </p>
                     </div>
                 </div>
@@ -199,10 +199,10 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-100 dark:border-zinc-800 pb-4">
             <div>
                 <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
-                    Ekspor Klasemen Akumulasi Medali & Poin
+                    Ekspor Klasemen Akumulasi Prestasi
                 </h4>
                 <p class="text-xs text-zinc-400 mt-0.5">
-                    Pilih kategori regu untuk mengunduh rekap ranking dan poin kejuaraan
+                    Pilih kategori regu untuk mengunduh rekap ranking kejuaraan
                 </p>
             </div>
 
@@ -226,7 +226,7 @@
 
         <div class="text-[11px] text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
             <flux:icon name="information-circle" class="size-4 text-amber-500 shrink-0" />
-            <span>Rumus Poin Prestasi Standar: Emas = 5 Poin, Perak = 3 Poin, Perunggu = 1 Poin. Tie-break dihitung otomatis berdasarkan medali tertinggi.</span>
+            <span>Peringkat umum ditentukan jumlah medali secara berurutan: Prestasi Tinggi terbanyak, lalu Prestasi Baik terbanyak, lalu Prestasi Cukup terbanyak.</span>
         </div>
     </div>
 </div>

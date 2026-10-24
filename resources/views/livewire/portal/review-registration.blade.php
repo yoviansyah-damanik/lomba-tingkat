@@ -102,6 +102,8 @@
             @endif
         </div>
 
+        @include('livewire.portal.partials.section-warning', ['items' => $this->sectionWarnings['profile'] ?? []])
+
         <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 text-xs">
             <div>
                 <span class="text-zinc-400 block">Nama Pangkalan:</span>
@@ -133,6 +135,10 @@
             @endif
         </div>
 
+        @if($scoutGroup->patrols->isEmpty())
+            @include('livewire.portal.partials.section-warning', ['items' => $this->sectionWarnings['patrols'] ?? [], 'title' => 'Belum ada regu terdaftar'])
+        @endif
+
         <div class="mt-4 space-y-6">
             @forelse($scoutGroup->patrols as $patrol)
                 <div class="rounded-xl border border-zinc-200/60 p-4 dark:border-zinc-800">
@@ -154,7 +160,9 @@
                         </div>
                     </div>
 
-                    <div class="overflow-x-auto">
+                    @include('livewire.portal.partials.section-warning', ['messages' => array_map('ucfirst', $scoutGroup->rosterProblemsFor($patrol)), 'title' => 'Regu ini belum memenuhi persyaratan'])
+
+                    <div class="mt-3 overflow-x-auto">
                         <table class="w-full text-left text-xs">
                             <thead class="border-b border-zinc-100 bg-zinc-50 text-zinc-500 uppercase dark:border-zinc-800 dark:bg-zinc-800/40">
                                 <tr>
@@ -207,6 +215,8 @@
             @endif
         </div>
 
+        @include('livewire.portal.partials.section-warning', ['items' => $this->sectionWarnings['chaperones'] ?? []])
+
         <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             @forelse($scoutGroup->chaperones as $chaperone)
                 <div class="rounded-xl border border-zinc-100 bg-zinc-50/50 p-3.5 text-xs dark:border-zinc-800 dark:bg-zinc-800/40">
@@ -229,12 +239,15 @@
             </div>
         </div>
 
+        @include('livewire.portal.partials.section-warning', ['messages' => $this->participantDocumentWarnings, 'title' => 'Berkas persyaratan peserta belum lengkap'])
+
         {{-- 4a. Berkas Pangkalan --}}
         <div class="mb-6">
             <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-3">Berkas Pangkalan</h4>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {{-- Surat Tugas / Mandat --}}
-                <div class="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50/50 p-3.5 dark:border-zinc-800 dark:bg-zinc-800/30">
+                <div class="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-zinc-50/50 p-3.5 dark:border-zinc-800 dark:bg-zinc-800/30">
+                  <div class="flex items-center justify-between gap-3">
                     <div class="flex items-center gap-2.5 min-w-0">
                         <div class="flex size-8 shrink-0 items-center justify-center rounded-lg {{ $scoutGroup->mandate_letter_path ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-400 dark:bg-zinc-800' }}">
                             <flux:icon name="{{ $scoutGroup->mandate_letter_path ? 'document-check' : 'document-arrow-up' }}" class="size-4" />
@@ -247,15 +260,17 @@
                         </div>
                     </div>
                     @if($scoutGroup->mandate_letter_path)
-                        <a href="{{ asset('storage/' . $scoutGroup->mandate_letter_path) }}" target="_blank"
-                           class="shrink-0 inline-flex items-center gap-1 rounded-lg bg-zinc-100 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600 transition-colors">
-                            <flux:icon name="eye" class="size-3.5" /> Lihat
-                        </a>
+                        <x-file-viewer-trigger :path="$scoutGroup->mandate_letter_path" title="Surat Tugas / Mandat Gugus Depan" label="Lihat" />
                     @endif
+                  </div>
+                  @if($scoutGroup->mandate_letter_path)
+                      <x-file-preview :path="$scoutGroup->mandate_letter_path" title="Surat Tugas / Mandat Gugus Depan" />
+                  @endif
                 </div>
 
                 {{-- Bukti Pembayaran --}}
-                <div class="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50/50 p-3.5 dark:border-zinc-800 dark:bg-zinc-800/30">
+                <div class="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-zinc-50/50 p-3.5 dark:border-zinc-800 dark:bg-zinc-800/30">
+                  <div class="flex items-center justify-between gap-3">
                     <div class="flex items-center gap-2.5 min-w-0">
                         <div class="flex size-8 shrink-0 items-center justify-center rounded-lg {{ $scoutGroup->payment_proof_path ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-400 dark:bg-zinc-800' }}">
                             <flux:icon name="{{ $scoutGroup->payment_proof_path ? 'document-check' : 'receipt-percent' }}" class="size-4" />
@@ -268,11 +283,12 @@
                         </div>
                     </div>
                     @if($scoutGroup->payment_proof_path)
-                        <a href="{{ asset('storage/' . $scoutGroup->payment_proof_path) }}" target="_blank"
-                           class="shrink-0 inline-flex items-center gap-1 rounded-lg bg-zinc-100 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600 transition-colors">
-                            <flux:icon name="eye" class="size-3.5" /> Lihat
-                        </a>
+                        <x-file-viewer-trigger :path="$scoutGroup->payment_proof_path" title="Bukti Pembayaran Biaya Pendaftaran" label="Lihat" />
                     @endif
+                  </div>
+                  @if($scoutGroup->payment_proof_path)
+                      <x-file-preview :path="$scoutGroup->payment_proof_path" title="Bukti Pembayaran Biaya Pendaftaran" />
+                  @endif
                 </div>
             </div>
         </div>
@@ -309,10 +325,7 @@
                                             {{ $participant->role_in_patrol?->label() }}
                                         </span>
                                         @if($participant->photo_path)
-                                            <a href="{{ asset('storage/' . $participant->photo_path) }}" target="_blank"
-                                               class="text-[10px] inline-flex items-center gap-0.5 text-blue-600 hover:underline dark:text-blue-400">
-                                                <flux:icon name="photo" class="size-3" /> Foto
-                                            </a>
+                                            <x-file-viewer-trigger :path="$participant->photo_path" :title="'Pas Foto — '.$participant->full_name" label="Foto" />
                                         @else
                                             <span class="text-[10px] text-zinc-400">Foto belum ada</span>
                                         @endif
@@ -341,10 +354,7 @@
                                         {{ Str::after($label, 'Scan ') }}
                                     </span>
                                     @if($filePath)
-                                        <a href="{{ asset('storage/' . $filePath) }}" target="_blank"
-                                           class="text-[10px] text-emerald-600 hover:underline dark:text-emerald-400 font-semibold">
-                                            Lihat
-                                        </a>
+                                        <x-file-viewer-trigger :path="$filePath" :title="Str::after($label, 'Scan ').' — '.$participant->full_name" label="Lihat" />
                                     @else
                                         <span class="text-[10px] text-zinc-400">Belum</span>
                                     @endif
@@ -387,10 +397,7 @@
                                 </div>
                             </div>
                             @if($chaperone->photo_path)
-                                <a href="{{ asset('storage/' . $chaperone->photo_path) }}" target="_blank"
-                                   class="shrink-0 inline-flex items-center gap-1 rounded-lg bg-zinc-100 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600 transition-colors">
-                                    <flux:icon name="eye" class="size-3.5" /> Lihat Foto
-                                </a>
+                                <x-file-viewer-trigger :path="$chaperone->photo_path" :title="'Foto Pembina Pendamping — '.$chaperone->full_name" label="Lihat Foto" />
                             @endif
                         </div>
                     @endforeach
@@ -406,6 +413,8 @@
                 <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100">5. Berkas Administrasi Pangkalan</h3>
                 <p class="text-xs text-zinc-500 mt-0.5">Unggah Surat Tugas / Mandat dan Bukti Pembayaran sebelum mengajukan. Biaya pendaftaran dihitung berdasarkan jumlah regu terdaftar.</p>
             </div>
+
+            @include('livewire.portal.partials.section-warning', ['items' => $this->sectionWarnings['documents'] ?? [], 'title' => 'Berkas administrasi belum lengkap'])
 
             {{-- Panel Penjelasan Biaya Pendaftaran Per Regu & Rekening Kwarcab --}}
             <div class="mb-6 rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/70 via-white to-amber-50/30 p-5 dark:border-amber-500/20 dark:from-zinc-900 dark:via-zinc-900 dark:to-amber-950/20">
@@ -484,25 +493,25 @@
                     <div class="flex items-center justify-between mb-1">
                         <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Surat Tugas / Mandat Gugus Depan</label>
                         @if($scoutGroup->mandate_letter_path)
-                            <a href="{{ asset('storage/' . $scoutGroup->mandate_letter_path) }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400"><flux:icon name="document-check" class="size-3.5" /> Lihat Berkas</a>
+                            <x-file-viewer-trigger :path="$scoutGroup->mandate_letter_path" title="Surat Tugas / Mandat Gugus Depan" label="Lihat Berkas" />
                         @else
                             <span class="text-[10px] text-zinc-400">Belum diunggah</span>
                         @endif
                     </div>
-                    <p class="text-[11px] text-zinc-500 mb-2">Surat penugasan resmi dari Gugus Depan untuk mengikuti LT III.</p>
-                    <input type="file" wire:model="mandate_letter" accept=".pdf,image/png,image/jpeg,image/jpg" class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300">
+                    <p class="text-[11px] text-zinc-500 mb-2">Surat penugasan resmi dari Gugus Depan untuk mengikuti LT III (format PDF).</p>
+                    <input type="file" wire:model="mandate_letter" accept=".pdf,application/pdf" class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300">
                     @error('mandate_letter') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                 </div>
                 <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
                     <div class="flex items-center justify-between mb-1">
                         <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Bukti Pembayaran Biaya Pendaftaran</label>
                         @if($scoutGroup->payment_proof_path)
-                            <a href="{{ asset('storage/' . $scoutGroup->payment_proof_path) }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400"><flux:icon name="document-check" class="size-3.5" /> Lihat Berkas</a>
+                            <x-file-viewer-trigger :path="$scoutGroup->payment_proof_path" title="Bukti Pembayaran Biaya Pendaftaran" label="Lihat Berkas" />
                         @else
                             <span class="text-[10px] text-zinc-400">Belum diunggah</span>
                         @endif
                     </div>
-                    <p class="text-[11px] text-zinc-500 mb-2">Unggah struk/bukti transfer sejumlah <strong>{{ $billingSummary['formatted_total_fee'] }}</strong> ({{ $billingSummary['patrol_count'] }} regu).</p>
+                    <p class="text-[11px] text-zinc-500 mb-2">Unggah struk/bukti transfer (PDF atau gambar) sejumlah <strong>{{ $billingSummary['formatted_total_fee'] }}</strong> ({{ $billingSummary['patrol_count'] }} regu).</p>
                     <input type="file" wire:model="payment_proof" accept=".pdf,image/png,image/jpeg,image/jpg" class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300">
                     @error('payment_proof') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                 </div>
@@ -698,4 +707,6 @@
             </div>
         </div>
     </flux:modal>
+
+    <x-file-viewer />
 </div>

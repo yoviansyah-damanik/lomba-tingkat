@@ -25,6 +25,9 @@ return new class extends Migration
             $table->text('revision_notes')->nullable();
             $table->foreignUuid('verified_by')->nullable()->constrained('users')->nullOnDelete();
             $table->dateTime('verified_at')->nullable();
+            $table->uuid('invitation_id')->nullable()->index();
+            $table->string('registered_ip', 45)->nullable();
+            $table->string('registered_user_agent', 500)->nullable();
             $table->timestamps();
 
             $table->index(['verification_status', 'created_at']);

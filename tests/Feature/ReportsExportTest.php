@@ -245,7 +245,7 @@ class ReportsExportTest extends TestCase
             $this->assertStringContainsString('Lomba Tingkat III', $html);
             $this->assertStringContainsString('Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan', $html);
             $this->assertStringContainsString('Tahun ', $html);
-            $this->assertStringContainsString('logo.png', $html);
+            $this->assertStringContainsString('logo-256.png', $html);
         }
 
         $berita = view('reports.berita-acara-pdf', $data)->render();

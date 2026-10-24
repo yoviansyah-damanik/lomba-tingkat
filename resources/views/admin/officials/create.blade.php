@@ -95,6 +95,7 @@
                             </div>
                         </label>
                     </div>
+                    @include('admin.officials.partials.administrator-toggle')
                 </div>
             </div>
 

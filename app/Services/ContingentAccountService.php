@@ -24,27 +24,43 @@ class ContingentAccountService
     /**
      * Buat akun yang belum ada untuk seluruh bindamping dan peserta gugus depan.
      *
+     * @param  (callable(int, int): void)|null  $onProgress  dipanggil setelah tiap akun diproses: (selesai, total)
      * @return array{chaperones: int, participants: int, skipped: int}
      */
-    public function provision(ScoutGroup $group): array
+    public function provision(ScoutGroup $group, ?callable $onProgress = null): array
     {
         $result = ['chaperones' => 0, 'participants' => 0, 'skipped' => 0];
 
-        foreach ($group->chaperones()->get() as $chaperone) {
+        $chaperones = $group->chaperones()->get();
+        $patrols = $group->patrols()->with('participants')->get();
+
+        $total = $chaperones->count() + $patrols->sum(fn ($patrol) => $patrol->participants->count());
+        $done = 0;
+        $advance = function () use (&$done, $total, $onProgress) {
+            $done++;
+
+            if ($onProgress) {
+                $onProgress($done, $total);
+            }
+        };
+
+        foreach ($chaperones as $chaperone) {
             match ($this->provisionChaperone($group, $chaperone)) {
                 'created' => $result['chaperones']++,
                 'skipped' => $result['skipped']++,
                 default => null,
             };
+            $advance();
         }
 
-        foreach ($group->patrols()->with('participants')->get() as $patrol) {
+        foreach ($patrols as $patrol) {
             foreach ($patrol->participants as $participant) {
                 match ($this->provisionParticipant($participant)) {
                     'created' => $result['participants']++,
                     'skipped' => $result['skipped']++,
                     default => null,
                 };
+                $advance();
             }
         }
 

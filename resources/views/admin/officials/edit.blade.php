@@ -104,6 +104,7 @@
                             </div>
                         </label>
                     </div>
+                    @include('admin.officials.partials.administrator-toggle', ['checked' => in_array('admin', $currentRoles)])
                 </div>
 
             </div>

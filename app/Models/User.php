@@ -188,6 +188,30 @@ class User extends Authenticatable implements PasskeyUser
     }
 
     /**
+     * Pengecekan penunjukan Administrator secara eksplisit (tanpa pewarisan dari Superadmin)
+     */
+    public function isAdministrator(): bool
+    {
+        return $this->roles->contains('name', \App\Enums\RoleEnum::Admin->value);
+    }
+
+    /**
+     * ID untuk kolom pelaku pada data non-audit (penulis, pembuat): null bila bertindak sebagai Administrator
+     */
+    public function recordableId(): ?string
+    {
+        return $this->isAdministrator() ? null : $this->id;
+    }
+
+    /**
+     * Administrator yang tidak merangkap Juri: hanya memantau, tidak menilai
+     */
+    public function isAdminOnly(): bool
+    {
+        return $this->isAdmin() && ! $this->isJudge();
+    }
+
+    /**
      * Helper cepat pengecekan role Panitia
      */
     public function isCommittee(): bool
@@ -339,7 +363,12 @@ class User extends Authenticatable implements PasskeyUser
         }
 
         if ($this->isAdmin()) {
-            return 'Administrator';
+            $duties = array_filter([
+                $this->isCommittee() ? 'Panitia' : null,
+                $this->isJudge() ? 'Juri' : null,
+            ]);
+
+            return $duties === [] ? 'Administrator' : implode(', ', $duties).' & Administrator';
         }
 
         if ($this->isCommitteeAndJudge()) {

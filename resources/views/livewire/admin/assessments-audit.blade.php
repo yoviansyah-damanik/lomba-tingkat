@@ -226,6 +226,9 @@
                                 <td class="p-3.5">
                                     <div class="font-bold text-zinc-900 dark:text-zinc-100">{{ $log->user?->name ?? 'Sistem' }}</div>
                                     <span class="text-[10px] text-zinc-400">{{ $log->user?->username ?? '-' }}</span>
+                                    @if($log->acting_role === 'admin')
+                                        <span class="mt-1 block w-fit rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950 dark:text-amber-300">Administrator</span>
+                                    @endif
                                 </td>
                                 <td class="p-3.5">
                                     @php

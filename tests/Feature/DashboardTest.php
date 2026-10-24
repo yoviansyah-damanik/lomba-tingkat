@@ -31,8 +31,8 @@ class DashboardTest extends TestCase
 
         $response = $this->actingAs($admin)->get(route('dashboard'));
         $response->assertOk();
-        $response->assertSee('Verifikasi Berkas');
-        $response->assertSee('Total Regu Terdaftar');
+        $response->assertSee('Menunggu Verifikasi');
+        $response->assertSee('Regu Terdaftar');
         $response->assertSee('Peserta Penggalang');
         $response->assertSee('Waktu Server Resmi');
     }
@@ -57,8 +57,8 @@ class DashboardTest extends TestCase
 
         $response = $this->actingAs($committee)->get(route('dashboard'));
         $response->assertOk();
-        $response->assertSee('Pemantauan Lapangan');
-        $response->assertSee('Regu Sah Siap Tanding');
+        $response->assertSee('Sesi Presensi Aktif');
+        $response->assertSee('Regu Sah');
     }
 
     public function test_judge_sees_judge_dashboard(): void
@@ -69,7 +69,8 @@ class DashboardTest extends TestCase
         $response = $this->actingAs($judge)->get(route('dashboard'));
         $response->assertOk();
         $response->assertSee('Rubrik Juknis Lomba');
-        $response->assertSee('Blind Scoring Aktif');
+        $response->assertSee('Sesi Ditugaskan');
+        $response->assertSee('Blind Scoring');
     }
 
     public function test_participant_sees_participant_dashboard(): void

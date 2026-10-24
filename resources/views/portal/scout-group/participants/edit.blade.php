@@ -167,9 +167,9 @@
                                     name="blood_type" required
                                     class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs sm:text-sm text-zinc-900 shadow-sm focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                                 >
-                                    <option value="">-</option>
-                                    @foreach(['A', 'B', 'AB', 'O'] as $bt)
-                                        <option value="{{ $bt }}" {{ old('blood_type', $participant->blood_type) === $bt ? 'selected' : '' }}>{{ $bt }}</option>
+                                    <option value="">-- Pilih --</option>
+                                    @foreach(\App\Support\BloodType::OPTIONS as $bt => $btLabel)
+                                        <option value="{{ $bt }}" {{ old('blood_type', $participant->blood_type) === $bt ? 'selected' : '' }}>{{ $btLabel }}</option>
                                     @endforeach
                                 </select>
                                 @error('blood_type') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
@@ -441,9 +441,9 @@
                                     <td class="py-2.5 px-3">
                                         <input
                                             type="text"
-                                            name="formal_education[{{ $i }}][graduation_year]" required
-                                            value="{{ old("formal_education.$i.graduation_year", $edu['graduation_year'] ?? '') }}"
-                                            placeholder="Tahun..."
+                                            name="formal_education[{{ $i }}][graduation_year]" @if(($edu['level'] ?? '') === 'SMP') readonly @else required @endif
+                                            value="{{ ($edu['level'] ?? '') === 'SMP' ? '' : old("formal_education.$i.graduation_year", $edu['graduation_year'] ?? '') }}"
+                                            placeholder="{{ ($edu['level'] ?? '') === 'SMP' ? 'Masih bersekolah' : 'Tahun...' }}"
                                             class="w-full rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                                         >
                                     </td>
@@ -617,7 +617,7 @@
                         <input
                             type="text"
                             name="scout_penggalang[group_number]"
-                            value="{{ old('scout_penggalang.group_number', $scoutPenggalang['group_number'] ?: $patrol->group_number) }}"
+                            value="{{ $patrol->group_number }}" readonly
                             class="w-full rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                         >
                     </div>
@@ -628,7 +628,7 @@
                         <input
                             type="text"
                             name="scout_penggalang[pangkalan]"
-                            value="{{ old('scout_penggalang.pangkalan', $scoutPenggalang['pangkalan'] ?: $scoutGroup->school_name) }}"
+                            value="{{ $scoutGroup->school_name }}" readonly
                             class="w-full rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                         >
                     </div>
@@ -751,7 +751,7 @@
                     <div>
                         <span class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Bagian 6</span>
                         <h2 class="text-base font-bold text-zinc-900 dark:text-zinc-100">Berkas Persyaratan Peserta</h2>
-                        <p class="text-xs text-zinc-500 mt-0.5">Unggah atau perbarui berkas dokumen persyaratan peserta dalam format PDF atau gambar (JPG/PNG), maksimal 4MB per berkas.</p>
+                        <p class="text-xs text-zinc-500 mt-0.5">Unggah atau perbarui berkas dokumen persyaratan peserta dalam format PDF, maksimal 4MB per berkas.</p>
                     </div>
                     <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
                         7 Berkas Persyaratan
@@ -766,10 +766,7 @@
                                 1. Scan Kartu Tanda Anggota (KTA) Pramuka
                             </label>
                             @if($participant->doc_kta_path)
-                                <a href="{{ asset('storage/' . $participant->doc_kta_path) }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
-                                    <flux:icon name="document-check" class="size-3.5" />
-                                    Lihat Berkas
-                                </a>
+                                <x-file-viewer-trigger :path="$participant->doc_kta_path" :title="'Berkas Peserta — '.$participant->full_name" label="Lihat Berkas" icon="document-check" />
                             @else
                                 <span class="text-[10px] text-zinc-400">Belum diunggah</span>
                             @endif
@@ -778,7 +775,7 @@
                         <input
                             type="file"
                             name="doc_kta"
-                            accept=".pdf,image/png,image/jpeg,image/jpg"
+                            accept=".pdf,application/pdf"
                             class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
                         >
                         @error('doc_kta') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
@@ -791,10 +788,7 @@
                                 2. Scan Kartu BPJS / Asuransi Kesehatan
                             </label>
                             @if($participant->doc_bpjs_path)
-                                <a href="{{ asset('storage/' . $participant->doc_bpjs_path) }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
-                                    <flux:icon name="document-check" class="size-3.5" />
-                                    Lihat Berkas
-                                </a>
+                                <x-file-viewer-trigger :path="$participant->doc_bpjs_path" :title="'Berkas Peserta — '.$participant->full_name" label="Lihat Berkas" icon="document-check" />
                             @else
                                 <span class="text-[10px] text-zinc-400">Belum diunggah</span>
                             @endif
@@ -803,7 +797,7 @@
                         <input
                             type="file"
                             name="doc_bpjs"
-                            accept=".pdf,image/png,image/jpeg,image/jpg"
+                            accept=".pdf,application/pdf"
                             class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
                         >
                         @error('doc_bpjs') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
@@ -816,10 +810,7 @@
                                 3. Scan Surat Keterangan Sehat
                             </label>
                             @if($participant->doc_health_certificate_path)
-                                <a href="{{ asset('storage/' . $participant->doc_health_certificate_path) }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
-                                    <flux:icon name="document-check" class="size-3.5" />
-                                    Lihat Berkas
-                                </a>
+                                <x-file-viewer-trigger :path="$participant->doc_health_certificate_path" :title="'Berkas Peserta — '.$participant->full_name" label="Lihat Berkas" icon="document-check" />
                             @else
                                 <span class="text-[10px] text-zinc-400">Belum diunggah</span>
                             @endif
@@ -828,7 +819,7 @@
                         <input
                             type="file"
                             name="doc_health_certificate"
-                            accept=".pdf,image/png,image/jpeg,image/jpg"
+                            accept=".pdf,application/pdf"
                             class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
                         >
                         @error('doc_health_certificate') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
@@ -841,10 +832,7 @@
                                 4. Scan Akta Kelahiran
                             </label>
                             @if($participant->doc_birth_certificate_path)
-                                <a href="{{ asset('storage/' . $participant->doc_birth_certificate_path) }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
-                                    <flux:icon name="document-check" class="size-3.5" />
-                                    Lihat Berkas
-                                </a>
+                                <x-file-viewer-trigger :path="$participant->doc_birth_certificate_path" :title="'Berkas Peserta — '.$participant->full_name" label="Lihat Berkas" icon="document-check" />
                             @else
                                 <span class="text-[10px] text-zinc-400">Belum diunggah</span>
                             @endif
@@ -853,7 +841,7 @@
                         <input
                             type="file"
                             name="doc_birth_certificate"
-                            accept=".pdf,image/png,image/jpeg,image/jpg"
+                            accept=".pdf,application/pdf"
                             class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
                         >
                         @error('doc_birth_certificate') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
@@ -866,10 +854,7 @@
                                 5. Scan Kartu Keluarga (KK)
                             </label>
                             @if($participant->doc_family_card_path)
-                                <a href="{{ asset('storage/' . $participant->doc_family_card_path) }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
-                                    <flux:icon name="document-check" class="size-3.5" />
-                                    Lihat Berkas
-                                </a>
+                                <x-file-viewer-trigger :path="$participant->doc_family_card_path" :title="'Berkas Peserta — '.$participant->full_name" label="Lihat Berkas" icon="document-check" />
                             @else
                                 <span class="text-[10px] text-zinc-400">Belum diunggah</span>
                             @endif
@@ -878,7 +863,7 @@
                         <input
                             type="file"
                             name="doc_family_card"
-                            accept=".pdf,image/png,image/jpeg,image/jpg"
+                            accept=".pdf,application/pdf"
                             class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
                         >
                         @error('doc_family_card') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
@@ -891,10 +876,7 @@
                                 6. Scan Syarat Kecakapan Umum (SKU)
                             </label>
                             @if($participant->doc_sku_path)
-                                <a href="{{ asset('storage/' . $participant->doc_sku_path) }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
-                                    <flux:icon name="document-check" class="size-3.5" />
-                                    Lihat Berkas
-                                </a>
+                                <x-file-viewer-trigger :path="$participant->doc_sku_path" :title="'Berkas Peserta — '.$participant->full_name" label="Lihat Berkas" icon="document-check" />
                             @else
                                 <span class="text-[10px] text-zinc-400">Belum diunggah</span>
                             @endif
@@ -903,7 +885,7 @@
                         <input
                             type="file"
                             name="doc_sku"
-                            accept=".pdf,image/png,image/jpeg,image/jpg"
+                            accept=".pdf,application/pdf"
                             class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
                         >
                         @error('doc_sku') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
@@ -916,10 +898,7 @@
                                 7. Scan Syarat Kecakapan Khusus (SKK)
                             </label>
                             @if($participant->doc_skk_path)
-                                <a href="{{ asset('storage/' . $participant->doc_skk_path) }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:underline dark:text-emerald-400">
-                                    <flux:icon name="document-check" class="size-3.5" />
-                                    Lihat Berkas
-                                </a>
+                                <x-file-viewer-trigger :path="$participant->doc_skk_path" :title="'Berkas Peserta — '.$participant->full_name" label="Lihat Berkas" icon="document-check" />
                             @else
                                 <span class="text-[10px] text-zinc-400">Belum diunggah</span>
                             @endif
@@ -928,7 +907,7 @@
                         <input
                             type="file"
                             name="doc_skk"
-                            accept=".pdf,image/png,image/jpeg,image/jpg"
+                            accept=".pdf,application/pdf"
                             class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
                         >
                         @error('doc_skk') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
@@ -947,4 +926,5 @@
             </div>
         </form>
     </div>
+    <x-file-viewer />
 </x-layouts::app>

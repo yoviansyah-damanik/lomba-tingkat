@@ -67,12 +67,12 @@ class AdminVerificationLivewireTest extends TestCase
             'verification_status' => RegistrationStatusEnum::Submitted,
         ]);
 
-        $this->actingAs($this->admin)
-            ->post(route('admin.scout-groups.verify', $scoutGroup->id))
-            ->assertRedirect();
+        \Livewire\Livewire::withoutLazyLoading()->actingAs($this->admin)
+            ->test(\App\Livewire\Admin\ScoutGroupVerificationActions::class, ['scoutGroupId' => $scoutGroup->id])
+            ->call('verify');
 
         $this->assertEquals(RegistrationStatusEnum::Verified, $scoutGroup->fresh()->verification_status);
-        $this->assertEquals($this->admin->id, $scoutGroup->fresh()->verified_by);
+        $this->assertNull($scoutGroup->fresh()->verified_by);
     }
 
     public function test_admin_can_request_revision_with_notes(): void
@@ -90,11 +90,11 @@ class AdminVerificationLivewireTest extends TestCase
             'verification_status' => RegistrationStatusEnum::Submitted,
         ]);
 
-        $this->actingAs($this->admin)
-            ->post(route('admin.scout-groups.revision', $scoutGroup->id), [
-                'revision_notes' => 'Mohon lengkapi NTA seluruh peserta regu putri.',
-            ])
-            ->assertRedirect();
+        \Livewire\Livewire::withoutLazyLoading()->actingAs($this->admin)
+            ->test(\App\Livewire\Admin\ScoutGroupVerificationActions::class, ['scoutGroupId' => $scoutGroup->id])
+            ->set('revisionNotes', 'Mohon lengkapi NTA seluruh peserta regu putri.')
+            ->call('requestRevision')
+            ->assertHasNoErrors();
 
         $this->assertEquals(RegistrationStatusEnum::NeedsRevision, $scoutGroup->fresh()->verification_status);
         $this->assertStringContainsString('lengkapi NTA', $scoutGroup->fresh()->revision_notes);
@@ -290,7 +290,7 @@ class AdminVerificationLivewireTest extends TestCase
         $this->assertTrue(collect($entryNames)->contains(fn ($name) => str_contains($name, 'Form_01_Rekap_Regu_')));
         // Verify Participant Form 02 and photo
         $this->assertTrue(collect($entryNames)->contains(fn ($name) => str_contains($name, 'Form_02_Biodata')));
-        $this->assertTrue(collect($entryNames)->contains(fn ($name) => str_contains($name, 'Pas_Foto.jpg')));
+        $this->assertTrue(collect($entryNames)->contains(fn ($name) => preg_match('/Pas_Foto_.+\.jpg$/', $name)));
         // Verify Chaperone Form 03 and photo
         $this->assertTrue(collect($entryNames)->contains(fn ($name) => str_contains($name, 'Form_03_Biodata')));
 

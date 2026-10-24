@@ -53,6 +53,22 @@ class QrCodeService
     }
 
     /**
+     * Isi hasil pindai (URL verifikasi ".../verify/{token}" atau token mentah) dibersihkan menjadi token saja
+     */
+    public function tokenFromScan(string $raw): string
+    {
+        $token = trim($raw);
+
+        if (str_contains($token, '/verify/')) {
+            $token = substr($token, strpos($token, '/verify/') + strlen('/verify/'));
+        }
+
+        $token = explode('#', explode('?', $token)[0])[0];
+
+        return trim($token, "/ \t\n\r");
+    }
+
+    /**
      * Menyelesaikan (resolve) token QR menjadi entitas terakreditasi resmi
      */
     public function resolveToken(string $token): ?array

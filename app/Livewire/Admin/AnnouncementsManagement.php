@@ -159,7 +159,7 @@ class AnnouncementsManagement extends Component
             Flux::toast(variant: 'success', heading: 'Pengumuman Diperbarui', text: "Pengumuman '{$announcement->title}' berhasil diperbarui.");
         } else {
             $announcement = Announcement::create([
-                'author_id' => auth()->id(),
+                'author_id' => auth()->user()->recordableId(),
                 'title' => $validated['title'],
                 'slug' => Str::slug($validated['title']) . '-' . Str::random(5),
                 'category' => $validated['category'],

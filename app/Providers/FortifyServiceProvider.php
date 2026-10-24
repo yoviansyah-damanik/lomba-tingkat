@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Actions\Fortify\CreateNewUser;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -37,8 +36,6 @@ class FortifyServiceProvider extends ServiceProvider
      */
     private function configureActions(): void
     {
-        Fortify::createUsersUsing(CreateNewUser::class);
-
         // Username dicocokkan persis (case-sensitive) karena basis data membandingkan tanpa membedakan huruf
         Fortify::authenticateUsing(function (Request $request) {
             $username = trim((string) $request->input(Fortify::username()));
@@ -60,23 +57,6 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::loginView(fn () => view('pages::auth.login'));
         Fortify::twoFactorChallengeView(fn () => view('pages::auth.two-factor-challenge'));
         Fortify::confirmPasswordView(fn () => view('pages::auth.confirm-password'));
-        Fortify::registerView(function () {
-            $event = \App\Models\Event::where('is_active', true)->first();
-            $isRegistrationOpen = $event ? $event->isRegistrationOpen() : config('registration.is_enabled', true);
-
-            return view('pages.auth.register-scout-group', [
-                'kwarrans' => [
-                    'Kwarran Padangsidimpuan Utara',
-                    'Kwarran Padangsidimpuan Selatan',
-                    'Kwarran Padangsidimpuan Batunadua',
-                    'Kwarran Padangsidimpuan Hutaimbaru',
-                    'Kwarran Padangsidimpuan Tenggara',
-                    'Kwarran Padangsidimpuan Angkola Julu',
-                ],
-                'event' => $event,
-                'isRegistrationOpen' => $isRegistrationOpen,
-            ]);
-        });
     }
 
     /**

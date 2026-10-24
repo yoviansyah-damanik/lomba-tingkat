@@ -185,6 +185,9 @@
                                     </td>
                                     <td class="py-3 px-3 text-center">
                                         <div class="inline-flex items-center gap-1.5">
+                                            <flux:button href="{{ route('scout-group.participants.show', $participant->id) }}" wire:navigate variant="subtle" size="xs" icon="eye" title="Lihat detail lengkap peserta">
+                                                Detail
+                                            </flux:button>
                                             @if($scoutGroup->canDownloadDocuments())
                                             <flux:button href="{{ route('scout-group.participants.print', $participant->id) }}" target="_blank" variant="subtle" size="xs" icon="printer" title="Cetak Formulir Biodata Resmi"
                                                 data-loading="Mencetak Form Biodata {{ $participant->full_name }} (PDF)...">

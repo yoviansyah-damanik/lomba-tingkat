@@ -2,7 +2,7 @@
     {{-- Header Halaman Dasbor --}}
     <x-heading-section
         title="Rekap Nilai & Klasemen Prestasi"
-        description="Pusat data hasil perlombaan, perolehan medali predikat resmi, dan klasemen juara umum LT III."
+        description="Pusat data hasil perlombaan, perolehan prestasi predikat resmi, dan klasemen juara umum LT III."
         icon="trophy"
     >
         <x-slot:breadcrumbs>
@@ -134,9 +134,7 @@
                             <th class="py-3 px-3 text-center text-amber-600 dark:text-amber-400">Tinggi (🥇)</th>
                             <th class="py-3 px-3 text-center text-slate-500 dark:text-slate-300">Baik (🥈)</th>
                             <th class="py-3 px-3 text-center text-amber-700 dark:text-amber-500">Cukup (🥉)</th>
-                            <th class="py-3 px-3 text-center">Total Medali</th>
-                            <th class="py-3 px-4 text-center font-black">Total Poin</th>
-                            <th class="py-3 px-4 text-right">Nilai Total</th>
+                            <th class="py-3 px-3 text-center">Total Prestasi</th>
                         </tr>
                     </thead>
                         <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800 font-medium">
@@ -169,18 +167,10 @@
                                 <td class="py-3 px-3 text-center font-bold text-zinc-800 dark:text-zinc-200">
                                     {{ $item['total_medals'] }}
                                 </td>
-                                <td class="py-3 px-4 text-center">
-                                    <span class="inline-block px-2.5 py-0.5 rounded-md font-bold text-amber-700 bg-amber-50 border border-amber-200 dark:bg-amber-950/60 dark:border-amber-800 dark:text-amber-300">
-                                        {{ $item['total_points'] }} Pts
-                                    </span>
-                                </td>
-                                <td class="py-3 px-4 text-right font-mono font-bold text-zinc-700 dark:text-zinc-300">
-                                    {{ number_format($item['total_score_sum'], 2) }}
-                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="py-8 text-center text-zinc-500">
+                                <td colspan="7" class="py-8 text-center text-zinc-500">
                                     Belum ada data regu terdaftar atau dinilai.
                                 </td>
                             </tr>
@@ -336,9 +326,11 @@
                                             </span>
                                         </td>
                                         <td class="py-3 px-4 text-center">
-                                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase border {{ $score->predicateBadgeClasses() }}">
-                                                {{ $score->predicateLabel() }}
-                                            </span>
+                                            @if($score->hasAchievement())
+                                                <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase border {{ $score->predicateBadgeClasses() }}">
+                                                    {{ $score->predicateLabel() }}
+                                                </span>
+                                            @endif
                                         </td>
                                         <td class="py-3 px-4 text-xs text-zinc-600 dark:text-zinc-400">
                                             <div class="font-semibold text-zinc-800 dark:text-zinc-200">

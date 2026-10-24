@@ -48,12 +48,10 @@ class StandingsService
             $gold = 0;
             $silver = 0;
             $bronze = 0;
-            $totalScoreSum = 0.0;
             $competitionsScored = 0;
 
             foreach ($patrol->competitionScores as $score) {
                 $competitionsScored++;
-                $totalScoreSum += (float) $score->final_score;
 
                 match ($score->predicate) {
                     'prestasi_tinggi' => $gold++,
@@ -63,7 +61,6 @@ class StandingsService
                 };
             }
 
-            $totalPoints = ($gold * 5) + ($silver * 3) + ($bronze * 1);
             $num = $patrol->draw_number ?: 1;
             $maskedPatrolName = 'Regu #' . str_pad((string) $num, 2, '0', STR_PAD_LEFT);
             $maskedSchoolName = 'Pangkalan Dirahasiakan';
@@ -86,13 +83,12 @@ class StandingsService
                 'silver' => $silver,
                 'bronze' => $bronze,
                 'total_medals' => $gold + $silver + $bronze,
-                'total_points' => $totalPoints,
-                'total_score_sum' => round($totalScoreSum, 2),
                 'competitions_scored' => $competitionsScored,
             ];
         });
 
-        // Urutkan berdasarkan perolehan peringkat lomba (Prestasi Tinggi > Prestasi Baik > Prestasi Cukup > Total Prestasi)
+        // Peringkat umum menurut jumlah medali, berurutan: Prestasi Tinggi terbanyak, lalu Prestasi Baik terbanyak,
+        // lalu Prestasi Cukup terbanyak. Tidak ada sistem poin; nama regu hanya penentu urutan tampil bila seri penuh.
         $sortCallback = function ($a, $b) {
             if ($a['gold'] !== $b['gold']) {
                 return $b['gold'] <=> $a['gold'];
@@ -103,10 +99,6 @@ class StandingsService
             if ($a['bronze'] !== $b['bronze']) {
                 return $b['bronze'] <=> $a['bronze'];
             }
-            if ($a['total_medals'] !== $b['total_medals']) {
-                return $b['total_medals'] <=> $a['total_medals'];
-            }
-
             return strcmp($a['real_patrol_name'] ?? $a['patrol_name'], $b['real_patrol_name'] ?? $b['patrol_name']);
         };
 
@@ -209,7 +201,7 @@ class StandingsService
             ],
             [
                 'participant_id' => $data['participant_id'] ?? null,
-                'judge_id' => $data['judge_id'] ?? auth()->id(),
+                'judge_id' => $data['judge_id'] ?? (auth()->user()?->isAdminOnly() ? null : auth()->id()),
                 'competition_schedule_id' => $data['competition_schedule_id'] ?? null,
                 'final_score' => $finalScore,
                 'criteria_scores' => $criteriaScores,

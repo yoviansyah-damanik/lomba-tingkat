@@ -21,18 +21,19 @@ class SampleContestSeederTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_sample_seeder_builds_verified_contingents_scored_by_judges_and_overall_champion(): void
+    public function test_sample_seeder_builds_unverified_contingents_scored_by_judges_and_standings_after_verification(): void
     {
         $this->seed(DatabaseSeeder::class);
         $this->seed(SampleContestSeeder::class);
 
-        // 11 gudep sampel terverifikasi, masing-masing 2 regu x 8 peserta dan 2 bindamping;
-        // gudep01 bawaan sengaja belum diverifikasi
-        $this->assertSame(11, ScoutGroup::where('verification_status', RegistrationStatusEnum::Verified)->count());
-        $this->assertSame(1, ScoutGroup::where('verification_status', RegistrationStatusEnum::Submitted)->count());
-        $this->assertSame(22, Patrol::where('status', RegistrationStatusEnum::Verified)->count());
-        $this->assertSame(11 * 16,Participant::whereIn('patrol_id', Patrol::pluck('id'))->where('status', RegistrationStatusEnum::Verified)->count());
-        $this->assertGreaterThanOrEqual(22, Chaperone::where('status', RegistrationStatusEnum::Verified)->count());
+        // Seluruh gudep (11 sampel + gudep01) berstatus Diajukan; tidak ada yang diverifikasi
+        $this->assertSame(0, ScoutGroup::where('verification_status', RegistrationStatusEnum::Verified)->count());
+        $this->assertSame(12, ScoutGroup::where('verification_status', RegistrationStatusEnum::Submitted)->count());
+        $this->assertSame(0, Patrol::where('status', RegistrationStatusEnum::Verified)->count());
+        $this->assertSame(24, Patrol::where('status', RegistrationStatusEnum::Submitted)->count());
+        $this->assertSame(0, Participant::where('status', RegistrationStatusEnum::Verified)->count());
+        $this->assertSame(0, Chaperone::where('status', RegistrationStatusEnum::Verified)->count());
+        $this->assertGreaterThanOrEqual(22, Chaperone::where('status', RegistrationStatusEnum::Submitted)->count());
 
         // Juri dan panitia tambahan
         $this->assertGreaterThanOrEqual(9, User::whereHas('roles', fn ($q) => $q->where('name', 'judge'))->count());
@@ -44,8 +45,14 @@ class SampleContestSeederTest extends TestCase
         $this->assertSame(22 * $lombas * 3, Assessment::where('status', 'finalized')->count());
         $this->assertSame(22 * $lombas, CompetitionScore::count());
 
-        // Klasemen regu putra dan putri terpisah; tiap lomba memberi 1 emas, 1 perak, 1 perunggu per kategori
+        // Belum ada klasemen sebelum gudep diverifikasi Administrator
         $service = app(StandingsService::class);
+        $this->assertCount(0, $service->getPatrolStandings('boys', null, true));
+
+        // Setelah diverifikasi, nilai contoh membentuk klasemen
+        Patrol::whereIn('id', CompetitionScore::pluck('patrol_id'))->update(['status' => RegistrationStatusEnum::Verified]);
+
+        // Klasemen regu putra dan putri terpisah; tiap lomba memberi 1 emas, 1 perak, 1 perunggu per kategori
         foreach (['boys', 'girls'] as $gender) {
             $standings = $service->getPatrolStandings($gender, null, true);
             $this->assertCount(11, $standings);

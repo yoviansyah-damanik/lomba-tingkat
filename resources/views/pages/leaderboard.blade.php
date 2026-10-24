@@ -3,7 +3,7 @@
         {{-- Breadcrumb & Title --}}
         <x-heading-section
             class="mb-6"
-            title="Klasemen Perolehan Medali & Prestasi"
+            title="Klasemen Perolehan Prestasi"
             description="Peringkat resmi akumulasi Prestasi Tinggi, Prestasi Baik, dan Prestasi Cukup kontingen LT III."
         >
             <x-slot:breadcrumbs>
@@ -28,7 +28,7 @@
                     <span class="font-bold text-sm">Prestasi Tinggi</span>
                 </div>
                 <p class="mt-2 text-xs text-amber-900/80 dark:text-amber-300/80 leading-relaxed">
-                    Setara Juara 1 / Medali Emas pada setiap cabang mata lomba yang dipublikasikan.
+                    Rank 1 pada setiap cabang mata lomba yang dipublikasikan.
                 </p>
             </div>
 
@@ -38,7 +38,7 @@
                     <span class="font-bold text-sm">Prestasi Baik</span>
                 </div>
                 <p class="mt-2 text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                    Setara Juara 2 / Medali Perak pada setiap cabang mata lomba yang dipublikasikan.
+                    Rank 2 pada setiap cabang mata lomba yang dipublikasikan.
                 </p>
             </div>
 
@@ -48,7 +48,7 @@
                     <span class="font-bold text-sm">Prestasi Cukup</span>
                 </div>
                 <p class="mt-2 text-xs text-amber-900/80 dark:text-amber-400/80 leading-relaxed">
-                    Setara Juara 3 / Medali Perunggu pada setiap cabang mata lomba yang dipublikasikan.
+                    Rank 3 pada setiap cabang mata lomba yang dipublikasikan.
                 </p>
             </div>
         </div>

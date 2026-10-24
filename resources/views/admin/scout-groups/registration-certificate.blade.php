@@ -337,10 +337,10 @@
             <td class="label-col">Tanggal Registrasi Akun</td>
             <td>{{ $scoutGroup->created_at?->translatedFormat('d F Y, H:i') }} WIB</td>
         </tr>
-        @if($scoutGroup->verifier && $scoutGroup->verified_at)
+        @if($scoutGroup->verified_at)
         <tr>
             <td class="label-col">Diverifikasi Oleh / Tanggal</td>
-            <td>{{ $scoutGroup->verifier->name }} &mdash; {{ $scoutGroup->verified_at->translatedFormat('d F Y, H:i') }} WIB</td>
+            <td>Administrator &mdash; {{ $scoutGroup->verified_at->translatedFormat('d F Y, H:i') }} WIB</td>
         </tr>
         @endif
     </table>

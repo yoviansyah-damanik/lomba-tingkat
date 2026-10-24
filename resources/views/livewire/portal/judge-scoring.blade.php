@@ -459,7 +459,7 @@
                 </div>
 
                 <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-300">
-                    <strong>Peringatan Integritas:</strong> Nilai yang difinalisasi akan langsung dikunci dan diakumulasikan ke klasemen medali resmi. Anda tidak dapat mengubahnya kembali tanpa persetujuan tertulis Administrator.
+                    <strong>Peringatan Integritas:</strong> Nilai yang difinalisasi akan langsung dikunci dan diakumulasikan ke klasemen prestasi resmi. Anda tidak dapat mengubahnya kembali tanpa persetujuan tertulis Administrator.
                 </div>
 
                 <div class="flex items-center justify-end gap-2 pt-2">

@@ -55,8 +55,8 @@
         <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <x-stat-card
                 label="Peringkat Umum"
-                :value="$standing ? '#'.$standing['rank'] : '-'"
-                :description="$standing && $totalInCategory ? 'dari '.$totalInCategory.' regu '.($patrol->isBoys() ? 'putra' : 'putri') : 'Belum ada nilai'"
+                :value="$blindMode ? '#•••' : ($standing ? '#'.$standing['rank'] : '-')"
+                :description="$blindMode ? 'Disensor selama blind mode aktif' : ($standing && $totalInCategory ? 'dari '.$totalInCategory.' regu '.($patrol->isBoys() ? 'putra' : 'putri') : 'Belum ada nilai')"
                 icon="trophy"
                 color="amber"
             />
@@ -79,13 +79,13 @@
                 label="Lomba Dinilai"
                 :value="$scores->count()"
                 unit="lomba"
-                :description="'Akumulasi nilai '.number_format($standing['total_score_sum'] ?? 0, 2)"
+                description="Cabang yang telah dinilai juri"
                 icon="clipboard-document-check"
                 color="blue"
             />
         </div>
 
-        @if ($standing && $standing['general_rank_title'])
+        @if (! $blindMode && $standing && $standing['general_rank_title'])
             <div class="flex items-center gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm font-semibold text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/30 dark:text-amber-200">
                 <flux:icon name="trophy" class="size-5 shrink-0 text-amber-600 dark:text-amber-400" />
                 <span>{{ $standing['general_rank_title'] }}</span>
@@ -106,9 +106,11 @@
                     <div class="min-w-0 flex-1">
                         <p class="font-mono text-[11px] font-bold text-amber-700 dark:text-amber-400">{{ $score->competition?->code }}</p>
                         <h4 class="truncate text-sm font-bold text-zinc-900 dark:text-zinc-100">{{ $score->competition?->title }}</h4>
-                        <span class="mt-1 inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-semibold {{ $score->predicateBadgeClasses() }}">
-                            {{ $score->predicateLabel() }}
-                        </span>
+                        @if($score->hasAchievement())
+                            <span class="mt-1 inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-semibold {{ $score->predicateBadgeClasses() }}">
+                                {{ $score->predicateLabel() }}
+                            </span>
+                        @endif
                     </div>
 
                     <div class="text-right">

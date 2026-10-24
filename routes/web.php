@@ -35,11 +35,12 @@ Route::delete('/api/push-subscriptions', [PushSubscriptionController::class, 'un
 
 // Public Digital Card QR Verification Endpoint
 Route::get('/digital-cards/verify/{token}', [DigitalCardController::class, 'verify'])->name('digital-cards.verify');
+Route::get('/permission-letters/verify/{id}', [\App\Http\Controllers\PermissionLetterController::class, 'verify'])->name('permission-letters.verify');
 
 // Public Registration Routes for Scout Group (Pangkalan Sekolah)
 Route::middleware('guest')->group(function () {
-    Route::get('/register/scout-group', [ScoutGroupRegistrationController::class, 'create'])->name('register.scout-group');
-    Route::post('/register/scout-group', [ScoutGroupRegistrationController::class, 'store'])->name('register.scout-group.store');
+    Route::get('/register/scout-group', \App\Livewire\Auth\InvitationCodeGate::class)->name('register.scout-group');
+    Route::get('/register/scout-group/form', \App\Livewire\Auth\ScoutGroupRegistrationForm::class)->name('register.scout-group.form');
 });
 Route::get('/register/scout-group/success', [ScoutGroupRegistrationController::class, 'success'])->name('register.scout-group.success')->middleware('auth');
 
@@ -47,6 +48,8 @@ Route::middleware(['auth', 'role'])->group(function () {
     Route::get('dashboard', \App\Livewire\Dashboard::class)->name('dashboard');
     Route::get('notifications', \App\Livewire\Notifications\Index::class)->name('notifications.index');
     Route::get('portal/agenda', \App\Livewire\Portal\UpcomingSchedules::class)->name('agenda.index');
+    Route::get('portal/digital-card', \App\Livewire\Portal\MyDigitalCard::class)->middleware('role:participant|chaperone|committee|judge')->name('digital-card.index');
+    Route::get('portal/my-attendance', \App\Livewire\Portal\MyAttendance::class)->middleware('role:participant|chaperone|committee|judge')->name('my-attendance.index');
     Route::get('portal/team-assessment', \App\Livewire\Portal\TeamAssessment::class)->middleware('role:participant|chaperone|scout_group')->name('team-assessment.index');
 
     // Digital Credentials / ID Cards
@@ -57,11 +60,20 @@ Route::middleware(['auth', 'role'])->group(function () {
     Route::get('/digital-cards/scout-group/{scoutGroupId}/chaperones/batch', [DigitalCardController::class, 'chaperoneBatchCards'])->name('digital-cards.chaperone.batch');
     Route::get('/digital-cards/scout-group/{scoutGroupId}/batch', [DigitalCardController::class, 'scoutGroupBatchCards'])->name('digital-cards.scout-group.batch');
 
+    // Verifikasi identitas lewat scan QR: Administrator (termasuk Superadmin) dan Panitia
+    Route::middleware('role:admin|committee')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/identity-verification', \App\Livewire\Admin\IdentityVerification::class)->name('identity-verification.index');
+    });
+
     // Shared routes: Akses Peserta, Bindamping, dan Gugusdepan (Admin, Panitia, Juri)
     Route::middleware('role:admin|committee|judge')->prefix('admin')->name('admin.')->group(function () {
         // Direktori & Data Kontingen Gugus Depan
+        Route::get('/gudep-directory', \App\Livewire\Admin\ScoutGroupsDirectory::class)->name('gudep-directory');
+        Route::get('/gudep-directory/{id}', \App\Livewire\Admin\ScoutGroupProfile::class)->name('gudep-directory.show');
+        Route::get('/gudep-directory/{id}/participants/{participantId}', \App\Livewire\Admin\ScoutGroupParticipantProfile::class)->name('gudep-directory.participants.show');
+        Route::get('/gudep-directory/{id}/chaperones/{chaperoneId}', \App\Livewire\Admin\ScoutGroupChaperoneProfile::class)->name('gudep-directory.chaperones.show');
         Route::get('/scout-groups', \App\Livewire\Admin\VerificationManagement::class)->name('scout-groups.index');
-        Route::get('/scout-groups/{id}', [AdminVerificationController::class, 'show'])->name('scout-groups.show');
+        Route::get('/scout-groups/{id}', \App\Livewire\Admin\ScoutGroupVerificationDetail::class)->name('scout-groups.show');
         Route::get('/scout-groups/{scoutGroupId}/chaperones/{chaperoneId}/print', [AdminVerificationController::class, 'chaperonePrint'])->name('scout-groups.chaperones.print');
         Route::get('/scout-groups/{scoutGroupId}/participants/{participantId}/print', [AdminVerificationController::class, 'participantPrint'])->name('scout-groups.participants.print');
         Route::get('/scout-groups/{scoutGroupId}/patrols/{patrolId}/form-01', [AdminVerificationController::class, 'form01Print'])->name('scout-groups.patrols.form-01');
@@ -88,11 +100,11 @@ Route::middleware(['auth', 'role'])->group(function () {
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', fn () => redirect()->route('dashboard'))->name('dashboard');
 
+        // Permohonan izin (meninggalkan perkemahan / kunjungan tamu): hanya Administrator
+        Route::get('/permission-requests', \App\Livewire\Admin\PermissionRequests::class)->name('permission-requests.index');
+        Route::get('/permission-requests/{id}/letter', [\App\Http\Controllers\PermissionLetterController::class, 'show'])->name('permission-requests.letter');
+
         // Tindakan Keputusan Verifikasi Kontingen
-        Route::post('/scout-groups/{id}/verify', [AdminVerificationController::class, 'verify'])->name('scout-groups.verify');
-        Route::post('/scout-groups/{id}/revision', [AdminVerificationController::class, 'requestRevision'])->name('scout-groups.revision');
-        Route::post('/scout-groups/{id}/reject', [AdminVerificationController::class, 'reject'])->name('scout-groups.reject');
-        Route::post('/scout-groups/{id}/cancel-verification', [AdminVerificationController::class, 'cancelVerification'])->name('scout-groups.cancel-verification');
 
         // Phase 5: Manajemen Mata Lomba & Rubrik Penilaian (Livewire 4 SPA)
         Route::get('/competitions', \App\Livewire\Admin\CompetitionsManagement::class)->name('competitions.index');
@@ -124,6 +136,7 @@ Route::middleware(['auth', 'role'])->group(function () {
         Route::get('/announcements', \App\Livewire\Admin\AnnouncementsManagement::class)->name('announcements.index');
 
         // Aparatur Panitia & Dewan Juri (Admin & Superadmin)
+        Route::get('/registration-invitations', \App\Livewire\Admin\RegistrationInvitations::class)->name('registration-invitations.index');
         Route::get('/officials', \App\Livewire\Admin\OfficialsManagement::class)->name('officials.index');
         Route::resource('officials', AdminOfficialController::class)->except(['show', 'index']);
     });
@@ -195,6 +208,7 @@ Route::middleware(['auth', 'role'])->group(function () {
         Route::get('/patrols/{patrolId}/form-01', [ScoutGroupPortalController::class, 'form01Print'])->name('patrols.form-01');
         Route::get('/patrols/{patrolId}/participants/create', [ScoutGroupPortalController::class, 'participantCreate'])->name('participants.create');
         Route::post('/patrols/{patrolId}/participants', [ScoutGroupPortalController::class, 'participantStore'])->name('participants.store');
+        Route::get('/participants/{id}', \App\Livewire\Portal\ParticipantDetail::class)->name('participants.show');
         Route::get('/participants/{id}/edit', [ScoutGroupPortalController::class, 'participantEdit'])->name('participants.edit');
         Route::put('/participants/{id}', [ScoutGroupPortalController::class, 'participantUpdate'])->name('participants.update');
         Route::get('/participants/{id}/print', [ScoutGroupPortalController::class, 'participantPrint'])->name('participants.print');
@@ -204,6 +218,7 @@ Route::middleware(['auth', 'role'])->group(function () {
         Route::get('/chaperones', \App\Livewire\Portal\ChaperonesManagement::class)->name('chaperones');
         Route::get('/chaperones/create', [ScoutGroupPortalController::class, 'chaperoneCreate'])->name('chaperones.create');
         Route::post('/chaperones', [ScoutGroupPortalController::class, 'chaperoneStore'])->name('chaperones.store');
+        Route::get('/chaperones/{id}', \App\Livewire\Portal\ChaperoneDetail::class)->name('chaperones.show');
         Route::get('/chaperones/{id}/edit', [ScoutGroupPortalController::class, 'chaperoneEdit'])->name('chaperones.edit');
         Route::put('/chaperones/{id}', [ScoutGroupPortalController::class, 'chaperoneUpdate'])->name('chaperones.update');
         Route::get('/chaperones/{id}/print', [ScoutGroupPortalController::class, 'chaperonePrint'])->name('chaperones.print');

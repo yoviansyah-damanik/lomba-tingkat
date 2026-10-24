@@ -21,7 +21,7 @@
                     </p>
 
                     <p class="text-sm text-zinc-600 dark:text-zinc-300 sm:text-base leading-relaxed">
-                        {!! nl2br(e($event?->description ?: 'Ajang prestasi regu Penggalang SMP/MTs se-Kota Padangsidimpuan. Terintegrasi dengan akreditasi kontingen, penerbitan kartu digital QR Code, validasi presensi berbasis waktu server resmi WIB, penilaian kompetisi blind scoring, dan siaran langsung klasemen perolehan medali.')) !!}
+                        {!! nl2br(e($event?->description ?: 'Ajang prestasi regu Penggalang SMP/MTs se-Kota Padangsidimpuan. Terintegrasi dengan verifikasi kontingen, penerbitan kartu digital QR Code, validasi presensi berbasis waktu server resmi WIB, penilaian kompetisi blind scoring, dan siaran langsung klasemen perolehan prestasi.')) !!}
                     </p>
 
                     <div class="flex flex-wrap items-center gap-3 pt-2">
@@ -111,7 +111,7 @@
                             </div>
                             <div class="rounded-xl bg-zinc-100/70 p-2.5 dark:bg-zinc-800/60">
                                 <span class="block text-xl font-bold text-blue-700 dark:text-blue-400">3</span>
-                                <span class="text-[11px] text-zinc-500">Peringkat Medali</span>
+                                <span class="text-[11px] text-zinc-500">Peringkat Prestasi</span>
                             </div>
                         </div>
                     </div>

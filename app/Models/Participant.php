@@ -117,7 +117,25 @@ class Participant extends Model
 
         // Akun peserta mengikuti data peserta: diperbarui saat berubah, dihapus saat peserta dihapus
         static::saved(fn (Participant $participant) => app(ContingentAccountService::class)->syncParticipant($participant));
-        static::deleting(fn (Participant $participant) => app(ContingentAccountService::class)->deleteParticipantAccount($participant));
+        static::deleting(function (Participant $participant) {
+            app(ContingentAccountService::class)->deleteParticipantAccount($participant);
+            $participant->deleteStoredFiles();
+        });
+    }
+
+    /**
+     * Hapus pas foto dan seluruh berkas persyaratan peserta dari penyimpanan
+     */
+    public function deleteStoredFiles(): void
+    {
+        $paths = collect([$this->photo_path])
+            ->merge(collect(self::DOCUMENTS)->map(fn (array $doc) => $this->{$doc[0]}))
+            ->filter()
+            ->all();
+
+        if ($paths) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($paths);
+        }
     }
 
     /**

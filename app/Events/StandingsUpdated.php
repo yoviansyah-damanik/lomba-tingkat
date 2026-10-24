@@ -9,7 +9,7 @@ use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
 /**
- * Event broadcast realtime pembaruan klasemen dan perolehan medali LT III
+ * Event broadcast realtime pembaruan klasemen dan perolehan prestasi LT III
  */
 class StandingsUpdated implements ShouldBroadcast
 {
@@ -17,7 +17,7 @@ class StandingsUpdated implements ShouldBroadcast
 
     public function __construct(
         public ?string $competitionId = null,
-        public ?string $message = 'Klasemen perolehan medali telah diperbarui.'
+        public ?string $message = 'Klasemen perolehan prestasi telah diperbarui.'
     ) {}
 
     /**

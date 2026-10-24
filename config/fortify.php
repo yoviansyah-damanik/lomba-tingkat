@@ -76,6 +76,14 @@ return [
     'home' => '/dashboard',
 
     /*
+    | Tujuan pengalihan setelah logout: halaman login (bukan beranda).
+    */
+
+    'redirects' => [
+        'logout' => '/login',
+    ],
+
+    /*
     |--------------------------------------------------------------------------
     | Fortify Routes Prefix / Subdomain
     |--------------------------------------------------------------------------
@@ -161,7 +169,6 @@ return [
     */
 
     'features' => [
-        Features::registration(),
         Features::twoFactorAuthentication([
             'confirm' => true,
             'confirmPassword' => true,

@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Announcement;
-use App\Models\User;
 use Illuminate\Database\Seeder;
 
 /**
@@ -13,8 +12,6 @@ class AnnouncementSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = User::where('username', 'admin')->first();
-
         $announcements = [
             [
                 'title' => 'Petunjuk Teknis LT-III Tahun 2026 Kwarcab Padangsidimpuan Resmi Dirilis',
@@ -66,7 +63,7 @@ class AnnouncementSeeder extends Seeder
         foreach ($announcements as $data) {
             Announcement::updateOrCreate(
                 ['slug' => $data['slug']],
-                array_merge($data, ['author_id' => $admin?->id])
+                $data
             );
         }
     }

@@ -16,7 +16,7 @@ use Tests\TestCase;
 
 class ScoutGroupRegistrationTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, \Tests\Concerns\RegistersViaInvitation, \Tests\Concerns\BuildsCompleteRoster;
 
     protected function setUp(): void
     {
@@ -43,10 +43,7 @@ class ScoutGroupRegistrationTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Registrasi Akun Pangkalan Gugus Depan');
-        $response->assertSee('Nomor Gudep Putra');
-        $response->assertSee('Nomor Gudep Putri (Otomatis)');
-        $response->assertSee('Kwartir Ranting (Kwarran)');
-        $response->assertSee('Kwarran Padangsidimpuan Utara');
+        $response->assertSee('Masukkan Kode Undangan');
         $response->assertSee('Batas Waktu Registrasi Pangkalan');
         $response->assertSee('Verifikasi Berkas oleh Administrator');
         $response->assertSee('tidak memerlukan email');
@@ -54,7 +51,7 @@ class ScoutGroupRegistrationTest extends TestCase
 
     public function test_scout_group_can_register_and_create_contingent_account_with_auto_generated_credentials(): void
     {
-        $response = $this->post(route('register.scout-group.store'), [
+        $response = $this->registerGudep([
             'school_name' => 'SMP Negeri 2 Padangsidimpuan',
             'group_number' => '01-093', // User hanya input nomor depan ganjil
             'kwarran' => 'Kwarran Padangsidimpuan Utara',
@@ -64,9 +61,9 @@ class ScoutGroupRegistrationTest extends TestCase
             'terms' => '1',
         ]);
 
-        $response->assertSessionHasNoErrors();
+        $response->assertHasNoErrors();
         $response->assertRedirect(route('register.scout-group.success'));
-        $response->assertSessionHas('newly_registered_credentials');
+        $this->assertNotNull(session('newly_registered_credentials'));
 
         // Pastikan entitas ScoutGroup terbuat dengan format ID resmi G-{no_gudep}
         $scoutGroup = ScoutGroup::where('school_name', 'SMP Negeri 2 Padangsidimpuan')->first();
@@ -106,7 +103,7 @@ class ScoutGroupRegistrationTest extends TestCase
             'registration_end_at' => now()->subDay(),
         ]);
 
-        $response = $this->post(route('register.scout-group.store'), [
+        $response = $this->registerGudep([
             'school_name' => 'SMP Negeri 4 Padangsidimpuan',
             'group_number' => '04.001 - 04.002',
             'kwarran' => 'Kwarran Padangsidimpuan Selatan',
@@ -116,7 +113,7 @@ class ScoutGroupRegistrationTest extends TestCase
             'terms' => '1',
         ]);
 
-        $response->assertSessionHasErrors(['registration_closed']);
+        $response->assertHasErrors(['registration_closed']);
         $this->assertGuest();
         $this->assertDatabaseMissing('scout_groups', ['school_name' => 'SMP Negeri 4 Padangsidimpuan']);
     }
@@ -128,7 +125,7 @@ class ScoutGroupRegistrationTest extends TestCase
             'is_registration_open' => false,
         ]);
 
-        $response = $this->post(route('register.scout-group.store'), [
+        $response = $this->registerGudep([
             'school_name' => 'SMP Negeri 5 Padangsidimpuan',
             'group_number' => '05.001 - 05.002',
             'kwarran' => 'Kwarran Padangsidimpuan Batunadua',
@@ -138,13 +135,13 @@ class ScoutGroupRegistrationTest extends TestCase
             'terms' => '1',
         ]);
 
-        $response->assertSessionHasErrors(['registration_closed']);
+        $response->assertHasErrors(['registration_closed']);
         $this->assertGuest();
     }
 
     public function test_registration_username_is_exactly_the_gudep_id(): void
     {
-        $response = $this->post(route('register.scout-group.store'), [
+        $response = $this->registerGudep([
             'school_name' => 'SMP Negeri 3 Padangsidimpuan',
             'group_number' => '03.001 - 03.002',
             'kwarran' => 'Kwarran Padangsidimpuan Selatan',
@@ -154,7 +151,7 @@ class ScoutGroupRegistrationTest extends TestCase
             'terms' => '1',
         ]);
 
-        $response->assertSessionHasNoErrors();
+        $response->assertHasNoErrors();
         $response->assertRedirect(route('register.scout-group.success'));
 
         $createdUser = User::where('name', 'Kak Syahrul Siregar')->first();
@@ -165,7 +162,7 @@ class ScoutGroupRegistrationTest extends TestCase
 
     public function test_registration_requires_terms_acceptance(): void
     {
-        $response = $this->post(route('register.scout-group.store'), [
+        $response = $this->registerGudep([
             'school_name' => 'MTs Negeri 1 Padangsidimpuan',
             'group_number' => '05.001 - 05.002',
             'kwarran' => 'Kwarran Padangsidimpuan Batunadua',
@@ -175,14 +172,14 @@ class ScoutGroupRegistrationTest extends TestCase
             // terms tidak disertakan
         ]);
 
-        $response->assertSessionHasErrors(['terms']);
+        $response->assertHasErrors(['terms']);
         $this->assertGuest();
     }
 
     public function test_odd_gudep_number_attaches_to_boys_patrol_and_even_to_girls_patrol(): void
     {
         // 1. Registrasi Gudep dengan nomor depan ganjil: 01-093
-        $this->post(route('register.scout-group.store'), [
+        $this->registerGudep([
             'school_name' => 'SMP Negeri 1 Padangsidimpuan',
             'group_number' => '01-093',
             'kwarran' => 'Kwarran Padangsidimpuan Utara',
@@ -229,6 +226,10 @@ class ScoutGroupRegistrationTest extends TestCase
             'contact_person' => 'Kak Pembina',
             'contact_phone' => '081234567899',
         ]);
+
+        // Bindamping hanya dapat didaftarkan setelah regu putra/putri yang bersangkutan ada
+        \App\Models\Patrol::factory()->create(['scout_group_id' => $scoutGroup->id, 'gender_category' => \App\Enums\PatrolGenderEnum::Boys]);
+        \App\Models\Patrol::factory()->create(['scout_group_id' => $scoutGroup->id, 'gender_category' => \App\Enums\PatrolGenderEnum::Girls]);
 
         $this->actingAs($user);
 
@@ -278,7 +279,7 @@ class ScoutGroupRegistrationTest extends TestCase
     public function test_registration_automatically_formats_group_number_when_input_without_symbols(): void
     {
         // Pengguna menginput murni 5 digit tanpa simbol: 01093
-        $response = $this->post(route('register.scout-group.store'), [
+        $response = $this->registerGudep([
             'school_name' => 'SMP Negeri 7 Padangsidimpuan',
             'group_number' => '01093',
             'kwarran' => 'Kwarran Padangsidimpuan Tenggara',
@@ -288,7 +289,7 @@ class ScoutGroupRegistrationTest extends TestCase
             'terms' => '1',
         ]);
 
-        $response->assertSessionHasNoErrors();
+        $response->assertHasNoErrors();
 
         $scoutGroup = ScoutGroup::where('school_name', 'SMP Negeri 7 Padangsidimpuan')->first();
         $this->assertNotNull($scoutGroup);
@@ -300,7 +301,7 @@ class ScoutGroupRegistrationTest extends TestCase
     public function test_registration_does_not_require_email_verification_and_admin_verifies_contingent(): void
     {
         // 1. Registrasi pangkalan tanpa verifikasi email
-        $this->post(route('register.scout-group.store'), [
+        $this->registerGudep([
             'school_name' => 'SMP Negeri 8 Padangsidimpuan',
             'group_number' => '01-081',
             'kwarran' => 'Kwarran Padangsidimpuan Hutaimbaru',
@@ -323,6 +324,7 @@ class ScoutGroupRegistrationTest extends TestCase
             'patrol_name' => 'Harimau',
             'gender_category' => \App\Enums\PatrolGenderEnum::Boys,
         ]);
+        $this->fillPatrolRoster($patrol);
         $scoutGroup->chaperones()->create([
             'full_name' => 'Kak Zulham Efendi',
             'gender' => 'male',
@@ -335,26 +337,27 @@ class ScoutGroupRegistrationTest extends TestCase
         // 3. Panitia biasa ditolak memverifikasi (Strictly Administrator)
         $committee = User::factory()->create();
         $committee->assignRole(RoleEnum::Committee);
-        $this->actingAs($committee)
-            ->post(route('admin.scout-groups.verify', $scoutGroup->id))
+        \Livewire\Livewire::withoutLazyLoading()->actingAs($committee)
+            ->test(\App\Livewire\Admin\ScoutGroupVerificationActions::class, ['scoutGroupId' => $scoutGroup->id])
+            ->call('verify')
             ->assertForbidden();
 
         // 4. Administrator memverifikasi dan menyetujui pendaftaran kontingen
         $admin = User::factory()->create();
         $admin->assignRole(RoleEnum::Admin);
-        $this->actingAs($admin)
-            ->post(route('admin.scout-groups.verify', $scoutGroup->id))
-            ->assertRedirect(route('admin.scout-groups.show', $scoutGroup->id));
+        \Livewire\Livewire::withoutLazyLoading()->actingAs($admin)
+            ->test(\App\Livewire\Admin\ScoutGroupVerificationActions::class, ['scoutGroupId' => $scoutGroup->id])
+            ->call('verify');
 
         $this->assertEquals(RegistrationStatusEnum::Verified, $scoutGroup->fresh()->verification_status);
-        $this->assertEquals($admin->id, $scoutGroup->fresh()->verified_by);
+        $this->assertNull($scoutGroup->fresh()->verified_by);
     }
 
     public function test_registration_queues_push_notification_for_admins(): void
     {
         Queue::fake();
 
-        $this->post(route('register.scout-group.store'), [
+        $this->registerGudep([
             'school_name' => 'SMP Negeri 5 Padangsidimpuan',
             'group_number' => '01-101',
             'kwarran' => 'Kwarran Padangsidimpuan Utara',
@@ -362,7 +365,7 @@ class ScoutGroupRegistrationTest extends TestCase
             'pic_name' => 'Kak Rahmat',
             'phone_number' => '081211112222',
             'terms' => '1',
-        ])->assertSessionHasNoErrors();
+        ])->assertHasNoErrors();
 
         $group = ScoutGroup::where('school_name', 'SMP Negeri 5 Padangsidimpuan')->firstOrFail();
 

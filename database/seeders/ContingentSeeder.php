@@ -19,9 +19,12 @@ use Illuminate\Support\Facades\Hash;
  */
 class ContingentSeeder extends Seeder
 {
+    /** ID Gudep contoh (G-{no_gudep}); juga menjadi username dan ID akun penanggung jawab */
+    public const GUDEP_ID = 'G-01001.01002';
+
     public function run(): void
     {
-        $gudepUser = User::where('username', 'gudep01')->first();
+        $gudepUser = User::where('username', self::GUDEP_ID)->first();
 
         if (! $gudepUser) {
             return;
@@ -31,7 +34,7 @@ class ContingentSeeder extends Seeder
         $scoutGroup = ScoutGroup::firstOrCreate(
             ['user_id' => $gudepUser->id],
             [
-                'registration_code' => 'GDP-PSP-01',
+                'registration_code' => self::GUDEP_ID,
                 'school_name' => 'SMP Negeri 1 Padangsidimpuan',
                 'group_number' => '01-001 & 01-002',
                 'male_group_number' => '01-001',

@@ -22,6 +22,7 @@ return new class extends Migration
             $table->text('reason')->nullable();
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
+            $table->string('acting_role', 30)->nullable(); // admin = bertindak dengan status Administrator; judge = sebagai Juri
             $table->timestamp('created_at')->useCurrent();
 
             $table->index(['model_type', 'model_id']);

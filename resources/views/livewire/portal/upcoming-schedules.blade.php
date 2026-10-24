@@ -1,13 +1,14 @@
 @php
     $totalSessions = $groups->sum(fn ($items) => $items->count());
     $liveSessions = $groups->flatten()->where('status', 'in_progress')->count();
+    $doneSessions = $groups->flatten()->where('status', 'completed')->count();
 @endphp
 
 <div class="flex h-full w-full flex-1 flex-col gap-6">
     <x-heading-section
         icon="calendar-days"
         title="Jadwal Kegiatan"
-        description="Sesi lomba yang sedang berlangsung dan yang terdekat, berurutan dari waktu paling dekat. Waktu resmi WIB."
+        description="Seluruh sesi lomba berurutan dari waktu paling awal, termasuk yang sedang berlangsung dan yang sudah selesai. Waktu resmi WIB."
     >
         <x-slot:breadcrumbs>
             <a href="{{ route('dashboard') }}" wire:navigate class="hover:underline">Dasbor</a>
@@ -27,10 +28,29 @@
             </div>
         </x-slot:actions>
     </x-heading-section>
+    {{-- Filter tanggal: otomatis aktif pada hari ini bila ada jadwal lomba --}}
+    @if ($dates->count() > 1)
+        <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Filter tanggal">
+            <flux:button size="sm" wire:click="filterDate('all')" :variant="$date === 'all' ? 'primary' : 'subtle'" icon="calendar-days">
+                Semua Tanggal
+            </flux:button>
+            @foreach ($dates as $option)
+                @php
+                    $optionDay = \Illuminate\Support\Carbon::parse($option)->locale('id');
+                @endphp
+                <flux:button size="sm" wire:key="date-filter-{{ $option }}" wire:click="filterDate('{{ $option }}')" :variant="$date === $option ? 'primary' : 'subtle'">
+                    {{ $optionDay->isoFormat('ddd, D MMM') }}
+                    @if ($optionDay->isToday())
+                        <span class="ml-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">Hari ini</span>
+                    @endif
+                </flux:button>
+            @endforeach
+        </div>
+    @endif
 
     {{-- Ringkasan --}}
     @if ($totalSessions)
-        <div class="grid grid-cols-3 gap-3">
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div class="rounded-2xl border border-zinc-200 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
                 <p class="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">Total Sesi</p>
                 <p class="mt-1 text-2xl font-extrabold text-zinc-900 dark:text-white">{{ $totalSessions }}</p>
@@ -47,6 +67,10 @@
                     Berlangsung
                 </p>
                 <p class="mt-1 text-2xl font-extrabold text-emerald-700 dark:text-emerald-300">{{ $liveSessions }}</p>
+            </div>
+            <div class="rounded-2xl border border-zinc-200 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
+                <p class="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">Selesai</p>
+                <p class="mt-1 text-2xl font-extrabold text-zinc-900 dark:text-white">{{ $doneSessions }}</p>
             </div>
         </div>
     @endif
@@ -87,7 +111,7 @@
             <div class="flex size-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
                 <flux:icon name="calendar-days" class="size-6" />
             </div>
-            <p class="text-sm text-zinc-500 dark:text-zinc-400">Tidak ada sesi yang akan datang.</p>
+            <p class="text-sm text-zinc-500 dark:text-zinc-400">Belum ada sesi kegiatan yang dipublikasikan.</p>
         </div>
     @endforelse
 </div>

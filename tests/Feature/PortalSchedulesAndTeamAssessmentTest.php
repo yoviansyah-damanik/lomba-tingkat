@@ -36,22 +36,50 @@ class PortalSchedulesAndTeamAssessmentTest extends TestCase
     {
         $this->get(route('agenda.index'))->assertRedirect();
 
-        foreach (['admin', 'panitia', 'juri', 'gudep01', 'peserta', 'bindamping'] as $local) {
+        foreach (['admin', 'panitia', 'juri', \Database\Seeders\ContingentSeeder::GUDEP_ID, 'peserta', 'bindamping'] as $local) {
             $user = User::where('username', $local)->first();
             $this->actingAs($user)->get(route('agenda.index'))->assertOk()->assertSee('Jadwal Kegiatan');
         }
     }
 
-    public function test_upcoming_schedules_are_ordered_and_hide_past_sessions(): void
+    public function test_schedules_are_ordered_and_keep_finished_sessions_visible(): void
     {
         // Sabtu 28 November 2026 pukul 12.30: sesi Jumat 27 November dan sesi pagi 28 November sudah lewat
         $this->travelTo(now()->setDate(2026, 11, 28)->setTime(12, 30));
 
         $admin = User::where('username', 'admin')->first();
-        $html = $this->actingAs($admin)->get(route('agenda.index'))->assertOk()->getContent();
+        $html = $this->actingAs($admin)->get(route('agenda.index', ['tanggal' => 'all']))->assertOk()->getContent();
 
-        $this->assertStringNotContainsString('Jumat, 27 November 2026', $html);
+        // Sesi yang sudah lewat tetap tampil, berurutan dari yang paling awal
+        $this->assertStringContainsString('Jumat, 27 November 2026', $html);
+        $this->assertLessThan(strpos($html, 'Sabtu, 28 November 2026'), strpos($html, 'Jumat, 27 November 2026'));
         $this->assertLessThan(strpos($html, 'Minggu, 29 November 2026'), strpos($html, 'Sabtu, 28 November 2026'));
+    }
+
+    public function test_date_filter_defaults_to_today_when_it_is_a_schedule_day(): void
+    {
+        $admin = User::where('username', 'admin')->first();
+
+        // Hari ini adalah hari lomba (Sabtu 28 November): filter tanggal otomatis aktif
+        $this->travelTo(now()->setDate(2026, 11, 28)->setTime(9, 0));
+        $html = $this->actingAs($admin)->get(route('agenda.index'))->assertOk()->getContent();
+        $this->assertStringContainsString('Sabtu, 28 November 2026', $html);
+        $this->assertStringNotContainsString('Jumat, 27 November 2026', $html);
+        $this->assertStringNotContainsString('Minggu, 29 November 2026', $html);
+
+        // Pilihan tanggal lain dan "semua tanggal" dapat dipilih
+        Livewire::actingAs($admin)->test(\App\Livewire\Portal\UpcomingSchedules::class)
+            ->assertSet('date', '2026-11-28')
+            ->call('filterDate', '2026-11-27')
+            ->assertSee('Jumat, 27 November 2026')
+            ->assertDontSee('Sabtu, 28 November 2026')
+            ->call('filterDate', 'all')
+            ->assertSee('Jumat, 27 November 2026')
+            ->assertSee('Minggu, 29 November 2026');
+
+        // Bukan hari lomba: tampil semua tanggal
+        $this->travelTo(now()->setDate(2026, 10, 1));
+        Livewire::actingAs($admin)->test(\App\Livewire\Portal\UpcomingSchedules::class)->assertSet('date', 'all');
     }
 
     public function test_participant_sees_own_patrol_assessment(): void
@@ -65,6 +93,23 @@ class PortalSchedulesAndTeamAssessmentTest extends TestCase
             ->assertSee('Nilai per Mata Lomba');
     }
 
+    public function test_general_rank_is_censored_while_blind_mode_is_active(): void
+    {
+        $user = User::where('username', 'peserta')->first();
+        $event = \App\Models\Event::first();
+
+        $event->update(['hide_patrol_identities' => false]);
+        Livewire::actingAs($user)->test(TeamAssessment::class)
+            ->assertSee('Peringkat Umum')
+            ->assertDontSee('Disensor selama blind mode aktif');
+
+        $event->update(['hide_patrol_identities' => true]);
+        Livewire::actingAs($user)->test(TeamAssessment::class)
+            ->assertSee('Peringkat Umum')
+            ->assertSee('#•••')
+            ->assertSee('Disensor selama blind mode aktif');
+    }
+
     public function test_chaperone_sees_patrol_matching_gender(): void
     {
         $putra = User::where('username', 'bindamping')->first();
@@ -76,7 +121,7 @@ class PortalSchedulesAndTeamAssessmentTest extends TestCase
 
     public function test_scout_group_sees_both_boys_and_girls_patrols(): void
     {
-        $gudep = User::where('username', 'gudep01')->first();
+        $gudep = User::where('username', \Database\Seeders\ContingentSeeder::GUDEP_ID)->first();
 
         $this->actingAs($gudep)->get(route('team-assessment.index'))->assertOk();
 
@@ -99,7 +144,7 @@ class PortalSchedulesAndTeamAssessmentTest extends TestCase
             $this->actingAs($user)->get(route('team-assessment.index'))->assertForbidden();
         }
 
-        foreach (['bindamping', 'peserta', 'gudep01'] as $local) {
+        foreach (['bindamping', 'peserta', \Database\Seeders\ContingentSeeder::GUDEP_ID] as $local) {
             $this->actingAs(User::where('username', $local)->first())
                 ->get(route('team-assessment.index'))->assertOk();
         }

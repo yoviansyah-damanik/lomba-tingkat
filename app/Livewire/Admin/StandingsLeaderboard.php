@@ -85,8 +85,8 @@ class StandingsLeaderboard extends Component
             return false;
         }
 
-        // Administrator dilarang keras melakukan penilaian lomba (tanpa terkecuali)
-        if ($user->isAdmin()) {
+        // Administrator yang tidak merangkap Juri dilarang melakukan penilaian lomba
+        if ($user->isAdminOnly()) {
             return false;
         }
 
@@ -238,7 +238,7 @@ class StandingsLeaderboard extends Component
      */
     public function openScoreModal(?string $patrolId = null, ?string $scoreId = null): void
     {
-        if (auth()->user()?->isAdmin()) {
+        if (auth()->user()?->isAdminOnly()) {
             Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Administrator tidak diperkenankan melakukan penilaian lomba. Penilaian hanya dapat dilakukan oleh Juri yang telah ditunjuk.');
             return;
         }
@@ -301,7 +301,7 @@ class StandingsLeaderboard extends Component
      */
     public function saveScoreModal(): void
     {
-        if (auth()->user()?->isAdmin()) {
+        if (auth()->user()?->isAdminOnly()) {
             Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Administrator tidak diperkenankan melakukan penilaian lomba. Penilaian hanya dapat dilakukan oleh Juri yang telah ditunjuk.');
             return;
         }

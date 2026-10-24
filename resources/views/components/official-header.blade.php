@@ -18,7 +18,7 @@
                 {{ $title ?? 'Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan' }}
             </h1>
             <p class="text-xs text-zinc-600 dark:text-zinc-400 sm:text-sm">
-                {{ $subtitle ?? 'Aplikasi Resmi Penyelenggaraan, Akreditasi, Presensi QR, dan Live Scoring LT III' }}
+                {{ $subtitle ?? 'Aplikasi Resmi Penyelenggaraan, Verifikasi Kontingen, Presensi QR, dan Live Scoring LT III' }}
             </p>
         </div>
 

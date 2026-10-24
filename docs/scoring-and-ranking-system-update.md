@@ -22,7 +22,7 @@
   3. Count of `Prestasi Cukup` (Bronze equivalent) &darr;
   4. Total Achievements (`total_medals`) &darr;
   5. Alphabetical order.
-- **Score Accumulation Removed from General Ranks**: Accumulated numerical scores (`total_score_sum`) and point weights (`total_points`) no longer determine the overall rank order. A team with 1 `Prestasi Tinggi` ranks higher than a team with multiple `Prestasi Baik`, regardless of numerical scores.
+- **Score Accumulation Removed from General Ranks**: Accumulated numerical scores and point weights (both fully removed from the standings data and views) no longer determine the overall rank order. A team with 1 `Prestasi Tinggi` ranks higher than a team with multiple `Prestasi Baik`, regardless of numerical scores.
 
 ---
 

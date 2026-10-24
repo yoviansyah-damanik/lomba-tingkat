@@ -278,6 +278,10 @@ class ScoutGroupPortalController extends Controller
             return back()->withErrors(['status' => 'Pendaftaran terkunci dan tidak dapat menambah peserta.']);
         }
 
+        if ($patrol->participants()->count() >= Patrol::REQUIRED_MEMBERS) {
+            return back()->withErrors(['status' => 'Setiap regu maksimal '.Patrol::REQUIRED_MEMBERS.' peserta.']);
+        }
+
         $validated = $request->validate($this->participantRules(), $this->participantMessages(), $this->participantAttributes());
 
         // Validasi: 1 regu hanya boleh punya 1 Pinru dan 1 Wapinru
@@ -291,6 +295,12 @@ class ScoutGroupPortalController extends Controller
 
         $data = $validated;
         unset($data['photo']);
+
+        // Nomor gudep dan pangkalan riwayat Penggalang selalu mengikuti data gugus depan (tidak dapat diubah)
+        $data['scout_penggalang'] = array_merge($data['scout_penggalang'] ?? [], [
+            'group_number' => $patrol->group_number,
+            'pangkalan' => $scoutGroup->school_name,
+        ]);
 
         if ($request->hasFile('photo')) {
             $data['photo_path'] = $request->file('photo')->store('participants', 'public');
@@ -316,14 +326,14 @@ class ScoutGroupPortalController extends Controller
      */
     protected function participantRules(?Participant $participant = null): array
     {
-        return [
+        $rules = [
             // Bagian 1: Identitas diri & jabatan regu (telepon rumah opsional)
             'photo' => [$participant?->photo_path ? 'nullable' : 'required', 'image', 'max:2048'],
             'full_name' => ['required', 'string', 'max:255'],
             'role_in_patrol' => ['required', 'in:patrol_leader,assistant_patrol_leader,member'],
             'gender' => ['required', 'in:male,female'],
             'religion' => ['required', 'string', 'max:50'],
-            'blood_type' => ['required', 'in:A,B,AB,O'],
+            'blood_type' => ['required', \App\Support\BloodType::rule()],
             'scout_id' => ['required', 'string', 'max:50'],
             'birth_place' => ['required', 'string', 'max:100'],
             'birth_date' => ['required', 'date'],
@@ -355,14 +365,22 @@ class ScoutGroupPortalController extends Controller
             'scout_penggalang' => ['nullable', 'array'],
 
             // Bagian 6: Berkas persyaratan peserta (KTA, BPJS, Surat Ket. Sehat, Akta Kelahiran, KK, SKU, SKK)
-            'doc_kta' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:4096'],
-            'doc_bpjs' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:4096'],
-            'doc_health_certificate' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:4096'],
-            'doc_birth_certificate' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:4096'],
-            'doc_family_card' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:4096'],
-            'doc_sku' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:4096'],
-            'doc_skk' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:4096'],
+            'doc_kta' => ['nullable', 'file', 'mimes:pdf', 'max:4096'],
+            'doc_bpjs' => ['nullable', 'file', 'mimes:pdf', 'max:4096'],
+            'doc_health_certificate' => ['nullable', 'file', 'mimes:pdf', 'max:4096'],
+            'doc_birth_certificate' => ['nullable', 'file', 'mimes:pdf', 'max:4096'],
+            'doc_family_card' => ['nullable', 'file', 'mimes:pdf', 'max:4096'],
+            'doc_sku' => ['nullable', 'file', 'mimes:pdf', 'max:4096'],
+            'doc_skk' => ['nullable', 'file', 'mimes:pdf', 'max:4096'],
         ];
+
+        // Tahun lulus wajib diisi, kecuali SMP: peserta diasumsikan masih bersekolah
+        unset($rules['formal_education.*.graduation_year']);
+        foreach ((array) request()->input('formal_education', []) as $index => $education) {
+            $rules["formal_education.$index.graduation_year"] = (($education['level'] ?? null) === 'SMP' ? 'nullable' : 'required').'|string|max:10';
+        }
+
+        return $rules;
     }
 
     protected function participantMessages(): array
@@ -372,7 +390,7 @@ class ScoutGroupPortalController extends Controller
             'photo.image' => 'Pas foto harus berupa gambar JPG atau PNG.',
             'photo.max' => 'Ukuran pas foto maksimal 2MB.',
             'file' => ':attribute harus berupa berkas yang valid.',
-            'mimes' => ':attribute harus berformat PDF, JPG, atau PNG.',
+            'mimes' => ':attribute harus berformat PDF.',
             'max' => 'Ukuran :attribute maksimal :max KB.',
         ];
     }
@@ -471,6 +489,12 @@ class ScoutGroupPortalController extends Controller
         $data = $validated;
         unset($data['photo']);
 
+        // Nomor gudep dan pangkalan riwayat Penggalang selalu mengikuti data gugus depan (tidak dapat diubah)
+        $data['scout_penggalang'] = array_merge($data['scout_penggalang'] ?? [], [
+            'group_number' => $patrol->group_number,
+            'pangkalan' => $scoutGroup->school_name,
+        ]);
+
         if ($request->hasFile('photo')) {
             if ($participant->photo_path && Storage::disk('public')->exists($participant->photo_path)) {
                 Storage::disk('public')->delete($participant->photo_path);
@@ -560,7 +584,7 @@ class ScoutGroupPortalController extends Controller
     /**
      * Formulir pendaftaran biodata lengkap pembina pendamping
      */
-    public function chaperoneCreate(Request $request): View
+    public function chaperoneCreate(Request $request): View|RedirectResponse
     {
         $scoutGroup = $this->getOrCreateScoutGroup($request);
 
@@ -572,6 +596,12 @@ class ScoutGroupPortalController extends Controller
         $gender = $request->query('gender', 'male');
         if (! in_array($gender, ['male', 'female'])) {
             $gender = 'male';
+        }
+
+        // Regu wajib ada lebih dulu; bindamping mengikuti regu putra/putri
+        if (! $scoutGroup->canRegisterChaperone($gender)) {
+            return redirect()->route($scoutGroup->patrols()->exists() ? 'scout-group.chaperones' : 'scout-group.patrols')
+                ->withErrors(['gender' => ScoutGroup::chaperoneRequiresPatrolMessage($gender)]);
         }
 
         $defaultEducation = Chaperone::defaultFormalEducation();
@@ -604,7 +634,7 @@ class ScoutGroupPortalController extends Controller
             'birth_place' => ['required', 'string', 'max:100'],
             'birth_date' => ['required', 'date'],
             'religion' => ['required', 'string', 'max:50'],
-            'blood_type' => ['required', 'string', 'max:5'],
+            'blood_type' => ['required', \App\Support\BloodType::rule()],
             'scout_id' => ['required', 'string', 'max:50'],
             'national_identity_number' => ['nullable', 'string', 'max:30'],
             'home_address' => ['required', 'string', 'max:500'],
@@ -618,6 +648,10 @@ class ScoutGroupPortalController extends Controller
             'scout_trainings' => ['nullable', 'array'],
             'other_trainings' => ['nullable', 'array'],
         ]);
+
+        if (! $scoutGroup->canRegisterChaperone($validated['gender'])) {
+            return back()->withInput()->withErrors(['gender' => ScoutGroup::chaperoneRequiresPatrolMessage($validated['gender'])]);
+        }
 
         if ($scoutGroup->chaperones()->where('gender', $validated['gender'])->exists()) {
             $label = $validated['gender'] === 'male' ? 'Pembina Pendamping Putra' : 'Pembina Pendamping Putri';
@@ -641,7 +675,7 @@ class ScoutGroupPortalController extends Controller
     /**
      * Formulir edit biodata pembina pendamping
      */
-    public function chaperoneEdit(Request $request, string $id): View
+    public function chaperoneEdit(Request $request, string $id): View|RedirectResponse
     {
         $scoutGroup = $this->getOrCreateScoutGroup($request);
 
@@ -695,7 +729,7 @@ class ScoutGroupPortalController extends Controller
             'birth_place' => ['required', 'string', 'max:100'],
             'birth_date' => ['required', 'date'],
             'religion' => ['required', 'string', 'max:50'],
-            'blood_type' => ['required', 'string', 'max:5'],
+            'blood_type' => ['required', \App\Support\BloodType::rule()],
             'scout_id' => ['required', 'string', 'max:50'],
             'national_identity_number' => ['nullable', 'string', 'max:30'],
             'home_address' => ['required', 'string', 'max:500'],
@@ -709,6 +743,9 @@ class ScoutGroupPortalController extends Controller
             'scout_trainings' => ['nullable', 'array'],
             'other_trainings' => ['nullable', 'array'],
         ]);
+
+        // Kategori bindamping tidak dapat diubah: selalu mengikuti data tersimpan
+        $validated['gender'] = $chaperone->gender;
 
         if ($validated['gender'] !== $chaperone->gender && $scoutGroup->chaperones()->where('gender', $validated['gender'])->where('id', '!=', $chaperone->id)->exists()) {
             $label = $validated['gender'] === 'male' ? 'Pembina Pendamping Putra' : 'Pembina Pendamping Putri';
@@ -757,7 +794,7 @@ class ScoutGroupPortalController extends Controller
         $scoutGroup = $this->getOrCreateScoutGroup($request);
         abort_unless($scoutGroup->canDownloadDocuments(), 403, ScoutGroup::DOWNLOAD_LOCKED_MESSAGE);
 
-        $scoutGroup->load(['patrols.participants', 'chaperones', 'user', 'verifier']);
+        $scoutGroup->load(['patrols.participants', 'chaperones', 'user']);
         $filename = 'Bukti_Registrasi_' . \Illuminate\Support\Str::slug($scoutGroup->school_name) . '.pdf';
 
         return $this->pdf->response(
@@ -817,17 +854,27 @@ class ScoutGroupPortalController extends Controller
             return back()->withErrors(['error' => 'Gugus Depan wajib membentuk minimal 1 regu sebelum mengajukan pendaftaran.']);
         }
 
-        if ($scoutGroup->chaperones()->count() === 0) {
-            return back()->withErrors(['error' => 'Gugus Depan wajib mendaftarkan minimal 1 Pembina Pendamping (Bindamping).']);
+        // Bindamping wajib sesuai regu: regu putra -> bindamping putra, regu putri -> bindamping putri
+        foreach ($scoutGroup->requiredChaperoneGenders() as $gender) {
+            if (! $scoutGroup->chaperones()->where('gender', $gender)->exists()) {
+                $label = $gender === 'male' ? 'Putra' : 'Putri';
+
+                return back()->withErrors(['error' => "Regu {$label} sudah terdaftar, sehingga Gugus Depan wajib mendaftarkan Pembina Pendamping (Bindamping) {$label}."]);
+            }
+        }
+
+        // Susunan regu: tepat 8 peserta serta Pinru dan Wapinru
+        if ($problems = $scoutGroup->patrolRosterProblems()) {
+            return back()->withErrors(['error' => implode(' ', $problems)]);
         }
 
         // Validasi unggah berkas pangkalan jika disertakan
         $request->validate([
-            'mandate_letter' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'mandate_letter' => ['nullable', 'file', 'mimes:pdf', 'max:5120'],
             'payment_proof' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
         ], [
             'mandate_letter.file' => 'Berkas Surat Tugas / Mandat harus valid.',
-            'mandate_letter.mimes' => 'Surat Tugas / Mandat harus berformat PDF, JPG, atau PNG.',
+            'mandate_letter.mimes' => 'Surat Tugas / Mandat harus berformat PDF.',
             'mandate_letter.max' => 'Ukuran Surat Tugas / Mandat maksimal 5MB.',
             'payment_proof.file' => 'Berkas Bukti Bayar harus valid.',
             'payment_proof.mimes' => 'Bukti Bayar harus berformat PDF, JPG, atau PNG.',

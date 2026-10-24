@@ -19,14 +19,14 @@ class UserSeeder extends Seeder
     {
         $defaultPassword = Hash::make('password123');
 
-        // 1-2. Akun Superadmin & Administrator (juga dipakai pada production)
+        // 1-2. Akun Superadmin & Administrator (Panitia yang ditunjuk; juga dipakai pada production)
         $this->call(AdministratorSeeder::class);
 
-        // 3. Akun Panitia (Monitoring Operasional Lapangan)
+        // 3. Akun Panitia murni (Monitoring Operasional Lapangan); dapat ditunjuk Superadmin menjadi Administrator
         $committee = User::firstOrCreate(
             ['username' => 'panitia'],
             [
-                'id_number' => 'ID-PANITIA1',
+                'id_number' => 'A-100001',
                 'name' => 'Panitia Lapangan',
                 'password' => $defaultPassword,
                 'phone_number' => '081234567891',
@@ -39,7 +39,7 @@ class UserSeeder extends Seeder
         $judge = User::firstOrCreate(
             ['username' => 'juri'],
             [
-                'id_number' => 'ID-JURI0001',
+                'id_number' => 'A-100002',
                 'name' => 'Dewan Juri LT III',
                 'password' => $defaultPassword,
                 'phone_number' => '081234567892',
@@ -52,7 +52,7 @@ class UserSeeder extends Seeder
         $dualRole = User::firstOrCreate(
             ['username' => 'panitia.juri'],
             [
-                'id_number' => 'ID-PANJURI1',
+                'id_number' => 'A-100003',
                 'name' => 'Panitia Merangkap Juri',
                 'password' => $defaultPassword,
                 'phone_number' => '081234567893',
@@ -62,10 +62,11 @@ class UserSeeder extends Seeder
         $dualRole->assignRole(RoleEnum::Committee);
         $dualRole->assignRole(RoleEnum::Judge);
 
-        // 6. Akun Penanggung Jawab Gugus Depan (Sekolah / Pangkalan)
+        // 6. Akun Penanggung Jawab Gugus Depan (Sekolah / Pangkalan): username dan ID persis sama dengan ID Gudep
         $scoutGroup = User::firstOrCreate(
-            ['username' => 'gudep01'],
+            ['username' => ContingentSeeder::GUDEP_ID],
             [
+                'id_number' => ContingentSeeder::GUDEP_ID,
                 'name' => 'Gudep SMP Negeri 1 Padangsidimpuan',
                 'password' => $defaultPassword,
                 'phone_number' => '081234567894',

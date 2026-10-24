@@ -26,6 +26,7 @@ class AuditLog extends Model
         'reason',
         'ip_address',
         'user_agent',
+        'acting_role',
         'created_at',
     ];
 
@@ -47,6 +48,20 @@ class AuditLog extends Model
     }
 
     /**
+     * Status bertindak sebagai Administrator (penunjukan eksplisit); null bila tidak berlaku
+     */
+    protected static function defaultActingRole(?string $userId): ?string
+    {
+        $actor = auth()->user();
+
+        if (! $actor || ($userId && $userId !== $actor->id)) {
+            return null;
+        }
+
+        return $actor->isAdministrator() ? 'admin' : null;
+    }
+
+    /**
      * Helper static untuk mencatat log audit secara instan
      */
     public static function log(
@@ -56,7 +71,8 @@ class AuditLog extends Model
         ?array $oldValues = null,
         ?array $newValues = null,
         ?string $reason = null,
-        ?string $userId = null
+        ?string $userId = null,
+        ?string $actingRole = null
     ): self {
         return static::create([
             'user_id' => $userId ?: auth()->id(),
@@ -68,6 +84,7 @@ class AuditLog extends Model
             'reason' => $reason,
             'ip_address' => request()?->ip(),
             'user_agent' => request()?->userAgent(),
+            'acting_role' => $actingRole ?? static::defaultActingRole($userId),
             'created_at' => now(),
         ]);
     }

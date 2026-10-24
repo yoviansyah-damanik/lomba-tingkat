@@ -38,7 +38,18 @@ class ScoutGroup extends Model
         'verified_at',
         'mandate_letter_path',
         'payment_proof_path',
+        'invitation_id',
+        'registered_ip',
+        'registered_user_agent',
     ];
+
+    /**
+     * Undangan registrasi yang dipakai untuk mendaftarkan pangkalan ini
+     */
+    public function invitation(): BelongsTo
+    {
+        return $this->belongsTo(RegistrationInvitation::class, 'invitation_id');
+    }
 
     /**
      * Boot model: beri tahu akun Gudep saat hasil verifikasi ditetapkan (disetujui, revisi, atau ditolak)
@@ -99,14 +110,6 @@ class ScoutGroup extends Model
     }
 
     /**
-     * Administrator yang memverifikasi
-     */
-    public function verifier(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'verified_by');
-    }
-
-    /**
      * Seluruh regu di bawah naungan Gugus Depan
      */
     public function patrols(): HasMany
@@ -152,6 +155,92 @@ class ScoutGroup extends Model
     public function isEditable(): bool
     {
         return $this->verification_status?->isEditable() ?? true;
+    }
+
+    /**
+     * Pelanggaran susunan regu yang menghalangi pengajuan: jumlah peserta harus tepat 8 serta wajib ada Pinru dan Wapinru
+     *
+     * @return array<int, string>
+     */
+    public function patrolRosterProblems(): array
+    {
+        $problems = [];
+        $size = Patrol::REQUIRED_MEMBERS;
+
+        foreach ($this->patrols()->with('participants')->get() as $patrol) {
+            foreach ($this->rosterProblemsFor($patrol) as $problem) {
+                $problems[] = "Regu {$patrol->patrol_name}: {$problem}";
+            }
+        }
+
+        return $problems;
+    }
+
+    /**
+     * Pelanggaran susunan satu regu (memakai relasi participants yang sudah dimuat bila ada)
+     *
+     * @return array<int, string>
+     */
+    public function rosterProblemsFor(Patrol $patrol): array
+    {
+        $problems = [];
+        $size = Patrol::REQUIRED_MEMBERS;
+        $participants = $patrol->participants;
+        $count = $participants->count();
+
+        if ($count !== $size) {
+            $problems[] = "berisi {$count} peserta; wajib tepat {$size} peserta.";
+        }
+
+        foreach ([
+            [\App\Enums\PatrolRoleEnum::PatrolLeader, 'Pimpinan Regu (Pinru)'],
+            [\App\Enums\PatrolRoleEnum::AssistantPatrolLeader, 'Wakil Pimpinan Regu (Wapinru)'],
+        ] as [$role, $label]) {
+            if ($participants->where('role_in_patrol', $role)->isEmpty()) {
+                $problems[] = "belum memiliki {$label}.";
+            }
+        }
+
+        return $problems;
+    }
+
+    /**
+     * Gender bindamping yang wajib ada ('male'/'female'), mengikuti regu putra/putri yang terdaftar
+     *
+     * @return array<int, string>
+     */
+    public function requiredChaperoneGenders(): array
+    {
+        $patrols = $this->patrols()->get(['id', 'gender_category']);
+        $genders = [];
+
+        if ($patrols->contains(fn (Patrol $p) => $p->isBoys())) {
+            $genders[] = 'male';
+        }
+
+        if ($patrols->contains(fn (Patrol $p) => $p->isGirls())) {
+            $genders[] = 'female';
+        }
+
+        return $genders;
+    }
+
+    /**
+     * Bindamping hanya dapat didaftarkan untuk gender yang memiliki regu terlebih dahulu
+     */
+    public function canRegisterChaperone(string $gender): bool
+    {
+        return in_array($gender, $this->requiredChaperoneGenders(), true);
+    }
+
+    /**
+     * Pesan penolakan bila bindamping didaftarkan sebelum regu putra/putri yang bersangkutan ada
+     */
+    public static function chaperoneRequiresPatrolMessage(string $gender): string
+    {
+        $label = $gender === 'male' ? 'Putra' : 'Putri';
+
+        return "Tambahkan Regu {$label} terlebih dahulu. Bindamping {$label} hanya dapat didaftarkan setelah Regu {$label} ada.";
     }
 
     /**

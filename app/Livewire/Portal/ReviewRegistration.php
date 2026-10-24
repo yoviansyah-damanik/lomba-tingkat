@@ -2,9 +2,11 @@
 
 namespace App\Livewire\Portal;
 
+use App\Enums\PatrolRoleEnum;
 use App\Enums\RegistrationStatusEnum;
 use App\Models\Event;
 use App\Models\Participant;
+use App\Models\Patrol;
 use App\Models\ScoutGroup;
 use Flux\Flux;
 use Illuminate\Support\Facades\Storage;
@@ -109,33 +111,73 @@ class ReviewRegistration extends Component
                 'badge_color' => 'red',
             ];
         } else {
-            // Cek apakah ada regu yang masih belum memiliki anggota peserta
-            $emptyPatrols = $group->patrols->filter(fn ($p) => $p->participants->isEmpty());
-            if ($emptyPatrols->isNotEmpty()) {
-                $names = $emptyPatrols->map(fn ($p) => 'Regu '.$p->patrol_name)->join(', ');
+            // Setiap regu wajib tepat 8 peserta
+            $size = Patrol::REQUIRED_MEMBERS;
+            $wrongSize = $group->patrols->filter(fn ($p) => $p->participants->count() !== $size);
+            if ($wrongSize->isNotEmpty()) {
+                $names = $wrongSize->map(fn ($p) => "Regu {$p->patrol_name} ({$p->participants->count()}/{$size})")->join(', ');
                 $missing[] = [
                     'category' => 'Regu Peserta',
-                    'title' => 'Anggota Regu Masih Kosong',
-                    'description' => "{$names} belum memiliki anggota peserta. Silakan daftarkan peserta ke dalam regu.",
+                    'title' => "Jumlah Anggota Regu Belum {$size} Peserta",
+                    'description' => "{$names}. Setiap regu wajib memiliki tepat {$size} peserta.",
                     'action_url' => route('scout-group.patrols'),
                     'action_label' => 'Kelola Anggota Regu',
                     'icon' => 'user-plus',
                     'badge_color' => 'red',
                 ];
             }
+
+            // Setiap regu wajib memiliki Pinru dan Wapinru
+            foreach ([
+                [PatrolRoleEnum::PatrolLeader, 'Pimpinan Regu (Pinru)'],
+                [PatrolRoleEnum::AssistantPatrolLeader, 'Wakil Pimpinan Regu (Wapinru)'],
+            ] as [$role, $label]) {
+                $without = $group->patrols->filter(fn ($p) => $p->participants->where('role_in_patrol', $role)->isEmpty());
+                if ($without->isNotEmpty()) {
+                    $names = $without->map(fn ($p) => 'Regu '.$p->patrol_name)->join(', ');
+                    $missing[] = [
+                        'category' => 'Regu Peserta',
+                        'title' => "Belum Ada {$label}",
+                        'description' => "{$names} belum memiliki {$label}. Tetapkan jabatan pada salah satu peserta regu.",
+                        'action_url' => route('scout-group.patrols'),
+                        'action_label' => 'Kelola Anggota Regu',
+                        'icon' => 'exclamation-triangle',
+                        'badge_color' => 'red',
+                    ];
+                }
+            }
         }
 
         // 3. Pembina Pendamping
-        if ($group->chaperones->isEmpty()) {
-            $missing[] = [
-                'category' => 'Pembina Pendamping',
-                'title' => 'Belum Ada Bindamping Terdaftar',
-                'description' => 'Pangkalan wajib mendaftarkan minimal 1 Pembina Pendamping (Putra atau Putri).',
-                'action_url' => route('scout-group.chaperones'),
-                'action_label' => 'Tambah Bindamping',
-                'icon' => 'identification',
-                'badge_color' => 'red',
-            ];
+        if ($group->patrols->isEmpty()) {
+            if ($group->chaperones->isEmpty()) {
+                $missing[] = [
+                    'category' => 'Pembina Pendamping',
+                    'title' => 'Belum Ada Bindamping Terdaftar',
+                    'description' => 'Tambahkan regu terlebih dahulu, lalu daftarkan Pembina Pendamping sesuai regu Putra/Putri.',
+                    'action_url' => route('scout-group.patrols'),
+                    'action_label' => 'Tambah Regu',
+                    'icon' => 'identification',
+                    'badge_color' => 'red',
+                ];
+            }
+        } else {
+            // Bindamping wajib mengikuti regu: regu putra -> bindamping putra, regu putri -> bindamping putri
+            foreach (['male' => 'Putra', 'female' => 'Putri'] as $gender => $label) {
+                $hasPatrol = $group->patrols->contains(fn ($p) => $gender === 'male' ? $p->isBoys() : $p->isGirls());
+
+                if ($hasPatrol && ! $group->chaperones->contains('gender', $gender)) {
+                    $missing[] = [
+                        'category' => 'Pembina Pendamping',
+                        'title' => "Belum Ada Bindamping {$label}",
+                        'description' => "Regu {$label} sudah terdaftar, sehingga Pembina Pendamping {$label} wajib didaftarkan.",
+                        'action_url' => route('scout-group.chaperones'),
+                        'action_label' => "Daftarkan Bindamping {$label}",
+                        'icon' => 'identification',
+                        'badge_color' => 'red',
+                    ];
+                }
+            }
         }
 
         // 4. Surat Tugas / Mandat Gugus Depan
@@ -144,7 +186,7 @@ class ReviewRegistration extends Component
             $missing[] = [
                 'category' => 'Berkas Pangkalan',
                 'title' => 'Surat Tugas / Mandat Belum Diunggah',
-                'description' => 'Surat Tugas resmi dari Kwartir Ranting wajib diunggah pada Bagian 4 Berkas Administrasi.',
+                'description' => 'Surat Tugas resmi dari Gugusdepan wajib diunggah pada Bagian 4 Berkas Administrasi.',
                 'action_url' => '#section-administrative-docs',
                 'action_label' => 'Unggah di Halaman Ini',
                 'icon' => 'document-arrow-up',
@@ -172,6 +214,27 @@ class ReviewRegistration extends Component
         }
 
         return $missing;
+    }
+
+    /**
+     * Persyaratan belum terpenuhi dikelompokkan per bagian halaman: profile, patrols, chaperones, documents
+     *
+     * @return array<string, array<int, array<string, string>>>
+     */
+    #[Computed]
+    public function sectionWarnings(): array
+    {
+        $sections = [
+            'Profil Pangkalan' => 'profile',
+            'Regu Peserta' => 'patrols',
+            'Pembina Pendamping' => 'chaperones',
+            'Berkas Pangkalan' => 'documents',
+        ];
+
+        return collect($this->missingRequirements)
+            ->groupBy(fn ($item) => $sections[$item['category']] ?? 'other')
+            ->map(fn ($items) => $items->values()->all())
+            ->all();
     }
 
     /**
@@ -207,6 +270,34 @@ class ReviewRegistration extends Component
             'incomplete' => $incompleteParticipantsCount,
             'complete' => $totalParticipants - $incompleteParticipantsCount,
         ];
+    }
+
+    /**
+     * Peringatan berkas persyaratan peserta yang belum diunggah, satu baris per peserta
+     *
+     * @return array<int, string>
+     */
+    #[Computed]
+    public function participantDocumentWarnings(): array
+    {
+        $group = $this->scoutGroup;
+        $group->loadMissing('patrols.participants');
+        $warnings = [];
+
+        foreach ($group->patrols as $patrol) {
+            foreach ($patrol->participants as $participant) {
+                $missing = collect(Participant::DOCUMENTS)
+                    ->filter(fn ($doc) => empty($participant->{$doc[0]}))
+                    ->map(fn ($doc) => str_replace('Scan ', '', $doc[1]))
+                    ->values();
+
+                if ($missing->isNotEmpty()) {
+                    $warnings[] = "{$participant->full_name} (Regu {$patrol->patrol_name}) belum mengunggah: {$missing->join(', ')}.";
+                }
+            }
+        }
+
+        return $warnings;
     }
 
     #[Computed]
@@ -271,11 +362,11 @@ class ReviewRegistration extends Component
         }
 
         $this->validate([
-            'mandate_letter' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'mandate_letter' => ['nullable', 'file', 'mimes:pdf', 'max:5120'],
             'payment_proof' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
         ], [
             'mandate_letter.file' => 'Berkas Surat Tugas / Mandat harus valid.',
-            'mandate_letter.mimes' => 'Surat Tugas / Mandat harus berformat PDF, JPG, atau PNG.',
+            'mandate_letter.mimes' => 'Surat Tugas / Mandat harus berformat PDF.',
             'mandate_letter.max' => 'Ukuran Surat Tugas / Mandat maksimal 5MB.',
             'payment_proof.file' => 'Berkas Bukti Bayar harus valid.',
             'payment_proof.mimes' => 'Bukti Bayar harus berformat PDF, JPG, atau PNG.',

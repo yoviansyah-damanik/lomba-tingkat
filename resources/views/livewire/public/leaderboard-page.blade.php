@@ -2,7 +2,7 @@
     {{-- Header Section --}}
     <x-heading-section
         title="Klasemen Perolehan Prestasi"
-        description="Pantau perolehan medali Prestasi Tinggi, Prestasi Baik, dan Prestasi Cukup kontingen LT III Kwarcab Padangsidimpuan 2026 secara berkala."
+        description="Pantau perolehan Prestasi Tinggi, Prestasi Baik, dan Prestasi Cukup kontingen LT III Kwarcab Padangsidimpuan 2026 secara berkala."
     >
         <x-slot:breadcrumbs>
             <a href="{{ route('home') }}" wire:navigate class="hover:underline">Beranda</a>
@@ -64,7 +64,7 @@
         </div>
     @endif
 
-    {{-- Ringkasan Statistik Perolehan Medali & Lomba --}}
+    {{-- Ringkasan Statistik Perolehan Prestasi & Lomba --}}
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <x-stat-card
             label="Total Pangkalan"
@@ -83,9 +83,9 @@
         />
 
         <x-stat-card
-            label="Medali Disahkan"
+            label="Prestasi Disahkan"
             value="{{ $summary['total_medals'] ?? 0 }}"
-            description="Emas, Perak, Perunggu"
+            description="Tinggi, Baik, Cukup"
             icon="trophy"
             color="amber"
         />
@@ -462,7 +462,7 @@
                                             'prestasi_tinggi' => 'Prestasi Tinggi',
                                             'prestasi_baik' => 'Prestasi Baik',
                                             'prestasi_cukup' => 'Prestasi Cukup',
-                                            default => 'Peserta',
+                                            default => null,
                                         };
                                     @endphp
                                     <tr class="transition hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40">
@@ -478,12 +478,12 @@
                                             {{ $score->patrol?->display_school ?? $score->patrol?->scoutGroup?->school_name ?? '-' }}
                                         </td>
                                         <td class="py-3 px-4 text-center">
-                                            <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-semibold text-[11px] {{ $badgeColor }}">
-                                                @if($score->rank <= 3)
+                                            @if($predicateLabel)
+                                                <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-semibold text-[11px] {{ $badgeColor }}">
                                                     <flux:icon name="trophy" class="size-3" />
-                                                @endif
-                                                {{ $predicateLabel }}
-                                            </span>
+                                                    {{ $predicateLabel }}
+                                                </span>
+                                            @endif
                                         </td>
                                     </tr>
                                 @empty

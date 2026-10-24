@@ -82,8 +82,15 @@ class AdminOfficialController extends Controller
             'position' => ['nullable', 'string', 'max:100'],
             'roles' => ['required', 'array', 'min:1'],
             'roles.*' => ['in:committee,judge'],
+            'is_administrator' => ['nullable', 'boolean'],
             'avatar' => ['nullable', 'image', 'max:2048'],
         ]);
+
+        // Penunjukan Administrator hanya oleh Superadmin dan hanya untuk akun Panitia
+        $designate = $request->user()->isSuperadmin() && $request->boolean('is_administrator');
+        if ($designate && ! in_array('committee', $validated['roles'], true)) {
+            return back()->withInput()->withErrors(['is_administrator' => 'Administrator harus dipilih dari akun Panitia.']);
+        }
 
         $officialIdNumber = User::generateOfficialIdNumber();
 
@@ -110,6 +117,10 @@ class AdminOfficialController extends Controller
 
         foreach ($validated['roles'] as $roleName) {
             $user->assignRole($roleName);
+        }
+
+        if ($designate) {
+            $user->assignRole(RoleEnum::Admin);
         }
 
         return redirect()->route('admin.officials.index')->with('success', "Aparatur {$user->name} berhasil didaftarkan dengan ID {$user->id_number}.");
@@ -140,6 +151,7 @@ class AdminOfficialController extends Controller
             'position' => ['nullable', 'string', 'max:100'],
             'roles' => ['required', 'array', 'min:1'],
             'roles.*' => ['in:committee,judge'],
+            'is_administrator' => ['nullable', 'boolean'],
             'avatar' => ['nullable', 'image', 'max:2048'],
         ]);
 
@@ -158,12 +170,24 @@ class AdminOfficialController extends Controller
             $updateData['avatar_path'] = $request->file('avatar')->store('avatars', 'public');
         }
 
+        // Penunjukan Administrator hanya oleh Superadmin dan hanya untuk akun Panitia
+        $designate = $request->user()->isSuperadmin() && $request->boolean('is_administrator');
+        if ($designate && ! in_array('committee', $validated['roles'], true)) {
+            return back()->withInput()->withErrors(['is_administrator' => 'Administrator harus dipilih dari akun Panitia.']);
+        }
+
         $official->update($updateData);
 
         // Peran user otomatis menyesuaikan dengan peran yang dipilih
         $nonOfficialRoleIds = $official->roles()->whereNotIn('name', ['committee', 'judge'])->pluck('roles.id')->toArray();
         $newRoleIds = Role::whereIn('name', $validated['roles'])->pluck('id')->toArray();
         $official->roles()->sync(array_merge($nonOfficialRoleIds, $newRoleIds));
+
+        if ($request->user()->isSuperadmin()) {
+            $designate ? $official->assignRole(RoleEnum::Admin) : $official->removeRole(RoleEnum::Admin);
+        } elseif (! in_array('committee', $validated['roles'], true)) {
+            $official->removeRole(RoleEnum::Admin);
+        }
 
         return redirect()->route('admin.officials.index')->with('success', "Data aparatur {$official->name} berhasil diperbarui.");
     }

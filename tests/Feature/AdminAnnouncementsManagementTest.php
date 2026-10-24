@@ -31,7 +31,7 @@ class AdminAnnouncementsManagementTest extends TestCase
         ]);
 
         $this->admin = User::whereHas('roles', fn ($q) => $q->where('name', 'admin'))->first();
-        $this->regularUser = User::whereHas('roles', fn ($q) => $q->where('name', 'committee'))->first();
+        $this->regularUser = User::where('username', 'panitia')->first();
     }
 
     /**

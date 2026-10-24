@@ -80,11 +80,11 @@
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
                                     Kategori Pembina Pendamping <span class="text-red-500">*</span>
                                 </label>
-                                <select name="gender" required
-                                    class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
-                                    <option value="male" @selected(old('gender', $chaperone->gender) === 'male')>Putra (Bindamping Putra)</option>
-                                    <option value="female" @selected(old('gender', $chaperone->gender) === 'female')>Putri (Bindamping Putri)</option>
-                                </select>
+                                @php($chaperoneGender = $chaperone->gender)
+                                <input type="hidden" name="gender" value="{{ $chaperoneGender }}">
+                                <input type="text" value="{{ $chaperoneGender === 'male' ? 'Putra (Bindamping Putra)' : 'Putri (Bindamping Putri)' }}" readonly
+                                    class="w-full rounded-xl border border-zinc-200 bg-zinc-100 px-3.5 py-2 text-xs sm:text-sm text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-400">
+                                <p class="mt-1 text-[11px] text-zinc-400">Kategori mengikuti slot bindamping dan tidak dapat diubah.</p>
                             </div>
                         </div>
 
@@ -128,8 +128,8 @@
                                 <select name="blood_type" required
                                     class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-zinc-900 focus:border-amber-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
                                     <option value="">-- Pilih --</option>
-                                    @foreach(['A', 'B', 'AB', 'O', '-'] as $bt)
-                                        <option value="{{ $bt }}" @selected(old('blood_type', $chaperone->blood_type) === $bt)>{{ $bt }}</option>
+                                    @foreach(\App\Support\BloodType::OPTIONS as $bt => $btLabel)
+                                        <option value="{{ $bt }}" @selected(old('blood_type', $chaperone->blood_type) === $bt)>{{ $btLabel }}</option>
                                     @endforeach
                                 </select>
                             </div>

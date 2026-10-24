@@ -35,6 +35,14 @@ class ChaperonesManagement extends Component
         );
     }
 
+    /**
+     * Bindamping hanya dapat didaftarkan untuk gender yang sudah memiliki regu
+     */
+    public function canRegister(string $gender): bool
+    {
+        return $this->scoutGroup->canRegisterChaperone($gender);
+    }
+
     public function deleteChaperone(string $id): void
     {
         $group = $this->scoutGroup;

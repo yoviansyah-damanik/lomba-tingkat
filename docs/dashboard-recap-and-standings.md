@@ -7,7 +7,7 @@ Fitur rekapitulasi penilaian dan klasemen prestasi resmi telah dibuat khusus di 
 1. **Model & Database**:
    - `CompetitionScore` (`competition_scores`): Menyimpan nilai akhir, rincian kriteria rubrik (`criteria_scores` JSON), predikat prestasi (`prestasi_tinggi` 🥇, `prestasi_baik` 🥈, `prestasi_cukup` 🥉, `partisipasi`), peringkat, catatan juri, dan status kunci.
 2. **Service Layer**:
-   - `StandingsService`: Mengkalkulasi akumulasi medali dan total poin pangkalan Gudep (Emas = 5 poin, Perak = 3 poin, Perunggu = 1 poin), klasemen regu, serta auto-ranking cabang lomba.
+   - `StandingsService`: Mengkalkulasi klasemen regu menurut jumlah medali (Prestasi Tinggi terbanyak, lalu Prestasi Baik terbanyak, lalu Prestasi Cukup terbanyak; tanpa sistem poin), serta auto-ranking cabang lomba.
 3. **Livewire 4 Component**:
    - `App\Livewire\Admin\StandingsLeaderboard`:
      - **Tab 1: Klasemen Kontingen (Gudep)** dengan visual podium 3 besar (Juara Tergiat I, II, III) dan tabel perolehan medali.

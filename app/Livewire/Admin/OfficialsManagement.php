@@ -41,6 +41,7 @@ class OfficialsManagement extends Component
     public string $institution = 'Kwarcab Kota Padangsidimpuan';
     public string $position = '';
     public array $selectedRoles = ['committee'];
+    public bool $is_administrator = false;
     public bool $is_active = true;
     public $avatar = null;
 
@@ -143,6 +144,7 @@ class OfficialsManagement extends Component
         $this->institution = $user->institution ?? 'Kwarcab Kota Padangsidimpuan';
         $this->position = $user->position ?? '';
         $this->selectedRoles = $user->roles->pluck('name')->intersect(['committee', 'judge'])->toArray();
+        $this->is_administrator = $user->isAdministrator();
         $this->is_active = (bool) $user->is_active;
         $this->avatar = null;
 
@@ -167,6 +169,15 @@ class OfficialsManagement extends Component
 
         $validated = $this->validate($rules);
 
+        // Penunjukan Administrator hanya oleh Superadmin dan hanya untuk akun Panitia
+        $canDesignate = auth()->user()->isSuperadmin();
+        $designateAdmin = $canDesignate && $this->is_administrator;
+        if ($designateAdmin && ! in_array('committee', $validated['selectedRoles'], true)) {
+            $this->addError('is_administrator', 'Administrator harus dipilih dari akun Panitia.');
+
+            return;
+        }
+
         if ($this->editingId) {
             $official = User::findOrFail($this->editingId);
             $data = [
@@ -190,6 +201,12 @@ class OfficialsManagement extends Component
             $nonOfficialRoleIds = $official->roles()->whereNotIn('name', ['committee', 'judge'])->pluck('roles.id')->toArray();
             $newRoleIds = Role::whereIn('name', $validated['selectedRoles'])->pluck('id')->toArray();
             $official->roles()->sync(array_merge($nonOfficialRoleIds, $newRoleIds));
+
+            if ($canDesignate) {
+                $designateAdmin ? $official->assignRole(RoleEnum::Admin) : $official->removeRole(RoleEnum::Admin);
+            } elseif (! in_array('committee', $validated['selectedRoles'], true)) {
+                $official->removeRole(RoleEnum::Admin);
+            }
 
             Flux::toast(variant: 'success', heading: 'Berhasil', text: "Data aparatur {$official->name} berhasil diperbarui.");
         } else {
@@ -219,6 +236,10 @@ class OfficialsManagement extends Component
 
             foreach ($validated['selectedRoles'] as $roleName) {
                 $official->assignRole($roleName);
+            }
+
+            if ($designateAdmin) {
+                $official->assignRole(RoleEnum::Admin);
             }
 
             Flux::toast(variant: 'success', heading: 'Berhasil', text: "Aparatur {$official->name} berhasil didaftarkan dengan ID {$official->id_number}.");
@@ -277,6 +298,7 @@ class OfficialsManagement extends Component
         $this->institution = 'Kwarcab Kota Padangsidimpuan';
         $this->position = '';
         $this->selectedRoles = ['committee'];
+        $this->is_administrator = false;
         $this->is_active = true;
         $this->avatar = null;
     }

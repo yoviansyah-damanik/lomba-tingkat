@@ -160,9 +160,10 @@ class RoleAuthorizationTest extends TestCase
             $this->actingAs($actor)->get(route('digital-cards.scout-group.batch', $scoutGroup->id))->assertOk();
 
             // Dilarang melakukan tindakan verifikasi berkas kontingen (Hanya Admin)
-            $this->actingAs($actor)->post(route('admin.scout-groups.verify', $scoutGroup->id))->assertForbidden();
-            $this->actingAs($actor)->post(route('admin.scout-groups.revision', $scoutGroup->id), ['revision_notes' => 'Catatan revisi'])->assertForbidden();
-            $this->actingAs($actor)->post(route('admin.scout-groups.reject', $scoutGroup->id), ['revision_notes' => 'Catatan penolakan'])->assertForbidden();
+            $panel = fn () => \Livewire\Livewire::withoutLazyLoading()->actingAs($actor)->test(\App\Livewire\Admin\ScoutGroupVerificationActions::class, ['scoutGroupId' => $scoutGroup->id]);
+            $panel()->call('verify')->assertForbidden();
+            $panel()->set('revisionNotes', 'Catatan revisi')->call('requestRevision')->assertForbidden();
+            $panel()->set('rejectNotes', 'Catatan penolakan')->call('reject')->assertForbidden();
         }
     }
 

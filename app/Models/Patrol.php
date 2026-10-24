@@ -20,6 +20,9 @@ class Patrol extends Model
 {
     use HasFactory, HasUuids;
 
+    /** Jumlah anggota wajib setiap regu */
+    public const REQUIRED_MEMBERS = 8;
+
     protected $fillable = [
         'scout_group_id',
         'patrol_name',
@@ -39,11 +42,9 @@ class Patrol extends Model
 
     protected static function booted(): void
     {
-        // Penghapusan regu menghapus peserta lewat cascade DB, sehingga akun peserta dihapus manual
+        // Cascade DB tidak memicu event model, maka peserta dihapus satu per satu agar akun dan berkasnya ikut terhapus
         static::deleting(function (Patrol $patrol) {
-            $service = app(ContingentAccountService::class);
-
-            $patrol->participants()->get()->each(fn (Participant $participant) => $service->deleteParticipantAccount($participant));
+            $patrol->participants()->get()->each(fn (Participant $participant) => $participant->delete());
         });
     }
 

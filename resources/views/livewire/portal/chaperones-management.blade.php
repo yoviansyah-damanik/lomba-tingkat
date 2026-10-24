@@ -73,6 +73,10 @@
             <div class="mt-5 pt-4 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
                 @if($maleChaperone)
                     <div class="flex items-center gap-2">
+                        <flux:button href="{{ route('scout-group.chaperones.show', $maleChaperone->id) }}" wire:navigate variant="subtle" size="xs" icon="eye" title="Lihat detail lengkap bindamping">
+                            Detail
+                        </flux:button>
+                        <span class="text-zinc-300">&bull;</span>
                         @if($scoutGroup->canDownloadDocuments())
                         <a href="{{ route('scout-group.chaperones.print', $maleChaperone->id) }}" target="_blank"
                             data-loading="Mencetak Biodata Bindamping (Putra) (PDF)..."
@@ -111,10 +115,17 @@
                     @endif
                 @else
                     @if($scoutGroup->isEditable())
-                        <a href="{{ route('scout-group.chaperones.create', ['gender' => 'male']) }}" wire:navigate
-                            class="w-full inline-flex justify-center items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700">
-                            + Daftarkan Bindamping Putra
-                        </a>
+                        @if($this->canRegister('male'))
+                            <a href="{{ route('scout-group.chaperones.create', ['gender' => 'male']) }}" wire:navigate
+                                class="w-full inline-flex justify-center items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700">
+                                + Daftarkan Bindamping Putra
+                            </a>
+                        @else
+                            <div class="w-full space-y-2 text-center">
+                                <p class="text-[11px] text-zinc-500 dark:text-zinc-400">Tambahkan <strong>Regu Putra</strong> terlebih dahulu. Bindamping Putra didaftarkan setelah Regu Putra ada.</p>
+                                <flux:button href="{{ route('scout-group.patrols') }}" wire:navigate size="xs" variant="subtle" icon="user-group">Kelola Regu</flux:button>
+                            </div>
+                        @endif
                     @endif
                 @endif
             </div>
@@ -172,6 +183,10 @@
             <div class="mt-5 pt-4 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
                 @if($femaleChaperone)
                     <div class="flex items-center gap-2">
+                        <flux:button href="{{ route('scout-group.chaperones.show', $femaleChaperone->id) }}" wire:navigate variant="subtle" size="xs" icon="eye" title="Lihat detail lengkap bindamping">
+                            Detail
+                        </flux:button>
+                        <span class="text-zinc-300">&bull;</span>
                         @if($scoutGroup->canDownloadDocuments())
                         <a href="{{ route('scout-group.chaperones.print', $femaleChaperone->id) }}" target="_blank"
                             data-loading="Mencetak Biodata Bindamping (Putri) (PDF)..."
@@ -210,10 +225,17 @@
                     @endif
                 @else
                     @if($scoutGroup->isEditable())
-                        <a href="{{ route('scout-group.chaperones.create', ['gender' => 'female']) }}" wire:navigate
-                            class="w-full inline-flex justify-center items-center gap-1.5 rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-rose-700">
-                            + Daftarkan Bindamping Putri
-                        </a>
+                        @if($this->canRegister('female'))
+                            <a href="{{ route('scout-group.chaperones.create', ['gender' => 'female']) }}" wire:navigate
+                                class="w-full inline-flex justify-center items-center gap-1.5 rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-rose-700">
+                                + Daftarkan Bindamping Putri
+                            </a>
+                        @else
+                            <div class="w-full space-y-2 text-center">
+                                <p class="text-[11px] text-zinc-500 dark:text-zinc-400">Tambahkan <strong>Regu Putri</strong> terlebih dahulu. Bindamping Putri didaftarkan setelah Regu Putri ada.</p>
+                                <flux:button href="{{ route('scout-group.patrols') }}" wire:navigate size="xs" variant="subtle" icon="user-group">Kelola Regu</flux:button>
+                            </div>
+                        @endif
                     @endif
                 @endif
             </div>

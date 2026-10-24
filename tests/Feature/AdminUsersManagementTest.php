@@ -32,7 +32,7 @@ class AdminUsersManagementTest extends TestCase
 
         $this->superadmin = User::whereHas('roles', fn ($q) => $q->where('name', 'superadmin'))->first();
         $this->admin = User::whereHas('roles', fn ($q) => $q->where('name', 'admin'))->first();
-        $this->regularUser = User::whereHas('roles', fn ($q) => $q->where('name', 'committee'))->first();
+        $this->regularUser = User::where('username', 'panitia')->first();
     }
 
     /**

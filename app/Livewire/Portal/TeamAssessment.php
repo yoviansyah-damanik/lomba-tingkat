@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Portal;
 
+use App\Models\Event;
 use App\Models\Patrol;
 use App\Services\StandingsService;
 use Illuminate\Support\Collection;
@@ -85,6 +86,8 @@ class TeamAssessment extends Component
         }
 
         return view('livewire.portal.team-assessment', [
+            // Blind mode: peringkat umum disensor selama identitas regu disembunyikan
+            'blindMode' => (bool) Event::first()?->hide_patrol_identities,
             'patrols' => $this->patrols,
             'patrol' => $patrol,
             'standing' => $standing,

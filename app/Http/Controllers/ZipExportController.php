@@ -31,7 +31,6 @@ class ZipExportController extends Controller
             'patrols.participants',
             'chaperones',
             'user',
-            'verifier',
         ])->findOrFail($id);
 
         $tempDir = storage_path('app/temp');
@@ -136,7 +135,7 @@ class ZipExportController extends Controller
                     $this->addStorageFile(
                         $zip,
                         $participant->{$field},
-                        "{$folderPeserta}/{$label}." . $this->ext($participant->{$field})
+                        "{$folderPeserta}/{$label}_{$namaSlug}." . $this->ext($participant->{$field})
                     );
                 }
             }
@@ -167,7 +166,7 @@ class ZipExportController extends Controller
             $this->addStorageFile(
                 $zip,
                 $chaperone->photo_path,
-                "{$folderBinda}/Pas_Foto." . $this->ext($chaperone->photo_path)
+                "{$folderBinda}/Pas_Foto_{$namaSlug}." . $this->ext($chaperone->photo_path)
             );
         }
 
@@ -189,7 +188,6 @@ class ZipExportController extends Controller
             'patrols.participants',
             'chaperones',
             'user',
-            'verifier',
         ])->findOrFail($id);
 
         return response()->stream(function () use ($scoutGroup) {
@@ -319,7 +317,7 @@ class ZipExportController extends Controller
                         $this->addStorageFile(
                             $zip,
                             $participant->{$field},
-                            "{$folderPeserta}/{$label}." . $this->ext($participant->{$field})
+                            "{$folderPeserta}/{$label}_{$namaSlug}." . $this->ext($participant->{$field})
                         );
                     }
                 }
@@ -348,7 +346,7 @@ class ZipExportController extends Controller
                 $this->addStorageFile(
                     $zip,
                     $chaperone->photo_path,
-                    "{$folderBinda}/Pas_Foto." . $this->ext($chaperone->photo_path)
+                    "{$folderBinda}/Pas_Foto_{$namaSlug}." . $this->ext($chaperone->photo_path)
                 );
             }
 

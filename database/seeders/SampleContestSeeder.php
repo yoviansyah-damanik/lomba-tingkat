@@ -22,9 +22,9 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * Seeder sampel lengkap: juri, panitia, 11 gugus depan terverifikasi (regu, peserta, bindamping)
- * ditambah gudep01 (dari ContingentSeeder) yang sengaja dibiarkan BELUM diverifikasi (status Diajukan),
- * jadwal lomba yang sudah berlangsung, dan penilaian juri yang difinalisasi hingga terbentuk klasemen regu putra dan regu putri berprestasi (terpisah).
+ * Seeder sampel lengkap: juri, panitia, 11 gugus depan (regu, peserta, bindamping) beserta gudep01 (dari ContingentSeeder);
+ * SEMUA gudep berstatus Diajukan dan tidak ada yang diverifikasi, agar alur verifikasi Administrator dapat dicoba langsung.
+ * Penilaian juri contoh untuk 11 gudep sudah difinalisasi; klasemen regu putra dan putri terbentuk setelah gudepnya diverifikasi.
  *
  * Jalankan: php artisan db:seed --class=SampleContestSeeder
  * Idempoten: aman dijalankan ulang (data yang sudah ada dilewati).
@@ -55,32 +55,33 @@ class SampleContestSeeder extends Seeder
     ];
 
     private const JUDGES = [
-        ['id' => 'ID-JURI0002', 'name' => 'Drs. Ahmad Fauzi Lubis'],
-        ['id' => 'ID-JURI0003', 'name' => 'Hj. Rosmawati Harahap, S.Pd'],
-        ['id' => 'ID-JURI0004', 'name' => 'Kak Bambang Siregar, M.Pd'],
-        ['id' => 'ID-JURI0005', 'name' => 'Kak Nurhayati Nasution, S.Pd'],
-        ['id' => 'ID-JURI0006', 'name' => 'Ir. Syahrul Daulay'],
-        ['id' => 'ID-JURI0007', 'name' => 'Kak Marlina Pulungan, S.Pd'],
-        ['id' => 'ID-JURI0008', 'name' => 'Kak Irwansyah Batubara, S.Kom'],
+        ['id' => 'A-300002', 'name' => 'Drs. Ahmad Fauzi Lubis'],
+        ['id' => 'A-300003', 'name' => 'Hj. Rosmawati Harahap, S.Pd'],
+        ['id' => 'A-300004', 'name' => 'Kak Bambang Siregar, M.Pd'],
+        ['id' => 'A-300005', 'name' => 'Kak Nurhayati Nasution, S.Pd'],
+        ['id' => 'A-300006', 'name' => 'Ir. Syahrul Daulay'],
+        ['id' => 'A-300007', 'name' => 'Kak Marlina Pulungan, S.Pd'],
+        ['id' => 'A-300008', 'name' => 'Kak Irwansyah Batubara, S.Kom'],
     ];
 
     private const COMMITTEES = [
-        ['id' => 'ID-PANITIA2', 'name' => 'Kak Hendra Rangkuti'],
-        ['id' => 'ID-PANITIA3', 'name' => 'Kak Sri Wahyuni Pane'],
-        ['id' => 'ID-PANITIA4', 'name' => 'Kak Rudi Hasibuan, S.Pd'],
-        ['id' => 'ID-PANITIA5', 'name' => 'Kak Dewi Sartika Ritonga'],
+        ['id' => 'A-400002', 'name' => 'Kak Hendra Rangkuti'],
+        ['id' => 'A-400003', 'name' => 'Kak Sri Wahyuni Pane'],
+        ['id' => 'A-400004', 'name' => 'Kak Rudi Hasibuan, S.Pd'],
+        ['id' => 'A-400005', 'name' => 'Kak Dewi Sartika Ritonga'],
     ];
+
+    /** @var array<int, string> ID gudep sampel (di luar gudep01) yang menerima nilai contoh */
+    private array $sampleGroupIds = [];
 
     public function run(): void
     {
         mt_srand(2026); // hasil nilai konsisten setiap dijalankan
 
-        $admin = User::where('username', 'admin')->first();
-
         try {
             $judges = $this->seedJudges();
             $this->seedCommittees();
-            $this->seedContingents($admin);
+            $this->seedContingents();
             $this->seedScoredSchedules($judges);
         } finally {
             mt_srand(); // kembalikan generator acak global agar tidak memengaruhi proses lain
@@ -105,8 +106,7 @@ class SampleContestSeeder extends Seeder
         }
 
         return User::whereHas('roles', fn ($q) => $q->where('name', RoleEnum::Judge->value))
-            ->where('is_active', true)->orderBy('id_number')->get()
-            ->filter(fn (User $u) => ! $u->isAdmin())->values();
+            ->where('is_active', true)->orderBy('id_number')->get();
     }
 
     private function seedCommittees(): void
@@ -121,26 +121,29 @@ class SampleContestSeeder extends Seeder
     }
 
     /**
-     * Gugus depan terverifikasi lengkap dengan regu putra/putri, 8 peserta per regu, dan bindamping
+     * Gugus depan berstatus Diajukan (belum diverifikasi) lengkap dengan regu putra/putri, 8 peserta per regu, dan bindamping
      */
-    private function seedContingents(?User $admin): void
+    private function seedContingents(): void
     {
         foreach (self::GROUPS as $i => $row) {
             $number = $i + 2; // gudep01 sudah ada di ContingentSeeder
-            $username = 'gudep'.str_pad((string) $number, 2, '0', STR_PAD_LEFT);
             $male = '01-'.str_pad((string) (($number * 2) - 1), 3, '0', STR_PAD_LEFT);
             $female = '01-'.str_pad((string) ($number * 2), 3, '0', STR_PAD_LEFT);
 
+            // ID Gudep G-{no_gudep}; username dan ID akun penanggung jawab persis sama dengan ID Gudep
+            $gudepId = ScoutGroup::where('male_group_number', $male)->value('registration_code')
+                ?? ScoutGroup::generateGudepId(['male' => $male, 'female' => $female]);
+
             $user = User::firstOrCreate(
-                ['username' => $username],
-                ['name' => 'Gudep '.$row['school'], 'password' => Hash::make(self::PASSWORD), 'phone_number' => '0852'.random_int(10000000, 99999999), 'is_active' => true]
+                ['username' => $gudepId],
+                ['id_number' => $gudepId, 'name' => 'Gudep '.$row['school'], 'password' => Hash::make(self::PASSWORD), 'phone_number' => '0852'.random_int(10000000, 99999999), 'is_active' => true]
             );
             $user->assignRole(RoleEnum::ScoutGroup);
 
             $group = ScoutGroup::firstOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'registration_code' => 'GDP-PSP-'.str_pad((string) $number, 2, '0', STR_PAD_LEFT),
+                    'registration_code' => $gudepId,
                     'school_name' => $row['school'],
                     'group_number' => "{$male} & {$female}",
                     'male_group_number' => $male,
@@ -149,11 +152,11 @@ class SampleContestSeeder extends Seeder
                     'address' => 'Jl. Sudirman No. '.($number * 3).', '.$row['kwarran'].', Kota Padangsidimpuan',
                     'contact_person' => 'Kak '.self::MALE_NAMES[$i].' '.self::SURNAMES[$i % count(self::SURNAMES)].', S.Pd',
                     'contact_phone' => $user->phone_number,
-                    'verification_status' => RegistrationStatusEnum::Verified,
-                    'verified_by' => $admin?->id,
-                    'verified_at' => now()->subDays(7),
+                    'verification_status' => RegistrationStatusEnum::Submitted,
                 ]
             );
+
+            $this->sampleGroupIds[] = $group->id;
 
             $this->seedPatrol($group, PatrolGenderEnum::Boys, $row['boys'], $number, $male);
             $this->seedPatrol($group, PatrolGenderEnum::Girls, $row['girls'], $number, $female);
@@ -165,7 +168,7 @@ class SampleContestSeeder extends Seeder
     {
         $patrol = Patrol::firstOrCreate(
             ['scout_group_id' => $group->id, 'gender_category' => $gender],
-            ['patrol_name' => $patrolName, 'status' => RegistrationStatusEnum::Verified]
+            ['patrol_name' => $patrolName, 'status' => RegistrationStatusEnum::Submitted]
         );
 
         $isBoys = $gender === PatrolGenderEnum::Boys;
@@ -197,7 +200,7 @@ class SampleContestSeeder extends Seeder
                     'parent_name' => 'Orang Tua '.$fullName,
                     'parent_job' => ['PNS', 'Wiraswasta', 'Guru', 'Petani'][$m % 4],
                     'parent_phone' => '0813'.random_int(10000000, 99999999),
-                    'status' => RegistrationStatusEnum::Verified,
+                    'status' => RegistrationStatusEnum::Submitted,
                 ]
             );
         }
@@ -218,7 +221,7 @@ class SampleContestSeeder extends Seeder
                     'birth_place' => 'Padangsidimpuan',
                     'birth_date' => Carbon::create(1985 + ($groupNumber % 10), random_int(1, 12), random_int(1, 28))->format('Y-m-d'),
                     'religion' => 'Islam',
-                    'status' => RegistrationStatusEnum::Verified,
+                    'status' => RegistrationStatusEnum::Submitted,
                 ]
             );
         }
@@ -243,7 +246,7 @@ class SampleContestSeeder extends Seeder
         }
 
         // Kekuatan dasar regu (acak terkendali) agar peringkat terbentuk wajar namun bervariasi
-        $strength = Patrol::where('status', RegistrationStatusEnum::Verified)->pluck('id')
+        $strength = Patrol::whereIn('scout_group_id', $this->sampleGroupIds)->pluck('id')
             ->mapWithKeys(fn ($id) => [$id => 66 + (mt_rand(0, 280) / 10)]);
 
         $slot = 0;
@@ -257,7 +260,7 @@ class SampleContestSeeder extends Seeder
                     // Waktu sistem digeser ke dalam sesi agar lolos jendela penilaian juri
                     Carbon::setTestNow($schedule->start_time->copy()->addMinutes(30));
 
-                    $patrols = Patrol::where('status', RegistrationStatusEnum::Verified)
+                    $patrols = Patrol::whereIn('scout_group_id', $this->sampleGroupIds)
                         ->where('gender_category', $gender)->get();
 
                     foreach ($patrols as $patrol) {
@@ -269,7 +272,11 @@ class SampleContestSeeder extends Seeder
                     }
 
                     Carbon::setTestNow();
-                    $schedule->update(['status' => 'completed']);
+
+                    // Nilai contoh sudah terisi, tetapi status "Selesai" hanya bila waktu sesi memang sudah berakhir
+                    if ($schedule->end_time->isPast()) {
+                        $schedule->update(['status' => 'completed']);
+                    }
                 }
             }
         } finally {

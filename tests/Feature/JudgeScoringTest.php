@@ -410,7 +410,7 @@ class JudgeScoringTest extends TestCase
         $scoringService = app(\App\Services\AssessmentScoringService::class);
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Administrator tidak diperkenankan memberikan penilaian lomba.');
+        $this->expectExceptionMessage('Pemberian nilai hanya dapat dilakukan oleh Juri yang telah ditunjuk');
 
         $scoringService->saveDraft([
             'competition_schedule_id' => $this->schedule->id,

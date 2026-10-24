@@ -79,6 +79,14 @@ class CompetitionScore extends Model
     }
 
     /**
+     * Predikat prestasi hanya untuk peringkat 1-3 (Tinggi, Baik, Cukup); peringkat 4 dan seterusnya tanpa predikat
+     */
+    public function hasAchievement(): bool
+    {
+        return in_array($this->predicate, ['prestasi_tinggi', 'prestasi_baik', 'prestasi_cukup'], true);
+    }
+
+    /**
      * Label predikat prestasi resmi
      */
     public function predicateLabel(): string
@@ -87,21 +95,7 @@ class CompetitionScore extends Model
             'prestasi_tinggi' => 'Prestasi Tinggi',
             'prestasi_baik' => 'Prestasi Baik',
             'prestasi_cukup' => 'Prestasi Cukup',
-            'partisipasi' => 'Peserta Terdaftar',
             default => '-',
-        };
-    }
-
-    /**
-     * Poin klasemen berdasarkan medali / predikat
-     */
-    public function predicatePoints(): int
-    {
-        return match ($this->predicate) {
-            'prestasi_tinggi' => 5,
-            'prestasi_baik' => 3,
-            'prestasi_cukup' => 1,
-            default => 0,
         };
     }
 

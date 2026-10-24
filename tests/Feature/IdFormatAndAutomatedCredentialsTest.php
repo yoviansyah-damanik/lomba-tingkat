@@ -18,7 +18,7 @@ use Tests\TestCase;
 
 class IdFormatAndAutomatedCredentialsTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, \Tests\Concerns\RegistersViaInvitation;
 
     protected function setUp(): void
     {
@@ -190,7 +190,7 @@ class IdFormatAndAutomatedCredentialsTest extends TestCase
      */
     public function test_scout_group_registration_flow_without_username_and_password(): void
     {
-        $response = $this->post(route('register.scout-group.store'), [
+        $response = $this->registerGudep([
             'school_name' => 'SMP Negeri 10 Padangsidimpuan',
             'group_number' => '01-155',
             'kwarran' => 'Kwarran Padangsidimpuan Selatan',
@@ -200,7 +200,7 @@ class IdFormatAndAutomatedCredentialsTest extends TestCase
             'terms' => '1',
         ]);
 
-        $response->assertSessionHasNoErrors();
+        $response->assertHasNoErrors();
         $response->assertRedirect(route('register.scout-group.success'));
 
         $group = ScoutGroup::where('school_name', 'SMP Negeri 10 Padangsidimpuan')->firstOrFail();

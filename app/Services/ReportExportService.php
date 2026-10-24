@@ -284,7 +284,7 @@ class ReportExportService
     }
 
     /**
-     * Ekspor Rekap Klasemen Akhir Akumulasi Medali & Poin
+     * Ekspor Rekap Klasemen Akhir menurut jumlah medali (Tinggi, Baik, Cukup)
      */
     public function exportStandingsCsv(string $gender = 'all'): StreamedResponse
     {
@@ -295,11 +295,10 @@ class ReportExportService
             'Pangkalan / Gugus Depan',
             'Nomor Gudep',
             'Kwartir Ranting',
-            'Prestasi Tinggi (Emas)',
-            'Prestasi Baik (Perak)',
-            'Prestasi Cukup (Perunggu)',
+            'Prestasi Tinggi',
+            'Prestasi Baik',
+            'Prestasi Cukup',
             'Total Prestasi',
-            'Total Poin Prestasi',
             'Predikat',
         ];
 
@@ -317,7 +316,6 @@ class ReportExportService
                 $st['silver'],
                 $st['bronze'],
                 $st['total_medals'],
-                $st['total_points'],
                 $st['general_rank_title'] ?? 'Peringkat '.$st['rank'],
             ];
         }

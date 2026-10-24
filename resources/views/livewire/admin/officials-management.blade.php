@@ -264,6 +264,19 @@
                         @error('selectedRoles')
                             <span class="text-rose-500 text-[11px] mt-1 block">{{ $message }}</span>
                         @enderror
+
+                        @if(auth()->user()->isSuperadmin())
+                            <label class="mt-3 flex items-center gap-2 p-3 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/30 cursor-pointer">
+                                <input type="checkbox" wire:model="is_administrator" class="rounded text-amber-600 focus:ring-amber-500">
+                                <div>
+                                    <span class="text-xs font-bold text-zinc-900 dark:text-zinc-100 block">Jadikan Administrator</span>
+                                    <span class="text-[10px] text-zinc-500 block">Hanya untuk akun Panitia; hak kelola penuh data kegiatan</span>
+                                </div>
+                            </label>
+                            @error('is_administrator')
+                                <span class="text-rose-500 text-[11px] mt-1 block">{{ $message }}</span>
+                            @enderror
+                        @endif
                     </div>
 
                     {{-- Foto Pas Foto --}}

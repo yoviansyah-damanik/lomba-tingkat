@@ -78,11 +78,6 @@ class AssessmentScoringService
      */
     public function saveDraft(array $data, User $judge): Assessment
     {
-        // Administrator dilarang keras memberikan nilai lomba
-        if ($judge->isAdmin()) {
-            throw new InvalidArgumentException('Administrator tidak diperkenankan memberikan penilaian lomba.');
-        }
-
         $schedule = CompetitionSchedule::with('competition.criteria')->findOrFail($data['competition_schedule_id']);
 
         // Pemberian nilai hanya dapat dilakukan oleh Juri yang ditugaskan pada sesi lomba ini
@@ -134,7 +129,8 @@ class AssessmentScoringService
                 modelId: $assessment->id,
                 oldValues: $oldValues,
                 newValues: $assessment->toArray(),
-                userId: $judge->id
+                userId: $judge->id,
+                actingRole: 'judge'
             );
 
             return $assessment;
@@ -146,11 +142,6 @@ class AssessmentScoringService
      */
     public function finalizeScore(string $assessmentId, User $judge): Assessment
     {
-        // Administrator dilarang keras memfinalisasi atau memberikan nilai lomba
-        if ($judge->isAdmin()) {
-            throw new InvalidArgumentException('Administrator tidak diperkenankan memfinalisasi penilaian lomba.');
-        }
-
         return DB::transaction(function () use ($assessmentId, $judge) {
             $assessment = Assessment::with(['competition.criteria', 'schedule.judgeAssignments', 'patrol'])->findOrFail($assessmentId);
 
@@ -189,7 +180,8 @@ class AssessmentScoringService
                 oldValues: $oldValues,
                 newValues: $assessment->toArray(),
                 reason: 'Finalisasi nilai resmi oleh juri',
-                userId: $judge->id
+                userId: $judge->id,
+                actingRole: 'judge'
             );
 
             // Akumulasi skor seluruh juri untuk regu ini ke CompetitionScore
@@ -228,7 +220,8 @@ class AssessmentScoringService
                 oldValues: $oldValues,
                 newValues: $assessment->toArray(),
                 reason: $reason,
-                userId: $admin->id
+                userId: $admin->id,
+                actingRole: 'admin'
             );
 
             // Hitung ulang akumulasi skor

@@ -59,8 +59,8 @@ class AssessmentCriteriaSeeder extends Seeder
      */
     private function seedJudgeAssignmentsAndPostSessions(): void
     {
-        $leadJudge = User::where('id_number', 'ID-JURI0001')->first();
-        $secondJudge = User::where('id_number', 'ID-PANJURI1')->first();
+        $leadJudge = User::where('id_number', 'A-100002')->first();
+        $secondJudge = User::where('id_number', 'A-100003')->first();
 
         foreach (CompetitionSchedule::all() as $schedule) {
             AttendanceSession::firstOrCreate(

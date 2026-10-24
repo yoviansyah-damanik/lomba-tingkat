@@ -44,7 +44,7 @@ class JudgeScoring extends Component
 
         // Verifikasi hak akses juri atau administrator
         $schedule = $this->schedule();
-        if (! $user->isAdmin()) {
+        if (! $user->isAdminOnly()) {
             $isAssigned = $schedule->judgeAssignments()
                 ->where('user_id', $user->id)
                 ->exists();
@@ -119,7 +119,7 @@ class JudgeScoring extends Component
         $query = Assessment::where('competition_schedule_id', $this->scheduleId)
             ->where('patrol_id', $this->selectedPatrolId);
 
-        if (! Auth::user()->isAdmin()) {
+        if (! Auth::user()->isAdminOnly()) {
             $query->where('judge_id', Auth::id());
         }
 
@@ -140,7 +140,7 @@ class JudgeScoring extends Component
     public function isAssignedJudge(): bool
     {
         $user = Auth::user();
-        if (! $user || $user->isAdmin()) {
+        if (! $user) {
             return false;
         }
 
@@ -182,7 +182,7 @@ class JudgeScoring extends Component
         $query = Assessment::where('competition_schedule_id', $this->scheduleId)
             ->where('patrol_id', $patrolId);
 
-        if (! Auth::user()->isAdmin()) {
+        if (! Auth::user()->isAdminOnly()) {
             $query->where('judge_id', Auth::id());
         }
 

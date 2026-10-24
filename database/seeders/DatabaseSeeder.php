@@ -11,7 +11,8 @@ class DatabaseSeeder extends Seeder
      *
      * - semua lingkungan : peran, akun Superadmin & Administrator, serta data resmi Juknis LT-III 2026
      *                      (kegiatan, 23 mata lomba beserta rubrik, jadwal sesi, sesi presensi, dan pengumuman)
-     * - local/dev        : ditambah akun contoh (panitia, juri, gudep) dan data sampel lengkap (gudep, penilaian)
+     * - local/dev        : ditambah akun contoh (panitia, juri, gudep) dan data sampel lengkap (gudep, penilaian,
+     *                      biodata beserta unggahan berkas gudep/peserta/bindamping)
      * - production       : hanya data resmi di atas, tanpa akun atau data contoh
      */
     public function run(): void
@@ -44,7 +45,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         if (app()->environment(['local', 'dev', 'development'])) {
-            $this->call(SampleContestSeeder::class);
+            $this->call([SampleContestSeeder::class, ContingentDocumentSeeder::class, PermissionRequestSeeder::class]);
         }
     }
 }

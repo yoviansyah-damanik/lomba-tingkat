@@ -49,7 +49,7 @@
                     </h1>
 
                     <p class="mt-3 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                        Dirancang khusus untuk memfasilitasi administrasi mandiri pangkalan sekolah, pengelolaan akreditasi peserta, hingga transparansi penilaian dewan juri secara real-time.
+                        Dirancang khusus untuk memfasilitasi administrasi mandiri pangkalan sekolah, pengelolaan data kontingen dan peserta, hingga transparansi penilaian dewan juri secara real-time.
                     </p>
                 </div>
 
@@ -86,7 +86,7 @@
                         <div>
                             <h2 class="text-xs font-bold text-zinc-900 dark:text-zinc-100">Dewan Juri & Blind Scoring</h2>
                             <p class="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 leading-snug">
-                                Input skor mata lomba objektif tanpa nomor gudep serta siaran langsung peringkat perolehan medali.
+                                Input skor mata lomba objektif tanpa nomor gudep serta siaran langsung peringkat perolehan prestasi.
                             </p>
                         </div>
                     </div>

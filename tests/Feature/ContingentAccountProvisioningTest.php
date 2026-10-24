@@ -80,9 +80,9 @@ class ContingentAccountProvisioningTest extends TestCase
 
     public function test_verifying_contingent_creates_accounts_with_expected_usernames_and_passwords(): void
     {
-        $this->actingAs($this->admin)
-            ->post(route('admin.scout-groups.verify', $this->group->id))
-            ->assertRedirect();
+        \Livewire\Livewire::withoutLazyLoading()->actingAs($this->admin)
+            ->test(\App\Livewire\Admin\ScoutGroupVerificationActions::class, ['scoutGroupId' => $this->group->id])
+            ->call('verify');
 
         $chaperoneModel = Chaperone::where('full_name', 'Bindamping Putra')->first();
         $this->assertNotNull($chaperoneModel);
@@ -110,8 +110,9 @@ class ContingentAccountProvisioningTest extends TestCase
         $chaperoneModel = Chaperone::where('full_name', 'Bindamping Putra')->first();
         $chaperoneModel->update(['birth_date' => null]);
 
-        $this->actingAs($this->admin)
-            ->post(route('admin.scout-groups.verify', $this->group->id));
+        \Livewire\Livewire::withoutLazyLoading()->actingAs($this->admin)
+            ->test(\App\Livewire\Admin\ScoutGroupVerificationActions::class, ['scoutGroupId' => $this->group->id])
+            ->call('verify');
 
         $this->assertNull(User::where('username', $chaperoneModel->id_number)->first());
         $this->assertSame(3, User::where('username', 'like', 'p-%')->count());
@@ -121,9 +122,9 @@ class ContingentAccountProvisioningTest extends TestCase
     {
         $chaperoneModel = Chaperone::where('full_name', 'Bindamping Putra')->first();
 
-        $this->actingAs($this->admin)
-            ->post(route('admin.scout-groups.verify', $this->group->id))
-            ->assertRedirect();
+        \Livewire\Livewire::withoutLazyLoading()->actingAs($this->admin)
+            ->test(\App\Livewire\Admin\ScoutGroupVerificationActions::class, ['scoutGroupId' => $this->group->id])
+            ->call('verify');
 
         $this->assertNotNull(User::where('username', $chaperoneModel->id_number)->first());
         $this->assertSame(3, User::where('username', 'like', 'p-%')->count());
@@ -133,9 +134,10 @@ class ContingentAccountProvisioningTest extends TestCase
     {
         $chaperoneModel = Chaperone::where('full_name', 'Bindamping Putra')->first();
 
-        $this->actingAs($this->admin)
-            ->post(route('admin.scout-groups.revision', $this->group->id), ['revision_notes' => 'Lengkapi data peserta'])
-            ->assertRedirect();
+        \Livewire\Livewire::withoutLazyLoading()->actingAs($this->admin)
+            ->test(\App\Livewire\Admin\ScoutGroupVerificationActions::class, ['scoutGroupId' => $this->group->id])
+            ->set('revisionNotes', 'Lengkapi data peserta')
+            ->call('requestRevision');
 
         $this->assertNull(User::where('username', $chaperoneModel->id_number)->first());
     }

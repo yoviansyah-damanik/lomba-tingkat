@@ -52,7 +52,7 @@ class VerificationManagement extends Component
     #[Computed]
     public function scoutGroups()
     {
-        $query = ScoutGroup::with(['user', 'patrols.participants', 'chaperones', 'verifier']);
+        $query = ScoutGroup::with(['user', 'patrols.participants', 'chaperones']);
 
         if (! empty($this->search)) {
             $query->where(function ($q) {
