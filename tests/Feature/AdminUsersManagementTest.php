@@ -71,56 +71,29 @@ class AdminUsersManagementTest extends TestCase
     }
 
     /**
-     * Memastikan admin dapat membuat akun pengguna baru dan menetapkan perannya
+     * Superadmin tidak dapat membuat, mengubah, atau menghapus data pengguna (aksinya tidak tersedia)
      */
-    public function test_admin_can_create_new_user(): void
+    public function test_superadmin_cannot_create_update_or_delete_user_data(): void
     {
-        Livewire::actingAs($this->superadmin)
-            ->test(UsersManagement::class)
-            ->call('openCreateModal')
-            ->set('name', 'Kak Budi Santoso')
-            ->set('username', 'budi.santoso')
-            ->set('phone_number', '081298765432')
-            ->set('institution', 'Kwarran Padangsidimpuan Selatan')
-            ->set('position', 'Anggota Dewan Juri')
-            ->set('password', 'secret123')
-            ->set('selectedRoles', [RoleEnum::Judge->value])
-            ->call('createUser')
-            ->assertHasNoErrors()
-            ->assertDispatched('toast-show');
+        $component = Livewire::actingAs($this->superadmin)->test(UsersManagement::class);
 
-        $newUser = User::where('username', 'budi.santoso')->first();
-        $this->assertNotNull($newUser);
-        $this->assertEquals('Kak Budi Santoso', $newUser->name);
-        $this->assertTrue($newUser->hasRole(RoleEnum::Judge));
-        $this->assertTrue(Hash::check('secret123', $newUser->password));
+        foreach (['openCreateModal', 'createUser', 'openEditModal', 'updateUser', 'openDeleteModal', 'deleteUser'] as $method) {
+            $this->assertFalse(method_exists(UsersManagement::class, $method), "Aksi {$method} seharusnya tidak tersedia");
+        }
 
-        $this->assertDatabaseHas('audit_logs', [
-            'action' => 'user_created',
-            'model_id' => $newUser->id,
-        ]);
-    }
+        $component->assertDontSee('Tambah Pengguna Baru')
+            ->assertDontSee('Edit Pengguna & Peran')
+            ->assertDontSee('Hapus Akun');
 
-    /**
-     * Memastikan admin dapat memperbarui data pengguna dan mengubah perannya
-     */
-    public function test_admin_can_update_user(): void
-    {
-        Livewire::actingAs($this->superadmin)
-            ->test(UsersManagement::class)
-            ->call('openEditModal', $this->regularUser->id)
-            ->set('name', 'Panitia Lapangan Senior')
-            ->set('selectedRoles', [RoleEnum::Committee->value, RoleEnum::Judge->value])
-            ->call('updateUser')
-            ->assertHasNoErrors()
-            ->assertDispatched('toast-show');
+        $before = $this->regularUser->only(['name', 'username', 'phone_number', 'institution', 'position']);
+        $roles = $this->regularUser->roles()->pluck('name')->sort()->values()->all();
+        $count = User::count();
 
         $this->regularUser->refresh();
-        $this->assertEquals('Panitia Lapangan Senior', $this->regularUser->name);
-        $this->assertTrue($this->regularUser->hasRole(RoleEnum::Committee));
-        $this->assertTrue($this->regularUser->hasRole(RoleEnum::Judge));
+        $this->assertSame($before, $this->regularUser->only(['name', 'username', 'phone_number', 'institution', 'position']));
+        $this->assertSame($roles, $this->regularUser->roles()->pluck('name')->sort()->values()->all());
+        $this->assertSame($count, User::count());
     }
-
     /**
      * Memastikan admin dapat menonaktifkan dan mengaktifkan akun pengguna lain
      */
@@ -179,21 +152,70 @@ class AdminUsersManagementTest extends TestCase
     }
 
     /**
-     * Memastikan admin dapat menghapus akun pengguna lain
+     * Superadmin dapat menonaktifkan/mengaktifkan dan mereset kata sandi akun apa pun, termasuk Peserta/Gudep/Bindamping
      */
-    public function test_admin_can_delete_user(): void
+    public function test_superadmin_can_toggle_and_reset_password_of_any_account_type(): void
     {
-        // Akun Participant adalah managed account dan diblokir ensureEditable.
-        // Gunakan role committee yang dapat dikelola superadmin secara penuh.
-        $userToDelete = User::factory()->create();
-        $userToDelete->assignRole(RoleEnum::Committee);
+        $gudep = User::factory()->create(['is_active' => true]);
+        $gudep->assignRole(RoleEnum::ScoutGroup);
+        $participant = User::factory()->create(['is_active' => true]);
+        $participant->assignRole(RoleEnum::Participant);
 
-        Livewire::actingAs($this->superadmin)
-            ->test(UsersManagement::class)
-            ->call('openDeleteModal', $userToDelete->id)
-            ->call('deleteUser');
+        foreach ([$gudep, $participant] as $account) {
+            Livewire::actingAs($this->superadmin)->test(UsersManagement::class)
+                ->call('toggleActive', $account->id)
+                ->call('openResetPasswordModal', $account->id)
+                ->set('newPassword', 'sandiBaru123')
+                ->call('resetUserPassword')
+                ->assertHasNoErrors();
 
-        // Verifikasi user berhasil dihapus dari database
-        $this->assertDatabaseMissing('users', ['id' => $userToDelete->id]);
+            $account->refresh();
+            $this->assertFalse($account->is_active);
+            $this->assertTrue(Hash::check('sandiBaru123', $account->password));
+        }
+
+        $this->assertDatabaseHas('audit_logs', ['action' => 'user_status_toggled', 'model_id' => $gudep->id]);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'user_password_reset', 'model_id' => $participant->id]);
+    }
+
+    /**
+     * Modal riwayat menampilkan login (berhasil dan gagal) serta audit log pengguna terpilih
+     */
+    public function test_superadmin_can_open_login_history_and_audit_log_modal(): void
+    {
+        \App\Models\LoginHistory::record($this->regularUser->id, $this->regularUser->username, 'success');
+        \App\Models\LoginHistory::record($this->regularUser->id, $this->regularUser->username, 'failed');
+        \App\Models\LoginHistory::record(User::where('username', 'juri')->first()->id, 'juri', 'success');
+        AuditLog::log('uji_aksi_pengguna', User::class, $this->regularUser->id, null, null, 'Aksi terhadap akun panitia', $this->superadmin->id);
+
+        Livewire::actingAs($this->superadmin)->test(UsersManagement::class)
+            ->assertSee('Riwayat Login & Audit Log', false)
+            ->call('openHistoryModal', $this->regularUser->id)
+            ->assertSet('historyUserId', $this->regularUser->id)
+            ->call('closeHistoryModal')
+            ->assertSet('historyUserId', null);
+
+        Livewire::withoutLazyLoading()->actingAs($this->superadmin)
+            ->test(\App\Livewire\Admin\UserActivityHistory::class, ['userId' => $this->regularUser->id])
+            ->assertSee('Riwayat Login (2)')
+            ->assertSee('Berhasil')
+            ->assertSee('Gagal')
+            ->call('$set', 'tab', 'audit')
+            ->assertSee('uji_aksi_pengguna')
+            ->assertSee('Aksi terhadap akun panitia');
+    }
+
+    public function test_successful_and_failed_logins_are_recorded(): void
+    {
+        $user = User::factory()->create(['username' => 'riwayat.user', 'password' => Hash::make('rahasia123'), 'is_active' => true]);
+
+        Livewire::test(\App\Livewire\Auth\Login::class)
+            ->set('username', 'riwayat.user')->set('password', 'salah-total')->call('login');
+        Livewire::test(\App\Livewire\Auth\Login::class)
+            ->set('username', 'riwayat.user')->set('password', 'rahasia123')->call('login');
+
+        $this->assertSame(1, \App\Models\LoginHistory::where('user_id', $user->id)->where('status', 'failed')->count());
+        $this->assertSame(1, \App\Models\LoginHistory::where('user_id', $user->id)->where('status', 'success')->count());
+        $this->assertNotNull(\App\Models\LoginHistory::where('user_id', $user->id)->first()->ip_address);
     }
 }

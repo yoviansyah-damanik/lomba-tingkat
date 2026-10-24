@@ -2,7 +2,7 @@
     {{-- Header Section --}}
     <x-heading-section
         title="Tata Kelola Pengguna & Peran"
-        description="Kelola akun pengguna, penugasan peran aparatur, status aktif, dan reset kredensial akses seluruh pemangku kepentingan LT III."
+        description="Pantau seluruh akun pengguna LT III. Data pengguna tidak dapat diubah dari halaman ini; Superadmin hanya dapat mengaktifkan atau menonaktifkan akun dan mengganti kata sandi."
     >
         <x-slot:breadcrumbs>
             <a href="{{ route('dashboard') }}" wire:navigate class="hover:underline">Dashboard</a>
@@ -10,15 +10,6 @@
             <span class="text-zinc-800 dark:text-zinc-200">Pengguna & Peran</span>
         </x-slot:breadcrumbs>
 
-        <x-slot:actions>
-            <flux:button
-                icon="user-plus"
-                variant="primary"
-                wire:click="openCreateModal"
-            >
-                Tambah Pengguna Baru
-            </flux:button>
-        </x-slot:actions>
     </x-heading-section>
 
     {{-- Filter & Pencarian Bar --}}
@@ -141,17 +132,14 @@
 
                             {{-- Aksi --}}
                             <td class="py-3 px-4 text-right">
-                                @php($locked = $user->isManagedAccount() || $user->isScoutGroup())
                                 <div class="flex items-center justify-end gap-1.5">
-                                    @unless($locked)
-                                        <flux:button
-                                            size="xs"
-                                            variant="subtle"
-                                            icon="pencil-square"
-                                            wire:click="openEditModal('{{ $user->id }}')"
-                                            title="Edit Pengguna & Peran"
-                                        />
-                                    @endunless
+                                    <flux:button
+                                        size="xs"
+                                        variant="subtle"
+                                        icon="clock"
+                                        wire:click="openHistoryModal('{{ $user->id }}')"
+                                        title="Riwayat Login & Audit Log"
+                                    />
 
                                     <flux:button
                                         size="xs"
@@ -161,21 +149,13 @@
                                         title="Reset Kata Sandi"
                                     />
 
-                                    @if($user->id !== auth()->id() && ! $locked)
+                                    @if($user->id !== auth()->id())
                                         <flux:button
                                             size="xs"
                                             variant="subtle"
                                             icon="{{ $user->is_active ? 'no-symbol' : 'check-circle' }}"
                                             wire:click="toggleActive('{{ $user->id }}')"
                                             title="{{ $user->is_active ? 'Nonaktifkan Akun' : 'Aktifkan Akun' }}"
-                                        />
-
-                                        <flux:button
-                                            size="xs"
-                                            variant="subtle"
-                                            icon="trash"
-                                            wire:click="openDeleteModal('{{ $user->id }}')"
-                                            title="Hapus Akun"
                                         />
                                     @endif
                                 </div>
@@ -199,145 +179,14 @@
         @endif
     </div>
 
-    {{-- Modal Tambah Pengguna Baru --}}
-    @if($showCreateModal)
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-            <div class="w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 space-y-4">
-                <div class="border-b border-zinc-100 dark:border-zinc-800 pb-3 flex items-center justify-between">
-                    <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
-                        Tambah Pengguna Baru
-                    </h3>
-                    <flux:button size="xs" variant="subtle" icon="x-mark" wire:click="$set('showCreateModal', false)" />
+    {{-- Modal Riwayat Login & Audit Log --}}
+    @if($historyUserId)
+        <div class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-xs" wire:key="history-modal">
+            <div class="relative w-full max-w-3xl overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+                <div class="absolute right-4 top-4 z-10">
+                    <flux:button wire:click="closeHistoryModal" size="sm" variant="subtle" icon="x-mark" />
                 </div>
-
-                <form wire:submit="createUser" class="space-y-3.5">
-                    <div>
-                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Nama Lengkap:</label>
-                        <input type="text" wire:model="name" class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
-                        @error('name') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Username:</label>
-                            <input type="text" wire:model="username" autocapitalize="none" class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
-                            @error('username') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Nomor HP / WhatsApp:</label>
-                            <input type="text" wire:model="phone_number" class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
-                            @error('phone_number') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Instansi / Pangkalan:</label>
-                            <input type="text" wire:model="institution" placeholder="Contoh: Kwarcab Padangsidimpuan" class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Jabatan:</label>
-                            <input type="text" wire:model="position" placeholder="Contoh: Koordinator Penjurian" class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Kata Sandi Awal:</label>
-                        <input type="text" wire:model="password" class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 font-mono focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
-                        @error('password') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">Penugasan Peran Resmi:</label>
-                        <div class="grid grid-cols-2 gap-2 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40">
-                            @foreach($availableRoles as $role)
-                                <label class="flex items-center gap-2 text-xs cursor-pointer">
-                                    <input type="checkbox" wire:model="selectedRoles" value="{{ $role->name }}" class="rounded text-amber-600 focus:ring-amber-500" />
-                                    <span class="text-zinc-700 dark:text-zinc-300 font-medium">{{ $role->label ?: $role->name }}</span>
-                                </label>
-                            @endforeach
-                        </div>
-                        @error('selectedRoles') <span class="text-xs text-rose-500 block mt-1">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-2">
-                        <flux:button type="button" variant="subtle" wire:click="$set('showCreateModal', false)">Batal</flux:button>
-                        <flux:button type="submit" variant="primary" icon="check">Simpan Pengguna</flux:button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    @endif
-
-    {{-- Modal Edit Pengguna --}}
-    @if($showEditModal)
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-            <div class="w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 space-y-4">
-                <div class="border-b border-zinc-100 dark:border-zinc-800 pb-3 flex items-center justify-between">
-                    <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
-                        Edit Data Pengguna
-                    </h3>
-                    <flux:button size="xs" variant="subtle" icon="x-mark" wire:click="$set('showEditModal', false)" />
-                </div>
-
-                <form wire:submit="updateUser" class="space-y-3.5">
-                    <div>
-                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Nama Lengkap:</label>
-                        <input type="text" wire:model="name" class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
-                        @error('name') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Username:</label>
-                            <input type="text" wire:model="username" autocapitalize="none" class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
-                            @error('username') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Nomor HP / WhatsApp:</label>
-                            <input type="text" wire:model="phone_number" class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Instansi / Pangkalan:</label>
-                            <input type="text" wire:model="institution" class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Jabatan:</label>
-                            <input type="text" wire:model="position" class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Ubah Kata Sandi (Kosongkan jika tidak diubah):</label>
-                        <input type="password" wire:model="password" placeholder="Minimal 6 karakter..." class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
-                        @error('password') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">Penugasan Peran Resmi:</label>
-                        <div class="grid grid-cols-2 gap-2 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40">
-                            @foreach($availableRoles as $role)
-                                <label class="flex items-center gap-2 text-xs cursor-pointer">
-                                    <input type="checkbox" wire:model="selectedRoles" value="{{ $role->name }}" class="rounded text-amber-600 focus:ring-amber-500" />
-                                    <span class="text-zinc-700 dark:text-zinc-300 font-medium">{{ $role->label ?: $role->name }}</span>
-                                </label>
-                            @endforeach
-                        </div>
-                        @error('selectedRoles') <span class="text-xs text-rose-500 block mt-1">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-2">
-                        <flux:button type="button" variant="subtle" wire:click="$set('showEditModal', false)">Batal</flux:button>
-                        <flux:button type="submit" variant="primary" icon="check">Simpan Perubahan</flux:button>
-                    </div>
-                </form>
+                <livewire:admin.user-activity-history :user-id="$historyUserId" :key="'history-'.$historyUserId" lazy />
             </div>
         </div>
     @endif
@@ -366,23 +215,4 @@
         </div>
     @endif
 
-    {{-- Modal Konfirmasi Hapus Pengguna --}}
-    @if($showDeleteModal)
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-            <div class="w-full max-w-sm rounded-2xl border border-rose-200 bg-white p-5 shadow-xl dark:border-rose-900/60 dark:bg-zinc-900 space-y-3">
-                <div class="flex items-center gap-2.5 text-rose-600">
-                    <flux:icon name="exclamation-triangle" class="size-5" />
-                    <h3 class="text-sm font-bold">Hapus Akun Pengguna?</h3>
-                </div>
-                <p class="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                    Apakah Anda yakin ingin menghapus akun <strong>{{ $name }}</strong>? Tindakan ini akan mencabut seluruh akses dan tidak dapat dibatalkan.
-                </p>
-
-                <div class="pt-2 flex justify-end gap-2">
-                    <flux:button type="button" variant="subtle" size="sm" wire:click="$set('showDeleteModal', false)">Batal</flux:button>
-                    <flux:button type="button" variant="danger" size="sm" icon="trash" wire:click="deleteUser">Ya, Hapus</flux:button>
-                </div>
-            </div>
-        </div>
-    @endif
 </div>

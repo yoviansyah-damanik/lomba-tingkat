@@ -57,6 +57,7 @@ class Login extends Component
 
         if (! $exactUsername || ! $provider->validateCredentials($user, ['password' => $this->password])) {
             RateLimiter::hit($throttleKey);
+            \App\Models\LoginHistory::record($exactUsername ? $user->getKey() : null, trim($this->username), 'failed');
             $this->reset('password');
             $this->toast('danger', 'Gagal Masuk', 'Username atau kata sandi tidak sesuai.');
 
