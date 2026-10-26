@@ -8,7 +8,7 @@
         badge-color="emerald"
     >
         <x-slot:actions>
-            <flux:button href="{{ route('attendance.recap') }}" variant="subtle" icon="clipboard-document-list">
+            <flux:button href="{{ route('attendance.recap') }}" variant="subtle" icon="clipboard-document-list" wire:navigate>
                 Rekapitulasi Presensi
             </flux:button>
 
@@ -356,7 +356,7 @@
 
                         <flux:button href="{{ route('attendance.scanner', $session) }}" size="xs" variant="primary" icon="qr-code"
                             class="bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs"
-                            title="Buka Kamera Scanner">
+                            title="Buka Kamera Scanner" wire:navigate>
                             Scanner
                         </flux:button>
                     </div>
@@ -1022,8 +1022,7 @@
                                 size="sm"
                                 icon="qr-code"
                                 class="bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs"
-                                title="Buka Kamera Scanner Sesi Ini"
-                            >
+                                title="Buka Kamera Scanner Sesi Ini" wire:navigate>
                                 <span class="hidden sm:inline">Buka Scanner</span>
                             </flux:button>
                             <flux:button type="button" variant="subtle" size="sm" icon="x-mark" wire:click="$set('showLogsModal', false)" />
@@ -1267,8 +1266,7 @@
                         <a 
                             href="{{ route('attendance.recap') }}" 
                             class="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 transition shadow-xs"
-                            title="Buka Rekapitulasi Presensi"
-                        >
+                            title="Buka Rekapitulasi Presensi" wire:navigate>
                             <flux:icon name="document-text" class="size-3.5" />
                             <span>Rekapitulasi</span>
                         </a>

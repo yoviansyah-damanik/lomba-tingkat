@@ -8,6 +8,9 @@
         badge-color="amber"
     >
         <x-slot:actions>
+            <flux:button href="{{ route('admin.print.preview', 'chaperones') }}" target="_blank" icon="printer">
+                Cetak Bindamping
+            </flux:button>
             <flux:button href="{{ route('admin.participants.index') }}" wire:navigate variant="subtle" icon="academic-cap">
                 Direktori Peserta
             </flux:button>

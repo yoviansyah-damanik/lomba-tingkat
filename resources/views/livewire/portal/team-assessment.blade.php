@@ -27,7 +27,7 @@
                             wire:key="patrol-{{ $option->id }}"
                             class="shrink-0"
                         >
-                            {{ $option->patrol_name }} &bull; {{ $option->isBoys() ? 'Putra' : 'Putri' }}
+                            {{ $option->npp ? $option->npp.' · ' : '' }}{{ $option->patrol_name }} &bull; {{ $option->isBoys() ? 'Putra' : 'Putri' }}
                         </flux:button>
                     @endforeach
                 </div>
@@ -43,6 +43,7 @@
                 <span class="text-[11px] text-zinc-500 dark:text-zinc-400">{{ $patrol->participantCount() }} peserta</span>
             </div>
             <h2 class="mt-2 text-xl font-extrabold tracking-tight text-zinc-900 dark:text-white">{{ $patrol->patrol_name }}</h2>
+            <p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">NPP: <x-npp-badge :npp="$patrol->npp" />@unless($patrol->npp) <em>belum dibuat panitia</em>@endunless</p>
             <p class="text-sm text-zinc-600 dark:text-zinc-400">
                 {{ $patrol->scoutGroup?->school_name }}
                 @if ($patrol->group_number)

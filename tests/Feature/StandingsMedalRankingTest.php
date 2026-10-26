@@ -18,13 +18,13 @@ class StandingsMedalRankingTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * Tabel nilai bobot per peringkat lomba (1=100, 2=80, 3=70, 4=65, ... 11-20=50, 21-33=45)
+     * Tabel nilai bobot per peringkat lomba (1=100, 2=80, 3=70, 4=65, ... 11-20=50, 21-33=45, 34+=0)
      */
     public function test_rank_weight_follows_the_official_conversion_table(): void
     {
         $expected = [
             1 => 100, 2 => 80, 3 => 70, 4 => 65, 5 => 60, 6 => 55, 7 => 54, 8 => 53, 9 => 52, 10 => 51,
-            11 => 50, 15 => 50, 20 => 50, 21 => 45, 30 => 45, 33 => 45,
+            11 => 50, 15 => 50, 20 => 50, 21 => 45, 30 => 45, 33 => 45, 34 => 0, 50 => 0,
         ];
 
         foreach ($expected as $rank => $weight) {

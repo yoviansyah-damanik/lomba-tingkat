@@ -92,7 +92,7 @@
 
             {{-- Quick Navigation Actions for Admin --}}
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <a href="{{ route('admin.scout-groups.index') }}" class="flex items-center gap-3.5 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 transition hover:bg-amber-100/60 dark:border-amber-500/20 dark:bg-amber-950/30">
+                <a href="{{ route('admin.scout-groups.index') }}" class="flex items-center gap-3.5 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 transition hover:bg-amber-100/60 dark:border-amber-500/20 dark:bg-amber-950/30" wire:navigate>
                     <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-600 text-white font-bold">
                         <flux:icon name="shield-check" class="size-5" />
                     </div>
@@ -102,7 +102,7 @@
                     </div>
                 </a>
 
-                <a href="{{ route('competitions') }}" class="flex items-center gap-3.5 rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900">
+                <a href="{{ route('competitions') }}" class="flex items-center gap-3.5 rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900" wire:navigate>
                     <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                         <flux:icon name="document-text" class="size-5" />
                     </div>
@@ -112,7 +112,7 @@
                     </div>
                 </a>
 
-                <a href="{{ route('schedules') }}" class="flex items-center gap-3.5 rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900">
+                <a href="{{ route('schedules') }}" class="flex items-center gap-3.5 rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900" wire:navigate>
                     <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                         <flux:icon name="calendar-days" class="size-5" />
                     </div>
@@ -188,7 +188,7 @@
                 <x-stat-card
                     label="Sistem Penilaian"
                     value="Blind Scoring Aktif"
-                    description="Identitas nomor undian acak menggantikan nama sekolah"
+                    description="Juri menilai berdasarkan NPP tanpa identitas pangkalan"
                     color="emerald"
                     icon="shield-check"
                 />
@@ -213,7 +213,7 @@
                     </strong>
                     <p class="mt-1.5 leading-relaxed pl-5.5">{{ $scoutGroup->revision_notes }}</p>
                     <div class="mt-3 pl-5.5">
-                        <a href="{{ route('scout-group.index') }}" class="inline-flex items-center rounded-lg bg-orange-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-700">
+                        <a href="{{ route('scout-group.index') }}" class="inline-flex items-center rounded-lg bg-orange-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-700" wire:navigate>
                             Perbaiki Data Sekarang &rarr;
                         </a>
                     </div>
@@ -295,17 +295,17 @@
                 Sistem <strong>LT III Kwarcab Padangsidimpuan</strong> terintegrasi dengan validasi pendaftaran kontingen terpusat, pengacakan identitas (*Blind Scoring*), serta pemantauan waktu resmi server WIB. Pastikan seluruh berkas telah disetujui sebelum sesi penimbangan dan presensi pos lomba dibuka.
             </p>
             <div class="mt-4 flex flex-wrap gap-4 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                <a href="{{ route('competitions') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300">
+                <a href="{{ route('competitions') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300" wire:navigate>
                     <flux:icon name="book-open" class="size-4" />
                     Petunjuk Teknis (Juknis) Lomba &rarr;
                 </a>
                 <span class="text-zinc-300 dark:text-zinc-700">&bull;</span>
-                <a href="{{ route('schedules') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300">
+                <a href="{{ route('schedules') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300" wire:navigate>
                     <flux:icon name="calendar" class="size-4" />
                     Jadwal Resmi & Arena &rarr;
                 </a>
                 <span class="text-zinc-300 dark:text-zinc-700">&bull;</span>
-                <a href="{{ route('leaderboard') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300">
+                <a href="{{ route('leaderboard') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300" wire:navigate>
                     <flux:icon name="trophy" class="size-4" />
                     Klasemen Langsung &rarr;
                 </a>

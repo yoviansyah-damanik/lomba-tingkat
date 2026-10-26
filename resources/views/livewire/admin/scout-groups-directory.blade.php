@@ -7,6 +7,11 @@
         badge-color="amber"
     >
         <x-slot:actions>
+            @if (auth()->user()->isAdmin() || auth()->user()->isCommittee())
+                <flux:button href="{{ route('admin.print.preview', 'scout-groups') }}" target="_blank" icon="printer">
+                    Cetak Pangkalan
+                </flux:button>
+            @endif
             <flux:button href="{{ route('admin.participants.index') }}" wire:navigate variant="subtle" icon="academic-cap">
                 Direktori Peserta
             </flux:button>

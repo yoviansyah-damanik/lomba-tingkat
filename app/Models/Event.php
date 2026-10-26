@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * Model kegiatan utama LT III
@@ -22,6 +23,10 @@ class Event extends Model
         'registration_start_at',
         'registration_end_at',
         'is_registration_open',
+        'is_official_registration_open',
+        'official_registration_start_at',
+        'official_registration_end_at',
+        'official_registration_token',
         'registration_fee_per_patrol',
         'payment_bank_name',
         'payment_account_number',
@@ -62,6 +67,9 @@ class Event extends Model
             'registration_start_at' => 'datetime',
             'registration_end_at' => 'datetime',
             'is_registration_open' => 'boolean',
+            'is_official_registration_open' => 'boolean',
+            'official_registration_start_at' => 'datetime',
+            'official_registration_end_at' => 'datetime',
             'registration_fee_per_patrol' => 'integer',
             'is_active' => 'boolean',
             'hide_patrol_identities' => 'boolean',
@@ -81,7 +89,7 @@ class Event extends Model
      */
     public function getFormattedFeePerPatrol(): string
     {
-        return 'Rp ' . number_format($this->getFeePerPatrol(), 0, ',', '.');
+        return 'Rp '.number_format($this->getFeePerPatrol(), 0, ',', '.');
     }
 
     /**
@@ -126,7 +134,7 @@ class Event extends Model
 
         return [
             'fee_per_patrol' => $feePerPatrol,
-            'formatted_fee_per_patrol' => 'Rp ' . number_format($feePerPatrol, 0, ',', '.'),
+            'formatted_fee_per_patrol' => 'Rp '.number_format($feePerPatrol, 0, ',', '.'),
             'bank_name' => $event ? $event->getPaymentBank() : config('registration.payment_bank', 'Bank Sumut'),
             'account_number' => $event ? $event->getPaymentAccountNumber() : config('registration.payment_account_number', '101-02-04-001234-5'),
             'account_holder' => $event ? $event->getPaymentAccountHolder() : config('registration.payment_account_holder', 'Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan'),
@@ -175,9 +183,51 @@ class Event extends Model
     }
 
     /**
+     * Tautan rahasia pendaftaran aparatur; null bila kode belum dibuat
+     */
+    public function officialRegistrationUrl(): ?string
+    {
+        return $this->official_registration_token
+            ? route('register.official', ['token' => $this->official_registration_token])
+            : null;
+    }
+
+    /**
+     * Memeriksa kode rahasia pada tautan dengan perbandingan waktu-konstan
+     */
+    public function matchesOfficialRegistrationToken(?string $token): bool
+    {
+        return $this->official_registration_token && $token && hash_equals($this->official_registration_token, $token);
+    }
+
+    /**
+     * Pendaftaran mandiri aparatur dibuka bila saklar aktif dan waktu sekarang berada dalam jendela yang diatur
+     */
+    public function isOfficialRegistrationOpen(): bool
+    {
+        if (! $this->is_active || ! $this->is_official_registration_open) {
+            return false;
+        }
+
+        if ($this->official_registration_start_at && now()->lt($this->official_registration_start_at)) {
+            return false;
+        }
+
+        return ! ($this->official_registration_end_at && now()->gt($this->official_registration_end_at));
+    }
+
+    /**
+     * Pendaftaran dianggap ditutup bila dimatikan panitia atau batas akhirnya sudah terlewat
+     */
+    public function isRegistrationClosed(): bool
+    {
+        return ! $this->is_registration_open || $this->hasRegistrationDeadlinePassed();
+    }
+
+    /**
      * Mengambil tanggal batas akhir pendaftaran resmi
      */
-    public function getRegistrationDeadlineAttribute(): ?\Illuminate\Support\Carbon
+    public function getRegistrationDeadlineAttribute(): ?Carbon
     {
         return $this->registration_end_at;
     }

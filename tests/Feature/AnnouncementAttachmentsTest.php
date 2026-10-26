@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\RoleEnum;
+use App\Livewire\Admin\AnnouncementForm;
 use App\Livewire\Admin\AnnouncementsManagement;
 use App\Models\Announcement;
 use App\Models\User;
@@ -31,8 +32,7 @@ class AnnouncementAttachmentsTest extends TestCase
 
     private function form(array $files = []): \Livewire\Features\SupportTesting\Testable
     {
-        return Livewire::actingAs($this->admin)->test(AnnouncementsManagement::class)
-            ->call('openCreateModal')
+        return Livewire::actingAs($this->admin)->test(AnnouncementForm::class)
             ->set('title', 'Juknis Lomba Pionering Terbaru')
             ->set('content', 'Silakan unduh petunjuk teknis terbaru pada lampiran.')
             ->set('broadcastPush', false)
@@ -44,7 +44,7 @@ class AnnouncementAttachmentsTest extends TestCase
         $this->form([
             UploadedFile::fake()->create('Juknis Pionering.pdf', 300, 'application/pdf'),
             UploadedFile::fake()->create('Formulir Pendaftaran.docx', 120, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'),
-        ])->call('saveAnnouncement')->assertHasNoErrors();
+        ])->call('save')->assertHasNoErrors();
 
         $announcement = Announcement::firstOrFail();
         $files = $announcement->attachmentFiles();
@@ -58,7 +58,7 @@ class AnnouncementAttachmentsTest extends TestCase
     public function test_public_detail_lists_files_and_downloads_them_with_original_name(): void
     {
         $this->form([UploadedFile::fake()->create('Juknis Pionering.pdf', 300, 'application/pdf')])
-            ->call('saveAnnouncement');
+            ->call('save');
 
         $announcement = Announcement::firstOrFail();
 
@@ -81,7 +81,7 @@ class AnnouncementAttachmentsTest extends TestCase
     {
         $this->form([UploadedFile::fake()->create('rahasia.pdf', 50, 'application/pdf')])
             ->set('is_published', false)
-            ->call('saveAnnouncement');
+            ->call('save');
 
         $announcement = Announcement::firstOrFail();
 
@@ -91,11 +91,11 @@ class AnnouncementAttachmentsTest extends TestCase
     public function test_invalid_file_type_and_size_are_rejected(): void
     {
         $this->form([UploadedFile::fake()->create('virus.exe', 10, 'application/x-msdownload')])
-            ->call('saveAnnouncement')
+            ->call('save')
             ->assertHasErrors(['newFiles.0']);
 
         $this->form([UploadedFile::fake()->create('besar.pdf', 11000, 'application/pdf')])
-            ->call('saveAnnouncement')
+            ->call('save')
             ->assertHasErrors(['newFiles.0']);
 
         $this->assertSame(0, Announcement::count());
@@ -106,16 +106,15 @@ class AnnouncementAttachmentsTest extends TestCase
         $this->form([
             UploadedFile::fake()->create('lama-1.pdf', 50, 'application/pdf'),
             UploadedFile::fake()->create('lama-2.pdf', 50, 'application/pdf'),
-        ])->call('saveAnnouncement');
+        ])->call('save');
 
         $announcement = Announcement::firstOrFail();
         [$first, $second] = $announcement->attachmentFiles();
 
-        $component = Livewire::actingAs($this->admin)->test(AnnouncementsManagement::class)
-            ->call('openEditModal', $announcement->id)
+        $component = Livewire::actingAs($this->admin)->test(AnnouncementForm::class, ['id' => $announcement->id])
             ->call('removeAttachment', 0)
             ->set('newFiles', [UploadedFile::fake()->create('baru.xlsx', 40, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')])
-            ->call('saveAnnouncement')
+            ->call('save')
             ->assertHasNoErrors();
 
         $names = array_column($announcement->fresh()->attachmentFiles(), 'name');
@@ -126,7 +125,7 @@ class AnnouncementAttachmentsTest extends TestCase
 
         // Menghapus pengumuman ikut menghapus seluruh berkas
         $paths = array_column($announcement->fresh()->attachmentFiles(), 'path');
-        $component->call('openDeleteModal', $announcement->id)->call('deleteAnnouncement');
+        Livewire::actingAs($this->admin)->test(AnnouncementsManagement::class)->call('openDeleteModal', $announcement->id)->call('deleteAnnouncement');
 
         foreach ($paths as $path) {
             Storage::disk('public')->assertMissing($path);
@@ -138,7 +137,7 @@ class AnnouncementAttachmentsTest extends TestCase
         $files = array_map(fn ($i) => UploadedFile::fake()->create("berkas-{$i}.pdf", 10, 'application/pdf'), range(1, 11));
 
         $this->form($files)
-            ->call('saveAnnouncement')
+            ->call('save')
             ->assertHasErrors(['newFiles']);
 
         $this->assertSame(0, Announcement::count());

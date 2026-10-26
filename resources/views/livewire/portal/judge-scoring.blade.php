@@ -42,19 +42,19 @@
         </div>
     </div>
 
-    {{-- Banner Protokol Blind Scoring --}}
-    <div class="rounded-2xl border {{ $unmaskNames ? 'border-amber-300 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/20' : 'border-indigo-200/80 bg-gradient-to-r from-indigo-50/70 via-blue-50/40 to-white dark:border-indigo-900/40 dark:from-indigo-950/30 dark:via-zinc-900 dark:to-zinc-900' }} p-4 shadow-xs">
+    {{-- Banner Protokol Penjurian Berbasis NPP --}}
+    <div class="rounded-2xl border border-indigo-200/80 bg-gradient-to-r from-indigo-50/70 via-blue-50/40 to-white dark:border-indigo-900/40 dark:from-indigo-950/30 dark:via-zinc-900 dark:to-zinc-900 p-4 shadow-xs">
         <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-3">
-                <span class="flex size-8 shrink-0 items-center justify-center rounded-lg {{ $unmaskNames ? 'bg-amber-600' : 'bg-indigo-600' }} text-white">
-                    <flux:icon name="{{ $unmaskNames ? 'exclamation-triangle' : 'shield-check' }}" class="size-4" />
+                <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white">
+                    <flux:icon name="shield-check" class="size-4" />
                 </span>
                 <div>
-                    <h4 class="text-xs font-bold {{ $unmaskNames ? 'text-amber-950 dark:text-amber-200' : 'text-indigo-950 dark:text-indigo-200' }}">
-                        {{ $unmaskNames ? 'MODE AUDIT ADMIN — IDENTITAS TERBUKA' : 'PROTOKOL PENILAIAN BLIND SCORING AKTIF' }}
+                    <h4 class="text-xs font-bold text-indigo-950 dark:text-indigo-200">
+                        PENJURIAN BERBASIS NPP (NOMOR PENDAFTARAN PESERTA)
                     </h4>
-                    <p class="text-[11px] {{ $unmaskNames ? 'text-amber-800/80 dark:text-amber-300/80' : 'text-indigo-900/80 dark:text-indigo-300/80' }}">
-                        {{ $unmaskNames ? 'Nama sekolah dan kontingen ditampilkan secara transparan khusus hak akses Administrator.' : 'Demi objektivitas mutlak, seluruh peserta disamarkan menjadi Nomor Undian acak.' }}
+                    <p class="text-[11px] text-indigo-900/80 dark:text-indigo-300/80">
+                        Masukkan NPP regu untuk membuka form penilaian. Nama regu, nomor gugus depan, dan pangkalan tidak ditampilkan kepada juri.
                     </p>
                 </div>
             </div>
@@ -82,89 +82,95 @@
         </div>
     @endif
 
-    {{-- Layout 2 Kolom: Roster Blind Scoring & Form Rubrik --}}
+    {{-- Layout 2 Kolom: Input NPP & Form Rubrik --}}
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
-        {{-- Kolom Kiri: Roster Nomor Undian Peserta --}}
-        <div class="lg:col-span-4 space-y-3">
-            <div class="flex items-center justify-between px-1">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500">
-                    Daftar Undian Peserta ({{ $roster->count() }})
-                </h3>
-                <span class="text-[11px] text-zinc-400">
-                    Klik untuk menilai
-                </span>
+        {{-- Kolom Kiri: Input NPP & riwayat penilaian sesi --}}
+        <div class="lg:col-span-4 space-y-4">
+            <div class="rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-xs dark:border-zinc-800 dark:bg-zinc-900 space-y-4">
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                        Langkah 2 &mdash; Masukkan NPP
+                    </h3>
+                    <p class="mt-1 text-[11px] text-zinc-400">
+                        Contoh: 01 atau 12. NPP dicari pada kategori sesi ini (putra atau putri). Sistem memverifikasi apakah NPP termasuk peserta lomba ini.
+                    </p>
+                </div>
+
+                @if(! $nppReady)
+                    <div class="flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-200">
+                        <flux:icon name="exclamation-triangle" class="mt-0.5 size-4 shrink-0 text-amber-600" />
+                        <span class="font-medium">NPP belum digenerate panitia. Penilaian dapat dimulai setelah pendaftaran ditutup dan NPP dibuat.</span>
+                    </div>
+                @endif
+
+                <form wire:submit="submitNpp" class="space-y-3">
+                    <flux:input
+                        wire:model="nppInput"
+                        placeholder="01"
+                        autocomplete="off"
+                        class="font-mono uppercase"
+                        :invalid="(bool) $nppError"
+                    />
+
+                    @if($nppError)
+                        <div class="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-medium text-rose-800 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">
+                            <flux:icon name="x-circle" class="mt-0.5 size-4 shrink-0" />
+                            <span>{{ $nppError }}</span>
+                        </div>
+                    @endif
+
+                    <div class="flex items-center gap-2">
+                        <flux:button type="submit" variant="primary" icon="magnifying-glass" :disabled="! $nppReady">
+                            Verifikasi NPP
+                        </flux:button>
+                        @if($selectedPatrol)
+                            <flux:button type="button" variant="subtle" icon="arrow-path" wire:click="resetNpp">
+                                NPP Lain
+                            </flux:button>
+                        @endif
+                    </div>
+                </form>
             </div>
 
-            <div class="space-y-2 max-h-[750px] overflow-y-auto pr-1">
-                @forelse($roster as $item)
-                    @php
-                        $isSelected = $selectedPatrolId === $item['patrol_id'];
-                        $isFinal = $item['assessment_status'] === 'finalized';
-                        $isDraft = $item['assessment_status'] === 'draft';
-                    @endphp
-                    <div
-                        wire:click="selectPatrol('{{ $item['patrol_id'] }}')"
-                        class="cursor-pointer rounded-2xl border p-4 transition shadow-xs {{ $isSelected ? 'border-amber-500 bg-amber-50/60 ring-2 ring-amber-500/20 dark:border-amber-500 dark:bg-amber-950/30' : 'border-zinc-200/80 bg-white hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700' }}"
-                    >
-                        <div class="flex items-center justify-between gap-2">
-                            <div class="flex items-center gap-2">
+            <div class="space-y-2">
+                <div class="px-1 flex items-center justify-between">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                        {{ $isAdmin ? 'Penilaian Masuk' : 'Sudah Anda Nilai' }} ({{ $scoredList->count() }})
+                    </h3>
+                    <span class="text-[11px] text-zinc-400">Klik untuk membuka</span>
+                </div>
+
+                <div class="space-y-2 max-h-[520px] overflow-y-auto pr-1">
+                    @forelse($scoredList as $item)
+                        <button
+                            type="button"
+                            wire:click="selectPatrol('{{ $item['patrol_id'] }}')"
+                            class="w-full text-left rounded-2xl border p-3 transition shadow-xs {{ $selectedPatrolId === $item['patrol_id'] ? 'border-amber-500 bg-amber-50/60 ring-2 ring-amber-500/20 dark:border-amber-500 dark:bg-amber-950/30' : 'border-zinc-200/80 bg-white hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700' }}"
+                        >
+                            <div class="flex items-center justify-between gap-2">
                                 <span class="rounded-lg bg-zinc-100 px-2 py-0.5 font-mono text-xs font-extrabold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100">
-                                    {{ $item['blind_code'] }}
+                                    {{ $item['npp'] }}
                                 </span>
-                                <span class="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                                    {{ $item['blind_label'] }}
-                                </span>
-                            </div>
-
-                            {{-- Status Nilai --}}
-                            @if($isFinal)
-                                <span class="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                                    <flux:icon name="lock-closed" class="size-3" />
-                                    Final
-                                </span>
-                            @elseif($isDraft)
-                                <span class="inline-flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
-                                    <flux:icon name="pencil" class="size-3" />
-                                    Draf
-                                </span>
-                            @else
-                                <span class="rounded-md bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
-                                    Belum
-                                </span>
-                            @endif
-                        </div>
-
-                        {{-- Nama Asli jika Mode Admin Unmask --}}
-                        @if($unmaskNames)
-                            <div class="mt-1 text-xs font-semibold text-amber-800 dark:text-amber-300">
-                                {{ $item['patrol_name'] }} &bull; {{ $item['school_name'] }}
-                            </div>
-                        @endif
-
-                        {{-- Metadata Presensi Pos & Skor --}}
-                        <div class="mt-2.5 flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-[11px]">
-                            <div class="flex items-center gap-1.5">
-                                @if($item['is_attended'])
-                                    <span class="size-2 rounded-full bg-emerald-500"></span>
-                                    <span class="text-emerald-700 dark:text-emerald-400 font-medium">Hadir di Pos</span>
-                                @else
-                                    <span class="size-2 rounded-full bg-zinc-300 dark:bg-zinc-600"></span>
-                                    <span class="text-zinc-400">Belum Presensi</span>
-                                @endif
-                            </div>
-
-                            @if($item['final_score'] !== null)
-                                <div class="font-bold text-zinc-900 dark:text-zinc-100 font-mono">
-                                    {{ number_format($item['final_score'], 2) }}
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100">{{ number_format($item['final_score'], 2) }}</span>
+                                    @if($item['status'] === 'finalized')
+                                        <span class="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                                            <flux:icon name="lock-closed" class="size-3" /> Final
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                                            <flux:icon name="pencil" class="size-3" /> Draf
+                                        </span>
+                                    @endif
                                 </div>
-                            @endif
+                            </div>
+                        </button>
+                    @empty
+                        <div class="rounded-2xl border border-zinc-200 bg-white p-5 text-center text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
+                            Belum ada NPP yang dinilai pada sesi ini.
                         </div>
-                    </div>
-                @empty
-                    <div class="rounded-2xl border border-zinc-200 bg-white p-6 text-center text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
-                        Belum ada regu terdaftar pada jadwal ini.
-                    </div>
-                @endforelse
+                    @endforelse
+                </div>
             </div>
         </div>
 
@@ -177,27 +183,20 @@
                         <div>
                             <div class="flex items-center gap-2">
                                 <span class="rounded-lg bg-amber-600 px-2.5 py-1 font-mono text-sm font-extrabold text-white">
-                                    {{ $selectedPatrol['blind_code'] }}
+                                    {{ $selectedPatrol['npp'] }}
                                 </span>
                                 <h2 class="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                                    {{ $selectedPatrol['blind_label'] }}
+                                    NPP {{ $selectedPatrol['npp'] }}
                                 </h2>
                                 <span class="rounded-md {{ $selectedPatrol['gender_category'] === 'boys' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300' }} px-2 py-0.5 text-xs font-semibold">
                                     Kategori {{ $selectedPatrol['gender_label'] }}
                                 </span>
                             </div>
 
-                            @if($unmaskNames)
+                            @if($unmaskNames && $selectedPatrol['patrol_name'])
                                 <p class="mt-1 text-xs text-amber-700 dark:text-amber-400 font-medium">
                                     Identitas Resmi: <strong>{{ $selectedPatrol['patrol_name'] }}</strong> &bull; {{ $selectedPatrol['school_name'] }}
                                 </p>
-                            @endif
-
-                            @if(! $selectedPatrol['is_attended'])
-                                <div class="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-2.5 py-1 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-                                    <flux:icon name="exclamation-circle" class="size-3.5 text-amber-600" />
-                                    <span>Regu ini belum tercatat hadir di pos presensi. Penilaian draf tetap dapat diinput.</span>
-                                </div>
                             @endif
                         </div>
 
@@ -430,10 +429,10 @@
                 <div class="rounded-2xl border border-zinc-200 bg-white p-12 text-center shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
                     <flux:icon name="user-group" class="mx-auto size-12 text-zinc-400" />
                     <h3 class="mt-3 text-sm font-bold text-zinc-900 dark:text-zinc-100">
-                        Pilih Peserta untuk Memulai Penilaian
+                        Masukkan NPP untuk Memulai Penilaian
                     </h3>
                     <p class="mt-1 text-xs text-zinc-500">
-                        Silakan klik salah satu Nomor Undian pada daftar peserta di sebelah kiri untuk membuka rubrik evaluasi.
+                        Ketik NPP regu pada kolom di sebelah kiri. Jika NPP valid, form penilaian rubrik akan tampil; jika tidak, sistem menampilkan notifikasi.
                     </p>
                 </div>
             @endif
@@ -453,7 +452,7 @@
                             Konfirmasi Finalisasi Nilai Resmi
                         </h3>
                         <p class="mt-1 text-xs text-zinc-500 leading-relaxed">
-                            Apakah Anda yakin ingin memfinalisasi nilai untuk <strong>{{ $selectedPatrol['blind_label'] ?? 'Peserta' }}</strong> dengan skor akhir <strong>{{ number_format($calculatedScore['final_score'], 2) }}</strong>?
+                            Apakah Anda yakin ingin memfinalisasi nilai untuk <strong>NPP {{ $selectedPatrol['npp'] ?? '-' }}</strong> dengan skor akhir <strong>{{ number_format($calculatedScore['final_score'], 2) }}</strong>?
                         </p>
                     </div>
                 </div>
@@ -494,7 +493,7 @@
                             Buka Kunci Penilaian (Audit Admin)
                         </h3>
                         <p class="mt-1 text-xs text-zinc-500 leading-relaxed">
-                            Membuka kunci penilaian untuk <strong>{{ $selectedPatrol['blind_label'] ?? 'Peserta' }}</strong> agar juri dapat melakukan perbaikan. Aksi ini akan dicatat dalam riwayat <em>Audit Trail</em>.
+                            Membuka kunci penilaian untuk <strong>NPP {{ $selectedPatrol['npp'] ?? '-' }}</strong> agar juri dapat melakukan perbaikan. Aksi ini akan dicatat dalam riwayat <em>Audit Trail</em>.
                         </p>
                     </div>
                 </div>

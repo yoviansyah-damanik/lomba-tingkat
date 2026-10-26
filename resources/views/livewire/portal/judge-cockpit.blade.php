@@ -2,7 +2,7 @@
     {{-- Header Section Konsisten --}}
     <x-heading-section
         title="Cockpit Penjurian"
-        subtitle="Portal penilaian resmi dewan juri dengan protokol Blind Scoring dan rubrik terstandarisasi."
+        subtitle="Portal penilaian resmi dewan juri dengan input NPP dan rubrik terstandarisasi."
     >
         <x-slot:actions>
             <flux:button
@@ -16,7 +16,7 @@
         </x-slot:actions>
     </x-heading-section>
 
-    {{-- Banner Protokol Blind Scoring --}}
+    {{-- Banner Protokol Penjurian Berbasis NPP --}}
     <div class="rounded-2xl border border-indigo-200/80 bg-gradient-to-r from-indigo-50/70 via-blue-50/40 to-white p-4.5 shadow-xs dark:border-indigo-900/40 dark:from-indigo-950/30 dark:via-zinc-900 dark:to-zinc-900">
         <div class="flex items-start gap-3">
             <div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-xs">
@@ -24,10 +24,10 @@
             </div>
             <div class="space-y-1">
                 <h4 class="text-xs font-bold text-indigo-950 dark:text-indigo-200 uppercase tracking-wider">
-                    Protokol Blind Scoring Aktif
+                    Penjurian Berbasis NPP
                 </h4>
                 <p class="text-xs text-indigo-900/80 dark:text-indigo-300/80 leading-relaxed">
-                    Identitas pangkalan sekolah dan nama regu disamarkan sepenuhnya menjadi <strong>Nomor Undian Peserta</strong> pada lembar penilaian. Pastikan penilaian dilakukan secara objektif berdasarkan standar rubrik petunjuk teknis.
+                    Pilih mata lomba, lalu masukkan <strong>NPP (Nomor Pendaftaran Peserta)</strong> regu. Sistem memverifikasi NPP dan membuka form penilaian; nama regu, nomor gugus depan, dan pangkalan tidak ditampilkan kepada juri.
                 </p>
             </div>
         </div>

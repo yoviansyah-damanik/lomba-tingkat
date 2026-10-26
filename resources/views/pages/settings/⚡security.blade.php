@@ -203,7 +203,7 @@ new #[Title('Security settings')] class extends Component {
                         Wajib Mengubah Kata Sandi Pertama Kali
                     </h3>
                     <p class="mt-0.5 text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
-                        Akun Anda saat ini menggunakan kata sandi default sistem (ID akun: <strong class="font-mono">{{ auth()->user()->id_number }}</strong>). Masukkan ID tersebut pada kolom <em>Current password</em> dan tentukan kata sandi baru Anda untuk dapat mengakses sistem.
+                        Akun Anda saat ini menggunakan kata sandi awal bawaan sistem (ID akun: <strong class="font-mono">{{ auth()->user()->id_number }}</strong>). Masukkan kata sandi awal tersebut pada kolom <em>Current password</em> dan tentukan kata sandi baru Anda untuk dapat mengakses sistem.
                     </p>
                 </div>
             </div>

@@ -16,6 +16,12 @@ return [
     'name' => env('APP_NAME', 'LT III Kwarcab Padangsidimpuan'),
 
     /*
+    | Nomor versi aplikasi yang ditampilkan pada footer seluruh halaman
+    */
+
+    'version' => env('APP_VERSION', '1.0.0'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Description / Subheading
     |--------------------------------------------------------------------------

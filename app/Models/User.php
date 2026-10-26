@@ -27,7 +27,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'username', 'password', 'must_change_password', 'phone_number', 'avatar_path', 'is_active', 'scout_id', 'institution', 'position', 'id_number', 'qr_token', 'qr_generated_at', 'participant_id'])]
+#[Fillable(['name', 'username', 'password', 'must_change_password', 'phone_number', 'avatar_path', 'is_active', 'scout_id', 'institution', 'position', 'committee_position', 'id_number', 'qr_token', 'qr_generated_at', 'participant_id'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
@@ -233,6 +233,22 @@ class User extends Authenticatable implements PasskeyUser
     public function isCommitteeAndJudge(): bool
     {
         return $this->hasRole(\App\Enums\RoleEnum::Committee) && $this->hasRole(\App\Enums\RoleEnum::Judge);
+    }
+
+    /**
+     * Teks jabatan pada ID Card aparatur: Juri saja "Dewan Juri", Panitia memakai posisi kepanitiaan,
+     * rangkap Panitia + Juri "Posisi Kepanitiaan / Dewan Juri"
+     */
+    public function cardPositionLabel(): string
+    {
+        $committee = $this->committee_position ?: 'Panitia Pelaksana';
+
+        return match (true) {
+            $this->isCommittee() && $this->isJudge() => $committee.' / Dewan Juri',
+            $this->isJudge() => 'Dewan Juri',
+            $this->isCommittee() => $committee,
+            default => $this->position ?: $this->roleLabel(),
+        };
     }
 
     /**

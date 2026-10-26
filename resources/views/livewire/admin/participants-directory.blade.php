@@ -8,6 +8,9 @@
         badge-color="amber"
     >
         <x-slot:actions>
+            <flux:button href="{{ route('admin.print.preview', 'participants') }}" target="_blank" icon="printer">
+                Cetak Peserta
+            </flux:button>
             <flux:button href="{{ route('admin.scout-groups.index') }}" wire:navigate variant="subtle" icon="shield-check">
                 Verifikasi Berkas
             </flux:button>

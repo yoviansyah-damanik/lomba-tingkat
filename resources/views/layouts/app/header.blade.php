@@ -80,5 +80,7 @@
         @endpersist
 
         @fluxScripts
+
+        <x-card-viewer />
     </body>
 </html>

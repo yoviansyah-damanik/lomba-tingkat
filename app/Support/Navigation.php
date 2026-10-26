@@ -130,6 +130,7 @@ class Navigation
                 'heading' => 'Lomba & Jadwal',
                 'items' => [
                     ['label' => 'Mata Lomba & Rubrik', 'icon' => 'trophy', 'route' => 'admin.competitions.index', 'active' => ['admin.competitions.*'], 'roles' => ['admin'], 'description' => 'Format lomba dan kriteria penilaian'],
+                    ['label' => 'Generate NPP', 'icon' => 'hashtag', 'route' => 'admin.npp.index', 'active' => ['admin.npp.*'], 'roles' => ['admin'], 'description' => 'Nomor Pendaftaran Peserta untuk penjurian'],
                     ['label' => 'Jadwal & Penugasan Juri', 'icon' => 'calendar', 'route' => 'admin.schedules.index', 'active' => ['admin.schedules.*'], 'roles' => ['admin'], 'description' => 'Jadwal sesi lomba dan juri bertugas'],
                 ],
             ],

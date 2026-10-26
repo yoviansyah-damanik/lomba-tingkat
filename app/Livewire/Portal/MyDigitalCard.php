@@ -75,13 +75,13 @@ class MyDigitalCard extends Component
                 'category' => $user->isJudge() && $user->isCommittee()
                     ? 'PANITIA PELAKSANA & DEWAN JURI'
                     : ($user->isJudge() ? 'DEWAN JURI PERLOMBAAN' : 'PANITIA PELAKSANA'),
-                'badge' => $user->position ?: $user->roleLabel(),
+                'badge' => $user->cardPositionLabel(),
                 'name' => $user->name,
                 'id_number' => $user->id_number,
                 'scout_id' => $user->scout_id,
                 'photo' => $user->avatar_path,
                 'rows' => [
-                    'Jabatan/Tugas' => $user->position ?? $user->roleLabel(),
+                    'Jabatan/Tugas' => $user->cardPositionLabel(),
                     'Instansi' => $user->institution ?? 'Kwartir Cabang Kota Padangsidimpuan',
                     'Kontak/WA' => $user->phone_number,
                 ],

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Competition;
 use App\Models\CompetitionSchedule;
+use Database\Seeders\Support\LiveContest;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 
@@ -25,6 +26,7 @@ class CompetitionScheduleSeeder extends Seeder
             $slot = $item['schedule'];
             $start = Carbon::parse("{$slot['day']} {$slot['start']}", 'Asia/Jakarta');
             $end = Carbon::parse("{$slot['day']} {$slot['end']}", 'Asia/Jakarta');
+            [$start, $end] = LiveContest::window($start, $end);
 
             foreach (['boys' => 'Penggalang Putra', 'girls' => 'Penggalang Putri'] as $gender => $label) {
                 CompetitionSchedule::updateOrCreate(

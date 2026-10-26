@@ -89,7 +89,7 @@ class ReportExportService
             ];
         }
 
-        $filename = 'rekap-kontingen-gudep-lt3-' . date('Ymd-His') . '.csv';
+        $filename = 'rekap-kontingen-gudep-lt3-'.date('Ymd-His').'.csv';
 
         return $this->streamCsv($filename, $headers, $rows);
     }
@@ -155,7 +155,7 @@ class ReportExportService
             ];
         }
 
-        $filename = 'buku-induk-peserta-lt3-' . date('Ymd-His') . '.csv';
+        $filename = 'buku-induk-peserta-lt3-'.date('Ymd-His').'.csv';
 
         return $this->streamCsv($filename, $headers, $rows);
     }
@@ -215,7 +215,7 @@ class ReportExportService
             ];
         }
 
-        $filename = 'rekap-kehadiran-pos-lt3-' . date('Ymd-His') . '.csv';
+        $filename = 'rekap-kehadiran-pos-lt3-'.date('Ymd-His').'.csv';
 
         return $this->streamCsv($filename, $headers, $rows);
     }
@@ -230,6 +230,7 @@ class ReportExportService
             'Kode Lomba',
             'Nama Mata Lomba',
             'Kategori',
+            'NPP',
             'Nama Regu',
             'Kategori Regu',
             'Asal Pangkalan / Gudep',
@@ -266,6 +267,7 @@ class ReportExportService
                 $competition?->code ?? '-',
                 $competition?->title ?? '-',
                 ucfirst($competition?->category ?? '-'),
+                $patrol?->npp ?? '-',
                 $patrol?->patrol_name ?? '-',
                 $gender,
                 $group?->school_name ?? '-',
@@ -278,7 +280,7 @@ class ReportExportService
             ];
         }
 
-        $filename = 'rekap-nilai-lomba-lt3-' . date('Ymd-His') . '.csv';
+        $filename = 'rekap-nilai-lomba-lt3-'.date('Ymd-His').'.csv';
 
         return $this->streamCsv($filename, $headers, $rows);
     }
@@ -291,6 +293,7 @@ class ReportExportService
         $headers = [
             'Kategori',
             'Peringkat',
+            'NPP',
             'Nama Regu',
             'Pangkalan / Gugus Depan',
             'Nomor Gudep',
@@ -309,6 +312,7 @@ class ReportExportService
             $rows[] = [
                 $st['gender_category'] === 'boys' ? 'Putra' : 'Putri',
                 $st['rank'],
+                $st['npp'] ?? '-',
                 $st['patrol_name'],
                 $st['school_name'],
                 $st['group_number'],
@@ -328,7 +332,7 @@ class ReportExportService
             default => 'gabungan',
         };
 
-        $filename = "klasemen-akhir-lt3-{$genderLabel}-" . date('Ymd-His') . '.csv';
+        $filename = "klasemen-akhir-lt3-{$genderLabel}-".date('Ymd-His').'.csv';
 
         return $this->streamCsv($filename, $headers, $rows);
     }

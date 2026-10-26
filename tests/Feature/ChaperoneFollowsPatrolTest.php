@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\PatrolGenderEnum;
 use App\Enums\RoleEnum;
+use App\Livewire\Portal\ChaperoneForm;
 use App\Livewire\Portal\ReviewRegistration;
 use App\Models\Chaperone;
 use App\Models\Patrol;
@@ -11,12 +12,13 @@ use App\Models\ScoutGroup;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Livewire\Livewire;
 use Tests\TestCase;
 
 class ChaperoneFollowsPatrolTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, \Tests\Concerns\SubmitsLivewireForms;
 
     private User $user;
 
@@ -46,7 +48,7 @@ class ChaperoneFollowsPatrolTest extends TestCase
             'city' => 'Padangsidimpuan',
             'postal_code' => '22711',
             'phone_number' => '081234567890',
-            'photo' => \Illuminate\Http\UploadedFile::fake()->image('foto.jpg'),
+            'photo' => UploadedFile::fake()->image('foto.jpg'),
         ];
     }
 
@@ -73,15 +75,19 @@ class ChaperoneFollowsPatrolTest extends TestCase
     {
         Patrol::factory()->create(['scout_group_id' => $this->group->id, 'gender_category' => PatrolGenderEnum::Boys]);
 
-        $this->actingAs($this->user)
-            ->post(route('scout-group.chaperones.store'), $this->chaperonePayload('female'))
-            ->assertSessionHasErrors(['gender']);
+        // Bindamping putri ditolak: formulir dibuka dengan kategori putra lalu dipaksa putri saat simpan
+        $form = Livewire::withQueryParams(['gender' => 'male'])->actingAs($this->user)
+            ->test(ChaperoneForm::class);
+
+        foreach ($this->chaperonePayload('female') as $property => $value) {
+            $form->set($property, $value);
+        }
+
+        $form->call('save')->assertHasErrors(['gender']);
 
         $this->assertSame(0, Chaperone::count());
 
-        $this->actingAs($this->user)
-            ->post(route('scout-group.chaperones.store'), $this->chaperonePayload('male'))
-            ->assertSessionHasNoErrors();
+        $this->storeChaperone($this->user, $this->chaperonePayload('male'))->assertHasNoErrors();
 
         $this->assertSame(1, Chaperone::where('gender', 'male')->count());
     }
@@ -92,9 +98,8 @@ class ChaperoneFollowsPatrolTest extends TestCase
         $boysB = Patrol::factory()->create(['scout_group_id' => $this->group->id, 'gender_category' => PatrolGenderEnum::Boys]);
         $girls = Patrol::factory()->create(['scout_group_id' => $this->group->id, 'gender_category' => PatrolGenderEnum::Girls]);
 
-        $this->actingAs($this->user)
-            ->post(route('scout-group.chaperones.store'), $this->chaperonePayload('male') + ['patrol_ids' => [$boysA->id, $girls->id]])
-            ->assertSessionHasNoErrors();
+        $this->storeChaperone($this->user, $this->chaperonePayload('male') + ['patrol_ids' => [$boysA->id, $girls->id]])
+            ->assertHasNoErrors();
 
         $chaperone = Chaperone::where('gender', 'male')->firstOrFail();
         $this->assertSame($chaperone->id, $boysA->fresh()->chaperone_id);
@@ -102,9 +107,8 @@ class ChaperoneFollowsPatrolTest extends TestCase
         $this->assertNull($girls->fresh()->chaperone_id);
 
         // Ubah pilihan: regu A dilepas, regu B ditetapkan
-        $this->actingAs($this->user)
-            ->put(route('scout-group.chaperones.update', $chaperone->id), $this->chaperonePayload('male') + ['patrol_ids' => [$boysB->id]])
-            ->assertSessionHasNoErrors();
+        $this->submitForm($this->user, ChaperoneForm::class, ['id' => $chaperone->id], $this->chaperonePayload('male') + ['patrol_ids' => [(string) $boysB->id]])
+            ->assertHasNoErrors();
 
         $this->assertNull($boysA->fresh()->chaperone_id);
         $this->assertSame($chaperone->id, $boysB->fresh()->chaperone_id);

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\Admin\AnnouncementForm;
 use App\Livewire\Admin\AnnouncementsManagement;
 use App\Models\Announcement;
 use App\Models\AuditLog;
@@ -72,16 +73,15 @@ class AdminAnnouncementsManagementTest extends TestCase
     public function test_admin_can_create_announcement(): void
     {
         Livewire::actingAs($this->admin)
-            ->test(AnnouncementsManagement::class)
-            ->call('openCreateModal')
+            ->test(AnnouncementForm::class)
             ->set('title', 'Instruksi Pemasangan Tenda Sektor Barat')
             ->set('category', 'technical')
             ->set('summary', 'Seluruh kontingen dipersilakan memulai pendirian tenda regu mulai pukul 08:00 WIB.')
             ->set('content', 'Materi instruksi lengkap mengenai standar tapak perkemahan, batas patok, dan sanitasi lingkungan.')
             ->set('is_published', true)
-            ->call('saveAnnouncement')
+            ->call('save')
             ->assertHasNoErrors()
-            ->assertDispatched('toast-show');
+            ->assertRedirect(route('admin.announcements.index'));
 
         $announcement = Announcement::where('title', 'Instruksi Pemasangan Tenda Sektor Barat')->first();
         $this->assertNotNull($announcement);
@@ -107,13 +107,12 @@ class AdminAnnouncementsManagementTest extends TestCase
         $announcement = Announcement::first();
 
         Livewire::actingAs($this->admin)
-            ->test(AnnouncementsManagement::class)
-            ->call('openEditModal', $announcement->id)
+            ->test(AnnouncementForm::class, ['id' => $announcement->id])
             ->set('title', 'Judul Pengumuman Diperbarui')
             ->set('category', 'urgent')
-            ->call('saveAnnouncement')
+            ->call('save')
             ->assertHasNoErrors()
-            ->assertDispatched('toast-show');
+            ->assertRedirect(route('admin.announcements.index'));
 
         $announcement->refresh();
         $this->assertEquals('Judul Pengumuman Diperbarui', $announcement->title);
@@ -160,5 +159,39 @@ class AdminAnnouncementsManagementTest extends TestCase
             ->assertDispatched('toast-show');
 
         $this->assertDatabaseMissing('announcements', ['id' => $id]);
+    }
+    /**
+     * Halaman tulis dan edit pengumuman berdiri sendiri (bukan modal) dan hanya untuk admin
+     */
+    public function test_create_and_edit_pages_are_standalone_and_admin_only(): void
+    {
+        $announcement = Announcement::first();
+
+        $this->get(route('admin.announcements.create'))->assertRedirect(route('login'));
+        $this->actingAs($this->regularUser)->get(route('admin.announcements.create'))->assertForbidden();
+        $this->actingAs($this->regularUser)->get(route('admin.announcements.edit', $announcement->id))->assertForbidden();
+
+        $this->actingAs($this->admin)->get(route('admin.announcements.create'))
+            ->assertOk()->assertSee('Tulis Pengumuman Baru')->assertSee('Terbitkan Pengumuman');
+
+        $this->actingAs($this->admin)->get(route('admin.announcements.edit', $announcement->id))
+            ->assertOk()->assertSee('Edit Pengumuman')->assertSee($announcement->title);
+
+        $this->actingAs($this->admin)->get(route('admin.announcements.edit', 'tidak-ada'))->assertNotFound();
+    }
+
+    public function test_list_links_to_form_pages_and_validation_blocks_invalid_input(): void
+    {
+        $announcement = Announcement::first();
+
+        $this->actingAs($this->admin)->get(route('admin.announcements.index'))
+            ->assertSee(route('admin.announcements.create'), false)
+            ->assertSee(route('admin.announcements.edit', $announcement->id), false);
+
+        Livewire::actingAs($this->admin)->test(AnnouncementForm::class)
+            ->set('title', 'abc')
+            ->set('content', 'pendek')
+            ->call('save')
+            ->assertHasErrors(['title', 'content']);
     }
 }

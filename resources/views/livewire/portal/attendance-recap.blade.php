@@ -25,7 +25,7 @@
         </x-slot:badge-extra>
 
         <x-slot:actions>
-            <flux:button href="{{ route('attendance.index') }}" variant="subtle" icon="qr-code">
+            <flux:button href="{{ route('attendance.index') }}" variant="subtle" icon="qr-code" wire:navigate>
                 Buka Scanner Kamera
             </flux:button>
 

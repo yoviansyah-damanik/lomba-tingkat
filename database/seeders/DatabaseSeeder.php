@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Services\PatrolNumberService;
+use Database\Seeders\Support\LiveContest;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -10,7 +12,7 @@ class DatabaseSeeder extends Seeder
      * Seed the application's database.
      *
      * - semua lingkungan : peran, akun Superadmin & Administrator, serta data resmi Juknis LT-III 2026
-     *                      (kegiatan, 17 mata lomba beserta rubrik, jadwal sesi, sesi presensi, dan pengumuman)
+     *                      (kegiatan, 18 mata lomba beserta rubrik, jadwal sesi, sesi presensi, dan pengumuman)
      * - local/dev        : ditambah akun contoh (panitia, juri, gudep) dan data sampel lengkap (gudep, penilaian,
      *                      biodata beserta unggahan berkas gudep/peserta/bindamping)
      * - production       : hanya data resmi di atas, tanpa akun atau data contoh
@@ -39,10 +41,15 @@ class DatabaseSeeder extends Seeder
             return;
         }
 
-        $this->call([
-            ContingentSeeder::class,
-            CompetitionScoreSeeder::class,
-        ]);
+        $this->call(ContingentSeeder::class);
+
+        // Pada local/dev lomba dianggap baru dimulai hari ini, sehingga belum ada nilai
+        if (! LiveContest::active()) {
+            $this->call(CompetitionScoreSeeder::class);
+        }
+
+        // Pendaftaran pada data contoh dianggap sudah ditutup: NPP langsung dibuat agar penjurian dapat dicoba
+        app(PatrolNumberService::class)->generate();
 
         if (app()->environment(['local', 'dev', 'development'])) {
             $this->call([SampleContestSeeder::class, ContingentDocumentSeeder::class, PermissionRequestSeeder::class]);

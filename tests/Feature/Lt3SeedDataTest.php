@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Announcement;
 use App\Models\AttendanceSession;
 use App\Models\Competition;
 use App\Models\CompetitionSchedule;
@@ -48,11 +49,11 @@ class Lt3SeedDataTest extends TestCase
         $this->assertStringContainsString('Pulo Baok', $event->location);
     }
 
-    public function test_seventeen_competitions_with_complete_rubrics(): void
+    public function test_eighteen_competitions_with_complete_rubrics(): void
     {
         $competitions = Competition::with('criteria')->get();
 
-        $this->assertCount(17, $competitions);
+        $this->assertCount(18, $competitions);
 
         foreach ($competitions as $competition) {
             $this->assertSame(100.0, (float) $competition->criteria->sum('weight_percentage'), "Bobot rubrik {$competition->code} harus 100%");
@@ -63,7 +64,7 @@ class Lt3SeedDataTest extends TestCase
 
     public function test_participant_counts_follow_juknis(): void
     {
-        $expected = ['PION-08' => 4, 'ADM-09' => 1, 'PACK-10' => 8, 'SEM-11' => 2, 'SKT-12' => 1, 'PTP-13' => 5, 'MNK-14' => 2, 'P3K-15' => 5,
+        $expected = ['PION-08' => 4, 'ADM-09' => 1, 'PACK-10' => 8, 'MOR-11' => 2, 'SMP-11' => 2, 'SKT-12' => 1, 'PTP-13' => 5, 'MNK-14' => 2, 'P3K-15' => 5,
             'MSK-16' => 2, 'BVK-17' => 8, 'BBT-18' => 8, 'SNM-19' => 8, 'PID-20' => 1, 'CCR-21' => 3, 'POS-22' => 1,
             'HSK-23' => 2, 'REP-24' => 2];
 
@@ -76,7 +77,7 @@ class Lt3SeedDataTest extends TestCase
 
     public function test_each_competition_has_separate_boys_and_girls_sessions_within_event_days(): void
     {
-        $this->assertSame(34, CompetitionSchedule::count());
+        $this->assertSame(36, CompetitionSchedule::count());
 
         foreach (Competition::all() as $competition) {
             $this->assertEqualsCanonicalizing(['boys', 'girls'], $competition->schedules()->pluck('gender_category')->all(), $competition->code);
@@ -98,12 +99,34 @@ class Lt3SeedDataTest extends TestCase
     {
         $this->assertTrue(AttendanceSession::where('title', 'like', 'Presensi Upacara Pembukaan%')->whereDate('opened_at', '2026-11-14')->exists());
         $this->assertTrue(AttendanceSession::where('session_type', 'chaperone')->exists());
-        $this->assertGreaterThanOrEqual(5, \App\Models\Announcement::published()->count());
+        $this->assertGreaterThanOrEqual(5, Announcement::published()->count());
 
         $this->seed([EventSeeder::class, CompetitionSeeder::class, CompetitionScheduleSeeder::class, AssessmentCriteriaSeeder::class, AnnouncementSeeder::class]);
 
         $this->assertSame(1, Event::count());
-        $this->assertSame(17, Competition::count());
-        $this->assertSame(34, CompetitionSchedule::count());
+        $this->assertSame(18, Competition::count());
+        $this->assertSame(36, CompetitionSchedule::count());
+    }
+
+    public function test_activities_without_attendance_are_not_seeded_and_retired_sessions_are_pruned(): void
+    {
+        foreach (['Presensi Anjangsana', 'Presensi Apel Pagi', 'Presensi Apel Sore'] as $title) {
+            $this->assertFalse(AttendanceSession::where('title', 'like', $title.'%')->exists(), $title);
+        }
+
+        $this->assertTrue(AttendanceSession::where('title', 'like', 'Presensi Olahraga%')->exists());
+        $this->assertTrue(AttendanceSession::where('title', 'like', 'Presensi Kreasi Seni Nusantara%')->exists());
+
+        // Sesi lama tanpa kehadiran dibersihkan saat seeder dijalankan ulang
+        $stale = AttendanceSession::create([
+            'title' => 'Presensi Apel Pagi — Minggu',
+            'session_type' => 'participant',
+            'is_competition' => false,
+            'is_active' => true,
+        ]);
+
+        $this->seed(AssessmentCriteriaSeeder::class);
+
+        $this->assertNull(AttendanceSession::find($stale->id));
     }
 }

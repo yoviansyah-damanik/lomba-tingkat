@@ -53,7 +53,7 @@ class NavigationMenuTest extends TestCase
             'Utama' => ['Dashboard', 'Jadwal Kegiatan'],
             'Pendaftaran & Verifikasi' => ['Kode Undangan Registrasi', 'Verifikasi Pendaftaran'],
             'Data Kontingen' => ['Pangkalan Gugusdepan', 'Direktori Peserta', 'Pembina Pendamping'],
-            'Lomba & Jadwal' => ['Mata Lomba & Rubrik', 'Jadwal & Penugasan Juri'],
+            'Lomba & Jadwal' => ['Mata Lomba & Rubrik', 'Generate NPP', 'Jadwal & Penugasan Juri'],
             'Presensi & Verifikasi' => ['Portal Presensi', 'Verifikasi Identitas (Scan QR)', 'Permohonan Izin', 'Rekapitulasi Presensi'],
             'Penilaian & Klasemen' => ['Cockpit Penjurian', 'Rekap Nilai & Klasemen'],
             'Informasi & Laporan' => ['Pengumuman Kegiatan', 'Pusat Laporan & Ekspor'],

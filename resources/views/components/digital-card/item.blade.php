@@ -14,7 +14,7 @@
         @if ($item['patrol_name'])
             <x-digital-card.patrol-badge :name="$item['patrol_name']" :theme="$item['theme']" />
         @endif
-        <x-digital-card.photo :photo-url="$item['photo_path'] ? asset('storage/' . $item['photo_path']) : null" :name="$item['name']" :role="$item['role']" />
+        <x-digital-card.photo :photo-url="$item['photo_path'] ? asset('storage/' . $item['photo_path']) : null" :name="$item['name']" :role="$item['role']" :npp="$item['npp'] ?? null" :theme="$item['theme']" />
         <x-digital-card.meta-info :name="$item['name']" :scout-id="$item['scout_id']" :id-number="$item['id_number']" :theme="$item['theme']" />
         <x-digital-card.details-table>
             <x-digital-card.details-row label="Nomor Gudep" :value="$item['group_number']" />

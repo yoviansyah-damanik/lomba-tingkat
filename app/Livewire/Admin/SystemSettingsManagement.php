@@ -17,29 +17,53 @@ use Livewire\Component;
 class SystemSettingsManagement extends Component
 {
     public ?string $eventId = null;
+
     public string $title = '';
+
     public string $theme = '';
+
     public string $description = '';
+
     public string $location = '';
+
     public string $start_date = '';
+
     public string $end_date = '';
+
     public ?string $registration_start_at = null;
+
     public ?string $registration_end_at = null;
+
     public bool $is_registration_open = true;
+
     public string $contact_email = '';
+
     public string $contact_phone = '';
+
     public bool $is_active = true;
+
     public bool $hide_patrol_identities = false;
+
     public string $committee_chair_name = '';
+
     public string $committee_chair_nta = '';
+
     public string $judge_chair_name = '';
+
     public string $judge_chair_nta = '';
+
     public string $kwarcab_chair_name = '';
+
     public string $kwarcab_chair_nta = '';
+
     public ?int $registration_fee_per_patrol = null;
+
     public string $payment_bank_name = '';
+
     public string $payment_account_number = '';
+
     public string $payment_account_holder = '';
+
     public string $payment_instructions = '';
 
     protected function rules(): array
@@ -123,7 +147,7 @@ class SystemSettingsManagement extends Component
         $event = Event::first();
 
         if (! $event) {
-            $event = new Event();
+            $event = new Event;
         }
 
         $oldValues = $event->only([

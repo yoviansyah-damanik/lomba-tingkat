@@ -51,7 +51,7 @@ class MyDigitalCardTest extends TestCase
             ->assertOk()
             ->assertSee('Rizky Peserta')
             ->assertSee($participant->id_number)
-            ->assertSee('Unduh ID Card')->assertSee('Tunjukkan QR Code ini kepada petugas')->assertSee('ID Card Resmi (79 x 126 mm)')
+            ->assertSee('Unduh ID Card')->assertSee('Layar Penuh')->assertSee('open-card-preview', false)->assertSee('Tunjukkan QR Code ini kepada petugas')->assertSee('ID Card Resmi (79 x 126 mm)')
             ->assertSee(route('digital-cards.verify', $participant->qr_token), false);
     }
 

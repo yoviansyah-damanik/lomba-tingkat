@@ -72,6 +72,7 @@ class ScoutGroupRegistrationService
                 'id_number' => $gudepId,
                 'phone_number' => $data['phone_number'],
                 'password' => Hash::make($plainPassword),
+                'must_change_password' => true,
                 'is_active' => true,
             ]);
 

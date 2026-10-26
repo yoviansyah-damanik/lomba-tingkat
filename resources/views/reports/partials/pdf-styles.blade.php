@@ -10,6 +10,7 @@
     .section-title { font-size: 9px; font-weight: bold; text-transform: uppercase; margin: 14px 0 5px; }
     .data th { background: #f4f4f5; border: 1px solid #a1a1aa; padding: 4px; font-size: 8px; text-transform: uppercase; text-align: center; vertical-align: middle; }
     .data td { border: 1px solid #d4d4d8; padding: 3px 4px; font-size: 8px; }
+    .page-break { page-break-before: always; }
     .center { text-align: center; }
     .strong { font-weight: bold; }
     .muted { color: #71717a; font-size: 8px; }

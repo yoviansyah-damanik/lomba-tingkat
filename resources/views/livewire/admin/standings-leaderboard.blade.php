@@ -131,6 +131,7 @@
                     <thead class="bg-zinc-50 dark:bg-zinc-800/60 text-zinc-500 dark:text-zinc-400 uppercase text-[10px] font-bold tracking-wider border-b border-zinc-200 dark:border-zinc-800">
                         <tr>
                             <th class="py-3 px-3.5 text-center w-12">Rank</th>
+                            <th class="py-3 px-3 text-center">NPP</th>
                             <th class="py-3 px-4">Nama Regu</th>
                             <th class="py-3 px-4">Pangkalan / Gudep</th>
                             <th class="py-3 px-3 text-center">Total Poin</th>
@@ -147,6 +148,9 @@
                                     <span class="font-extrabold text-xs {{ $item['rank'] <= 3 ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-500' }}">
                                         #{{ $item['rank'] }}
                                     </span>
+                                </td>
+                                <td class="py-3 px-3 text-center">
+                                    <x-npp-badge :npp="$item['npp'] ?? null" />
                                 </td>
                                 <td class="py-3 px-4">
                                     <div class="font-bold text-zinc-900 dark:text-zinc-100 text-sm flex items-center gap-2">
@@ -176,7 +180,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="py-8 text-center text-zinc-500">
+                                <td colspan="9" class="py-8 text-center text-zinc-500">
                                     Belum ada data regu terdaftar atau dinilai.
                                 </td>
                             </tr>
@@ -289,6 +293,7 @@
                             <thead class="bg-zinc-50 dark:bg-zinc-800/60 text-zinc-500 dark:text-zinc-400 uppercase text-[10px] font-bold tracking-wider border-b border-zinc-200 dark:border-zinc-800">
                                 <tr>
                                     <th class="py-3 px-3.5 text-center w-12">Rank</th>
+                                    <th class="py-3 px-3 text-center">NPP</th>
                                     <th class="py-3 px-4">Nama Regu & Pangkalan</th>
                                     <th class="py-3 px-3 text-center">Kategori</th>
                                     <th class="py-3 px-4 text-center">Nilai Akhir</th>
@@ -310,6 +315,9 @@
                                             @else
                                                 <span class="text-zinc-500 font-bold">{{ $score->rank ?: '-' }}</span>
                                             @endif
+                                        </td>
+                                        <td class="py-3 px-3 text-center">
+                                            <x-npp-badge :npp="$score->patrol?->npp" />
                                         </td>
                                         <td class="py-3 px-4">
                                             <div class="font-bold text-zinc-900 dark:text-zinc-100 text-sm">
@@ -378,7 +386,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="py-10 text-center text-zinc-500">
+                                        <td colspan="8" class="py-10 text-center text-zinc-500">
                                             <div class="max-w-xs mx-auto">
                                                 <flux:icon name="clipboard-document-list" class="size-8 text-zinc-400 mx-auto mb-2" />
                                                 <p class="font-semibold text-zinc-700 dark:text-zinc-300">Belum ada penilaian untuk cabang ini.</p>
@@ -418,6 +426,7 @@
                         <h3 class="flex items-center gap-2 text-base font-bold text-zinc-900 dark:text-zinc-100">
                             <flux:icon name="chart-bar" class="size-5 text-amber-600" />
                             Rincian Poin Regu {{ $standing['patrol_name'] }}
+                            <x-npp-badge :npp="$standing['npp'] ?? null" :hide="$standing['is_masked'] ?? false" />
                         </h3>
                         <p class="mt-0.5 text-xs text-zinc-500">
                             {{ $standing['school_name'] }} &bull; Gudep {{ $standing['group_number'] }} &bull; Peringkat #{{ $standing['rank'] }} {{ $standing['gender_category'] === 'boys' ? 'Putra' : 'Putri' }}
@@ -514,7 +523,7 @@
                             <option value="">-- Pilih Regu Peserta --</option>
                             @foreach($eligiblePatrols as $p)
                                 <option value="{{ $p->id }}">
-                                    Regu {{ $p->patrol_name }} ({{ $p->scoutGroup?->school_name }})
+                                    {{ $p->npp ? '['.$p->npp.'] ' : '' }}Regu {{ $p->patrol_name }} ({{ $p->scoutGroup?->school_name }})
                                 </option>
                             @endforeach
                         </select>

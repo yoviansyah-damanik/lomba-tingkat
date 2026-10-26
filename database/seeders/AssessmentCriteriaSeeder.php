@@ -8,8 +8,8 @@ use App\Models\Competition;
 use App\Models\CompetitionSchedule;
 use App\Models\JudgeAssignment;
 use App\Models\User;
+use Database\Seeders\Support\LiveContest;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Carbon;
 
 /**
  * Seeder rubrik penilaian per mata lomba (aspek penilaian Juknis), penugasan juri awal,
@@ -24,6 +24,7 @@ class AssessmentCriteriaSeeder extends Seeder
         $this->seedCriteria($data['competitions']);
         $this->seedJudgeAssignmentsAndPostSessions();
         $this->seedActivitySessions($data['activities']);
+        $this->pruneRetiredActivitySessions($data['retired_activity_titles'] ?? []);
     }
 
     /**
@@ -88,6 +89,31 @@ class AssessmentCriteriaSeeder extends Seeder
     }
 
     /**
+     * Hapus sesi presensi kegiatan yang tidak lagi memerlukan presensi (Anjangsana, Apel Pagi, Apel Sore).
+     * Sesi yang sudah memiliki catatan kehadiran dipertahankan agar riwayat tidak hilang.
+     *
+     * @param  array<int, string>  $titlePrefixes
+     */
+    private function pruneRetiredActivitySessions(array $titlePrefixes): void
+    {
+        foreach ($titlePrefixes as $prefix) {
+            $sessions = AttendanceSession::whereNull('competition_schedule_id')
+                ->where('title', 'like', $prefix.'%')
+                ->get();
+
+            foreach ($sessions as $session) {
+                if ($session->attendances()->exists()) {
+                    $this->command?->warn("Sesi \"{$session->title}\" dipertahankan karena sudah memiliki catatan kehadiran.");
+
+                    continue;
+                }
+
+                $session->delete();
+            }
+        }
+    }
+
+    /**
      * Sesi presensi kegiatan perkemahan (upacara, apel, permainan, kedatangan, dan bindamping)
      */
     private function seedActivitySessions(array $activities): void
@@ -98,8 +124,8 @@ class AssessmentCriteriaSeeder extends Seeder
                 [
                     'session_type' => $activity['type'],
                     'is_competition' => false,
-                    'opened_at' => Carbon::parse($activity['start'], 'Asia/Jakarta'),
-                    'closed_at' => Carbon::parse($activity['end'], 'Asia/Jakarta'),
+                    'opened_at' => LiveContest::shift($activity['start']),
+                    'closed_at' => LiveContest::shift($activity['end']),
                     'is_active' => true,
                 ]
             );

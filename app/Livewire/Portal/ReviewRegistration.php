@@ -26,11 +26,14 @@ class ReviewRegistration extends Component
     use WithFileUploads;
 
     public bool $showIncompleteModal = false;
+
     public bool $showSubmitModal = false;
+
     public bool $agreed = false;
 
     // Berkas pangkalan: Surat Tugas/Mandat dan Bukti Bayar
     public $mandate_letter = null;
+
     public $payment_proof = null;
 
     #[Computed]
@@ -66,7 +69,7 @@ class ReviewRegistration extends Component
         return array_merge($config, [
             'patrol_count' => $patrolCount,
             'total_fee' => $totalFee,
-            'formatted_total_fee' => 'Rp ' . number_format($totalFee, 0, ',', '.'),
+            'formatted_total_fee' => 'Rp '.number_format($totalFee, 0, ',', '.'),
             'patrols' => $group->patrols->map(fn ($p) => [
                 'id' => $p->id,
                 'name' => $p->patrol_name,
@@ -347,6 +350,7 @@ class ReviewRegistration extends Component
     {
         if (! empty($this->missingRequirements)) {
             $this->showIncompleteModal = true;
+
             return;
         }
 
@@ -367,12 +371,14 @@ class ReviewRegistration extends Component
 
         if (! $group->isEditable()) {
             Flux::toast('Pendaftaran sudah diajukan atau terkunci.', variant: 'danger');
+
             return;
         }
 
         if (! empty($this->missingRequirements)) {
             $this->showIncompleteModal = true;
             Flux::toast('Mohon lengkapi seluruh persyaratan pendaftaran terlebih dahulu.', variant: 'warning');
+
             return;
         }
 
@@ -419,7 +425,7 @@ class ReviewRegistration extends Component
         session()->flash('success', 'Pendaftaran kontingen berhasil diajukan untuk verifikasi Panitia Kwarcab.');
         Flux::toast('Pendaftaran kontingen berhasil diajukan.', variant: 'success');
 
-        $this->redirectRoute('scout-group.index');
+        $this->redirectRoute('scout-group.index', navigate: true);
     }
 
     public function render()

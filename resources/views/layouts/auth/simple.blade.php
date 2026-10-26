@@ -13,7 +13,7 @@
         </main>
 
         <div class="text-center text-xs text-zinc-500 dark:text-zinc-400 pb-6">
-            &copy; 2026 LT III Kwarcab Padangsidimpuan &mdash; Bidang Humas dan Informatika Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan.
+            &copy; 2026 LT III Kwarcab Padangsidimpuan &mdash; Bidang Humas dan Informatika Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan. <x-app-version />
         </div>
 
         <x-alert />

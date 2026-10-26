@@ -5,6 +5,8 @@
     'placeholderText' => 'PAS FOTO<br>3 x 4',
     'leaderColor' => 'red',
     'assistantColor' => 'blue', // blue, amber, emerald, indigo
+    'npp' => null, // Nomor Pendaftaran Peserta: lencana di sisi kiri foto (cermin lencana PINRU/WAPINRU)
+    'theme' => 'boys',
 ])
 
 @php
@@ -14,12 +16,22 @@
         'indigo' => ['border' => 'border-indigo-600', 'bg' => 'bg-indigo-600'],
         default => ['border' => 'border-blue-600', 'bg' => 'bg-blue-600'],
     };
+
+    $nppBg = $theme === 'girls' ? 'bg-[#831843]' : 'bg-[#1e3a8a]';
+    $nppDigits = $npp ? mb_str_split((string) $npp) : [];
+
+    // Lebar total: foto 24.5mm + lencana kanan 6.5mm (PINRU/WAPINRU) + lencana NPP kiri 6.5mm
+    $leaderWidth = $npp ? 'w-[37.5mm]' : 'w-[31mm]';
+    $memberWidth = $npp ? 'w-[31.5mm]' : 'w-[25mm]';
 @endphp
 
 <div class="flex items-center justify-center shrink-0 mb-[1.5mm]">
     @if($role === 'leader')
         {{-- PINRU: Pita & Border Merah Tegas --}}
-        <div class="photo-pinru badge-pinru w-[31mm] h-[33mm] rounded-[3.2mm] overflow-hidden flex relative shrink-0 shadow-xs border-[1.5px] border-red-600 bg-red-600" title="Pimpinan Regu (PINRU)">
+        <div class="photo-pinru badge-pinru {{ $leaderWidth }} h-[33mm] rounded-[3.2mm] overflow-hidden flex relative shrink-0 shadow-xs border-[1.5px] border-red-600 bg-red-600" title="Pimpinan Regu (PINRU)">
+            @if($npp)
+                <x-digital-card.npp-badge :digits="$nppDigits" :bg="$nppBg" />
+            @endif
             <div class="w-[24.5mm] h-full overflow-hidden bg-slate-50 flex items-center justify-center">
                 @if($photoUrl)
                     <img src="{{ $photoUrl }}" alt="{{ $name }}" class="w-full h-full object-cover block">
@@ -41,7 +53,10 @@
         </div>
     @elseif($role === 'assistant_leader')
         {{-- WAPINRU: Pita & Border Biru Membedakan dari PINRU --}}
-        <div class="photo-wapinru badge-wapinru w-[31mm] h-[33mm] rounded-[3.2mm] overflow-hidden flex relative shrink-0 shadow-xs border-[1.5px] {{ $assistantClasses['border'] }} {{ $assistantClasses['bg'] }}" title="Wakil Pimpinan Regu (WAPINRU)">
+        <div class="photo-wapinru badge-wapinru {{ $leaderWidth }} h-[33mm] rounded-[3.2mm] overflow-hidden flex relative shrink-0 shadow-xs border-[1.5px] {{ $assistantClasses['border'] }} {{ $assistantClasses['bg'] }}" title="Wakil Pimpinan Regu (WAPINRU)">
+            @if($npp)
+                <x-digital-card.npp-badge :digits="$nppDigits" :bg="$nppBg" />
+            @endif
             <div class="w-[24.5mm] h-full overflow-hidden bg-slate-50 flex items-center justify-center">
                 @if($photoUrl)
                     <img src="{{ $photoUrl }}" alt="{{ $name }}" class="w-full h-full object-cover block">
@@ -65,12 +80,17 @@
         </div>
     @else
         {{-- ANGGOTA: Border Standar Netral --}}
-        <div class="photo-member w-[25mm] h-[33mm] rounded-[3.2mm] overflow-hidden bg-slate-50 flex items-center justify-center relative shrink-0 border-[1.5px] border-slate-300 shadow-xs">
-            @if($photoUrl)
-                <img src="{{ $photoUrl }}" alt="{{ $name }}" class="w-full h-full object-cover block">
-            @else
-                <div class="text-[7pt] text-slate-500 text-center font-bold leading-tight">{!! $placeholderText !!}</div>
+        <div class="photo-member {{ $memberWidth }} h-[33mm] rounded-[3.2mm] overflow-hidden bg-slate-50 flex relative shrink-0 border-[1.5px] border-slate-300 shadow-xs">
+            @if($npp)
+                <x-digital-card.npp-badge :digits="$nppDigits" :bg="$nppBg" />
             @endif
+            <div class="w-[25mm] h-full overflow-hidden flex items-center justify-center">
+                @if($photoUrl)
+                    <img src="{{ $photoUrl }}" alt="{{ $name }}" class="w-full h-full object-cover block">
+                @else
+                    <div class="text-[7pt] text-slate-500 text-center font-bold leading-tight">{!! $placeholderText !!}</div>
+                @endif
+            </div>
         </div>
     @endif
 </div>

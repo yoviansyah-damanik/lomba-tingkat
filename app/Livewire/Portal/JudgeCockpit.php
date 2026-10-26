@@ -4,7 +4,6 @@ namespace App\Livewire\Portal;
 
 use App\Models\Assessment;
 use App\Models\CompetitionSchedule;
-use App\Models\Patrol;
 use App\Services\AssessmentScoringService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -82,10 +81,10 @@ class JudgeCockpit extends Component
 
         // Format data jadwal untuk tampilan dengan kalkulasi progres penilaian
         $schedulesData = $schedules->map(function (CompetitionSchedule $schedule) use ($user, $scoringService) {
-            $roster = $scoringService->getBlindScoringRoster($schedule, $user);
-            $totalPatrols = $roster->count();
-            $scoredPatrols = $roster->whereIn('assessment_status', ['draft', 'finalized'])->count();
-            $finalizedPatrols = $roster->where('assessment_status', 'finalized')->count();
+            $progress = $scoringService->scoringProgress($schedule, $user);
+            $totalPatrols = $progress['total'];
+            $scoredPatrols = $progress['scored'];
+            $finalizedPatrols = $progress['finalized'];
 
             $myAssignment = $schedule->judgeAssignments->firstWhere('user_id', $user->id);
 

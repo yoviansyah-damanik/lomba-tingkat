@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PatrolGenderEnum;
+use App\Enums\PatrolRoleEnum;
 use App\Enums\RegistrationStatusEnum;
 use App\Jobs\SendVerificationResultPush;
 use App\Services\ContingentAccountService;
@@ -149,6 +150,25 @@ class ScoutGroup extends Model
     }
 
     /**
+     * Gugus depan milik akun yang login; dibuat sebagai draf bila belum ada
+     */
+    public static function forUser(User $user): self
+    {
+        return static::firstOrCreate(
+            ['user_id' => $user->id],
+            [
+                'registration_code' => 'GDP-'.strtoupper(substr(md5($user->id), 0, 6)),
+                'school_name' => $user->name,
+                'group_number' => 'Belum Diisi',
+                'address' => 'Kota Padangsidimpuan',
+                'contact_person' => $user->name,
+                'contact_phone' => $user->phone_number ?? '08123456789',
+                'verification_status' => RegistrationStatusEnum::Draft,
+            ]
+        );
+    }
+
+    /**
      * Apakah pendaftaran masih berstatus draft atau perbaikan
      */
     public function isEditable(): bool
@@ -192,8 +212,8 @@ class ScoutGroup extends Model
         }
 
         foreach ([
-            [\App\Enums\PatrolRoleEnum::PatrolLeader, 'Pimpinan Regu (Pinru)'],
-            [\App\Enums\PatrolRoleEnum::AssistantPatrolLeader, 'Wakil Pimpinan Regu (Wapinru)'],
+            [PatrolRoleEnum::PatrolLeader, 'Pimpinan Regu (Pinru)'],
+            [PatrolRoleEnum::AssistantPatrolLeader, 'Wakil Pimpinan Regu (Wapinru)'],
         ] as [$role, $label]) {
             if ($participants->where('role_in_patrol', $role)->isEmpty()) {
                 $problems[] = "belum memiliki {$label}.";
@@ -414,7 +434,7 @@ class ScoutGroup extends Model
         }
 
         $count = static::count() + 1;
-        $dummy = '01-' . str_pad((string) $count, 3, '0', STR_PAD_LEFT);
+        $dummy = '01-'.str_pad((string) $count, 3, '0', STR_PAD_LEFT);
 
         return static::generateGudepId($dummy);
     }
@@ -458,9 +478,7 @@ class ScoutGroup extends Model
     protected function formatKwarranName(string $name): string
     {
         $cleaned = trim(preg_replace('/^Kwarran\s+/i', '', $name));
+
         return $cleaned ?: 'Padangsidimpuan';
     }
 }
-
-
-

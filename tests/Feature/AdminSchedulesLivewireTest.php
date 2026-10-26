@@ -8,9 +8,10 @@ use App\Models\Competition;
 use App\Models\CompetitionSchedule;
 use App\Models\Event;
 use App\Models\User;
+use App\Services\WebPushService;
+use Database\Seeders\EventSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Services\WebPushService;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -19,15 +20,18 @@ class AdminSchedulesLivewireTest extends TestCase
     use RefreshDatabase;
 
     protected User $admin;
+
     protected User $judge;
+
     protected Event $event;
+
     protected Competition $competition;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->seed(RoleSeeder::class);
-        $this->seed(\Database\Seeders\EventSeeder::class);
+        $this->seed(EventSeeder::class);
 
         $this->event = Event::first();
 
@@ -255,5 +259,29 @@ class AdminSchedulesLivewireTest extends TestCase
             ->assertSee('Kirim Notifikasi')
             ->call('sendReminder', $schedule->id)
             ->assertHasNoErrors();
+    }
+
+    /**
+     * Sesi baru otomatis menyiapkan sesi presensi pos, dan jadwal dapat dihapus
+     */
+    public function test_livewire_schedule_initializes_attendance_session_and_can_be_deleted(): void
+    {
+        Livewire::actingAs($this->admin)
+            ->test(SchedulesManagement::class)
+            ->call('openCreateModal')
+            ->set('competition_id', $this->competition->id)
+            ->set('session_name', 'Sesi Penilaian Final')
+            ->set('arena_location', 'Zona Barat Bumi Perkemahan')
+            ->set('start_time', now()->addDays(2)->setTime(8, 0)->format('Y-m-d\TH:i'))
+            ->set('end_time', now()->addDays(2)->setTime(11, 0)->format('Y-m-d\TH:i'))
+            ->set('status', 'scheduled')
+            ->call('saveSchedule')
+            ->assertHasNoErrors();
+
+        $schedule = CompetitionSchedule::where('session_name', 'Sesi Penilaian Final')->firstOrFail();
+        $this->assertDatabaseHas('attendance_sessions', ['competition_schedule_id' => $schedule->id, 'session_type' => 'participant']);
+
+        Livewire::actingAs($this->admin)->test(SchedulesManagement::class)->call('deleteSchedule', $schedule->id);
+        $this->assertDatabaseMissing('competition_schedules', ['id' => $schedule->id]);
     }
 }

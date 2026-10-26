@@ -9,7 +9,6 @@ use App\Services\QrCodeService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
-use Illuminate\View\View;
 
 /**
  * Surat izin (PDF) untuk permohonan izin beserta halaman verifikasi tanda tangan digital (QR)
@@ -40,15 +39,5 @@ class PermissionLetterController extends Controller
             'chair' => $event?->signatory('committee') ?? ['name' => null, 'nta' => null],
             'issuedAt' => $permission->created_at->timezone('Asia/Jakarta'),
         ], 'Surat_Izin_'.Str::slug($permission->type->label()).'_'.$permission->created_at->format('Ymd').'.pdf', $request->boolean('download'));
-    }
-
-    /**
-     * Halaman publik pembuktian keaslian surat izin (hasil pindai QR Ketua Panitia)
-     */
-    public function verify(string $id): View
-    {
-        $permission = PermissionRequest::with(['scoutGroup', 'members.participant', 'members.chaperone'])->find($id);
-
-        return view('permissions.verify', ['permission' => $permission]);
     }
 }

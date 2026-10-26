@@ -81,7 +81,8 @@ class CompetitionScore extends Model
             $rank === 9 => 52,
             $rank === 10 => 51,
             $rank <= 20 => 50,
-            default => 45,
+            $rank <= 33 => 45,
+            default => 0,
         };
     }
 

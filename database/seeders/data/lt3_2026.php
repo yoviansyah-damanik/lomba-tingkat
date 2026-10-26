@@ -1,5 +1,7 @@
 <?php
 
+use Database\Seeders\Support\LiveContest;
+
 /**
  * Data resmi LT-III Tahun 2026 Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan
  * (bersumber dari Petunjuk Pelaksanaan No. 12 Tahun 2026 dan Petunjuk Teknis No. 14 Tahun 2026).
@@ -8,25 +10,31 @@
  * adalah usulan panitia karena Juknis hanya menyebut aspek tanpa bobot; nilai akhir tiap lomba dikonversi ke 100 poin.
  * Kreasi Seni Nusantara dan Festival Kuliner Daerah bukan "Lomba" sehingga hanya menjadi sesi presensi.
  */
-
 $buper = 'Lapangan Pulo Baok, Padangsidimpuan Tenggara';
 $upacara = 'Lapangan upacara perkemahan';
 
-$days = [
+// Label hari mengikuti tanggal yang digeser pada lingkungan local/dev (lihat LiveContest)
+$days = [];
+foreach ([
     '2026-11-14' => 'Sabtu 14 November',
     '2026-11-15' => 'Minggu 15 November',
     '2026-11-16' => 'Senin 16 November',
     '2026-11-17' => 'Selasa 17 November',
-];
+] as $date => $label) {
+    $days[$date] = LiveContest::dayLabel($date, $label);
+}
 
-/** Kegiatan harian berulang: [judul, hari yang berlaku, mulai, selesai] */
+/**
+ * Kegiatan harian berulang yang memerlukan presensi: [judul, hari yang berlaku, mulai, selesai].
+ * Anjangsana, Apel Pagi, dan Apel Sore tidak memerlukan presensi, sehingga tidak dibuatkan sesi.
+ */
 $daily = [
     ['Presensi Olahraga', ['2026-11-15', '2026-11-16', '2026-11-17'], '06:00', '07:00'],
-    ['Presensi Apel Pagi', ['2026-11-15', '2026-11-16', '2026-11-17'], '07:00', '08:00'],
-    ['Presensi Anjangsana', ['2026-11-14', '2026-11-15', '2026-11-16'], '17:00', '18:00'],
-    ['Presensi Apel Sore', ['2026-11-14', '2026-11-15', '2026-11-16'], '17:30', '18:00'],
     ['Presensi Kreasi Seni Nusantara (Pentas Seni)', ['2026-11-14', '2026-11-15', '2026-11-16'], '19:30', '20:30'],
 ];
+
+/** Awalan judul sesi presensi yang sudah tidak dipakai; dihapus saat seeder dijalankan ulang bila belum memiliki catatan kehadiran */
+$retiredActivityTitles = ['Presensi Anjangsana', 'Presensi Apel Pagi', 'Presensi Apel Sore'];
 
 $dailyActivities = [];
 foreach ($daily as [$title, $dates, $start, $end]) {
@@ -57,13 +65,15 @@ return [
         'contact_phone' => '+62 821-6543-2100',
     ],
 
+    'retired_activity_titles' => $retiredActivityTitles,
+
     // Kegiatan perkemahan (bukan lomba): menjadi sesi presensi umum
     'activities' => array_merge([
-        ['title' => 'Presensi Daftar Ulang Pemimpin Regu — Sabtu 14 November', 'type' => 'participant', 'start' => '2026-11-14 08:00', 'end' => '2026-11-14 12:00'],
+        ['title' => "Presensi Daftar Ulang Pemimpin Regu — {$days['2026-11-14']}", 'type' => 'participant', 'start' => '2026-11-14 08:00', 'end' => '2026-11-14 12:00'],
         ['title' => 'Presensi Upacara Pembukaan (8 orang per regu)', 'type' => 'participant', 'start' => '2026-11-14 14:00', 'end' => '2026-11-14 16:00'],
         ['title' => 'Presensi Festival Kuliner Daerah (8 orang per regu)', 'type' => 'participant', 'start' => '2026-11-17 10:00', 'end' => '2026-11-17 12:00'],
         ['title' => 'Presensi Upacara Penutupan (8 orang per regu)', 'type' => 'participant', 'start' => '2026-11-17 14:00', 'end' => '2026-11-17 16:00'],
-        ['title' => 'Presensi Kehadiran Pembina Pendamping — Sabtu 14 November', 'type' => 'chaperone', 'start' => '2026-11-14 08:00', 'end' => '2026-11-14 17:00'],
+        ['title' => "Presensi Kehadiran Pembina Pendamping — {$days['2026-11-14']}", 'type' => 'chaperone', 'start' => '2026-11-14 08:00', 'end' => '2026-11-14 17:00'],
     ], $dailyActivities),
 
     'competitions' => [
@@ -117,19 +127,32 @@ return [
             'schedule' => ['day' => '2026-11-14', 'start' => '10:00', 'end' => '12:00', 'venue' => $buper],
         ],
         [
-            'code' => 'SEM-11', 'no' => 11, 'title' => 'Lomba Semboyan & Isyarat (Semaphore dan Morse)', 'group' => 'Keterampilan Kepramukaan dan Bela Negara',
+            'code' => 'MOR-11', 'no' => 11, 'title' => 'Lomba Semboyan & Isyarat — Morse', 'group' => 'Keterampilan Kepramukaan dan Bela Negara',
             'type' => 'group', 'min' => 2, 'max' => 2,
-            'goal' => 'Peserta dapat menyampaikan pesan dengan menggunakan bendera semaphore dan Morse.',
+            'goal' => 'Peserta dapat menyampaikan pesan dengan menggunakan isyarat Morse.',
             'time' => 'Sabtu, 14 November 2026, pukul 16.00 s.d. 17.30 WIB', 'place' => $buper,
             'steps' => [
                 'Peserta menerima lembar soal dan jawaban serta mengisi identitas regu.',
                 '1 orang per regu mengirimkan isyarat Morse yang disampaikan dengan bunyi (peluit).',
                 'Penerima isyarat Morse menuliskan isyarat yang diterima dari pengirim pada lembar jawaban.',
+            ],
+            'attire' => 'Seragam Pramuka lengkap', 'gear' => 'Alat tulis, peluit Morse', 'committee_gear' => 'Laptop untuk kode Morse, lembar jawaban',
+            'note' => 'Bagian dari kegiatan nomor 11 Juknis (Lomba Semboyan & Isyarat), dinilai sebagai mata lomba tersendiri.',
+            'criteria' => [['Kecepatan', 40], ['Ketepatan pengiriman dan jawaban', 60]],
+            'schedule' => ['day' => '2026-11-14', 'start' => '16:00', 'end' => '17:30', 'venue' => $buper],
+        ],
+        [
+            'code' => 'SMP-11', 'no' => 11, 'title' => 'Lomba Semboyan & Isyarat — Semaphore', 'group' => 'Keterampilan Kepramukaan dan Bela Negara',
+            'type' => 'group', 'min' => 2, 'max' => 2,
+            'goal' => 'Peserta dapat menyampaikan pesan dengan menggunakan bendera semaphore.',
+            'time' => 'Sabtu, 14 November 2026, pukul 16.00 s.d. 17.30 WIB', 'place' => $buper,
+            'steps' => [
+                'Peserta menerima lembar soal dan jawaban serta mengisi identitas regu.',
                 'Pemberi isyarat semaphore mengirimkan pesan ke penerima (1 orang).',
                 'Penerima pesan semaphore menuliskan pesan yang diterima dari pengirim pada lembar jawaban.',
             ],
-            'attire' => 'Seragam Pramuka lengkap', 'gear' => 'Alat tulis, 2 set bendera semaphore, peluit Morse', 'committee_gear' => 'Laptop untuk kode Morse, lembar jawaban',
-            'note' => null,
+            'attire' => 'Seragam Pramuka lengkap', 'gear' => 'Alat tulis, 2 set bendera semaphore', 'committee_gear' => 'Lembar soal dan jawaban',
+            'note' => 'Bagian dari kegiatan nomor 11 Juknis (Lomba Semboyan & Isyarat), dinilai sebagai mata lomba tersendiri.',
             'criteria' => [['Kecepatan', 40], ['Ketepatan pengiriman dan jawaban', 60]],
             'schedule' => ['day' => '2026-11-14', 'start' => '16:00', 'end' => '17:30', 'venue' => $buper],
         ],

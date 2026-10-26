@@ -19,10 +19,15 @@ class DigitalCardTest extends TestCase
     use RefreshDatabase;
 
     protected User $admin;
+
     protected User $scoutUser;
+
     protected ScoutGroup $scoutGroup;
+
     protected Patrol $patrol;
+
     protected Participant $participant;
+
     protected Chaperone $chaperone;
 
     protected function setUp(): void
@@ -133,6 +138,32 @@ class DigitalCardTest extends TestCase
     }
 
     /**
+     * Memastikan NPP regu tampil sebagai lencana di kiri foto (kartu tunggal dan batch) dan tidak muncul sebelum NPP dibuat
+     */
+    public function test_participant_card_shows_npp_badge_on_the_left_of_the_photo(): void
+    {
+        $this->actingAs($this->scoutUser)
+            ->get(route('digital-cards.participant', $this->participant->id))
+            ->assertOk()
+            ->assertDontSee('npp-badge');
+
+        $this->patrol->update(['npp' => '07']);
+
+        foreach ([route('digital-cards.participant', $this->participant->id), route('digital-cards.patrol.batch', $this->patrol->id)] as $url) {
+            $html = $this->actingAs($this->scoutUser)->get($url)->assertOk()->getContent();
+
+            $this->assertStringContainsString('npp-badge', $html);
+            $this->assertStringContainsString('Nomor Pendaftaran Peserta (NPP)', $html);
+            $this->assertLessThan(strpos($html, 'photo-member') + 2000, strpos($html, 'npp-badge'));
+            $this->assertGreaterThan(strpos($html, 'photo-member'), strpos($html, 'npp-badge'));
+        }
+
+        $this->participant->update(['role_in_patrol' => PatrolRoleEnum::PatrolLeader]);
+        $html = $this->actingAs($this->scoutUser)->get(route('digital-cards.participant', $this->participant->id))->getContent();
+        $this->assertLessThan(strpos($html, 'title="Pimpinan Regu (PINRU)">') + 1500, strpos($html, 'npp-badge'));
+    }
+
+    /**
      * Memastikan ID card digital pembina pendamping dapat diakses dan memuat kode QR
      */
     public function test_chaperone_digital_id_card_can_be_viewed(): void
@@ -229,7 +260,7 @@ class DigitalCardTest extends TestCase
 
         // Pengguna pangkalan lain dilarang mengakses
         $otherUser = User::factory()->create();
-        $otherUser->assignRole(\App\Enums\RoleEnum::ScoutGroup);
+        $otherUser->assignRole(RoleEnum::ScoutGroup);
 
         $this->actingAs($otherUser)
             ->get(route('digital-cards.scout-group.batch', $this->scoutGroup->id))
@@ -281,51 +312,19 @@ class DigitalCardTest extends TestCase
     }
 
     /**
-     * Memastikan administrator dapat mengelola aparatur panitia & juri
+     * Memastikan ID card staf aparatur dapat dibuka administrator
      */
-    public function test_admin_can_manage_officials(): void
+    public function test_admin_can_open_official_staff_card(): void
     {
-        // 1. Tampilkan index
-        $indexResponse = $this->actingAs($this->admin)->get(route('admin.officials.index'));
-        $indexResponse->assertOk();
-        $indexResponse->assertSee('Aparatur Panitia & Dewan Juri');
+        $official = User::factory()->create(['name' => 'Kak Hasan Basri, S.Pd', 'is_active' => true]);
+        $official->assignRole(RoleEnum::Committee);
+        $official->assignRole(RoleEnum::Judge);
 
-        // 2. Tampilkan form create
-        $createResponse = $this->actingAs($this->admin)->get(route('admin.officials.create'));
-        $createResponse->assertOk();
-
-        // 3. Simpan official baru (username & password otomatis digenerate mengikuti ID resmi)
-        $storeResponse = $this->actingAs($this->admin)->post(route('admin.officials.store'), [
-            'name' => 'Kak Hasan Basri, S.Pd',
-            'phone_number' => '085211223344',
-            'scout_id' => '02.17.009.99',
-            'institution' => 'Kwarcab Padangsidimpuan',
-            'position' => 'Koordinator Pos Sandi & Isyarat',
-            'roles' => ['committee', 'judge'],
-        ]);
-
-        $storeResponse->assertRedirect(route('admin.officials.index'));
-        $this->assertDatabaseHas('users', [
-            'name' => 'Kak Hasan Basri, S.Pd',
-            'is_active' => true,
-        ]);
-
-        $newOfficial = User::where('name', 'Kak Hasan Basri, S.Pd')->first();
-        $this->assertNotNull($newOfficial);
-        $this->assertMatchesRegularExpression('/^A-\d{6}$/', $newOfficial->username);
-        $this->assertMatchesRegularExpression('/^A-\d{6}$/', $newOfficial->id_number);
-        $this->assertTrue(\Illuminate\Support\Facades\Hash::check($newOfficial->id_number, $newOfficial->password));
-        $this->assertTrue($newOfficial->must_change_password);
-        $this->assertNotNull($newOfficial->qr_token);
-        $this->assertTrue($newOfficial->isCommittee());
-        $this->assertTrue($newOfficial->isJudge());
-
-        // 4. Akses ID card staf aparatur
-        $staffCardResponse = $this->actingAs($this->admin)->get(route('digital-cards.staff', $newOfficial->id));
-        $staffCardResponse->assertOk();
-        $staffCardResponse->assertSee('Kak Hasan Basri, S.Pd');
-        $staffCardResponse->assertSee('PANITIA PELAKSANA & DEWAN JURI', false);
-        $staffCardResponse->assertDontSee('Akreditasi');
-        $staffCardResponse->assertDontSee('Terverifikasi Aktif');
+        $this->actingAs($this->admin)->get(route('digital-cards.staff', $official->id))
+            ->assertOk()
+            ->assertSee('Kak Hasan Basri, S.Pd')
+            ->assertSee('PANITIA PELAKSANA & DEWAN JURI', false)
+            ->assertDontSee('Akreditasi')
+            ->assertDontSee('Terverifikasi Aktif');
     }
 }

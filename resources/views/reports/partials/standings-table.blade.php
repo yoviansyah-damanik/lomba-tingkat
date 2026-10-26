@@ -3,6 +3,7 @@
     <thead>
         <tr>
             <th class="center" style="width: 28px;">Rank</th>
+            <th class="center" style="width: 52px;">NPP</th>
             <th class="center">Regu &amp; Pangkalan</th>
             <th class="center" style="width: 46px;">Gudep</th>
             <th class="center">Kwarran</th>
@@ -16,6 +17,7 @@
         @forelse($rows as $st)
             <tr>
                 <td class="center">{{ $st['rank'] }}</td>
+                <td class="center strong" style="white-space: nowrap;">{{ $st['npp'] ?? '-' }}</td>
                 <td>
                     <span class="strong">{{ $st['patrol_name'] }}</span><br>
                     <span class="muted">{{ $st['school_name'] }}</span>
@@ -29,7 +31,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="8" class="center muted" style="padding: 14px; font-style: italic;">{{ $emptyText }}</td>
+                <td colspan="9" class="center muted" style="padding: 14px; font-style: italic;">{{ $emptyText }}</td>
             </tr>
         @endforelse
     </tbody>

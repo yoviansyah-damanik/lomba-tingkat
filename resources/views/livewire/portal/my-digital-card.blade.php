@@ -38,12 +38,17 @@
                     <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100">ID Card Resmi (79 x 126 mm)</h3>
                     <p class="text-xs text-zinc-500 dark:text-zinc-400">Format cetak resmi kegiatan. Unduh sebagai gambar PNG untuk dicetak atau disimpan.</p>
                 </div>
-                <flux:button variant="primary" icon="arrow-down-tray" onclick="window.saveCardAsPng('{{ $filename }}', document.querySelector('#official-id-card [data-digital-card]'))">
-                    Unduh ID Card
-                </flux:button>
+                <div class="flex flex-wrap items-center gap-2">
+                    <flux:button icon="arrows-pointing-out" x-on:click="$dispatch('open-card-preview', {{ \Illuminate\Support\Js::from(['target' => '#official-id-card [data-digital-card]', 'filename' => $filename, 'title' => 'ID Card — '.($display['name'] ?? '')]) }})">
+                        Layar Penuh
+                    </flux:button>
+                    <flux:button variant="primary" icon="arrow-down-tray" onclick="window.saveCardAsPng('{{ $filename }}', document.querySelector('#official-id-card [data-digital-card]'))">
+                        Unduh ID Card
+                    </flux:button>
+                </div>
             </div>
 
-            <div id="official-id-card" class="flex justify-center overflow-x-auto py-2">
+            <div id="official-id-card" class="flex cursor-zoom-in justify-center overflow-x-auto py-2" x-on:click="$dispatch('open-card-preview', {{ \Illuminate\Support\Js::from(['target' => '#official-id-card [data-digital-card]', 'filename' => $filename, 'title' => 'ID Card — '.($display['name'] ?? '')]) }})">
                 @if($type === 'participant')
                     @include('digital-cards.partials.participant-card', $card)
                 @elseif($type === 'chaperone')

@@ -2,21 +2,27 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Enums\PatrolGenderEnum;
 use App\Enums\RegistrationStatusEnum;
 use App\Enums\RoleEnum;
-use App\Models\Event;
-use App\Models\ScoutGroup;
 use App\Jobs\SendScoutGroupRegisteredPush;
+use App\Livewire\Admin\ScoutGroupVerificationActions;
+use App\Livewire\Portal\ReviewRegistration;
+use App\Models\Event;
+use App\Models\Patrol;
+use App\Models\ScoutGroup;
 use App\Models\User;
 use App\Services\WebPushService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class ScoutGroupRegistrationTest extends TestCase
 {
-    use RefreshDatabase, \Tests\Concerns\RegistersViaInvitation, \Tests\Concerns\BuildsCompleteRoster;
+    use RefreshDatabase, \Tests\Concerns\BuildsCompleteRoster, \Tests\Concerns\RegistersViaInvitation, \Tests\Concerns\SubmitsLivewireForms;
 
     protected function setUp(): void
     {
@@ -196,13 +202,13 @@ class ScoutGroupRegistrationTest extends TestCase
         // 2. Buat Regu Putra: Rajawali
         $boysPatrol = $scoutGroup->patrols()->create([
             'patrol_name' => 'Rajawali',
-            'gender_category' => \App\Enums\PatrolGenderEnum::Boys,
+            'gender_category' => PatrolGenderEnum::Boys,
         ]);
 
         // 3. Buat Regu Putri: Melati
         $girlsPatrol = $scoutGroup->patrols()->create([
             'patrol_name' => 'Melati',
-            'gender_category' => \App\Enums\PatrolGenderEnum::Girls,
+            'gender_category' => PatrolGenderEnum::Girls,
         ]);
 
         // Pastikan nomor ganjil melekat pada regu putra, dan nomor genap pada regu putri
@@ -228,13 +234,13 @@ class ScoutGroupRegistrationTest extends TestCase
         ]);
 
         // Bindamping hanya dapat didaftarkan setelah regu putra/putri yang bersangkutan ada
-        $boysPatrol = \App\Models\Patrol::factory()->create(['scout_group_id' => $scoutGroup->id, 'gender_category' => \App\Enums\PatrolGenderEnum::Boys]);
-        $boysPatrol2 = \App\Models\Patrol::factory()->create(['scout_group_id' => $scoutGroup->id, 'gender_category' => \App\Enums\PatrolGenderEnum::Boys]);
-        $girlsPatrol = \App\Models\Patrol::factory()->create(['scout_group_id' => $scoutGroup->id, 'gender_category' => \App\Enums\PatrolGenderEnum::Girls]);
+        $boysPatrol = Patrol::factory()->create(['scout_group_id' => $scoutGroup->id, 'gender_category' => PatrolGenderEnum::Boys]);
+        $boysPatrol2 = Patrol::factory()->create(['scout_group_id' => $scoutGroup->id, 'gender_category' => PatrolGenderEnum::Boys]);
+        $girlsPatrol = Patrol::factory()->create(['scout_group_id' => $scoutGroup->id, 'gender_category' => PatrolGenderEnum::Girls]);
 
         $this->actingAs($user);
 
-        $fakePhoto = \Illuminate\Http\UploadedFile::fake()->image('photo.jpg');
+        $fakePhoto = UploadedFile::fake()->image('photo.jpg');
 
         $baseChaperonePayload = [
             'birth_place' => 'Padangsidimpuan',
@@ -249,13 +255,13 @@ class ScoutGroupRegistrationTest extends TestCase
         ];
 
         // 1. Tambah Bindamping Putra berhasil
-        $resMale = $this->post(route('scout-group.chaperones.store'), array_merge($baseChaperonePayload, [
+        $resMale = $this->storeChaperone($user, array_merge($baseChaperonePayload, [
             'full_name' => 'Kak Rahmat Hidayat, S.Pd',
             'gender' => 'male',
             'phone_number' => '081377889901',
             'patrol_ids' => [$boysPatrol->id, $boysPatrol2->id, $girlsPatrol->id],
         ]));
-        $resMale->assertSessionHasNoErrors();
+        $resMale->assertHasNoErrors();
         $this->assertEquals(1, $scoutGroup->chaperones()->where('gender', 'male')->count());
         $this->assertEquals('Kak Rahmat Hidayat, S.Pd', $boysPatrol->fresh()->chaperone?->full_name);
         // Satu bindamping mendampingi beberapa regu sekategori; regu putri diabaikan
@@ -263,25 +269,25 @@ class ScoutGroupRegistrationTest extends TestCase
         $this->assertNull($girlsPatrol->fresh()->chaperone_id);
 
         // 2. Bindamping Putra kedua diperbolehkan (tanpa batas) dan mengambil alih regu yang dipilih
-        $resMale2 = $this->post(route('scout-group.chaperones.store'), array_merge($baseChaperonePayload, [
+        $resMale2 = $this->storeChaperone($user, array_merge($baseChaperonePayload, [
             'full_name' => 'Kak Syarifuddin, S.Pd',
             'gender' => 'male',
             'phone_number' => '081377889902',
             'patrol_ids' => [$boysPatrol2->id],
         ]));
-        $resMale2->assertSessionHasNoErrors();
+        $resMale2->assertHasNoErrors();
         $this->assertEquals(2, $scoutGroup->chaperones()->where('gender', 'male')->count());
         $this->assertEquals('Kak Syarifuddin, S.Pd', $boysPatrol2->fresh()->chaperone?->full_name);
         $this->assertEquals('Kak Rahmat Hidayat, S.Pd', $boysPatrol->fresh()->chaperone?->full_name);
 
         // 3. Tambah Bindamping Putri berhasil
-        $resFemale = $this->post(route('scout-group.chaperones.store'), array_merge($baseChaperonePayload, [
+        $resFemale = $this->storeChaperone($user, array_merge($baseChaperonePayload, [
             'full_name' => 'Kak Sri Wahyuni, S.Pd',
             'gender' => 'female',
             'phone_number' => '081377889903',
             'patrol_ids' => [$girlsPatrol->id],
         ]));
-        $resFemale->assertSessionHasNoErrors();
+        $resFemale->assertHasNoErrors();
         $this->assertEquals(1, $scoutGroup->chaperones()->where('gender', 'female')->count());
         $this->assertEquals('Kak Sri Wahyuni, S.Pd', $girlsPatrol->fresh()->chaperone?->full_name);
     }
@@ -324,7 +330,13 @@ class ScoutGroupRegistrationTest extends TestCase
         $scoutGroup = ScoutGroup::where('school_name', 'SMP Negeri 8 Padangsidimpuan')->first();
         $user = $scoutGroup->user;
 
-        // User dapat langsung mengakses dashboard tanpa hambatan email verification
+        // Kata sandi bawaan sistem wajib diperbarui dulu; tidak ada hambatan email verification
+        $this->assertTrue($user->must_change_password);
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertRedirect(route('security.edit'));
+
+        $user->update(['must_change_password' => false]);
         $this->actingAs($user)
             ->get(route('dashboard'))
             ->assertOk();
@@ -332,7 +344,7 @@ class ScoutGroupRegistrationTest extends TestCase
         // 2. Kontingen diisi dan diajukan (Submit)
         $patrol = $scoutGroup->patrols()->create([
             'patrol_name' => 'Harimau',
-            'gender_category' => \App\Enums\PatrolGenderEnum::Boys,
+            'gender_category' => PatrolGenderEnum::Boys,
         ]);
         $this->fillPatrolRoster($patrol);
         $chaperone = $scoutGroup->chaperones()->create([
@@ -342,22 +354,26 @@ class ScoutGroupRegistrationTest extends TestCase
         ]);
         $patrol->update(['chaperone_id' => $chaperone->id]);
 
-        $this->actingAs($user)->post(route('scout-group.submit'))->assertRedirect(route('scout-group.index'));
+        Livewire::actingAs($user)->test(ReviewRegistration::class)
+            ->set('mandate_letter', UploadedFile::fake()->create('mandat.pdf', 100, 'application/pdf'))
+            ->set('payment_proof', UploadedFile::fake()->image('bukti.jpg', 300, 300))
+            ->call('submitRegistration')
+            ->assertRedirect(route('scout-group.index'));
         $this->assertEquals(RegistrationStatusEnum::Submitted, $scoutGroup->fresh()->verification_status);
 
         // 3. Panitia biasa ditolak memverifikasi (Strictly Administrator)
         $committee = User::factory()->create();
         $committee->assignRole(RoleEnum::Committee);
-        \Livewire\Livewire::withoutLazyLoading()->actingAs($committee)
-            ->test(\App\Livewire\Admin\ScoutGroupVerificationActions::class, ['scoutGroupId' => $scoutGroup->id])
+        Livewire::withoutLazyLoading()->actingAs($committee)
+            ->test(ScoutGroupVerificationActions::class, ['scoutGroupId' => $scoutGroup->id])
             ->call('verify')
             ->assertForbidden();
 
         // 4. Administrator memverifikasi dan menyetujui pendaftaran kontingen
         $admin = User::factory()->create();
         $admin->assignRole(RoleEnum::Admin);
-        \Livewire\Livewire::withoutLazyLoading()->actingAs($admin)
-            ->test(\App\Livewire\Admin\ScoutGroupVerificationActions::class, ['scoutGroupId' => $scoutGroup->id])
+        Livewire::withoutLazyLoading()->actingAs($admin)
+            ->test(ScoutGroupVerificationActions::class, ['scoutGroupId' => $scoutGroup->id])
             ->call('verify');
 
         $this->assertEquals(RegistrationStatusEnum::Verified, $scoutGroup->fresh()->verification_status);

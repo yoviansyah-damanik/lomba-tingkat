@@ -149,7 +149,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                            @forelse($patrol->participants as $index => $participant)
+                            @forelse($patrol->orderedParticipants() as $index => $participant)
                                 <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50">
                                     <td class="py-3 px-3 text-zinc-400 font-mono">{{ $index + 1 }}</td>
                                     <td class="py-3 px-3">

@@ -210,8 +210,7 @@
                                     variant="subtle" 
                                     size="sm" 
                                     icon="eye"
-                                    title="Tinjau Berkas & Pendaftaran Kontingen"
-                                >
+                                    title="Tinjau Berkas & Pendaftaran Kontingen" wire:navigate>
                                     Tinjau
                                 </flux:button>
                             </td>

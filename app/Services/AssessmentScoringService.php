@@ -2,21 +2,19 @@
 
 namespace App\Services;
 
-use App\Enums\PatrolGenderEnum;
+use App\Enums\RegistrationStatusEnum;
 use App\Models\Assessment;
-use App\Models\AssessmentCriterion;
 use App\Models\AuditLog;
 use App\Models\Competition;
 use App\Models\CompetitionSchedule;
 use App\Models\CompetitionScore;
 use App\Models\Patrol;
 use App\Models\User;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 /**
- * Service untuk orkestrasi penilaian rubrik juri, protokol blind scoring, dan jejak audit
+ * Service untuk orkestrasi penilaian rubrik juri, penjurian berbasis NPP, dan jejak audit
  */
 class AssessmentScoringService
 {
@@ -32,6 +30,7 @@ class AssessmentScoringService
         $criteria = $competition->criteria;
         if ($criteria->isEmpty()) {
             $sum = array_sum(array_map('floatval', $criteriaScores));
+
             return [
                 'raw_total' => round($sum, 2),
                 'final_score' => round($sum, 2),
@@ -255,6 +254,7 @@ class AssessmentScoringService
                     ->where('patrol_id', $patrolId)
                     ->delete();
                 $this->standingsService->recalculateRanks($competitionId);
+
                 return;
             }
         }
@@ -296,98 +296,61 @@ class AssessmentScoringService
     }
 
     /**
-     * Mengambil daftar peserta lomba dengan protokol Blind Scoring Masking
+     * Verifikasi NPP yang dimasukkan juri terhadap sesi lomba: NPP harus terdaftar, regu terverifikasi,
+     * dan dicari pada kategori (putra/putri) sesi. Mengembalikan regu atau pesan penolakan; identitas gudep tidak dibuka.
+     *
+     * @return array{patrol: ?Patrol, error: ?string}
      */
-    public function getBlindScoringRoster(CompetitionSchedule $schedule, ?User $judge = null, bool $unmask = false): Collection
+    public function resolveNpp(CompetitionSchedule $schedule, string $npp): array
     {
-        // Pastikan nomor undian (draw_number) terisi secara berurutan jika belum diundi
-        $this->ensureDrawNumbersAssigned($schedule->gender_category);
+        $npp = PatrolNumberService::normalize($npp);
 
-        $query = Patrol::with(['scoutGroup', 'participants'])
-            ->where('status', 'verified');
-
-        if ($schedule->gender_category) {
-            $query->where('gender_category', $schedule->gender_category);
+        if ($npp === '') {
+            return ['patrol' => null, 'error' => 'NPP wajib diisi.'];
         }
 
-        $patrols = $query->orderBy('draw_number')->get();
+        $gender = $schedule->gender_category;
+        $label = $gender === 'boys' ? ' Putra' : ($gender === 'girls' ? ' Putri' : '');
 
-        // Ambil data presensi pos untuk sesi ini
-        $activeSession = $schedule->attendanceSessions()->first();
-        $attendedPatrolIds = collect();
+        // NPP putra dan putri sama-sama dimulai dari 01, jadi pencarian dibatasi pada kategori sesi
+        $matches = Patrol::where('npp', $npp)->when($gender, fn ($q) => $q->where('gender_category', $gender))->get();
 
-        if ($activeSession) {
-            $attendances = $activeSession->attendances()
-                ->where('status', 'present')
-                ->get();
-
-            // Ekstrak patrol IDs dari presensi langsung maupun peserta
-            foreach ($attendances as $att) {
-                if ($att->patrol_id) {
-                    $attendedPatrolIds->push($att->patrol_id);
-                } elseif ($att->participant && $att->participant->patrol_id) {
-                    $attendedPatrolIds->push($att->participant->patrol_id);
-                }
-            }
+        if ($matches->count() > 1) {
+            return ['patrol' => null, 'error' => "NPP {$npp} ada pada kategori putra dan putri. Gunakan sesi yang sesuai kategori regu."];
         }
 
-        $attendedPatrolIds = $attendedPatrolIds->unique();
+        $patrol = $matches->first();
 
-        // Ambil penilaian eksisting juri
-        $assessments = collect();
-        if ($judge) {
-            $assessments = Assessment::where('competition_schedule_id', $schedule->id)
-                ->where('judge_id', $judge->id)
-                ->get()
-                ->keyBy('patrol_id');
+        if (! $patrol) {
+            return ['patrol' => null, 'error' => "NPP {$npp} tidak ditemukan pada Regu{$label}. Periksa kembali nomor pada kartu/papan regu."];
         }
 
-        return $patrols->map(function (Patrol $patrol) use ($attendedPatrolIds, $assessments, $unmask) {
-            $assessment = $assessments->get($patrol->id);
-            $hasAttended = $attendedPatrolIds->contains($patrol->id);
+        if ($patrol->status !== RegistrationStatusEnum::Verified) {
+            return ['patrol' => null, 'error' => "NPP {$npp} bukan peserta lomba yang terverifikasi."];
+        }
 
-            return [
-                'patrol_id' => $patrol->id,
-                'draw_number' => $patrol->draw_number ?: 1,
-                'blind_code' => $patrol->blindScoringCode(),
-                'blind_label' => $patrol->blindScoringLabel(),
-                'gender_category' => $patrol->gender_category instanceof PatrolGenderEnum ? $patrol->gender_category->value : $patrol->gender_category,
-                'gender_label' => $patrol->isBoys() ? 'Putra' : 'Putri',
-                // Blind Scoring Masking: jika $unmask false (untuk Juri), nama sekolah dan regu dirahasiakan!
-                'school_name' => $unmask ? $patrol->scoutGroup?->school_name : 'Rahasia (Blind Scoring)',
-                'patrol_name' => $unmask ? $patrol->patrol_name : 'Regu #' . str_pad((string) ($patrol->draw_number ?: 1), 2, '0', STR_PAD_LEFT),
-                'is_attended' => $hasAttended,
-                'assessment_id' => $assessment?->id,
-                'assessment_status' => $assessment ? $assessment->status : 'unscored',
-                'is_locked' => $assessment ? $assessment->isLocked() : false,
-                'final_score' => $assessment ? (float) $assessment->final_score : null,
-                'criteria_scores' => $assessment ? $assessment->criteria_scores : [],
-                'notes' => $assessment?->notes,
-                'finalized_at' => $assessment?->finalized_at?->format('d/m/Y H:i'),
-            ];
-        });
+        return ['patrol' => $patrol, 'error' => null];
     }
 
     /**
-     * Memastikan setiap regu memiliki nomor undian urut untuk blind scoring
+     * Progres penilaian satu juri pada sesi: jumlah regu peserta, sudah dinilai (draf/final), dan final
+     *
+     * @return array{total: int, scored: int, finalized: int}
      */
-    public function ensureDrawNumbersAssigned(?string $genderCategory = null): void
+    public function scoringProgress(CompetitionSchedule $schedule, ?User $judge = null): array
     {
-        $genders = $genderCategory ? [$genderCategory] : ['boys', 'girls'];
+        $total = Patrol::where('status', RegistrationStatusEnum::Verified)
+            ->when($schedule->gender_category, fn ($q, $gender) => $q->where('gender_category', $gender))
+            ->count();
 
-        foreach ($genders as $gender) {
-            $unassignedPatrols = Patrol::where('gender_category', $gender)
-                ->whereNull('draw_number')
-                ->orderBy('created_at')
-                ->get();
+        $assessments = Assessment::where('competition_schedule_id', $schedule->id)
+            ->when($judge, fn ($q) => $q->where('judge_id', $judge->id))
+            ->get();
 
-            if ($unassignedPatrols->isNotEmpty()) {
-                $maxDraw = Patrol::where('gender_category', $gender)->max('draw_number') ?: 0;
-                foreach ($unassignedPatrols as $patrol) {
-                    $maxDraw++;
-                    $patrol->update(['draw_number' => $maxDraw]);
-                }
-            }
-        }
+        return [
+            'total' => $total,
+            'scored' => $assessments->pluck('patrol_id')->unique()->count(),
+            'finalized' => $assessments->where('status', 'finalized')->pluck('patrol_id')->unique()->count(),
+        ];
     }
 }

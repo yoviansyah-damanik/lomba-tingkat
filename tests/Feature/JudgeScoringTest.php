@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\PatrolGenderEnum;
 use App\Enums\RegistrationStatusEnum;
-use App\Livewire\Portal\JudgeCockpit;
+use App\Livewire\Admin\AssessmentsAudit;
 use App\Livewire\Portal\JudgeScoring;
 use App\Models\Assessment;
 use App\Models\AssessmentCriterion;
@@ -17,6 +17,8 @@ use App\Models\Patrol;
 use App\Models\Role;
 use App\Models\ScoutGroup;
 use App\Models\User;
+use App\Services\AssessmentScoringService;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -26,23 +28,34 @@ class JudgeScoringTest extends TestCase
     use RefreshDatabase;
 
     protected User $admin;
+
     protected User $judge1;
+
     protected User $judge2;
+
     protected User $unassignedJudge;
+
     protected User $scoutUser;
+
     protected ScoutGroup $scoutGroup;
+
     protected Patrol $patrol1;
+
     protected Patrol $patrol2;
+
     protected Competition $competition;
+
     protected CompetitionSchedule $schedule;
+
     protected AssessmentCriterion $criterion1;
+
     protected AssessmentCriterion $criterion2;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\RoleSeeder::class);
+        $this->seed(RoleSeeder::class);
 
         $adminRole = Role::where('name', 'admin')->first();
         $judgeRole = Role::where('name', 'judge')->first();
@@ -79,7 +92,7 @@ class JudgeScoringTest extends TestCase
             'patrol_name' => 'Rajawali',
             'gender_category' => PatrolGenderEnum::Boys,
             'status' => RegistrationStatusEnum::Verified,
-            'draw_number' => 1,
+            'npp' => '01',
         ]);
 
         $this->patrol2 = Patrol::create([
@@ -87,7 +100,7 @@ class JudgeScoringTest extends TestCase
             'patrol_name' => 'Garuda',
             'gender_category' => PatrolGenderEnum::Boys,
             'status' => RegistrationStatusEnum::Verified,
-            'draw_number' => 2,
+            'npp' => '02',
         ]);
 
         $this->competition = Competition::create([
@@ -177,12 +190,17 @@ class JudgeScoringTest extends TestCase
         // Buka lembar scoring juri
         $responseScoring = $this->actingAs($this->judge1)->get(route('judge.scoring', $this->schedule->id));
         $responseScoring->assertOk();
-        $responseScoring->assertSee('Nomor Undian #01');
-        $responseScoring->assertSee('UND-01');
+        $responseScoring->assertSee('Masukkan NPP');
 
-        // PROTOKOL BLIND SCORING: Nama sekolah asli dan nama regu asli TIDAK BOLEH muncul pada tampilan juri!
-        $responseScoring->assertDontSee('SMP Negeri 1 Padangsidimpuan');
-        $responseScoring->assertDontSee('Rajawali');
+        // Juri memasukkan NPP: form tampil hanya dengan NPP; nama regu dan pangkalan tidak boleh terlihat
+        Livewire::actingAs($this->judge1, 'web')
+            ->test(JudgeScoring::class, ['scheduleId' => $this->schedule->id])
+            ->set('nppInput', '1')
+            ->call('submitNpp')
+            ->assertSet('selectedPatrolId', $this->patrol1->id)
+            ->assertSee('NPP 01')
+            ->assertDontSee('SMP Negeri 1 Padangsidimpuan')
+            ->assertDontSee('Rajawali');
     }
 
     /**
@@ -194,8 +212,8 @@ class JudgeScoringTest extends TestCase
         Livewire::actingAs($this->judge1, 'web')
             ->test(JudgeScoring::class, ['scheduleId' => $this->schedule->id])
             ->set('selectedPatrolId', $this->patrol1->id)
-            ->set('criteriaScores.' . $this->criterion1->id, 80.00)
-            ->set('criteriaScores.' . $this->criterion2->id, 90.00)
+            ->set('criteriaScores.'.$this->criterion1->id, 80.00)
+            ->set('criteriaScores.'.$this->criterion2->id, 90.00)
             ->set('notes', 'Langkah tegap sempurna.')
             ->call('saveDraft')
             ->assertDispatched('alert');
@@ -227,8 +245,8 @@ class JudgeScoringTest extends TestCase
         Livewire::actingAs($this->judge1, 'web')
             ->test(JudgeScoring::class, ['scheduleId' => $this->schedule->id])
             ->set('selectedPatrolId', $this->patrol1->id)
-            ->set('criteriaScores.' . $this->criterion1->id, 85.00)
-            ->set('criteriaScores.' . $this->criterion2->id, 95.00)
+            ->set('criteriaScores.'.$this->criterion1->id, 85.00)
+            ->set('criteriaScores.'.$this->criterion2->id, 95.00)
             ->call('finalize')
             ->assertDispatched('alert');
 
@@ -309,16 +327,16 @@ class JudgeScoringTest extends TestCase
         Livewire::actingAs($this->judge1, 'web')
             ->test(JudgeScoring::class, ['scheduleId' => $this->schedule->id])
             ->set('selectedPatrolId', $this->patrol1->id)
-            ->set('criteriaScores.' . $this->criterion1->id, 90.00)
-            ->set('criteriaScores.' . $this->criterion2->id, 90.00)
+            ->set('criteriaScores.'.$this->criterion1->id, 90.00)
+            ->set('criteriaScores.'.$this->criterion2->id, 90.00)
             ->call('finalize');
 
         // Juri 2 memberi nilai 85.00 (terfinalisasi)
         Livewire::actingAs($this->judge2, 'web')
             ->test(JudgeScoring::class, ['scheduleId' => $this->schedule->id])
             ->set('selectedPatrolId', $this->patrol1->id)
-            ->set('criteriaScores.' . $this->criterion1->id, 85.00)
-            ->set('criteriaScores.' . $this->criterion2->id, 85.00)
+            ->set('criteriaScores.'.$this->criterion1->id, 85.00)
+            ->set('criteriaScores.'.$this->criterion2->id, 85.00)
             ->call('finalize');
 
         $compScore = CompetitionScore::where('competition_id', $this->competition->id)
@@ -374,7 +392,7 @@ class JudgeScoringTest extends TestCase
 
         // Beralih ke tab riwayat audit log
         Livewire::actingAs($this->admin, 'web')
-            ->test(\App\Livewire\Admin\AssessmentsAudit::class)
+            ->test(AssessmentsAudit::class)
             ->set('activeTab', 'audit_logs')
             ->assertSee('score_finalized')
             ->assertSee('Uji log audit');
@@ -407,7 +425,7 @@ class JudgeScoringTest extends TestCase
             ->assertDispatched('alert');
 
         // 4. Memastikan service backend melempar InvalidArgumentException jika dicoba oleh Administrator
-        $scoringService = app(\App\Services\AssessmentScoringService::class);
+        $scoringService = app(AssessmentScoringService::class);
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Pemberian nilai hanya dapat dilakukan oleh Juri yang telah ditunjuk');
@@ -424,7 +442,7 @@ class JudgeScoringTest extends TestCase
      */
     public function test_unassigned_judge_cannot_give_scores(): void
     {
-        $scoringService = app(\App\Services\AssessmentScoringService::class);
+        $scoringService = app(AssessmentScoringService::class);
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Pemberian nilai hanya dapat dilakukan oleh Juri yang telah ditunjuk pada sesi lomba ini.');
@@ -498,10 +516,43 @@ class JudgeScoringTest extends TestCase
 
         $this->expectException(\InvalidArgumentException::class);
 
-        app(\App\Services\AssessmentScoringService::class)->saveDraft([
+        app(AssessmentScoringService::class)->saveDraft([
             'competition_schedule_id' => $this->schedule->id,
             'patrol_id' => $this->patrol1->id,
             'criteria_scores' => [$this->criterion1->id => 80, $this->criterion2->id => 90],
         ], $this->judge1);
+    }
+
+    /**
+     * NPP yang tidak ada, bukan peserta sesi (kategori berbeda), atau belum terverifikasi ditolak dengan notifikasi
+     */
+    public function test_invalid_npp_is_rejected_with_notification(): void
+    {
+        $girl = Patrol::create([
+            'scout_group_id' => $this->scoutGroup->id,
+            'patrol_name' => 'Melati',
+            'gender_category' => PatrolGenderEnum::Girls,
+            'status' => RegistrationStatusEnum::Verified,
+            'npp' => '05',
+        ]);
+        Patrol::create([
+            'scout_group_id' => $this->scoutGroup->id,
+            'patrol_name' => 'Elang',
+            'gender_category' => PatrolGenderEnum::Boys,
+            'status' => RegistrationStatusEnum::Submitted,
+            'npp' => '03',
+        ]);
+
+        foreach (['99' => 'tidak ditemukan', '05' => 'tidak ditemukan pada Regu Putra', '03' => 'bukan peserta lomba yang terverifikasi'] as $npp => $message) {
+            Livewire::actingAs($this->judge1, 'web')
+                ->test(JudgeScoring::class, ['scheduleId' => $this->schedule->id])
+                ->set('nppInput', $npp)
+                ->call('submitNpp')
+                ->assertSet('selectedPatrolId', null)
+                ->assertSee($message)
+                ->assertDispatched('alert');
+        }
+
+        $this->assertNotNull($girl->npp);
     }
 }

@@ -7,6 +7,7 @@ use App\Livewire\Admin\CompetitionsManagement;
 use App\Models\Competition;
 use App\Models\Event;
 use App\Models\User;
+use Database\Seeders\EventSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -17,13 +18,14 @@ class AdminCompetitionsLivewireTest extends TestCase
     use RefreshDatabase;
 
     protected User $admin;
+
     protected Event $event;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->seed(RoleSeeder::class);
-        $this->seed(\Database\Seeders\EventSeeder::class);
+        $this->seed(EventSeeder::class);
 
         $this->event = Event::first();
 
@@ -113,5 +115,38 @@ class AdminCompetitionsLivewireTest extends TestCase
             'name' => 'Kerapihan dan Keselarasan',
             'weight_percentage' => 35,
         ]);
+    }
+
+    /**
+     * Membuat, memperbarui, dan menghapus mata lomba lewat modal Livewire
+     */
+    public function test_livewire_can_create_update_and_delete_competition(): void
+    {
+        $component = Livewire::actingAs($this->admin)
+            ->test(CompetitionsManagement::class)
+            ->call('openCreateModal')
+            ->set('title', 'Lomba Pidato Kebangsaan')
+            ->set('code', 'PID-01')
+            ->set('category', 'all')
+            ->set('participant_type', 'individual')
+            ->set('min_participants', 1)
+            ->set('max_participants', 1)
+            ->set('scoring_formula', 'average')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $competition = Competition::where('code', 'PID-01')->firstOrFail();
+        $this->assertSame('individual', $competition->participant_type);
+
+        $component->call('openEditModal', $competition->id)
+            ->set('title', 'Lomba Pidato Bahasa Inggris')
+            ->set('scoring_formula', 'sum')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('competitions', ['id' => $competition->id, 'title' => 'Lomba Pidato Bahasa Inggris', 'scoring_formula' => 'sum']);
+
+        $component->call('deleteCompetition', $competition->id);
+        $this->assertDatabaseMissing('competitions', ['id' => $competition->id]);
     }
 }

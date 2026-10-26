@@ -25,7 +25,7 @@
                 Kata Sandi
             </label>
             @if (Route::has('password.request'))
-                <a href="{{ route('password.request') }}" class="text-xs font-semibold text-amber-700 hover:text-amber-800 hover:underline dark:text-amber-400 dark:hover:text-amber-300">
+                <a href="{{ route('password.request') }}" class="text-xs font-semibold text-amber-700 hover:text-amber-800 hover:underline dark:text-amber-400 dark:hover:text-amber-300" wire:navigate>
                     Lupa kata sandi?
                 </a>
             @endif

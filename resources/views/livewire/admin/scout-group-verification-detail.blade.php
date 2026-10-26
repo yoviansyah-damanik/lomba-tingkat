@@ -38,7 +38,7 @@
     {{-- Top Breadcrumb & Status Navigation --}}
     <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div class="flex items-center gap-3">
-            <flux:button href="{{ route('admin.scout-groups.index') }}" variant="subtle" icon="arrow-left" size="sm">
+            <flux:button href="{{ route('admin.scout-groups.index') }}" variant="subtle" icon="arrow-left" size="sm" wire:navigate>
             </flux:button>
             <div>
                 <div class="flex items-center gap-2">
@@ -271,7 +271,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
-                            @forelse($patrol->participants as $participant)
+                            @forelse($patrol->orderedParticipants() as $participant)
                                 @php
                                     // Hitung kelengkapan dokumen peserta (8 berkas)
                                     $docsCheck = [
@@ -336,7 +336,7 @@
                                                 </flux:button>
                                             </flux:modal.trigger>
 
-                                            <flux:button href="{{ route('admin.participants.show', $participant->id) }}" size="xs" variant="subtle" icon="identification">
+                                            <flux:button href="{{ route('admin.participants.show', $participant->id) }}" size="xs" variant="subtle" icon="identification" wire:navigate>
                                                 Detail
                                             </flux:button>
 
@@ -366,7 +366,7 @@
             </div>
 
             {{-- Modals for each participant in patrol --}}
-            @foreach($patrol->participants as $participant)
+            @foreach($patrol->orderedParticipants() as $participant)
                 @php
                     $participantDocsList = [
                         ['label' => 'Pas Foto 3x4', 'path' => $participant->photo_path, 'desc' => 'Foto berseragam pramuka lengkap'],
@@ -583,7 +583,7 @@
                         {{-- Footer Modal --}}
                         <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
                             <div class="flex items-center gap-2 flex-wrap">
-                                <flux:button href="{{ route('admin.participants.show', $participant->id) }}" size="sm" variant="subtle" icon="arrow-top-right-on-square">
+                                <flux:button href="{{ route('admin.participants.show', $participant->id) }}" size="sm" variant="subtle" icon="arrow-top-right-on-square" wire:navigate>
                                     Halaman Detail Lengkap
                                 </flux:button>
                                 @if($scoutGroup->canDownloadDocuments())
@@ -697,7 +697,7 @@
                                         </flux:button>
                                     </flux:modal.trigger>
 
-                                    <flux:button href="{{ route('admin.chaperones.show', $chaperone->id) }}" size="xs" variant="subtle" icon="identification">
+                                    <flux:button href="{{ route('admin.chaperones.show', $chaperone->id) }}" size="xs" variant="subtle" icon="identification" wire:navigate>
                                         Detail
                                     </flux:button>
 
@@ -978,7 +978,7 @@
                 {{-- Footer Modal --}}
                 <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
                     <div class="flex items-center gap-2 flex-wrap">
-                        <flux:button href="{{ route('admin.chaperones.show', $chaperone->id) }}" size="sm" variant="subtle" icon="arrow-top-right-on-square">
+                        <flux:button href="{{ route('admin.chaperones.show', $chaperone->id) }}" size="sm" variant="subtle" icon="arrow-top-right-on-square" wire:navigate>
                             Halaman Detail Lengkap
                         </flux:button>
                         @if($scoutGroup->canDownloadDocuments())

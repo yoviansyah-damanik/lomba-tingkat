@@ -198,6 +198,9 @@
                             const label = el.getAttribute('data-loading') || 'Memproses...';
                             const href = el.getAttribute('href');
 
+                            // Pratinjau ID Card dibuka di modal (card-viewer), tanpa overlay unduhan
+                            if (e.defaultPrevented || (href && (href.includes('/digital-cards/') || href.includes('/id-cards')) && el.getAttribute('target') === '_blank')) return;
+
                             // 1. Ekspor arsip ZIP kontingen via real-time SSE Stream
                             if (href && href.includes('/download-zip') && !href.includes('/download-zip-file')) {
                                 e.preventDefault();
@@ -424,5 +427,7 @@
                 });
             }
         </script>
+
+        <x-card-viewer />
     </body>
 </html>

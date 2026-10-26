@@ -14,7 +14,8 @@
             <flux:button
                 icon="plus"
                 variant="primary"
-                wire:click="openCreateModal"
+                href="{{ route('admin.announcements.create') }}"
+                wire:navigate
             >
                 Tulis Pengumuman Baru
             </flux:button>
@@ -136,7 +137,8 @@
                                         size="xs"
                                         variant="subtle"
                                         icon="pencil-square"
-                                        wire:click="openEditModal('{{ $item->id }}')"
+                                        href="{{ route('admin.announcements.edit', $item->id) }}"
+                                        wire:navigate
                                         title="Edit Pengumuman"
                                     />
 
@@ -175,122 +177,6 @@
             </div>
         @endif
     </div>
-
-    {{-- Modal Tambah / Edit Pengumuman --}}
-    @if($showFormModal)
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-            <div class="w-full max-w-2xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 space-y-4">
-                <div class="border-b border-zinc-100 dark:border-zinc-800 pb-3 flex items-center justify-between">
-                    <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
-                        {{ $selectedAnnouncementId ? 'Edit Pengumuman Kegiatan' : 'Tulis Pengumuman Baru' }}
-                    </h3>
-                    <flux:button size="xs" variant="subtle" icon="x-mark" wire:click="$set('showFormModal', false)" />
-                </div>
-
-                <form wire:submit="saveAnnouncement" class="space-y-3.5">
-                    <div>
-                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Judul Pengumuman:</label>
-                        <input type="text" wire:model="title" placeholder="Contoh: Perubahan Lokasi Upacara Pembukaan LT-III" class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 font-semibold" />
-                        @error('title') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Kategori Informasi:</label>
-                            <select wire:model="category" class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
-                                <option value="general">Informasi Umum</option>
-                                <option value="schedule">Perubahan / Pengingat Jadwal</option>
-                                <option value="technical">Petunjuk Teknis Lomba</option>
-                                <option value="urgent">Pengumuman Penting / Darurat</option>
-                            </select>
-                            @error('category') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Status Publikasi Langsung:</label>
-                            <div class="pt-2 flex items-center gap-2">
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" wire:model="is_published" class="sr-only peer" />
-                                    <div class="w-9 h-5 bg-zinc-200 peer-focus:outline-hidden rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-zinc-600 peer-checked:bg-amber-600"></div>
-                                </label>
-                                <span class="text-xs text-zinc-600 dark:text-zinc-400 font-medium">
-                                    {{ $is_published ? 'Langsung Terbitkan' : 'Simpan Sebagai Draf' }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Ringkasan / Excerpt (Opsional):</label>
-                        <input type="text" wire:model="summary" placeholder="Ringkasan 1 kalimat yang tampil di kartu pengumuman..." class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" />
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Materi Isi Pengumuman Lengkap:</label>
-                        <textarea wire:model="content" rows="6" placeholder="Tuliskan isi pengumuman lengkap secara jelas..." class="w-full rounded-xl border border-zinc-300 bg-white p-3 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"></textarea>
-                        @error('content') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
-                    </div>
-
-                    {{-- Berkas unduhan --}}
-                    <div class="rounded-xl border border-zinc-200 p-3.5 dark:border-zinc-800">
-                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Berkas Unduhan (Opsional):</label>
-                        <p class="mb-2 text-[11px] text-zinc-500">PDF, Word, Excel, PowerPoint, JPG/PNG, atau ZIP &bull; maks. 10 MB per berkas &bull; maks. 10 berkas.</p>
-
-                        @if($keptAttachments || $newFiles)
-                            <ul class="mb-2 space-y-1.5">
-                                @foreach($keptAttachments as $index => $file)
-                                    <li wire:key="kept-{{ $index }}-{{ $file['path'] }}" class="flex items-center justify-between gap-2 rounded-lg bg-zinc-50 px-3 py-1.5 text-xs dark:bg-zinc-800/60">
-                                        <span class="flex min-w-0 items-center gap-2">
-                                            <flux:icon name="paper-clip" class="size-4 shrink-0 text-zinc-400" />
-                                            <span class="truncate font-medium text-zinc-800 dark:text-zinc-200">{{ $file['name'] }}</span>
-                                            <span class="shrink-0 text-[11px] text-zinc-400">{{ \App\Models\Announcement::formatFileSize((int) $file['size']) }}</span>
-                                        </span>
-                                        <flux:button type="button" size="xs" variant="subtle" icon="x-mark" wire:click="removeAttachment({{ $index }})" title="Lepas berkas" />
-                                    </li>
-                                @endforeach
-                                @foreach($newFiles as $index => $upload)
-                                    <li wire:key="new-{{ $index }}" class="flex items-center justify-between gap-2 rounded-lg bg-amber-50 px-3 py-1.5 text-xs dark:bg-amber-950/30">
-                                        <span class="flex min-w-0 items-center gap-2">
-                                            <flux:icon name="arrow-up-tray" class="size-4 shrink-0 text-amber-600" />
-                                            <span class="truncate font-medium text-zinc-800 dark:text-zinc-200">{{ $upload->getClientOriginalName() }}</span>
-                                            <span class="shrink-0 text-[11px] text-amber-700 dark:text-amber-400">baru &bull; {{ \App\Models\Announcement::formatFileSize((int) $upload->getSize()) }}</span>
-                                        </span>
-                                        <flux:button type="button" size="xs" variant="subtle" icon="x-mark" wire:click="removeNewFile({{ $index }})" title="Batalkan berkas" />
-                                    </li>
-                                @endforeach
-                            </ul>
-                        @endif
-
-                        <input type="file" wire:model="newFiles" multiple
-                            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.zip"
-                            class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300">
-                        <div wire:loading wire:target="newFiles" class="mt-1 text-[11px] text-amber-700">Mengunggah berkas...</div>
-                        @error('newFiles') <span class="mt-1 block text-xs text-rose-500">{{ $message }}</span> @enderror
-                        @error('newFiles.*') <span class="mt-1 block text-xs text-rose-500">{{ $message }}</span> @enderror
-                    </div>
-                    @if(! $selectedAnnouncementId)
-                        <div class="rounded-xl border border-amber-200 bg-amber-50/60 p-3 dark:border-amber-900/60 dark:bg-amber-950/20 flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <flux:icon name="bell" class="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                                <div>
-                                    <strong class="text-xs text-amber-950 dark:text-amber-200 block">Kirim Notifikasi PWA Otomatis</strong>
-                                    <span class="text-[11px] text-amber-800 dark:text-amber-400">Notifikasi otomatis terkirim ke gawai seluruh pengguna yang memasang PWA saat pengumuman diterbitkan.</span>
-                                </div>
-                            </div>
-                            <input type="checkbox" wire:model="broadcastPush" class="rounded text-amber-600 focus:ring-amber-500 size-4" />
-                        </div>
-                    @endif
-
-                    <div class="pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-2">
-                        <flux:button type="button" variant="subtle" wire:click="$set('showFormModal', false)">Batal</flux:button>
-                        <flux:button type="submit" variant="primary" icon="check">
-                            {{ $selectedAnnouncementId ? 'Simpan Perubahan' : 'Terbitkan Pengumuman' }}
-                        </flux:button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    @endif
 
     {{-- Modal Hapus Pengumuman --}}
     @if($showDeleteModal)

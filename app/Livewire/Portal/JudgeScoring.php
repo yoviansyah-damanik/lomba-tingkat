@@ -4,6 +4,7 @@ namespace App\Livewire\Portal;
 
 use App\Models\Assessment;
 use App\Models\CompetitionSchedule;
+use App\Models\Patrol;
 use App\Services\AssessmentScoringService;
 use Flux\Flux;
 use Illuminate\Support\Collection;
@@ -14,15 +15,20 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /**
- * Komponen Livewire 4 Lembar Penilaian Juri (Blind Scoring Cockpit)
+ * Komponen Livewire 4 Lembar Penilaian Juri: juri memasukkan NPP regu, bukan memilih dari daftar peserta
  */
 #[Layout('layouts.app')]
-#[Title('Lembar Penilaian Juri — Blind Scoring')]
+#[Title('Lembar Penilaian Juri — Input NPP')]
 class JudgeScoring extends Component
 {
     public string $scheduleId;
 
     public ?string $selectedPatrolId = null;
+
+    /** NPP yang diketik juri pada langkah 2 */
+    public string $nppInput = '';
+
+    public ?string $nppError = null;
 
     /** @var array<string, float|int|string> */
     public array $criteriaScores = [];
@@ -37,7 +43,7 @@ class JudgeScoring extends Component
 
     public bool $unmaskNames = false;
 
-    public function mount(string $scheduleId, AssessmentScoringService $scoringService): void
+    public function mount(string $scheduleId): void
     {
         $this->scheduleId = $scheduleId;
         $user = Auth::user();
@@ -52,12 +58,6 @@ class JudgeScoring extends Component
             if (! $isAssigned) {
                 abort(403, 'Anda tidak ditugaskan sebagai dewan juri pada sesi lomba ini.');
             }
-        }
-
-        // Pilih regu pertama secara default
-        $roster = $this->roster();
-        if ($roster->isNotEmpty()) {
-            $this->selectPatrol($roster->first()['patrol_id']);
         }
     }
 
@@ -83,22 +83,21 @@ class JudgeScoring extends Component
         return $this->competition()->criteria ?: collect();
     }
 
+    /**
+     * Apakah NPP sudah digenerate untuk kategori sesi ini
+     */
     #[Computed]
-    public function roster(): Collection
+    public function nppReady(): bool
     {
-        $scoringService = app(AssessmentScoringService::class);
-        $user = Auth::user();
-
-        // Hanya administrator yang dapat melihat unmask nama sekolah
-        $canUnmask = $user->isAdmin() && $this->unmaskNames;
-
-        return $scoringService->getBlindScoringRoster(
-            $this->schedule(),
-            $user,
-            $canUnmask
-        );
+        return Patrol::whereNotNull('npp')
+            ->when($this->schedule()->gender_category, fn ($q, $gender) => $q->where('gender_category', $gender))
+            ->exists();
     }
 
+    /**
+     * Regu aktif yang lolos verifikasi NPP. Hanya NPP yang ditampilkan; nama regu dan pangkalan
+     * hanya dibuka untuk Administrator bila mode audit dinyalakan.
+     */
     #[Computed]
     public function selectedPatrol(): ?array
     {
@@ -106,7 +105,45 @@ class JudgeScoring extends Component
             return null;
         }
 
-        return $this->roster()->firstWhere('patrol_id', $this->selectedPatrolId);
+        $patrol = Patrol::with('scoutGroup')->find($this->selectedPatrolId);
+        if (! $patrol) {
+            return null;
+        }
+
+        $canUnmask = Auth::user()->isAdmin() && $this->unmaskNames;
+
+        return [
+            'patrol_id' => $patrol->id,
+            'npp' => $patrol->nppLabel(),
+            'gender_category' => $patrol->isBoys() ? 'boys' : 'girls',
+            'gender_label' => $patrol->isBoys() ? 'Putra' : 'Putri',
+            'patrol_name' => $canUnmask ? $patrol->patrol_name : null,
+            'school_name' => $canUnmask ? ($patrol->scoutGroup?->school_name ?? '-') : null,
+        ];
+    }
+
+    /**
+     * Riwayat penilaian pada sesi ini: NPP yang sudah dinilai juri (seluruh juri bagi Administrator)
+     */
+    #[Computed]
+    public function scoredList(): Collection
+    {
+        $query = Assessment::with('patrol')
+            ->where('competition_schedule_id', $this->scheduleId);
+
+        if (! Auth::user()->isAdminOnly()) {
+            $query->where('judge_id', Auth::id());
+        }
+
+        return $query->latest('updated_at')->get()
+            ->map(fn (Assessment $a) => [
+                'patrol_id' => $a->patrol_id,
+                'npp' => $a->patrol?->nppLabel() ?? '—',
+                'status' => $a->status,
+                'final_score' => (float) $a->final_score,
+            ])
+            ->unique('patrol_id')
+            ->values();
     }
 
     #[Computed]
@@ -130,6 +167,7 @@ class JudgeScoring extends Component
     public function currentCalculatedScore(): array
     {
         $scoringService = app(AssessmentScoringService::class);
+
         return $scoringService->calculateWeightedScore(
             $this->criteriaScores,
             $this->competition()
@@ -174,35 +212,52 @@ class JudgeScoring extends Component
     }
 
     /**
-     * Memilih regu peserta yang akan dinilai
+     * Langkah 2-4: juri memasukkan NPP, sistem memverifikasi, lalu membuka form atau menampilkan notifikasi
+     */
+    public function submitNpp(AssessmentScoringService $scoringService): void
+    {
+        $result = $scoringService->resolveNpp($this->schedule(), $this->nppInput);
+
+        if (! $result['patrol']) {
+            $this->nppError = $result['error'];
+            $this->selectedPatrolId = null;
+            Flux::toast(variant: 'danger', heading: 'NPP Tidak Valid', text: $result['error']);
+            $this->dispatch('alert', ['type' => 'error', 'message' => $result['error']]);
+
+            return;
+        }
+
+        $this->nppError = null;
+        $this->nppInput = $result['patrol']->npp;
+        $this->selectPatrol($result['patrol']->id);
+    }
+
+    /**
+     * Membuka form penilaian untuk regu yang sudah lolos verifikasi NPP
      */
     public function selectPatrol(string $patrolId): void
     {
         $this->selectedPatrolId = $patrolId;
-        $query = Assessment::where('competition_schedule_id', $this->scheduleId)
-            ->where('patrol_id', $patrolId);
+        $this->nppError = null;
+        $this->nppInput = Patrol::find($patrolId)?->npp ?? '';
 
-        if (! Auth::user()->isAdminOnly()) {
-            $query->where('judge_id', Auth::id());
-        }
-
-        $assessment = $query->first();
-
+        $assessment = $this->activeAssessment();
         $this->criteriaScores = [];
-        $criteria = $this->criteria();
 
-        if ($assessment && is_array($assessment->criteria_scores)) {
-            foreach ($criteria as $criterion) {
-                $this->criteriaScores[$criterion->id] = $assessment->criteria_scores[$criterion->id] ?? (float) $criterion->min_score;
-            }
-            $this->notes = $assessment->notes;
-        } else {
-            // Default nilai ke batas minimal kriteria
-            foreach ($criteria as $criterion) {
-                $this->criteriaScores[$criterion->id] = (float) $criterion->min_score;
-            }
-            $this->notes = null;
+        foreach ($this->criteria() as $criterion) {
+            $saved = $assessment && is_array($assessment->criteria_scores) ? ($assessment->criteria_scores[$criterion->id] ?? null) : null;
+            $this->criteriaScores[$criterion->id] = $saved ?? (float) $criterion->min_score;
         }
+
+        $this->notes = $assessment?->notes;
+    }
+
+    /**
+     * Kembali ke langkah input NPP
+     */
+    public function resetNpp(): void
+    {
+        $this->reset(['selectedPatrolId', 'nppInput', 'nppError', 'notes', 'criteriaScores']);
     }
 
     /**
@@ -218,6 +273,7 @@ class JudgeScoring extends Component
                 'type' => 'error',
                 'message' => $msg,
             ]);
+
             return;
         }
 
@@ -237,6 +293,7 @@ class JudgeScoring extends Component
                 'type' => 'warning',
                 'message' => $msg,
             ]);
+
             return;
         }
 
@@ -247,7 +304,7 @@ class JudgeScoring extends Component
             'notes' => $this->notes,
         ], Auth::user());
 
-        $msg = 'Draf penilaian untuk ' . ($this->selectedPatrol()['blind_label'] ?? 'Peserta') . ' berhasil disimpan.';
+        $msg = 'Draf penilaian untuk '.('NPP '.($this->selectedPatrol()['npp'] ?? '-')).' berhasil disimpan.';
         Flux::toast(variant: 'success', heading: 'Draf Disimpan', text: $msg);
         $this->dispatch('alert', [
             'type' => 'success',
@@ -267,6 +324,7 @@ class JudgeScoring extends Component
                 'type' => 'error',
                 'message' => $msg,
             ]);
+
             return;
         }
 
@@ -290,6 +348,7 @@ class JudgeScoring extends Component
                 'type' => 'error',
                 'message' => $msg,
             ]);
+
             return;
         }
 
@@ -316,7 +375,7 @@ class JudgeScoring extends Component
 
         $this->isFinalizeModalOpen = false;
 
-        $msg = 'Nilai resmi untuk ' . ($this->selectedPatrol()['blind_label'] ?? 'Peserta') . ' telah difinalisasi dan dikunci ke klasemen.';
+        $msg = 'Nilai resmi untuk '.('NPP '.($this->selectedPatrol()['npp'] ?? '-')).' telah difinalisasi dan dikunci ke klasemen.';
         Flux::toast(variant: 'success', heading: 'Nilai Difinalisasi', text: $msg);
         $this->dispatch('alert', [
             'type' => 'success',
@@ -384,7 +443,8 @@ class JudgeScoring extends Component
             'schedule' => $this->schedule(),
             'competition' => $this->competition(),
             'criteria' => $this->criteria(),
-            'roster' => $this->roster(),
+            'scoredList' => $this->scoredList(),
+            'nppReady' => $this->nppReady(),
             'selectedPatrol' => $this->selectedPatrol(),
             'activeAssessment' => $this->activeAssessment(),
             'calculatedScore' => $this->currentCalculatedScore(),

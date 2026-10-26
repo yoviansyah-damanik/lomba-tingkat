@@ -93,7 +93,7 @@
                 <x-stat-card label="Nilai Final Saya" :value="$judgeStats['finalized_scores']" unit="Penilaian" :description="$judgeStats['draft_scores'].' masih draf'" color="emerald" icon="clipboard-document-check" />
                 <x-stat-card label="Rubrik Juknis Lomba" :value="$judgeStats['total_competitions']" unit="Mata Lomba" action-text="Pelajari Standar Nilai" href="{{ route('competitions') }}" color="amber" icon="document-text" />
                 <x-stat-card label="Presensi Pos Aktif" :value="$judgeStats['active_attendance_sessions']" unit="Sesi" action-text="Portal Presensi" href="{{ route('attendance.index') }}" color="blue" icon="qr-code" />
-                <x-stat-card label="Sistem Penilaian" value="Blind Scoring" description="Nomor undian acak menggantikan identitas regu" color="indigo" icon="shield-check" />
+                <x-stat-card label="Sistem Penilaian" value="Blind Scoring" description="Juri menilai berdasarkan NPP tanpa identitas regu" color="indigo" icon="shield-check" />
                 <x-stat-card label="Kartu Digital" value="ID Card Juri" description="Tunjukkan QR Code saat bertugas" action-text="Buka Kartu" href="{{ route('digital-card.index') }}" color="purple" icon="qr-code" />
             </div>
         </section>

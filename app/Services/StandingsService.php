@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Enums\PatrolGenderEnum;
 use App\Enums\RegistrationStatusEnum;
+use App\Events\StandingsUpdated;
 use App\Models\AssessmentCriterion;
 use App\Models\Competition;
 use App\Models\CompetitionScore;
@@ -63,15 +65,14 @@ class StandingsService
                 };
             }
 
-            $num = $patrol->draw_number ?: 1;
-            $maskedPatrolName = 'Regu #' . str_pad((string) $num, 2, '0', STR_PAD_LEFT);
+            $maskedPatrolName = $patrol->maskedName();
             $maskedSchoolName = 'Pangkalan Dirahasiakan';
 
             return [
                 'id' => $patrol->id,
                 'patrol_name' => $shouldHide ? $maskedPatrolName : $patrol->patrol_name,
                 'real_patrol_name' => $patrol->patrol_name,
-                'gender_category' => $patrol->gender_category instanceof \App\Enums\PatrolGenderEnum
+                'gender_category' => $patrol->gender_category instanceof PatrolGenderEnum
                     ? $patrol->gender_category->value
                     : $patrol->gender_category,
                 'school_name' => $shouldHide ? $maskedSchoolName : ($patrol->scoutGroup?->school_name ?? '-'),
@@ -79,7 +80,7 @@ class StandingsService
                 'group_number' => $shouldHide ? '***' : $patrol->group_number,
                 'kwarran_name' => $shouldHide ? 'Dirahasiakan' : ($patrol->scoutGroup?->kwarran_name ?? 'Padangsidimpuan'),
                 'real_group_number' => $patrol->group_number,
-                'draw_number' => $patrol->draw_number,
+                'npp' => $patrol->npp,
                 'is_masked' => $shouldHide,
                 'gold' => $gold,
                 'silver' => $silver,
@@ -106,6 +107,7 @@ class StandingsService
             if ($a['bronze'] !== $b['bronze']) {
                 return $b['bronze'] <=> $a['bronze'];
             }
+
             return strcmp($a['real_patrol_name'] ?? $a['patrol_name'], $b['real_patrol_name'] ?? $b['patrol_name']);
         };
 
@@ -118,6 +120,7 @@ class StandingsService
                     3 => 'Regu Berprestasi Cukup Putra',
                     default => null,
                 };
+
                 return $item;
             });
 
@@ -129,6 +132,7 @@ class StandingsService
                     3 => 'Regu Berprestasi Cukup Putri',
                     default => null,
                 };
+
                 return $item;
             });
 
@@ -141,11 +145,12 @@ class StandingsService
         return $sorted->map(function ($item, $index) use ($suffix) {
             $item['rank'] = $index + 1;
             $item['general_rank_title'] = match ($item['rank']) {
-                1 => 'Regu Berprestasi Tinggi' . $suffix,
-                2 => 'Regu Berprestasi Baik' . $suffix,
-                3 => 'Regu Berprestasi Cukup' . $suffix,
+                1 => 'Regu Berprestasi Tinggi'.$suffix,
+                2 => 'Regu Berprestasi Baik'.$suffix,
+                3 => 'Regu Berprestasi Cukup'.$suffix,
                 default => null,
             };
+
             return $item;
         });
     }
@@ -164,9 +169,8 @@ class StandingsService
 
         foreach ($scores as $score) {
             if ($score->patrol) {
-                $num = $score->patrol->draw_number ?: 1;
                 $score->patrol->display_name = $shouldHide
-                    ? ('Regu #' . str_pad((string) $num, 2, '0', STR_PAD_LEFT))
+                    ? $score->patrol->maskedName()
                     : $score->patrol->patrol_name;
                 $score->patrol->display_school = $shouldHide
                     ? 'Pangkalan Dirahasiakan'
@@ -237,7 +241,7 @@ class StandingsService
         $perCategory = $scores->groupBy(function (CompetitionScore $score) {
             $gender = $score->patrol?->gender_category;
 
-            return $gender instanceof \App\Enums\PatrolGenderEnum ? $gender->value : (string) $gender;
+            return $gender instanceof PatrolGenderEnum ? $gender->value : (string) $gender;
         });
 
         foreach ($perCategory as $categoryScores) {
@@ -258,7 +262,7 @@ class StandingsService
         }
 
         // Siarkan event pembaruan klasemen secara realtime
-        event(new \App\Events\StandingsUpdated($competitionId));
+        event(new StandingsUpdated($competitionId));
     }
 
     /**

@@ -418,7 +418,7 @@
                         Sembunyikan Nama Regu & Pangkalan (Mode Sensor / Blind)
                     </strong>
                     <p class="text-[11px] text-zinc-500 dark:text-zinc-400 max-w-xl">
-                        Saat aktif, nama regu dan pangkalan sekolah akan disamarkan (contoh: <em>Nomor Undian #01</em> / <em>Pangkalan Dirahasiakan</em>) pada halaman publik dan akun panitia/juri. Hanya Administrator yang dapat melihat dan mengintip identitas asli.
+                        Saat aktif, nama regu dan pangkalan sekolah akan disamarkan (contoh: <em>Regu 01 Putra</em> / <em>Pangkalan Dirahasiakan</em>) pada halaman publik dan akun panitia/juri. Hanya Administrator yang dapat melihat dan mengintip identitas asli.
                     </p>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer ml-4">

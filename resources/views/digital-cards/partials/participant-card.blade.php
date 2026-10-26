@@ -22,7 +22,7 @@
         @endif
 
         {{-- Pas Foto & Lencana Pinru/Wapinru --}}
-        <x-digital-card.photo :photo-url="$photoUrl" :name="$participant->full_name" :role="$role" />
+        <x-digital-card.photo :photo-url="$photoUrl" :name="$participant->full_name" :role="$role" :npp="$participant->patrol?->npp" :theme="$theme" />
 
         {{-- Nama Peserta, NTA & Nomor ID (Tanpa Box) --}}
         <x-digital-card.meta-info :name="$participant->full_name" :scout-id="$participant->scout_id" :id-number="$participant->id_number ?: 'ID-PESERTA'" :theme="$theme" />

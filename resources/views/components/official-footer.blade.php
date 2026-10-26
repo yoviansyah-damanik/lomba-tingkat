@@ -9,7 +9,7 @@
         <p class="font-normal text-center sm:text-start">
             &copy; 2026 <span
                 class="font-semibold text-zinc-900 dark:text-zinc-200">{{ config('app.name', 'LT III Kwarcab Padangsidimpuan') }}</span>
-            &mdash; Bidang Humas dan Informatika Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan.
+            &mdash; Bidang Humas dan Informatika Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan. <x-app-version />
         </p>
         <div class="flex items-center shrink-0" x-data="{
             isStandalone: window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true,
@@ -37,10 +37,7 @@
                 {{-- KOLOM 1: Brand, Identitas & Penjelasan Portal --}}
                 <div class="lg:col-span-5 space-y-4">
                     <div class="flex items-center gap-3">
-                        <div
-                            class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 p-2 border border-white/10 shadow-inner">
-                            <img src="{{ asset('logo.png') }}" alt="Logo LT III" class="size-full object-contain">
-                        </div>
+                        <img src="{{ asset('logo.png') }}" alt="Logo LT III" class="size-12 shrink-0 object-contain">
                         <div>
                             <span class="block text-base font-extrabold tracking-tight text-white">
                                 {{ config('app.name', 'LT III Kwarcab Padangsidimpuan') }}
@@ -57,21 +54,9 @@
                         pantau verifikasi berkas, dan cetak kartu QR peserta di sini.
                     </p>
 
-                    <div class="flex flex-wrap items-center gap-2 pt-1">
-                        <span
-                            class="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-400">
-                            <span class="size-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                            Portal Resmi Terverifikasi
-                        </span>
-                        <span
-                            class="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-300">
-                            Pramuka Penggalang SMP/MTs
-                        </span>
-                    </div>
-
                     <div class="pt-2">
                         <span class="text-[11px] text-zinc-500 block leading-relaxed max-w-md">
-                            Dikelola oleh Panitia Pelaksana dan Dewan Juri LT III Kwartir Cabang Gerakan Pramuka Kota
+                            Dikelola oleh Panitia Pelaksana LT III Kwartir Cabang Gerakan Pramuka Kota
                             Padangsidimpuan Tahun 2026.
                         </span>
                     </div>
@@ -212,7 +197,7 @@
                 <p class="text-center sm:text-start">
                     &copy; 2026 <span
                         class="font-semibold text-zinc-200">{{ config('app.name', 'LT III Kwarcab Padangsidimpuan') }}</span>
-                    &mdash; Bidang Humas dan Informatika Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan.
+                    &mdash; Bidang Humas dan Informatika Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan. <x-app-version />
                 </p>
                 <div class="flex items-center shrink-0" x-data="{
                     isStandalone: window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true,

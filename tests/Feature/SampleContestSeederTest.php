@@ -39,9 +39,9 @@ class SampleContestSeederTest extends TestCase
         $this->assertGreaterThanOrEqual(9, User::whereHas('roles', fn ($q) => $q->where('name', 'judge'))->count());
         $this->assertGreaterThanOrEqual(5, User::whereHas('roles', fn ($q) => $q->where('name', 'committee'))->count());
 
-        // 17 mata lomba berrubrik sesuai Juknis; setiap regu dinilai 3 juri pada seluruhnya dan difinalisasi
+        // 18 mata lomba berrubrik sesuai Juknis; setiap regu dinilai 3 juri pada seluruhnya dan difinalisasi
         $lombas = Competition::whereHas('criteria')->count();
-        $this->assertSame(17, $lombas);
+        $this->assertSame(18, $lombas);
         $this->assertSame(27 * $lombas * 3, Assessment::where('status', 'finalized')->count());
         $this->assertSame(27 * $lombas, CompetitionScore::count());
 

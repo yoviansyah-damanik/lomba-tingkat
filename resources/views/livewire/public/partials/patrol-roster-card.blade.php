@@ -50,7 +50,7 @@
 
         @if($patrol && $patrol->participants->isNotEmpty())
             <div class="mt-3 divide-y divide-zinc-100 dark:divide-zinc-800/80">
-                @foreach($patrol->participants as $index => $participant)
+                @foreach($patrol->orderedParticipants() as $index => $participant)
                     <div class="-mx-2 flex items-center justify-between gap-2.5 rounded-xl px-2 py-2.5 text-xs transition-colors {{ $tone['row'] }}">
                         <div class="flex min-w-0 flex-1 items-center gap-2.5">
                             <span class="flex size-6 shrink-0 items-center justify-center rounded-lg bg-zinc-100 font-mono text-[11px] font-bold text-zinc-600 dark:border dark:border-zinc-700/60 dark:bg-zinc-800 dark:text-zinc-300">

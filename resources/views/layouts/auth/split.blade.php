@@ -24,7 +24,7 @@
                         <footer><flux:heading>{{ trim($author) }}</flux:heading></footer>
                     </blockquote>
                     <p class="text-[11px] text-neutral-400">
-                        &copy; 2026 LT III Kwarcab Padangsidimpuan &mdash; Bidang Humas dan Informatika Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan.
+                        &copy; 2026 LT III Kwarcab Padangsidimpuan &mdash; Bidang Humas dan Informatika Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan. <x-app-version />
                     </p>
                 </div>
             </div>
@@ -33,7 +33,7 @@
                     {{ $slot }}
 
                     <div class="text-center text-[11px] text-zinc-500 lg:hidden">
-                        &copy; 2026 LT III Kwarcab Padangsidimpuan &mdash; Bidang Humas dan Informatika Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan.
+                        &copy; 2026 LT III Kwarcab Padangsidimpuan &mdash; Bidang Humas dan Informatika Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan. <x-app-version />
                     </div>
                 </div>
             </div>

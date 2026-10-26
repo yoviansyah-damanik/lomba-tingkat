@@ -7,11 +7,13 @@ use App\Enums\RegistrationStatusEnum;
 use App\Livewire\Admin\StandingsLeaderboard;
 use App\Models\Competition;
 use App\Models\CompetitionScore;
+use App\Models\Event;
 use App\Models\Patrol;
 use App\Models\Role;
 use App\Models\ScoutGroup;
 use App\Models\User;
 use App\Services\StandingsService;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -21,17 +23,22 @@ class StandingsLeaderboardTest extends TestCase
     use RefreshDatabase;
 
     protected User $admin;
+
     protected User $judge;
+
     protected User $scoutUser;
+
     protected ScoutGroup $scoutGroup;
+
     protected Patrol $patrol;
+
     protected Competition $competition;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\RoleSeeder::class);
+        $this->seed(RoleSeeder::class);
 
         $adminRole = Role::where('name', 'admin')->first();
         $judgeRole = Role::where('name', 'judge')->first();
@@ -62,6 +69,7 @@ class StandingsLeaderboardTest extends TestCase
         $this->patrol = Patrol::create([
             'scout_group_id' => $this->scoutGroup->id,
             'patrol_name' => 'Rajawali',
+            'npp' => '01',
             'gender_category' => PatrolGenderEnum::Boys,
             'status' => RegistrationStatusEnum::Verified,
         ]);
@@ -316,20 +324,20 @@ class StandingsLeaderboardTest extends TestCase
         $standingsService = app(StandingsService::class);
 
         // Buat sekolah dan regu kedua
-        $group2 = \App\Models\ScoutGroup::factory()->create([
+        $group2 = ScoutGroup::factory()->create([
             'school_name' => 'SMP Swasta Harapan',
             'group_number' => '02-002',
-            'verification_status' => \App\Enums\RegistrationStatusEnum::Verified,
+            'verification_status' => RegistrationStatusEnum::Verified,
         ]);
-        $patrol2 = \App\Models\Patrol::factory()->create([
+        $patrol2 = Patrol::factory()->create([
             'scout_group_id' => $group2->id,
             'patrol_name' => 'Garuda',
             'gender_category' => 'boys',
-            'status' => \App\Enums\RegistrationStatusEnum::Verified,
+            'status' => RegistrationStatusEnum::Verified,
         ]);
 
         // Buat lomba kedua
-        $comp2 = \App\Models\Competition::create([
+        $comp2 = Competition::create([
             'code' => 'PIO-02',
             'title' => 'Lomba Pionering',
             'category' => 'all',
@@ -338,7 +346,7 @@ class StandingsLeaderboardTest extends TestCase
             'is_published' => true,
         ]);
         // Buat lomba ketiga
-        $comp3 = \App\Models\Competition::create([
+        $comp3 = Competition::create([
             'code' => 'MOR-03',
             'title' => 'Lomba Morse',
             'category' => 'all',
@@ -348,11 +356,11 @@ class StandingsLeaderboardTest extends TestCase
         ]);
 
         // Buat regu ketiga sebagai pemenang emas di lomba 2
-        $patrol3 = \App\Models\Patrol::factory()->create([
+        $patrol3 = Patrol::factory()->create([
             'scout_group_id' => $group2->id,
             'patrol_name' => 'Singa',
             'gender_category' => 'boys',
-            'status' => \App\Enums\RegistrationStatusEnum::Verified,
+            'status' => RegistrationStatusEnum::Verified,
         ]);
 
         // Lomba 1: Patrol 1 (Elang) dapat Emas (skor 90)
@@ -485,7 +493,7 @@ class StandingsLeaderboardTest extends TestCase
      */
     public function test_standings_identities_masking_and_admin_unmasking(): void
     {
-        \App\Models\Event::create([
+        Event::create([
             'title' => 'LT III Kwarcab Padangsidimpuan 2026',
             'location' => 'Bumi Perkemahan Tor Simarsayang',
             'start_date' => now()->toDateString(),
@@ -501,7 +509,7 @@ class StandingsLeaderboardTest extends TestCase
         $patrolData = $maskedStandings->firstWhere('id', $this->patrol->id);
 
         $this->assertTrue($patrolData['is_masked']);
-        $this->assertStringContainsString('Regu #', $patrolData['patrol_name']);
+        $this->assertSame('Regu 01 Putra', $patrolData['patrol_name']);
         $this->assertEquals('Pangkalan Dirahasiakan', $patrolData['school_name']);
         $this->assertEquals('***', $patrolData['group_number']);
 
@@ -531,7 +539,7 @@ class StandingsLeaderboardTest extends TestCase
 
         $competitions = [];
         for ($i = 1; $i <= 18; $i++) {
-            $competitions[$i] = \App\Models\Competition::create([
+            $competitions[$i] = Competition::create([
                 'code' => 'RNK-'.str_pad((string) $i, 2, '0', STR_PAD_LEFT),
                 'title' => 'Lomba Uji '.$i,
                 'category' => 'all',
@@ -544,16 +552,16 @@ class StandingsLeaderboardTest extends TestCase
         $n = 0;
         foreach ($counts as $name => $triple) {
             $n++;
-            $group = \App\Models\ScoutGroup::factory()->create([
+            $group = ScoutGroup::factory()->create([
                 'school_name' => 'Sekolah '.$name,
                 'group_number' => '0'.$n.'-00'.$n,
-                'verification_status' => \App\Enums\RegistrationStatusEnum::Verified,
+                'verification_status' => RegistrationStatusEnum::Verified,
             ]);
-            $patrol = \App\Models\Patrol::factory()->create([
+            $patrol = Patrol::factory()->create([
                 'scout_group_id' => $group->id,
                 'patrol_name' => $name,
                 'gender_category' => 'boys',
-                'status' => \App\Enums\RegistrationStatusEnum::Verified,
+                'status' => RegistrationStatusEnum::Verified,
             ]);
 
             $predicates = array_merge(

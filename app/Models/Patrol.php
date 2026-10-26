@@ -5,7 +5,7 @@ namespace App\Models;
 use App\Enums\PatrolGenderEnum;
 use App\Enums\PatrolRoleEnum;
 use App\Enums\RegistrationStatusEnum;
-use App\Services\ContingentAccountService;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -27,7 +27,7 @@ class Patrol extends Model
         'scout_group_id',
         'patrol_name',
         'gender_category',
-        'draw_number',
+        'npp',
         'chaperone_id',
         'status',
     ];
@@ -37,7 +37,6 @@ class Patrol extends Model
         return [
             'gender_category' => PatrolGenderEnum::class,
             'status' => RegistrationStatusEnum::class,
-            'draw_number' => 'integer',
         ];
     }
 
@@ -106,34 +105,31 @@ class Patrol extends Model
     }
 
     /**
-     * Kode acak/nomor undian blind scoring resmi
+     * Label Nomor Pendaftaran Peserta (NPP); tanda strip bila NPP belum digenerate
      */
-    public function blindScoringCode(): string
+    public function nppLabel(): string
     {
-        $num = $this->draw_number ?: 1;
-        return 'UND-' . str_pad((string) $num, 2, '0', STR_PAD_LEFT);
+        return $this->npp ?: '—';
     }
 
     /**
-     * Label nomor undian peserta untuk tampilan blind scoring juri
+     * Nama samaran regu: NPP dilengkapi kategori karena NPP putra dan putri sama-sama dimulai dari 01
      */
-    public function blindScoringLabel(): string
+    public function maskedName(): string
     {
-        $num = $this->draw_number ?: 1;
-        return 'Nomor Undian #' . str_pad((string) $num, 2, '0', STR_PAD_LEFT);
+        return 'Regu '.$this->nppLabel().' '.($this->isBoys() ? 'Putra' : 'Putri');
     }
 
     /**
-     * Nama tampilan regu yang menghormati kebijakan privasi / blind mode
+     * Nama tampilan regu yang menghormati kebijakan privasi / blind mode (disamarkan menjadi NPP)
      */
     public function displayName(bool $unmask = false): string
     {
-        if ($unmask || ! \App\Models\Event::first()?->hide_patrol_identities) {
+        if ($unmask || ! Event::first()?->hide_patrol_identities) {
             return $this->patrol_name;
         }
 
-        $num = $this->draw_number ?: 1;
-        return 'Regu #' . str_pad((string) $num, 2, '0', STR_PAD_LEFT);
+        return $this->maskedName();
     }
 
     /**
@@ -141,7 +137,7 @@ class Patrol extends Model
      */
     public function displaySchool(bool $unmask = false): string
     {
-        if ($unmask || ! \App\Models\Event::first()?->hide_patrol_identities) {
+        if ($unmask || ! Event::first()?->hide_patrol_identities) {
             return $this->scoutGroup?->school_name ?? '-';
         }
 
@@ -211,9 +207,9 @@ class Patrol extends Model
     }
 
     /**
-     * Mengurutkan peserta regu: Pinru (1), Wapinru (2), lalu Anggota (3..8)
+     * Mengurutkan peserta regu: Pinru di urutan pertama (1), Anggota di tengah (2..7), Wapinru di urutan terakhir (8)
      */
-    public function orderedParticipants(): \Illuminate\Database\Eloquent\Collection
+    public function orderedParticipants(): Collection
     {
         return $this->participants->sortBy(function ($participant) {
             $role = $participant->role_in_patrol instanceof PatrolRoleEnum
@@ -222,10 +218,9 @@ class Patrol extends Model
 
             return match ($role) {
                 'patrol_leader' => 1,
-                'assistant_patrol_leader' => 2,
-                default => 3,
+                'assistant_patrol_leader' => 3,
+                default => 2,
             };
         })->values();
     }
 }
-

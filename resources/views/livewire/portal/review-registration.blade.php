@@ -174,7 +174,7 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                                @forelse($patrol->participants as $idx => $participant)
+                                @forelse($patrol->orderedParticipants() as $idx => $participant)
                                     <tr>
                                         <td class="py-2 px-2.5 text-zinc-400">{{ $idx + 1 }}</td>
                                         <td class="py-2 px-2.5 font-medium text-zinc-900 dark:text-zinc-100">
@@ -304,7 +304,7 @@
                     <span class="text-xs text-zinc-400">{{ $patrol->participants->count() }} Peserta</span>
                 </div>
 
-                @forelse($patrol->participants as $participant)
+                @forelse($patrol->orderedParticipants() as $participant)
                     <div class="mb-4 rounded-xl border border-zinc-200/70 bg-zinc-50/30 dark:border-zinc-800 dark:bg-zinc-800/20 overflow-hidden">
                         {{-- Header Peserta --}}
                         <div class="flex items-center justify-between px-4 py-2.5 bg-zinc-100/60 border-b border-zinc-200/60 dark:bg-zinc-800/50 dark:border-zinc-700/50">

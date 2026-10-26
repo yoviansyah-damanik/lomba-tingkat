@@ -14,6 +14,9 @@
         </x-slot:actions>
     </x-heading-section>
 
+    {{-- Konfigurasi pendaftaran mandiri (accordion) --}}
+    <livewire:admin.official-registration-link lazy />
+
     {{-- Statistics Cards --}}
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <x-stat-card
@@ -247,14 +250,14 @@
                         <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">Peran Penugasan (Bisa Pilih Keduanya)</label>
                         <div class="grid grid-cols-2 gap-3">
                             <label class="flex items-center gap-2 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40 cursor-pointer">
-                                <input type="checkbox" wire:model="selectedRoles" value="committee" class="rounded text-amber-600 focus:ring-amber-500">
+                                <input type="checkbox" wire:model.live="selectedRoles" value="committee" class="rounded text-amber-600 focus:ring-amber-500">
                                 <div>
                                     <span class="text-xs font-bold text-zinc-900 dark:text-zinc-100 block">Panitia Pelaksana</span>
                                     <span class="text-[10px] text-zinc-500 block">Operator pos & operasional</span>
                                 </div>
                             </label>
                             <label class="flex items-center gap-2 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40 cursor-pointer">
-                                <input type="checkbox" wire:model="selectedRoles" value="judge" class="rounded text-amber-600 focus:ring-amber-500">
+                                <input type="checkbox" wire:model.live="selectedRoles" value="judge" class="rounded text-amber-600 focus:ring-amber-500">
                                 <div>
                                     <span class="text-xs font-bold text-zinc-900 dark:text-zinc-100 block">Dewan Juri</span>
                                     <span class="text-[10px] text-zinc-500 block">Penilai lomba & rubrik</span>
@@ -264,6 +267,13 @@
                         @error('selectedRoles')
                             <span class="text-rose-500 text-[11px] mt-1 block">{{ $message }}</span>
                         @enderror
+
+                        @if(in_array('committee', $selectedRoles, true))
+                            <div class="mt-3">
+                                <flux:input wire:model="committee_position" label="Posisi Kepanitiaan" placeholder="Contoh: Ketua Panitia / Sekretaris / Koordinator Lapangan" />
+                                <p class="mt-1 text-[10px] text-zinc-500">Ditampilkan pada ID Card{{ in_array('judge', $selectedRoles, true) ? ' bersama "Dewan Juri"' : '' }}.</p>
+                            </div>
+                        @endif
 
                         @if(auth()->user()->isSuperadmin())
                             <label class="mt-3 flex items-center gap-2 p-3 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/30 cursor-pointer">

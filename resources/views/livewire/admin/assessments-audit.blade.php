@@ -110,7 +110,8 @@
                     <thead class="bg-zinc-50 border-b border-zinc-200/80 text-zinc-500 font-bold uppercase tracking-wider dark:bg-zinc-800/50 dark:border-zinc-800">
                         <tr>
                             <th class="p-3.5">Mata Lomba</th>
-                            <th class="p-3.5">Undian & Regu</th>
+                            <th class="p-3.5">NPP</th>
+                            <th class="p-3.5">Nama Regu</th>
                             <th class="p-3.5">Pangkalan Sekolah</th>
                             <th class="p-3.5">Juri Penilai</th>
                             <th class="p-3.5 text-center">Nilai Mentah</th>
@@ -127,12 +128,10 @@
                                     <span class="text-[11px] text-zinc-400">Sesi: {{ $ass->schedule?->session_name ?? '-' }}</span>
                                 </td>
                                 <td class="p-3.5">
-                                    <span class="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[11px] font-bold text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
-                                        {{ $ass->patrol?->blindScoringCode() ?? '-' }}
-                                    </span>
-                                    <div class="mt-1 font-semibold text-zinc-900 dark:text-zinc-100">
-                                        {{ $ass->patrol?->patrol_name ?? '-' }}
-                                    </div>
+                                    <x-npp-badge :npp="$ass->patrol?->npp" />
+                                </td>
+                                <td class="p-3.5 font-semibold text-zinc-900 dark:text-zinc-100">
+                                    {{ $ass->patrol?->patrol_name ?? '-' }}
                                 </td>
                                 <td class="p-3.5 text-zinc-600 dark:text-zinc-300">
                                     {{ $ass->patrol?->scoutGroup?->school_name ?? '-' }}

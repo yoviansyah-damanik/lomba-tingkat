@@ -13,13 +13,17 @@ use App\Models\CompetitionSchedule;
 use App\Models\JudgeAssignment;
 use App\Models\Participant;
 use App\Models\Patrol;
-use App\Services\ContingentAccountService;
 use App\Models\ScoutGroup;
 use App\Models\User;
 use App\Services\AssessmentScoringService;
+use App\Services\ContingentAccountService;
+use App\Services\JudgeAutoAssignmentService;
+use App\Services\PatrolNumberService;
 use App\Services\StandingsService;
+use Database\Seeders\Support\LiveContest;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 
 /**
@@ -92,9 +96,11 @@ class SampleContestSeeder extends Seeder
         try {
             $judges = $this->seedJudges();
             $this->seedCommittees();
+            app(JudgeAutoAssignmentService::class)->assign();
             $this->seedContingents();
             $this->verifySampleContingent();
             $this->seedScoredSchedules($judges);
+            app(PatrolNumberService::class)->generate();
         } finally {
             mt_srand(); // kembalikan generator acak global agar tidak memengaruhi proses lain
         }
@@ -105,7 +111,7 @@ class SampleContestSeeder extends Seeder
     /**
      * Juri contoh (ditambah juri yang sudah ada di UserSeeder)
      *
-     * @return \Illuminate\Support\Collection<int, User>
+     * @return Collection<int, User>
      */
     private function seedJudges()
     {
@@ -274,7 +280,7 @@ class SampleContestSeeder extends Seeder
      * oleh panel 3 juri, lalu difinalisasi lewat alur resmi AssessmentScoringService. Waktu sistem digeser ke
      * dalam jendela penilaian masing-masing sesi, sehingga tanggal penilaian mengikuti jadwal Juknis.
      *
-     * @param  \Illuminate\Support\Collection<int, User>  $judges
+     * @param  Collection<int, User>  $judges
      */
     private function seedScoredSchedules($judges): void
     {
@@ -292,12 +298,18 @@ class SampleContestSeeder extends Seeder
             ->mapWithKeys(fn ($id) => [$id => 66 + (mt_rand(0, 280) / 10)]);
 
         $slot = 0;
+        $freshStart = LiveContest::active();
 
         try {
             foreach ($competitions as $competition) {
                 foreach (['boys' => 'Penggalang Putra', 'girls' => 'Penggalang Putri'] as $gender => $label) {
                     $schedule = $this->scheduleFor($competition, $gender, $label, $slot++);
                     $panel = $this->panelFor($schedule, $judges, $slot);
+
+                    // Lomba baru dimulai: panel juri ditugaskan, tetapi nilai dibiarkan kosong untuk diisi juri
+                    if ($freshStart) {
+                        continue;
+                    }
 
                     // Waktu sistem digeser ke dalam sesi agar lolos jendela penilaian juri
                     Carbon::setTestNow($schedule->start_time->copy()->addMinutes(30));
@@ -355,8 +367,8 @@ class SampleContestSeeder extends Seeder
     /**
      * Panel 3 juri: juri yang sudah ditugaskan pada sesi, dilengkapi juri lain secara bergilir
      *
-     * @param  \Illuminate\Support\Collection<int, User>  $judges
-     * @return \Illuminate\Support\Collection<int, User>
+     * @param  Collection<int, User>  $judges
+     * @return Collection<int, User>
      */
     private function panelFor(CompetitionSchedule $schedule, $judges, int $slot)
     {

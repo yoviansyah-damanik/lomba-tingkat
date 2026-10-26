@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
+use App\Models\Event;
 use App\Services\AttendanceService;
 use App\Services\PdfService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,75 +16,6 @@ use Illuminate\View\View;
 
 class AttendanceScannerController extends Controller
 {
-    /**
-     * Dashboard daftar sesi presensi pos kegiatan LT III
-     */
-    public function index(Request $request): View
-    {
-        $query = AttendanceSession::accessibleBy($request->user())
-            ->with(['schedule.competition', 'attendances'])
-            ->orderByDesc('is_active')
-            ->orderBy('title');
-
-        if ($request->filled('status')) {
-            if ($request->status === 'active') {
-                $query->where('is_active', true);
-            } elseif ($request->status === 'inactive') {
-                $query->where('is_active', false);
-            }
-        }
-
-        if ($request->filled('search')) {
-            $term = $request->search;
-            $query->where(function ($q) use ($term) {
-                $q->where('title', 'like', "%{$term}%")
-                    ->orWhereHas('schedule', function ($sq) use ($term) {
-                        $sq->where('arena_location', 'like', "%{$term}%")
-                            ->orWhere('session_name', 'like', "%{$term}%")
-                            ->orWhereHas('competition', function ($cq) use ($term) {
-                                $cq->where('title', 'like', "%{$term}%");
-                            });
-                    });
-            });
-        }
-
-        $sessions = $query->paginate(12)->withQueryString();
-
-        $stats = [
-            'total_sessions' => AttendanceSession::accessibleBy($request->user())->count(),
-            'active_sessions' => AttendanceSession::accessibleBy($request->user())->where('is_active', true)->count(),
-            'total_attendances_today' => Attendance::whereHas('session', fn($q) => $q->accessibleBy($request->user()))->whereDate('scanned_at', today())->count(),
-        ];
-
-        return view('portal.attendance.index', compact('sessions', 'stats'));
-    }
-
-    /**
-     * Antarmuka scanner kamera presensi langsung untuk sesi tertentu
-     */
-    public function scanner(Request $request, AttendanceSession $session): View
-    {
-        if (! $session->canBeAccessedBy($request->user())) {
-            $message = $request->user()?->isJudge()
-                ? 'Akses ditolak. Dewan Juri hanya dapat mengakses scanner presensi pos untuk mata lomba yang ditugaskan kepada Anda.'
-                : 'Akses ditolak. Panitia hanya memiliki hak akses untuk presensi kehadiran umum (bukan pos mata lomba).';
-            abort(403, $message);
-        }
-
-        $session->load([
-            'schedule.competition',
-            'attendances' => function ($q) {
-                $q->with(['participant.patrol.scoutGroup', 'chaperone.scoutGroup', 'user', 'scannedBy'])
-                    ->orderByDesc('scanned_at');
-            },
-        ]);
-
-        $recentAttendances = $session->attendances->take(15);
-        $totalAttended = $session->attendances->count();
-
-        return view('portal.attendance.scanner', compact('session', 'recentAttendances', 'totalAttended'));
-    }
-
     /**
      * AJAX Endpoint: Proses pemindaian token QR
      */
@@ -196,7 +129,7 @@ class AttendanceScannerController extends Controller
                     'role' => $att->entity_role,
                     'group' => $att->entity_group,
                     'photo_url' => $att->entity_photo_url,
-                    'scanned_at' => $att->scanned_at->format('H:i:s') . ' WIB',
+                    'scanned_at' => $att->scanned_at->format('H:i:s').' WIB',
                     'scanned_by' => $att->scannedBy?->name ?: 'Sistem',
                     'status' => $att->status,
                     'notes' => $att->notes,
@@ -237,7 +170,7 @@ class AttendanceScannerController extends Controller
         ];
 
         if (! empty($validated['scanned_at'])) {
-            $updateData['scanned_at'] = \Carbon\Carbon::parse($validated['scanned_at']);
+            $updateData['scanned_at'] = Carbon::parse($validated['scanned_at']);
         }
 
         $attendance->update($updateData);
@@ -290,7 +223,7 @@ class AttendanceScannerController extends Controller
     {
         $user = $request->user();
 
-        $query = Attendance::whereHas('session', fn($q) => $q->accessibleBy($user))
+        $query = Attendance::whereHas('session', fn ($q) => $q->accessibleBy($user))
             ->with(['session.schedule.competition', 'participant.patrol.scoutGroup', 'chaperone.scoutGroup', 'user', 'scannedBy']);
 
         if ($request->filled('session_id') && $request->session_id !== 'all') {
@@ -312,10 +245,10 @@ class AttendanceScannerController extends Controller
         if ($request->filled('search')) {
             $term = $request->search;
             $query->where(function ($q) use ($term) {
-                $q->whereHas('participant', fn($pq) => $pq->where('full_name', 'like', "%{$term}%")->orWhere('id_number', 'like', "%{$term}%"))
-                    ->orWhereHas('chaperone', fn($cq) => $cq->where('full_name', 'like', "%{$term}%")->orWhere('id_number', 'like', "%{$term}%"))
-                    ->orWhereHas('user', fn($uq) => $uq->where('name', 'like', "%{$term}%")->orWhere('id_number', 'like', "%{$term}%"))
-                    ->orWhereHas('patrol', fn($ptq) => $ptq->where('patrol_name', 'like', "%{$term}%"))
+                $q->whereHas('participant', fn ($pq) => $pq->where('full_name', 'like', "%{$term}%")->orWhere('id_number', 'like', "%{$term}%"))
+                    ->orWhereHas('chaperone', fn ($cq) => $cq->where('full_name', 'like', "%{$term}%")->orWhere('id_number', 'like', "%{$term}%"))
+                    ->orWhereHas('user', fn ($uq) => $uq->where('name', 'like', "%{$term}%")->orWhere('id_number', 'like', "%{$term}%"))
+                    ->orWhereHas('patrol', fn ($ptq) => $ptq->where('patrol_name', 'like', "%{$term}%"))
                     ->orWhere('notes', 'like', "%{$term}%");
             });
         }
@@ -334,7 +267,7 @@ class AttendanceScannerController extends Controller
             'absent' => $attendances->where('status', 'absent')->count(),
         ];
 
-        $event = \App\Models\Event::where('is_active', true)->first() ?? \App\Models\Event::first();
+        $event = Event::where('is_active', true)->first() ?? Event::first();
 
         // Satu lembar per sesi presensi. Pada pilihan "seluruh sesi", semua sesi yang dapat diakses
         // ditampilkan terpisah, termasuk sesi yang belum memiliki catatan presensi.
@@ -400,4 +333,3 @@ class AttendanceScannerController extends Controller
         );
     }
 }
-

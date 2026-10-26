@@ -40,6 +40,7 @@ class OfficialsManagement extends Component
     public string $scout_id = '';
     public string $institution = 'Kwarcab Kota Padangsidimpuan';
     public string $position = '';
+    public string $committee_position = '';
     public array $selectedRoles = ['committee'];
     public bool $is_administrator = false;
     public bool $is_active = true;
@@ -143,6 +144,7 @@ class OfficialsManagement extends Component
         $this->scout_id = $user->scout_id ?? '';
         $this->institution = $user->institution ?? 'Kwarcab Kota Padangsidimpuan';
         $this->position = $user->position ?? '';
+        $this->committee_position = $user->committee_position ?? '';
         $this->selectedRoles = $user->roles->pluck('name')->intersect(['committee', 'judge'])->toArray();
         $this->is_administrator = $user->isAdministrator();
         $this->is_active = (bool) $user->is_active;
@@ -162,7 +164,8 @@ class OfficialsManagement extends Component
             'scout_id' => ['nullable', 'string', 'max:50'],
             'institution' => ['nullable', 'string', 'max:150'],
             'position' => ['nullable', 'string', 'max:100'],
-            'selectedRoles' => ['required', 'array', 'min:1'],
+            'committee_position' => ['nullable', 'string', 'max:100'],
+            'selectedRoles' =>['required', 'array', 'min:1'],
             'selectedRoles.*' => ['in:committee,judge'],
             'avatar' => ['nullable', 'image', 'max:2048'],
         ];
@@ -186,6 +189,7 @@ class OfficialsManagement extends Component
                 'scout_id' => $validated['scout_id'] ?: null,
                 'institution' => $validated['institution'] ?: 'Kwarcab Kota Padangsidimpuan',
                 'position' => $validated['position'] ?: null,
+                'committee_position' => $this->committeePositionFor($validated),
             ];
 
             if ($this->avatar) {
@@ -223,7 +227,8 @@ class OfficialsManagement extends Component
                 'scout_id' => $validated['scout_id'] ?: null,
                 'institution' => $validated['institution'] ?: 'Kwarcab Kota Padangsidimpuan',
                 'position' => $validated['position'] ?: null,
-                'is_active' => true,                        // Akun otomatis dibuat dan aktif
+                'committee_position' => $this->committeePositionFor($validated),
+                'is_active' => true,                       // Akun otomatis dibuat dan aktif
                 'qr_token' => (string) Str::uuid(),
                 'qr_generated_at' => now(),
             ];
@@ -297,10 +302,19 @@ class OfficialsManagement extends Component
         $this->scout_id = '';
         $this->institution = 'Kwarcab Kota Padangsidimpuan';
         $this->position = '';
+        $this->committee_position = '';
         $this->selectedRoles = ['committee'];
         $this->is_administrator = false;
         $this->is_active = true;
         $this->avatar = null;
+    }
+
+    /**
+     * Posisi kepanitiaan hanya disimpan untuk akun berperan Panitia
+     */
+    private function committeePositionFor(array $validated): ?string
+    {
+        return in_array('committee', $validated['selectedRoles'], true) ? ($validated['committee_position'] ?: null) : null;
     }
 
     public function render()

@@ -1,5 +1,6 @@
 import html2canvas from 'html2canvas-pro';
 import JSZip from 'jszip';
+import './app-dialog';
 import './digital-card-export';
 
 window.html2canvas = html2canvas;

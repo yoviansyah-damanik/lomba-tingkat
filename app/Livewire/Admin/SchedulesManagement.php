@@ -3,11 +3,11 @@
 namespace App\Livewire\Admin;
 
 use App\Enums\RoleEnum;
-use App\Models\AttendanceSession;
 use App\Models\Competition;
 use App\Models\CompetitionSchedule;
 use App\Models\JudgeAssignment;
 use App\Models\User;
+use App\Services\JudgeAutoAssignmentService;
 use App\Services\WebPushService;
 use Carbon\Carbon;
 use Flux\Flux;
@@ -27,31 +27,49 @@ class SchedulesManagement extends Component
     use WithPagination;
 
     public string $search = '';
+
     public string $competitionFilter = 'all';
+
     public string $genderFilter = 'all';
+
     public string $statusFilter = 'all_status';
 
     // State Modal Form Jadwal
     public bool $showModal = false;
+
     public ?string $editingId = null;
 
     // Field Form Jadwal
     public string $competition_id = '';
+
     public string $session_name = '';
+
     public string $arena_location = '';
+
     public string $start_time = '';
+
     public string $end_time = '';
+
     public string $status = 'scheduled';
+
     public string $participant_type = 'patrol';
+
     public string $gender_category = 'all';
+
     public bool $is_published = true;
 
     // State Modal Penugasan Juri
     public bool $showJudgesModal = false;
+
     public ?string $selectedScheduleId = null;
+
     public string $selectedJudgeId = '';
+
     public string $judgeRole = 'scoring_judge';
+
     public string $judgeNotes = '';
+
+    public bool $showAutoAssignModal = false;
 
     protected $queryString = [
         'search' => ['except' => ''],
@@ -139,11 +157,11 @@ class SchedulesManagement extends Component
 
         if (! empty($this->search)) {
             $query->where(function ($q) {
-                $q->where('session_name', 'like', '%' . $this->search . '%')
-                    ->orWhere('arena_location', 'like', '%' . $this->search . '%')
+                $q->where('session_name', 'like', '%'.$this->search.'%')
+                    ->orWhere('arena_location', 'like', '%'.$this->search.'%')
                     ->orWhereHas('competition', function ($sub) {
-                        $sub->where('title', 'like', '%' . $this->search . '%')
-                            ->orWhere('code', 'like', '%' . $this->search . '%');
+                        $sub->where('title', 'like', '%'.$this->search.'%')
+                            ->orWhere('code', 'like', '%'.$this->search.'%');
                     });
             });
         }
@@ -260,7 +278,7 @@ class SchedulesManagement extends Component
                 ['competition_schedule_id' => $schedule->id],
                 [
                     'session_type' => 'participant',
-                    'title' => 'Presensi: ' . $competitionTitle . ' (' . $schedule->session_name . $genderSuffix . ')',
+                    'title' => 'Presensi: '.$competitionTitle.' ('.$schedule->session_name.$genderSuffix.')',
                     'is_competition' => true,
                     'opened_at' => $schedule->checkin_open_time,
                     'closed_at' => $schedule->checkin_close_time,
@@ -330,6 +348,25 @@ class SchedulesManagement extends Component
     }
 
     /**
+     * Lengkapi panel juri seluruh sesi secara otomatis (beban dibagi rata, tanpa jadwal bertumpuk)
+     */
+    public function autoAssignJudges(JudgeAutoAssignmentService $service): void
+    {
+        $result = $service->assign();
+        $this->showAutoAssignModal = false;
+
+        if ($result['assignments'] === 0) {
+            Flux::toast(variant: $result['skipped'] ? 'warning' : 'success', heading: 'Tidak Ada Perubahan', text: $result['skipped']
+                ? "{$result['skipped']} sesi masih kekurangan juri karena jumlah juri aktif belum cukup."
+                : 'Seluruh sesi sudah memiliki panel juri lengkap.');
+
+            return;
+        }
+
+        Flux::toast(variant: 'success', heading: 'Juri Ditentukan Otomatis', text: "{$result['assignments']} penugasan baru pada {$result['schedules']} sesi lomba.");
+    }
+
+    /**
      * Hapus penugasan juri secara instan
      */
     public function removeJudge(string $assignmentId): void
@@ -351,7 +388,7 @@ class SchedulesManagement extends Component
         $session = $schedule->attendanceSessions()->firstOrCreate(
             ['session_type' => 'participant'],
             [
-                'title' => 'Presensi Peserta ' . $schedule->session_name,
+                'title' => 'Presensi Peserta '.$schedule->session_name,
                 'is_competition' => true,
                 'opened_at' => $schedule->attendance_open_time ?: now(),
                 'closed_at' => $schedule->attendance_close_time ?: now()->addHours(2),

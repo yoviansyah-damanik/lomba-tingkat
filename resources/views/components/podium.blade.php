@@ -62,6 +62,7 @@
                         @endif
 
                         <h5 class="mt-1.5 font-black leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 {{ $style['name'] }}">{{ $item['patrol_name'] }}</h5>
+                        <x-npp-badge :npp="$item['npp'] ?? null" :hide="$item['is_masked'] ?? false" />
                         <p class="text-sm font-semibold text-zinc-600 dark:text-zinc-300">{{ $item['school_name'] }}</p>
                         <p class="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-zinc-500 dark:text-zinc-400">
                             <span class="font-mono font-semibold">{{ $item['group_number'] }}</span>

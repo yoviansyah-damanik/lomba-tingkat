@@ -133,6 +133,9 @@
         </div>
     @endif
 
+    {{-- Cara penentuan peringkat umum: terpisah dari tab agar selalu terlihat --}}
+    <x-standings.rules />
+
     {{-- Navigasi Tab & Kontrol Filter Interaktif --}}
     <div class="rounded-2xl border border-zinc-200/80 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 shadow-xs space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800 pb-3">
@@ -210,8 +213,6 @@
                 </div>
             @endif
 
-            <x-standings.rules />
-
             <div class="text-[11px] text-zinc-500 dark:text-zinc-400 flex flex-wrap items-center gap-2">
                 <span>🥇 Prestasi Tinggi</span>
                 <span>&bull;</span>
@@ -253,6 +254,7 @@
                             <thead class="border-b border-zinc-200 bg-zinc-50/80 font-bold uppercase tracking-wider text-zinc-500 dark:border-zinc-800 dark:bg-zinc-800/40">
                                 <tr>
                                     <th class="py-3 px-4 text-center w-14">Rank</th>
+                                    <th class="py-3 px-3 text-center">NPP</th>
                                     <th class="py-3 px-4">Nama Regu</th>
                                     <th class="py-3 px-4">Pangkalan Sekolah</th>
                                     <th class="py-3 px-3 text-center">Total Poin</th>
@@ -273,6 +275,9 @@
                                             <span class="font-mono {{ $item['rank'] <= 3 ? 'font-extrabold text-blue-600 dark:text-blue-400' : 'text-zinc-500' }}">
                                                 #{{ $item['rank'] }}
                                             </span>
+                                        </td>
+                                        <td class="py-3 px-3 text-center">
+                                            <x-npp-badge :npp="$item['npp'] ?? null" />
                                         </td>
                                         <td class="py-3 px-4 font-bold text-zinc-900 dark:text-zinc-100">
                                             {{ $item['patrol_name'] }}
@@ -307,7 +312,7 @@
                                                     @if($item['rank'] === 1)
                                                         <flux:icon name="trophy" class="size-3" />
                                                     @endif
-                                                    {{ $item['general_rank_title'] }}
+                                                    {{ preg_replace('/\s+(Putra|Putri)$/u', '', $item['general_rank_title']) }}
                                                 </span>
                                             @else
                                                 <span class="font-mono text-zinc-400 text-xs">-</span>
@@ -316,7 +321,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="9" class="py-8 text-center text-zinc-500">
+                                        <td colspan="10" class="py-8 text-center text-zinc-500">
                                             Belum ada data regu penggalang putra.
                                         </td>
                                     </tr>
@@ -348,6 +353,7 @@
                             <thead class="border-b border-zinc-200 bg-zinc-50/80 font-bold uppercase tracking-wider text-zinc-500 dark:border-zinc-800 dark:bg-zinc-800/40">
                                 <tr>
                                     <th class="py-3 px-4 text-center w-14">Rank</th>
+                                    <th class="py-3 px-3 text-center">NPP</th>
                                     <th class="py-3 px-4">Nama Regu</th>
                                     <th class="py-3 px-4">Pangkalan Sekolah</th>
                                     <th class="py-3 px-3 text-center">Total Poin</th>
@@ -368,6 +374,9 @@
                                             <span class="font-mono {{ $item['rank'] <= 3 ? 'font-extrabold text-rose-600 dark:text-rose-400' : 'text-zinc-500' }}">
                                                 #{{ $item['rank'] }}
                                             </span>
+                                        </td>
+                                        <td class="py-3 px-3 text-center">
+                                            <x-npp-badge :npp="$item['npp'] ?? null" />
                                         </td>
                                         <td class="py-3 px-4 font-bold text-zinc-900 dark:text-zinc-100">
                                             {{ $item['patrol_name'] }}
@@ -402,7 +411,7 @@
                                                     @if($item['rank'] === 1)
                                                         <flux:icon name="trophy" class="size-3" />
                                                     @endif
-                                                    {{ $item['general_rank_title'] }}
+                                                    {{ preg_replace('/\s+(Putra|Putri)$/u', '', $item['general_rank_title']) }}
                                                 </span>
                                             @else
                                                 <span class="font-mono text-zinc-400 text-xs">-</span>
@@ -411,7 +420,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="9" class="py-8 text-center text-zinc-500">
+                                        <td colspan="10" class="py-8 text-center text-zinc-500">
                                             Belum ada data regu penggalang putri.
                                         </td>
                                     </tr>
@@ -454,6 +463,7 @@
                             <thead class="border-b border-zinc-200 bg-zinc-50/80 font-bold uppercase tracking-wider text-zinc-500 dark:border-zinc-800 dark:bg-zinc-800/40">
                                 <tr>
                                     <th class="py-3 px-4 text-center w-14">Rank</th>
+                                    <th class="py-3 px-3 text-center">NPP</th>
                                     <th class="py-3 px-4">Nama Regu Peserta</th>
                                     <th class="py-3 px-4">Pangkalan Sekolah</th>
                                     <th class="py-3 px-4 text-center">Predikat Prestasi</th>
@@ -481,6 +491,9 @@
                                                 {{ $score->rank ?? '-' }}
                                             </span>
                                         </td>
+                                        <td class="py-3 px-3 text-center">
+                                            <x-npp-badge :npp="$score->patrol?->npp" />
+                                        </td>
                                         <td class="py-3 px-4 font-bold text-zinc-900 dark:text-zinc-100">
                                             {{ $score->patrol?->display_name ?? $score->patrol?->patrol_name ?? 'Regu' }}
                                         </td>
@@ -498,7 +511,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="py-12 text-center text-zinc-500">
+                                        <td colspan="5" class="py-12 text-center text-zinc-500">
                                             <div class="max-w-xs mx-auto">
                                                 <flux:icon name="clipboard-document-list" class="size-8 text-zinc-400 mx-auto mb-2" />
                                                 <p class="font-semibold text-zinc-700 dark:text-zinc-300">Belum ada penilaian terfinalisasi untuk mata lomba ini.</p>

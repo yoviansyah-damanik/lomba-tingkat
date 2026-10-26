@@ -7,7 +7,7 @@ use App\Models\Event;
 use Illuminate\Database\Seeder;
 
 /**
- * Seeder 17 mata lomba resmi LT-III Tahun 2026 (Juknis Bab III: kegiatan berawalan "Lomba" yang dinilai juri)
+ * Seeder 18 mata lomba resmi LT-III Tahun 2026 (Juknis Bab III: kegiatan berawalan "Lomba" yang dinilai juri)
  * beserta ketentuan teknisnya
  */
 class CompetitionSeeder extends Seeder

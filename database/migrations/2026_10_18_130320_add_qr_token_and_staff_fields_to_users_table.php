@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('scout_id', 50)->nullable()->after('phone_number'); // NTA Pramuka Staf
             $table->string('institution', 150)->nullable()->after('scout_id'); // Asal Pangkalan/Instansi
             $table->string('position', 100)->nullable()->after('institution'); // Jabatan/Bidang Tugas
+            $table->string('committee_position', 100)->nullable()->after('position'); // Posisi kepanitiaan (khusus peran Panitia)
         });
     }
 
@@ -26,7 +27,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['qr_token', 'qr_generated_at', 'scout_id', 'institution', 'position']);
+            $table->dropColumn(['qr_token', 'qr_generated_at', 'scout_id', 'institution', 'position', 'committee_position']);
         });
     }
 };
