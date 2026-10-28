@@ -256,7 +256,7 @@ class ReviewRegistration extends Component
     }
 
     /**
-     * Ringkasan kelengkapan 7 berkas persyaratan peserta
+     * Ringkasan kelengkapan 8 berkas persyaratan peserta
      */
     #[Computed]
     public function participantDocumentsSummary(): array
@@ -269,13 +269,8 @@ class ReviewRegistration extends Component
         foreach ($group->patrols as $patrol) {
             foreach ($patrol->participants as $participant) {
                 $totalParticipants++;
-                $hasAllDocs = ! empty($participant->doc_kta_path)
-                    && ! empty($participant->doc_bpjs_path)
-                    && ! empty($participant->doc_health_certificate_path)
-                    && ! empty($participant->doc_birth_certificate_path)
-                    && ! empty($participant->doc_family_card_path)
-                    && ! empty($participant->doc_sku_path)
-                    && ! empty($participant->doc_skk_path);
+                $hasAllDocs = collect(Participant::DOCUMENTS)
+                    ->every(fn ($doc) => ! empty($participant->{$doc[0]}));
 
                 if (! $hasAllDocs) {
                     $incompleteParticipantsCount++;

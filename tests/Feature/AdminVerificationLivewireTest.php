@@ -137,6 +137,7 @@ class AdminVerificationLivewireTest extends TestCase
             'doc_kta_path' => 'participants/kta_bintang.pdf',
             'doc_bpjs_path' => 'participants/bpjs_bintang.pdf',
             'doc_health_certificate_path' => 'participants/health_bintang.pdf',
+            'doc_parent_consent_path' => 'participants/consent_bintang.pdf',
             'doc_birth_certificate_path' => 'participants/birth_bintang.pdf',
             'doc_family_card_path' => 'participants/kk_bintang.pdf',
             'doc_sku_path' => 'participants/sku_bintang.pdf',
@@ -168,8 +169,9 @@ class AdminVerificationLivewireTest extends TestCase
             ->assertSee('mandate_test.pdf')
             ->assertSee('payment_test.jpg')
             // Participant uploads & review modal
-            ->assertSee('8/8 Berkas')
+            ->assertSee('9/9 Berkas')
             ->assertSee('review-participant-'.$participant->id)
+            ->assertSee('Surat Izin Orang Tua')
             ->assertSee('Scan Kartu Keluarga (KK)')
             ->assertSee('Scan SKU Penggalang')
             // Chaperone uploads & review modal

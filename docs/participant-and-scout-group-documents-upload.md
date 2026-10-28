@@ -1,15 +1,18 @@
 # Participant and Scout Group Document Upload
 
 ## Overview
-Implements document upload capabilities for contingent participants (7 requirement files) and scout groups (Mandate Letter & Payment Proof) for LT III Kwarcab Kota Padangsidimpuan.
+Implements document upload capabilities for contingent participants (8 requirement files) and scout groups (Mandate Letter & Payment Proof) for LT III Kwarcab Kota Padangsidimpuan.
 
 ## Database & Models
-- **Migration:** `2026_10_22_160000_add_document_paths_to_participants_and_scout_groups.php`
+- **Migrations:**
+  - `2026_10_22_160000_add_document_paths_to_participants_and_scout_groups.php`
+  - `2026_10_28_000001_add_doc_parent_consent_path_to_participants_table.php`
 - **Participant Model (`app/Models/Participant.php`):**
   - Added constants `Participant::DOCUMENTS` mapping input fields to database columns:
     - `doc_kta` => `doc_kta_path` (Kartu Tanda Anggota)
     - `doc_bpjs` => `doc_bpjs_path` (BPJS)
     - `doc_health_certificate` => `doc_health_certificate_path` (Surat Sehat)
+    - `doc_parent_consent` => `doc_parent_consent_path` (Surat Izin Orang Tua)
     - `doc_birth_certificate` => `doc_birth_certificate_path` (Akta Kelahiran)
     - `doc_family_card` => `doc_family_card_path` (Kartu Keluarga)
     - `doc_sku` => `doc_sku_path` (SKU)

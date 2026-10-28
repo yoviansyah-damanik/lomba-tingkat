@@ -1028,10 +1028,11 @@ class ContingentRegistrationTest extends TestCase
             'status' => RegistrationStatusEnum::Draft,
         ])->id]);
 
-        // 1. Simpan peserta beserta 7 berkas persyaratan
+        // 1. Simpan peserta beserta 8 berkas persyaratan
         $fileKta = UploadedFile::fake()->create('kta.pdf', 500, 'application/pdf');
         $fileBpjs = UploadedFile::fake()->create('bpjs.pdf', 500, 'application/pdf');
         $fileSehat = UploadedFile::fake()->create('surat_sehat.pdf', 500, 'application/pdf');
+        $fileIzin = UploadedFile::fake()->create('izin_ortu.pdf', 500, 'application/pdf');
         $fileAkta = UploadedFile::fake()->create('akta.pdf', 500, 'application/pdf');
         $fileKk = UploadedFile::fake()->create('kk.pdf', 500, 'application/pdf');
         $fileSku = UploadedFile::fake()->create('sku.pdf', 500, 'application/pdf');
@@ -1042,6 +1043,7 @@ class ContingentRegistrationTest extends TestCase
             'doc_kta' => $fileKta,
             'doc_bpjs' => $fileBpjs,
             'doc_health_certificate' => $fileSehat,
+            'doc_parent_consent' => $fileIzin,
             'doc_birth_certificate' => $fileAkta,
             'doc_family_card' => $fileKk,
             'doc_sku' => $fileSku,
@@ -1058,6 +1060,7 @@ class ContingentRegistrationTest extends TestCase
         $this->assertNotNull($participant->doc_kta_path);
         $this->assertNotNull($participant->doc_bpjs_path);
         $this->assertNotNull($participant->doc_health_certificate_path);
+        $this->assertNotNull($participant->doc_parent_consent_path);
         $this->assertNotNull($participant->doc_birth_certificate_path);
         $this->assertNotNull($participant->doc_family_card_path);
         $this->assertNotNull($participant->doc_sku_path);
@@ -1065,6 +1068,7 @@ class ContingentRegistrationTest extends TestCase
 
         Storage::disk('public')->assertExists($participant->doc_kta_path);
         Storage::disk('public')->assertExists($participant->doc_bpjs_path);
+        Storage::disk('public')->assertExists($participant->doc_parent_consent_path);
 
         // 2. Update peserta dengan berkas KTA baru (berkas lama harus terhapus)
         $oldKtaPath = $participant->doc_kta_path;
@@ -1113,6 +1117,7 @@ class ContingentRegistrationTest extends TestCase
             $participant->doc_kta_path,
             $participant->doc_bpjs_path,
             $participant->doc_health_certificate_path,
+            $participant->doc_parent_consent_path,
             $participant->doc_birth_certificate_path,
             $participant->doc_family_card_path,
             $participant->doc_sku_path,

@@ -716,7 +716,7 @@
                             <p class="text-xs text-zinc-500 mt-0.5">Unggah atau perbarui berkas dokumen persyaratan peserta dalam format PDF, maksimal 4MB per berkas.</p>
                         </div>
                         <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
-                            7 Berkas Persyaratan
+                            8 Berkas Persyaratan
                         </span>
                     </div>
 
@@ -787,11 +787,33 @@
                             @error('doc_health_certificate') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                         </div>
 
-                        {{-- 4. Scan Akta Kelahiran --}}
+                        {{-- 4. Scan Surat Izin Orang Tua --}}
                         <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
                             <div class="flex items-center justify-between mb-1">
                                 <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                                    4. Scan Akta Kelahiran
+                                    4. Scan Surat Izin Orang Tua
+                                </label>
+                                @if($participant?->doc_parent_consent_path)
+                                    <x-file-viewer-trigger :path="$participant?->doc_parent_consent_path" :title="'Berkas Peserta — '.$participant?->full_name" label="Lihat Berkas" icon="document-check" />
+                                @else
+                                    <span class="text-[10px] text-zinc-400">Belum diunggah</span>
+                                @endif
+                            </div>
+                            <p class="text-[11px] text-zinc-500 mb-2">Surat izin / persetujuan orang tua atau wali untuk mengikuti kegiatan LT III.</p>
+                            <input
+                                type="file"
+                                wire:model="doc_parent_consent"
+                                accept=".pdf,application/pdf"
+                                class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
+                            >
+                            @error('doc_parent_consent') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                        </div>
+
+                        {{-- 5. Scan Akta Kelahiran --}}
+                        <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                                    5. Scan Akta Kelahiran
                                 </label>
                                 @if($participant?->doc_birth_certificate_path)
                                     <x-file-viewer-trigger :path="$participant?->doc_birth_certificate_path" :title="'Berkas Peserta — '.$participant?->full_name" label="Lihat Berkas" icon="document-check" />
@@ -809,11 +831,11 @@
                             @error('doc_birth_certificate') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                         </div>
 
-                        {{-- 5. Scan Kartu Keluarga --}}
+                        {{-- 6. Scan Kartu Keluarga --}}
                         <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
                             <div class="flex items-center justify-between mb-1">
                                 <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                                    5. Scan Kartu Keluarga (KK)
+                                    6. Scan Kartu Keluarga (KK)
                                 </label>
                                 @if($participant?->doc_family_card_path)
                                     <x-file-viewer-trigger :path="$participant?->doc_family_card_path" :title="'Berkas Peserta — '.$participant?->full_name" label="Lihat Berkas" icon="document-check" />
@@ -831,11 +853,11 @@
                             @error('doc_family_card') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                         </div>
 
-                        {{-- 6. Scan SKU --}}
+                        {{-- 7. Scan SKU --}}
                         <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
                             <div class="flex items-center justify-between mb-1">
                                 <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                                    6. Scan Syarat Kecakapan Umum (SKU)
+                                    7. Scan Syarat Kecakapan Umum (SKU)
                                 </label>
                                 @if($participant?->doc_sku_path)
                                     <x-file-viewer-trigger :path="$participant?->doc_sku_path" :title="'Berkas Peserta — '.$participant?->full_name" label="Lihat Berkas" icon="document-check" />
@@ -853,11 +875,11 @@
                             @error('doc_sku') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                         </div>
 
-                        {{-- 7. Scan SKK --}}
-                        <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30 md:col-span-2">
+                        {{-- 8. Scan SKK --}}
+                        <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
                             <div class="flex items-center justify-between mb-1">
                                 <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                                    7. Scan Syarat Kecakapan Khusus (SKK)
+                                    8. Scan Syarat Kecakapan Khusus (SKK)
                                 </label>
                                 @if($participant?->doc_skk_path)
                                     <x-file-viewer-trigger :path="$participant?->doc_skk_path" :title="'Berkas Peserta — '.$participant?->full_name" label="Lihat Berkas" icon="document-check" />

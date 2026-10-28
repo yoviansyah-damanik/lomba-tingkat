@@ -84,6 +84,8 @@ class ParticipantForm extends Component
 
     public $doc_health_certificate = null;
 
+    public $doc_parent_consent = null;
+
     public $doc_birth_certificate = null;
 
     public $doc_family_card = null;
@@ -184,6 +186,7 @@ class ParticipantForm extends Component
             'doc_kta' => ['nullable', 'file', 'mimes:pdf', 'max:4096'],
             'doc_bpjs' => ['nullable', 'file', 'mimes:pdf', 'max:4096'],
             'doc_health_certificate' => ['nullable', 'file', 'mimes:pdf', 'max:4096'],
+            'doc_parent_consent' => ['nullable', 'file', 'mimes:pdf', 'max:4096'],
             'doc_birth_certificate' => ['nullable', 'file', 'mimes:pdf', 'max:4096'],
             'doc_family_card' => ['nullable', 'file', 'mimes:pdf', 'max:4096'],
             'doc_sku' => ['nullable', 'file', 'mimes:pdf', 'max:4096'],
@@ -243,6 +246,7 @@ class ParticipantForm extends Component
             'doc_kta' => 'Scan KTA',
             'doc_bpjs' => 'Scan BPJS',
             'doc_health_certificate' => 'Scan Surat Keterangan Sehat',
+            'doc_parent_consent' => 'Scan Surat Izin Orang Tua',
             'doc_birth_certificate' => 'Scan Akta Kelahiran',
             'doc_family_card' => 'Scan Kartu Keluarga (KK)',
             'doc_sku' => 'Scan SKU',

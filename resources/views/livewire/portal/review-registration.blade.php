@@ -343,7 +343,7 @@
                         </div>
 
                         {{-- Grid Dokumen Peserta --}}
-                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-px bg-zinc-200/50 dark:bg-zinc-700/30 p-px">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-px bg-zinc-200/50 dark:bg-zinc-700/30 p-px">
                             @foreach(\App\Models\Participant::DOCUMENTS as $key => [$pathCol, $label])
                                 @php $filePath = $participant->{$pathCol}; @endphp
                                 <div class="flex flex-col items-center gap-1.5 bg-white dark:bg-zinc-900 p-2.5 text-center">

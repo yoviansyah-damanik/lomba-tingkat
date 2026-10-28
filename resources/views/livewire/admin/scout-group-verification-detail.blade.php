@@ -273,19 +273,20 @@
                         <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
                             @forelse($patrol->orderedParticipants() as $participant)
                                 @php
-                                    // Hitung kelengkapan dokumen peserta (8 berkas)
+                                    // Hitung kelengkapan dokumen peserta (9 berkas)
                                     $docsCheck = [
                                         $participant->photo_path,
                                         $participant->doc_kta_path,
                                         $participant->doc_bpjs_path,
                                         $participant->doc_health_certificate_path,
+                                        $participant->doc_parent_consent_path,
                                         $participant->doc_birth_certificate_path,
                                         $participant->doc_family_card_path,
                                         $participant->doc_sku_path,
                                         $participant->doc_skk_path,
                                     ];
                                     $uploadedDocsCount = collect($docsCheck)->filter(fn($d) => !empty($d))->count();
-                                    $isFullDocs = $uploadedDocsCount === 8;
+                                    $isFullDocs = $uploadedDocsCount === 9;
                                 @endphp
                                 <tr class="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40">
                                     <td class="px-5 py-2.5 font-semibold text-zinc-900 dark:text-zinc-100">
@@ -325,7 +326,7 @@
                                     </td>
                                     <td class="px-5 py-2.5 text-center">
                                         <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold {{ $isFullDocs ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' : ($uploadedDocsCount > 0 ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300') }}">
-                                            {{ $uploadedDocsCount }}/8 Berkas
+                                            {{ $uploadedDocsCount }}/9 Berkas
                                         </span>
                                     </td>
                                     <td class="px-5 py-2.5 text-right">
@@ -373,6 +374,7 @@
                         ['label' => 'Scan KTA Pramuka', 'path' => $participant->doc_kta_path, 'desc' => 'Kartu Tanda Anggota aktif'],
                         ['label' => 'Scan BPJS / Asuransi', 'path' => $participant->doc_bpjs_path, 'desc' => 'Kartu jaminan kesehatan aktif'],
                         ['label' => 'Surat Keterangan Sehat', 'path' => $participant->doc_health_certificate_path, 'desc' => 'Dari dokter / faskes pemerintah'],
+                        ['label' => 'Surat Izin Orang Tua', 'path' => $participant->doc_parent_consent_path, 'desc' => 'Persetujuan orang tua / wali'],
                         ['label' => 'Scan Akta Kelahiran', 'path' => $participant->doc_birth_certificate_path, 'desc' => 'Akta otentik catatan sipil'],
                         ['label' => 'Scan Kartu Keluarga (KK)', 'path' => $participant->doc_family_card_path, 'desc' => 'Kartu keluarga terbaru'],
                         ['label' => 'Scan SKU Penggalang', 'path' => $participant->doc_sku_path, 'desc' => 'Syarat Kecakapan Umum'],
@@ -431,7 +433,7 @@
                         {{-- Section 1: Seluruh Dokumen Persyaratan yang Diunggah --}}
                         <div>
                             <h4 class="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-3">
-                                1. Seluruh Dokumen Persyaratan Yang Diunggah (8 Berkas)
+                                1. Seluruh Dokumen Persyaratan Yang Diunggah (9 Berkas)
                             </h4>
                             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
                                 @foreach($participantDocsList as $doc)
