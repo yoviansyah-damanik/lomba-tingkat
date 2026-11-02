@@ -27,7 +27,7 @@ return [
     |
     */
 
-    'fee_per_patrol' => (int) env('REGISTRATION_FEE_PER_PATROL', 250000),
+    'fee_per_patrol' => (int) env('REGISTRATION_FEE_PER_PATROL', 350000),
 
     /*
     | Tampilkan pengaturan 2FA dan Passkeys pada halaman keamanan akun.

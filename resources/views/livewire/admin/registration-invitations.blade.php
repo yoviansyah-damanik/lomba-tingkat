@@ -7,6 +7,12 @@
         badge-color="amber"
     >
         <x-slot:actions>
+            <flux:button href="{{ route('admin.registration-invitations.print-slips') }}" target="_blank" icon="printer" variant="subtle">
+                Cetak Surat Undangan
+            </flux:button>
+            <flux:button href="{{ route('admin.registration-invitations.print-recap') }}" target="_blank" icon="document-text" variant="subtle">
+                Cetak Rekap Undangan
+            </flux:button>
             <flux:button wire:click="$dispatch('open-invitation-form')" variant="primary" icon="plus">
                 Tambah Gugus Depan
             </flux:button>

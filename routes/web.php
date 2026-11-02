@@ -5,6 +5,7 @@ use App\Http\Controllers\AttendanceScannerController;
 use App\Http\Controllers\PermissionLetterController;
 use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\PushSubscriptionController;
+use App\Http\Controllers\RegistrationInvitationPrintController;
 use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\RosterPrintController;
 use App\Http\Controllers\ScheduleCalendarController;
@@ -214,6 +215,9 @@ Route::middleware(['auth', 'role'])->group(function () {
 
         // Aparatur Panitia & Dewan Juri (Admin & Superadmin)
         Route::get('/registration-invitations', RegistrationInvitations::class)->name('registration-invitations.index');
+        Route::get('/registration-invitations/print-slips', [RegistrationInvitationPrintController::class, 'printSlips'])->name('registration-invitations.print-slips');
+        Route::get('/registration-invitations/print-recap', [RegistrationInvitationPrintController::class, 'printRecap'])->name('registration-invitations.print-recap');
+        Route::get('/registration-invitations/{id}/print', [RegistrationInvitationPrintController::class, 'printSingle'])->name('registration-invitations.print-single');
         Route::get('/officials', OfficialsManagement::class)->name('officials.index');
     });
 

@@ -108,4 +108,18 @@ class RegistrationInvitation extends Model
     {
         return substr($this->code, 0, 4).'-'.substr($this->code, 4);
     }
+
+    public function maleGroupNumber(): string
+    {
+        $parts = explode('&', $this->group_number);
+
+        return trim($parts[0] ?? $this->group_number);
+    }
+
+    public function femaleGroupNumber(): string
+    {
+        $parts = explode('&', $this->group_number);
+
+        return trim($parts[1] ?? '');
+    }
 }

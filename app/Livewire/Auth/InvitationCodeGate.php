@@ -21,6 +21,13 @@ class InvitationCodeGate extends Component
 
     public string $code = '';
 
+    public function mount(): void
+    {
+        if ($code = request()->query('code')) {
+            $this->code = strtoupper(trim((string) $code));
+        }
+    }
+
     public function verifyCode()
     {
         $this->validate(

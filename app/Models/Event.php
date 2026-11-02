@@ -81,7 +81,7 @@ class Event extends Model
      */
     public function getFeePerPatrol(): int
     {
-        return $this->registration_fee_per_patrol ?? (int) config('registration.fee_per_patrol', 250000);
+        return $this->registration_fee_per_patrol ?? (int) config('registration.fee_per_patrol', 350000);
     }
 
     /**
@@ -130,7 +130,7 @@ class Event extends Model
     public static function activePaymentConfig(): array
     {
         $event = static::where('is_active', true)->first() ?? static::first();
-        $feePerPatrol = $event ? $event->getFeePerPatrol() : (int) config('registration.fee_per_patrol', 250000);
+        $feePerPatrol = $event ? $event->getFeePerPatrol() : (int) config('registration.fee_per_patrol', 350000);
 
         return [
             'fee_per_patrol' => $feePerPatrol,

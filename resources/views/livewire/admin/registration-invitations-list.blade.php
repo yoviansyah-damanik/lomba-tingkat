@@ -72,14 +72,22 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-right">
-                                @unless ($invitation->used_at)
-                                    <flux:button size="xs" variant="danger" icon="trash"
-                                        wire:click="delete('{{ $invitation->id }}')"
-                                        wire:confirm="Hapus undangan untuk {{ $invitation->school_name }}?"
-                                        title="Hapus undangan">
-                                        Hapus
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <flux:button size="xs" variant="subtle" icon="printer"
+                                        href="{{ route('admin.registration-invitations.print-single', $invitation->id) }}"
+                                        target="_blank"
+                                        title="Cetak Surat Undangan">
+                                        Cetak
                                     </flux:button>
-                                @endunless
+                                    @unless ($invitation->used_at)
+                                        <flux:button size="xs" variant="danger" icon="trash"
+                                            wire:click="delete('{{ $invitation->id }}')"
+                                            wire:confirm="Hapus undangan untuk {{ $invitation->school_name }}?"
+                                            title="Hapus undangan">
+                                            Hapus
+                                        </flux:button>
+                                    @endunless
+                                </div>
                             </td>
                         </tr>
                     @empty

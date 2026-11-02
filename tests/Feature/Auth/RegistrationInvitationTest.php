@@ -264,4 +264,57 @@ class RegistrationInvitationTest extends TestCase
 
         $this->actingAs($user)->get(route('admin.registration-invitations.index'))->assertForbidden();
     }
+
+    public function test_admin_can_print_invitation_slips_and_recap(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole(RoleEnum::Admin);
+
+        $invitation = RegistrationInvitation::create([
+            'group_number' => '01-053 & 01-054',
+            'school_name' => 'SMP Negeri 1 Padangsidimpuan',
+            'kwarran_name' => 'Kwarran Padangsidimpuan Utara',
+            'is_active' => true,
+        ]);
+
+        // 1. Cetak seluruh slip
+        $response = $this->actingAs($admin)->get(route('admin.registration-invitations.print-slips', ['raw' => 1]));
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/pdf');
+
+        // 2. Cetak satu slip
+        $singleResponse = $this->actingAs($admin)->get(route('admin.registration-invitations.print-single', ['id' => $invitation->id, 'raw' => 1]));
+        $singleResponse->assertOk();
+        $singleResponse->assertHeader('Content-Type', 'application/pdf');
+
+        // 3. Cetak rekap
+        $recapResponse = $this->actingAs($admin)->get(route('admin.registration-invitations.print-recap', ['raw' => 1]));
+        $recapResponse->assertOk();
+        $recapResponse->assertHeader('Content-Type', 'application/pdf');
+    }
+
+    public function test_invitation_code_gate_mounts_code_from_query(): void
+    {
+        $invitation = RegistrationInvitation::create([
+            'group_number' => '01-053 & 01-054',
+            'school_name' => 'SMP Negeri 1 Padangsidimpuan',
+            'kwarran_name' => 'Kwarran Padangsidimpuan Utara',
+            'is_active' => true,
+        ]);
+
+        $this->get(route('register.scout-group', ['code' => $invitation->code]))
+            ->assertOk()
+            ->assertSee($invitation->code);
+    }
+
+    public function test_registration_invitation_seeder_seeds_official_schools(): void
+    {
+        $this->seed(\Database\Seeders\RegistrationInvitationSeeder::class);
+
+        $this->assertSame(23, RegistrationInvitation::count());
+        $this->assertDatabaseHas('registration_invitations', [
+            'school_name' => 'SMP Negeri 1 Padangsidimpuan',
+            'group_number' => '01-053 & 01-054',
+        ]);
+    }
 }
