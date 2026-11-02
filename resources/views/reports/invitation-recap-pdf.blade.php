@@ -75,20 +75,6 @@
             </tfoot>
         @endif
     </table>
-
-    <table class="signatures" style="width: 100%; margin-top: 24px;">
-        <tr>
-            <td style="width: 50%;"></td>
-            <td style="width: 50%; text-align: center;">
-                <div>Padangsidimpuan, {{ $generatedAt->translatedFormat('d F Y') }}</div>
-                <div style="font-weight: bold; margin-top: 2px;">Panitia Pelaksana LT III Tahun {{ $year }}</div>
-                <div style="font-size: 7.5px; color: #52525b;">Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan</div>
-                <div style="height: 50px;"></div>
-                <div style="font-weight: bold; text-decoration: underline;">PANITIA PELAKSANA LT III</div>
-                <div style="font-size: 7.5px; color: #52525b;">Bidang Administrasi &amp; Pendaftaran</div>
-            </td>
-        </tr>
-    </table>
 </body>
 </html>
 
