@@ -67,7 +67,7 @@ class UserSeeder extends Seeder
             ['username' => ContingentSeeder::GUDEP_ID],
             [
                 'id_number' => ContingentSeeder::GUDEP_ID,
-                'name' => 'Gudep SMP Negeri 1 Padangsidimpuan',
+                'name' => 'Gudep '.ContingentSeeder::school()['school'],
                 'password' => $defaultPassword,
                 'phone_number' => '081234567894',
                 'is_active' => true,

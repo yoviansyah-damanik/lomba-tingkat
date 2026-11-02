@@ -125,10 +125,10 @@
 
     {{-- Ringkasan angka --}}
     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <x-stat-card label="Regu Terdaftar" :value="$scoutGroup->patrols->count()" unit="regu" description="Putra {{ $boysPatrols->count() }} &bull; Putri {{ $girlsPatrols->count() }}" icon="user-group" color="emerald" />
+        <x-stat-card label="Regu Terdaftar" :value="$scoutGroup->patrols->count()" unit="regu" description="Putra {{ $boysPatrols->count() }} • Putri {{ $girlsPatrols->count() }}" icon="user-group" color="emerald" />
         <x-stat-card label="Peserta" :value="$participantsTotal" :unit="'/ '.$participantsTarget" description="Wajib 8 peserta per regu" icon="users" color="indigo" />
         <x-stat-card label="Bindamping" :value="$scoutGroup->chaperones->count()" :unit="'/ '.max(1, count($requiredChaperoneGenders))" description="Sesuai regu putra/putri" icon="user-circle" color="blue" />
-        <x-stat-card label="Berkas Administrasi" :value="collect([$scoutGroup->mandate_letter_path, $scoutGroup->payment_proof_path])->filter()->count()" unit="/ 2" description="Surat tugas &amp; bukti bayar" icon="document-check" color="amber" />
+        <x-stat-card label="Berkas Administrasi" :value="collect([$scoutGroup->mandate_letter_path, $scoutGroup->payment_proof_path])->filter()->count()" unit="/ 2" description="Surat tugas dan bukti bayar" icon="document-check" color="amber" />
     </div>
 
     {{-- Regu putra & putri --}}

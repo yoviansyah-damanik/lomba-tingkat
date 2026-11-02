@@ -44,19 +44,19 @@ class SampleContestSeeder extends Seeder
 
     private const FEMALE_NAMES = ['Aisyah', 'Nabila', 'Salsa', 'Putri', 'Rahma', 'Syifa', 'Zahra', 'Anisa', 'Dinda', 'Fitri', 'Hana', 'Intan', 'Jihan', 'Khalisa', 'Laila', 'Mutiara', 'Nadia', 'Olivia', 'Qonita', 'Rania', 'Sabrina', 'Tiara', 'Umi', 'Vina'];
 
-    /** @var array<int, array{school: string, kwarran: string, boys: string, girls: string}> */
+    /** @var array<int, array{boys: string, girls: string}> Nama regu; sekolah, kwarran, dan nomor gudep diambil berurutan dari data/schools.php setelah gudep contoh (ContingentSeeder) */
     private const GROUPS = [
-        ['school' => 'SMP Negeri 2 Padangsidimpuan', 'kwarran' => 'Kwarran Padangsidimpuan Utara', 'boys' => 'Garuda', 'girls' => 'Melati'],
-        ['school' => 'SMP Negeri 3 Padangsidimpuan', 'kwarran' => 'Kwarran Padangsidimpuan Selatan', 'boys' => 'Elang', 'girls' => 'Mawar'],
-        ['school' => 'SMP Negeri 4 Padangsidimpuan', 'kwarran' => 'Kwarran Padangsidimpuan Batunadua', 'boys' => 'Singa', 'girls' => 'Anggrek'],
-        ['school' => 'SMP Negeri 5 Padangsidimpuan', 'kwarran' => 'Kwarran Padangsidimpuan Hutaimbaru', 'boys' => 'Harimau', 'girls' => 'Dahlia'],
-        ['school' => 'SMP Negeri 6 Padangsidimpuan', 'kwarran' => 'Kwarran Padangsidimpuan Tenggara', 'boys' => 'Kancil', 'girls' => 'Teratai'],
-        ['school' => 'SMP Negeri 7 Padangsidimpuan', 'kwarran' => 'Kwarran Padangsidimpuan Angkola Julu', 'boys' => 'Cendrawasih', 'girls' => 'Tulip'],
-        ['school' => 'MTs Negeri 1 Padangsidimpuan', 'kwarran' => 'Kwarran Padangsidimpuan Utara', 'boys' => 'Merpati', 'girls' => 'Kenanga'],
-        ['school' => 'MTs Negeri 2 Padangsidimpuan', 'kwarran' => 'Kwarran Padangsidimpuan Selatan', 'boys' => 'Rajawali Hitam', 'girls' => 'Seruni'],
-        ['school' => 'SMP Swasta Al-Azhar Padangsidimpuan', 'kwarran' => 'Kwarran Padangsidimpuan Batunadua', 'boys' => 'Macan Tutul', 'girls' => 'Cempaka'],
-        ['school' => 'SMP Swasta Muhammadiyah Padangsidimpuan', 'kwarran' => 'Kwarran Padangsidimpuan Hutaimbaru', 'boys' => 'Banteng', 'girls' => 'Flamboyan'],
-        ['school' => 'SMP Swasta Tri Dharma Padangsidimpuan', 'kwarran' => 'Kwarran Padangsidimpuan Tenggara', 'boys' => 'Beruang', 'girls' => 'Lavender'],
+        ['boys' => 'Garuda', 'girls' => 'Melati'],
+        ['boys' => 'Elang', 'girls' => 'Mawar'],
+        ['boys' => 'Singa', 'girls' => 'Anggrek'],
+        ['boys' => 'Harimau', 'girls' => 'Dahlia'],
+        ['boys' => 'Kancil', 'girls' => 'Teratai'],
+        ['boys' => 'Cendrawasih', 'girls' => 'Tulip'],
+        ['boys' => 'Merpati', 'girls' => 'Kenanga'],
+        ['boys' => 'Rajawali Hitam', 'girls' => 'Seruni'],
+        ['boys' => 'Macan Tutul', 'girls' => 'Cempaka'],
+        ['boys' => 'Banteng', 'girls' => 'Flamboyan'],
+        ['boys' => 'Beruang', 'girls' => 'Lavender'],
     ];
 
     /** @var array<int, array{boys?: array<int, string>, girls?: array<int, string>}> Regu tambahan (indeks GROUPS) untuk gudep yang mengirim lebih dari satu regu sekategori */
@@ -143,10 +143,13 @@ class SampleContestSeeder extends Seeder
      */
     private function seedContingents(): void
     {
-        foreach (self::GROUPS as $i => $row) {
-            $number = $i + 2; // gudep01 sudah ada di ContingentSeeder
-            $male = '01-'.str_pad((string) (($number * 2) - 1), 3, '0', STR_PAD_LEFT);
-            $female = '01-'.str_pad((string) ($number * 2), 3, '0', STR_PAD_LEFT);
+        $schools = require __DIR__.'/data/schools.php';
+
+        foreach (self::GROUPS as $i => $patrols) {
+            $number = $i + 2; // sekolah pertama sudah ada di ContingentSeeder
+            $row = $patrols + $schools[$i + 1];
+            $male = $row['male'];
+            $female = $row['female'];
 
             // ID Gudep G-{no_gudep}; username dan ID akun penanggung jawab persis sama dengan ID Gudep
             $gudepId = ScoutGroup::where('male_group_number', $male)->value('registration_code')
@@ -167,7 +170,7 @@ class SampleContestSeeder extends Seeder
                     'male_group_number' => $male,
                     'female_group_number' => $female,
                     'kwarran_name' => $row['kwarran'],
-                    'address' => 'Jl. Sudirman No. '.($number * 3).', '.$row['kwarran'].', Kota Padangsidimpuan',
+                    'address' => $row['address'].', '.$row['kwarran'].', Kota Padangsidimpuan',
                     'contact_person' => 'Kak '.self::MALE_NAMES[$i].' '.self::SURNAMES[$i % count(self::SURNAMES)].', S.Pd',
                     'contact_phone' => $user->phone_number,
                     'verification_status' => RegistrationStatusEnum::Submitted,

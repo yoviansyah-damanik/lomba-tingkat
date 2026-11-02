@@ -16,7 +16,7 @@ Akun pengguna tidak lagi memakai email. Login cukup dengan **username** dan **ka
 | Panitia | `panitia` |
 | Juri | `juri` |
 | Panitia merangkap Juri | `panitia.juri` |
-| Gugus Depan | `G-01001.01002` (username = ID Gudep) |
+| Gugus Depan | `G-01053.01054` (username = ID Gudep) |
 | Peserta | `peserta` |
 | Bindamping putra | `bindamping` |
 | Bindamping putri | `bindamping.putri` |

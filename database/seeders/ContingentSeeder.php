@@ -19,8 +19,18 @@ use Illuminate\Support\Facades\Hash;
  */
 class ContingentSeeder extends Seeder
 {
-    /** ID Gudep contoh (G-{no_gudep}); juga menjadi username dan ID akun penanggung jawab */
-    public const GUDEP_ID = 'G-01001.01002';
+    /** ID Gudep contoh (G-{no_gudep}) sekolah pertama pada data/schools.php; juga menjadi username dan ID akun penanggung jawab */
+    public const GUDEP_ID = 'G-01053.01054';
+
+    /**
+     * Sekolah pertama pada data resmi (data/schools.php) yang dijadikan gudep contoh
+     *
+     * @return array{school: string, male: string, female: string, kwarran: string, address: string}
+     */
+    public static function school(): array
+    {
+        return (require __DIR__.'/data/schools.php')[0];
+    }
 
     public function run(): void
     {
@@ -30,16 +40,19 @@ class ContingentSeeder extends Seeder
             return;
         }
 
+        $school = self::school();
+
         // 1. Gugus Depan
         $scoutGroup = ScoutGroup::firstOrCreate(
             ['user_id' => $gudepUser->id],
             [
                 'registration_code' => self::GUDEP_ID,
-                'school_name' => 'SMP Negeri 1 Padangsidimpuan',
-                'group_number' => '01-001 & 01-002',
-                'male_group_number' => '01-001',
-                'female_group_number' => '01-002',
-                'address' => 'Jl. Teuku Umar No. 12, Padangsidimpuan Selatan',
+                'school_name' => $school['school'],
+                'group_number' => "{$school['male']} & {$school['female']}",
+                'male_group_number' => $school['male'],
+                'female_group_number' => $school['female'],
+                'kwarran_name' => $school['kwarran'],
+                'address' => $school['address'].', '.$school['kwarran'],
                 'contact_person' => 'Drs. H. M. Siregar',
                 'contact_phone' => '081234567894',
                 'verification_status' => RegistrationStatusEnum::Submitted,
