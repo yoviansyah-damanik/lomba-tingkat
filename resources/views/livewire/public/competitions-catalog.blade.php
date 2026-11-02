@@ -201,17 +201,18 @@
                 $sessions = $c->schedules->where('is_published', true)->sortBy('start_time');
             @endphp
 
-            {{-- Header --}}
-            <div class="relative overflow-hidden bg-linear-to-br from-amber-600 via-amber-500 to-amber-400 px-6 pb-6 pt-7 text-white dark:from-amber-800 dark:via-amber-700 dark:to-amber-600">
-                <div class="pointer-events-none absolute -right-10 -top-10 size-44 rounded-full bg-white/20 blur-2xl"></div>
+            {{-- Header Modal --}}
+            <div class="relative overflow-hidden border-b border-white/10 bg-gradient-to-br from-zinc-950 via-zinc-900 to-amber-950 px-6 pb-6 pt-7 text-white">
+                <div class="pointer-events-none absolute -right-10 -top-10 size-48 rounded-full bg-amber-500/20 blur-3xl"></div>
+                <div class="pointer-events-none absolute -left-10 -bottom-10 size-36 rounded-full bg-amber-600/15 blur-2xl"></div>
                 <div class="relative">
-                    <div class="flex flex-wrap items-center gap-2 text-[11px] font-bold">
-                        <span class="rounded-full bg-zinc-950/80 px-2.5 py-1 font-mono tracking-wider">{{ $c->code }}</span>
-                        <span class="rounded-full bg-white/25 px-2.5 py-1 backdrop-blur-sm">{{ $c->categoryLabel() }}</span>
-                        <span class="rounded-full bg-white/25 px-2.5 py-1 backdrop-blur-sm">{{ $c->participantRangeLabel() }}</span>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="rounded-full bg-amber-500 px-3 py-1 font-mono text-[11px] font-black tracking-wider text-zinc-950 shadow-xs">{{ $c->code }}</span>
+                        <span class="rounded-full border border-amber-400/30 bg-amber-400/15 px-3 py-1 text-[11px] font-semibold text-amber-200 backdrop-blur-sm">{{ $c->categoryLabel() }}</span>
+                        <span class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold text-zinc-100 backdrop-blur-sm">{{ $c->participantRangeLabel() }}</span>
                     </div>
-                    <h3 class="mt-3 text-2xl font-black leading-tight sm:text-3xl">{{ $c->title }}</h3>
-                    <p class="mt-2 max-w-2xl text-xs leading-relaxed text-white/90 sm:text-sm">{{ $c->description }}</p>
+                    <h3 class="mt-3.5 text-2xl font-black leading-tight tracking-tight text-white sm:text-3xl">{{ $c->title }}</h3>
+                    <p class="mt-2.5 max-w-2xl text-xs sm:text-sm leading-relaxed text-zinc-300 font-normal">{{ $c->description }}</p>
                 </div>
             </div>
 
