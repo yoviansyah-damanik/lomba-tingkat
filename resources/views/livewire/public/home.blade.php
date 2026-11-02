@@ -380,4 +380,81 @@
                 </div>
             </div>
         </section>
+
+        {{-- Section Video Tutorial Pendaftaran Gugus Depan --}}
+        <section id="video-tutorial" class="border-b border-zinc-200/80 bg-zinc-900 py-14 text-white dark:border-zinc-800 dark:bg-black">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="mx-auto max-w-3xl text-center">
+                    <div class="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-500/10 px-3.5 py-1 text-xs font-semibold text-amber-300 backdrop-blur-sm">
+                        <flux:icon name="play-circle" class="size-4 text-amber-400" />
+                        Panduan Langkah Demi Langkah
+                    </div>
+                    <h2 class="mt-3 text-2xl font-black tracking-tight sm:text-3xl lg:text-4xl">
+                        Video Tutorial Pendaftaran Gugus Depan
+                    </h2>
+                    <p class="mt-3 text-xs sm:text-sm text-zinc-300 leading-relaxed">
+                        Simak video panduan praktis pendaftaran pangkalan Gugus Depan, pengisian data regu putra/putri, biodata peserta dan pembina pendamping, hingga pengunggahan berkas verifikasi kontingen LT III.
+                    </p>
+                </div>
+
+                {{-- Player Container --}}
+                <div class="mt-8 mx-auto max-w-4xl">
+                    <div class="relative overflow-hidden rounded-3xl border border-white/10 bg-zinc-950 p-2 sm:p-3 shadow-2xl shadow-black/60 ring-1 ring-white/10">
+                        <div class="relative aspect-video w-full overflow-hidden rounded-2xl bg-black">
+                            <video
+                                controls
+                                preload="metadata"
+                                playsinline
+                                class="size-full object-contain"
+                            >
+                                <source src="{{ asset('video/demo.webm') }}" type="video/webm">
+                                Browser Anda tidak mendukung pemutaran video HTML5 webm.
+                            </video>
+                        </div>
+                    </div>
+
+                    {{-- Highlight Poin Penting & Tombol Aksi --}}
+                    <div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <div class="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+                            <div class="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
+                                <flux:icon name="key" class="size-4" />
+                                <span>1. Kode Undangan</span>
+                            </div>
+                            <p class="mt-2 text-xs text-zinc-300 leading-relaxed">
+                                Masukkan 8 karakter kode registrasi unik dari panitia untuk membuka akses formulir pangkalan Gugus Depan.
+                            </p>
+                        </div>
+
+                        <div class="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+                            <div class="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
+                                <flux:icon name="user-group" class="size-4" />
+                                <span>2. Kelola Regu &amp; Peserta</span>
+                            </div>
+                            <p class="mt-2 text-xs text-zinc-300 leading-relaxed">
+                                Bentuk regu penggalang, lengkapi biodata anggota dan bindamping beserta pas foto dan nomor NTA Pramuka.
+                            </p>
+                        </div>
+
+                        <div class="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+                            <div class="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
+                                <flux:icon name="qr-code" class="size-4" />
+                                <span>3. Verifikasi &amp; Kartu QR</span>
+                            </div>
+                            <p class="mt-2 text-xs text-zinc-300 leading-relaxed">
+                                Unggah bukti pembayaran dan berkas mandat, lalu unduh kartu tanda peserta digital bertoken QR resmi setelah disetujui.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+                        <flux:button href="{{ route('register.scout-group') }}" variant="primary" icon="building-library" wire:navigate class="px-6">
+                            Daftarkan Pangkalan Sekarang
+                        </flux:button>
+                        <flux:button href="{{ route('guide') }}" variant="subtle" icon="book-open-text" wire:navigate class="text-zinc-200!">
+                            Buka Panduan Lengkap
+                        </flux:button>
+                    </div>
+                </div>
+            </div>
+        </section>
 </div>

@@ -36,6 +36,43 @@
         @endforeach
     </div>
 
+    {{-- Section Video Tutorial Pendaftaran Gugus Depan --}}
+    <section class="mb-8 overflow-hidden rounded-3xl border border-amber-300/80 bg-gradient-to-br from-amber-50/80 via-white to-amber-100/30 p-5 shadow-sm sm:p-6 dark:border-amber-500/20 dark:from-zinc-900 dark:via-zinc-900 dark:to-amber-950/20">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <span class="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-100/80 px-2.5 py-0.5 text-[11px] font-bold text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/60 dark:text-amber-300">
+                    <flux:icon name="play-circle" class="size-3.5 text-amber-700 dark:text-amber-400" />
+                    Video Panduan Visual
+                </span>
+                <h2 class="mt-2 text-lg font-extrabold text-zinc-900 sm:text-xl dark:text-zinc-100">
+                    Video Tutorial Pendaftaran Gugus Depan
+                </h2>
+                <p class="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+                    Tonton demonstrasi langkah demi langkah aktivasi akun, pembentukan regu penggalang, entri biodata peserta &amp; bindamping, hingga verifikasi berkas.
+                </p>
+            </div>
+            <div class="shrink-0">
+                <flux:button href="{{ route('register.scout-group') }}" variant="primary" icon="building-library" wire:navigate class="text-xs">
+                    Daftar Sekarang
+                </flux:button>
+            </div>
+        </div>
+
+        <div class="mt-4 overflow-hidden rounded-2xl border border-zinc-200 bg-black shadow-lg dark:border-zinc-800">
+            <div class="aspect-video w-full">
+                <video
+                    controls
+                    preload="metadata"
+                    playsinline
+                    class="size-full object-contain"
+                >
+                    <source src="{{ asset('video/demo.webm') }}" type="video/webm">
+                    Browser Anda tidak mendukung pemutaran video HTML5 webm.
+                </video>
+            </div>
+        </div>
+    </section>
+
     <div class="space-y-6">
         {{-- Step 1 --}}
         <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 {{ $activeStep === 1 ? 'ring-2 ring-amber-500/30' : '' }}">

@@ -86,6 +86,19 @@ Route::get('/guide', GuidePage::class)->name('guide');
 Route::get('/leaderboard', LeaderboardPage::class)->name('leaderboard');
 Route::get('/participants', ParticipantsPage::class)->name('participants');
 
+// Video Tutorial Pendaftaran Gugus Depan
+Route::get('/video/demo.webm', function () {
+    $path = public_path('video/demo.webm');
+    if (! file_exists($path)) {
+        $path = resource_path('video/demo.webm');
+    }
+    abort_unless(file_exists($path), 404);
+
+    return response()->file($path, [
+        'Content-Type' => 'video/webm',
+    ]);
+})->name('video.tutorial');
+
 // Phase 9: Web Push Subscriptions & VAPID API
 Route::get('/api/push/vapid-public-key', [PushSubscriptionController::class, 'vapidPublicKey'])->name('push.vapid');
 Route::post('/api/push-subscriptions', [PushSubscriptionController::class, 'subscribe'])->name('push.subscribe');

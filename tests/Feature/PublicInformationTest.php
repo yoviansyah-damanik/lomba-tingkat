@@ -50,6 +50,19 @@ class PublicInformationTest extends TestCase
         $response->assertSee('Sambutan dan Deskripsi Singkat Kegiatan LT III');
         $response->assertSee('Mata Lomba');
         $response->assertSee('Juknis');
+        $response->assertSee('Video Tutorial Pendaftaran Gugus Depan');
+        $response->assertSee('demo.webm');
+    }
+
+    /**
+     * Memastikan video tutorial pendaftaran gugus depan dapat diakses melalui endpoint
+     */
+    public function test_registration_video_tutorial_endpoint_is_accessible(): void
+    {
+        $response = $this->get('/video/demo.webm');
+
+        $response->assertStatus(200);
+        $response->assertHeader('Content-Type', 'video/webm');
     }
 
     /**
@@ -109,6 +122,8 @@ class PublicInformationTest extends TestCase
         $response->assertSee('Panduan Pendaftaran');
         $response->assertSee('Gugus Depan');
         $response->assertSee('Kartu Digital');
+        $response->assertSee('Video Tutorial Pendaftaran Gugus Depan');
+        $response->assertSee('demo.webm');
     }
 
     /**

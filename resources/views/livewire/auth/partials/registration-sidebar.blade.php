@@ -104,10 +104,13 @@
             </a>
         </div>
 
-        <div class="mt-3">
-            <flux:button href="{{ route('guide') }}" wire:navigate icon="book-open-text" variant="subtle" size="sm" class="w-full">
-            Baca Panduan Pendaftaran &amp; Penggunaan
-        </flux:button>
+        <div class="mt-3 space-y-2">
+            <flux:button href="{{ route('guide') }}" wire:navigate icon="play-circle" variant="subtle" size="sm" class="w-full">
+                Video Tutorial Pendaftaran
+            </flux:button>
+            <flux:button href="{{ route('guide') }}" wire:navigate icon="book-open-text" variant="ghost" size="sm" class="w-full">
+                Petunjuk Teknis Lengkap
+            </flux:button>
         </div>
     </div>
 </div>
