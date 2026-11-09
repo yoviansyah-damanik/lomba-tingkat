@@ -167,7 +167,7 @@ class DashboardPanelsTest extends TestCase
     public function test_stat_cards_are_complete_for_each_role(): void
     {
         $expectations = [
-            [RoleEnum::Admin, ['Gudep Terdaftar', 'Menunggu Verifikasi', 'Terverifikasi', 'Perlu Revisi / Ditolak', 'Regu Terdaftar', 'Peserta Penggalang', 'Pembina Pendamping', 'Izin Belum Kembali', 'Sesi Lomba', 'Mata Lomba', 'Presensi Hari Ini', 'Aparatur']],
+            [RoleEnum::Admin, ['Gudep Terdaftar', 'Masih Draft', 'Menunggu Verifikasi', 'Terverifikasi', 'Perlu Revisi / Ditolak', 'Regu Terdaftar', 'Peserta Penggalang', 'Pembina Pendamping', 'Izin Belum Kembali', 'Sesi Lomba', 'Mata Lomba', 'Presensi Hari Ini', 'Aparatur']],
             [RoleEnum::Committee, ['Sesi Presensi Aktif', 'Presensi Hari Ini', 'Sesi Lomba Hari Ini', 'Regu Sah', 'Peserta Terverifikasi', 'Pembina Terverifikasi']],
             [RoleEnum::Judge, ['Sesi Ditugaskan', 'Lomba Akan Datang', 'Sesi Hari Ini', 'Nilai Final Saya', 'Rubrik Juknis Lomba', 'Presensi Pos Aktif']],
         ];
@@ -189,12 +189,20 @@ class DashboardPanelsTest extends TestCase
 
     public function test_admin_cards_split_participants_and_chaperones_by_gender_and_count_officials(): void
     {
-        $boys = \App\Models\Patrol::factory()->create(['gender_category' => 'boys']);
-        $girls = \App\Models\Patrol::factory()->create(['gender_category' => 'girls']);
-        \App\Models\Participant::factory()->count(3)->create(['patrol_id' => $boys->id]);
-        \App\Models\Participant::factory()->count(2)->create(['patrol_id' => $girls->id]);
-        \App\Models\Chaperone::factory()->count(2)->create(['gender' => 'male']);
-        \App\Models\Chaperone::factory()->create(['gender' => 'female']);
+        $group = ScoutGroup::factory()->create(['verification_status' => RegistrationStatusEnum::Verified]);
+        $boys = \App\Models\Patrol::factory()->create(['scout_group_id' => $group->id, 'gender_category' => 'boys', 'status' => RegistrationStatusEnum::Verified]);
+        $girls = \App\Models\Patrol::factory()->create(['scout_group_id' => $group->id, 'gender_category' => 'girls', 'status' => RegistrationStatusEnum::Verified]);
+        \App\Models\Participant::factory()->count(3)->create(['patrol_id' => $boys->id, 'status' => RegistrationStatusEnum::Verified]);
+        \App\Models\Participant::factory()->count(2)->create(['patrol_id' => $girls->id, 'status' => RegistrationStatusEnum::Verified]);
+        \App\Models\Chaperone::factory()->count(2)->create(['scout_group_id' => $group->id, 'gender' => 'male', 'status' => RegistrationStatusEnum::Verified]);
+        \App\Models\Chaperone::factory()->create(['scout_group_id' => $group->id, 'gender' => 'female', 'status' => RegistrationStatusEnum::Verified]);
+
+        // Peserta & bindamping berstatus draft tidak ikut dihitung
+        $draftGroup = ScoutGroup::factory()->create(['verification_status' => RegistrationStatusEnum::Draft]);
+        $draftPatrol = \App\Models\Patrol::factory()->create(['scout_group_id' => $draftGroup->id, 'gender_category' => 'boys', 'status' => RegistrationStatusEnum::Draft]);
+        \App\Models\Participant::factory()->create(['patrol_id' => $draftPatrol->id, 'status' => RegistrationStatusEnum::Draft]);
+        \App\Models\Chaperone::factory()->create(['scout_group_id' => $draftGroup->id, 'gender' => 'male', 'status' => RegistrationStatusEnum::Draft]);
+
         $this->account(RoleEnum::Committee);
         $this->account(RoleEnum::Judge);
         $this->account(RoleEnum::Judge);
@@ -203,7 +211,8 @@ class DashboardPanelsTest extends TestCase
             ->assertOk()
             ->assertSee('3 putra / 2 putri')
             ->assertSee('2 putra / 1 putri')
-            ->assertSee('1 panitia / 2 juri');
+            ->assertSee('1 panitia / 2 juri')
+            ->assertSee('Masih Draft');
     }
 
     public function test_general_rank_cards_for_participant_and_scout_group_are_censored_in_blind_mode(): void

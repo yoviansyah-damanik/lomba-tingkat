@@ -44,18 +44,19 @@
         {{-- Statistik Administrator / Superadmin --}}
         <section class="space-y-3" aria-label="Statistik penyelenggaraan">
             <h3 class="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Pendaftaran Kontingen</h3>
-            <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
                 <x-stat-card label="Gudep Terdaftar" :value="$adminStats['total_groups']" unit="Pangkalan" description="Seluruh status pendaftaran" color="indigo" icon="building-library" action-text="Direktori Pangkalan" href="{{ route('admin.gudep-directory') }}" />
+                <x-stat-card label="Masih Draft" :value="$adminStats['draft_groups']" unit="Gudep" description="Belum diajukan pangkalan" color="neutral" icon="pencil-square" action-text="Antrean Pendaftaran" href="{{ route('admin.scout-groups.index') }}" />
                 <x-stat-card label="Menunggu Verifikasi" :value="$adminStats['pending_count']" unit="Gudep" action-text="Buka Antrean" href="{{ route('admin.scout-groups.index') }}" color="amber" icon="shield-check" />
                 <x-stat-card label="Terverifikasi" :value="$adminStats['verified_groups']" unit="Gudep" description="Kontingen sah" color="emerald" icon="check-badge" />
                 <x-stat-card label="Perlu Revisi / Ditolak" :value="$adminStats['revision_groups']" unit="Gudep" description="Menunggu perbaikan pangkalan" color="orange" icon="exclamation-triangle" />
             </div>
 
-            <h3 class="pt-2 text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Peserta & Pendamping</h3>
+            <h3 class="pt-2 text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Peserta & Pendamping Terverifikasi</h3>
             <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                <x-stat-card label="Regu Terdaftar" :value="$adminStats['total_patrols']" unit="Regu" :description="$adminStats['boys_patrols'].' putra / '.$adminStats['girls_patrols'].' putri'" color="emerald" icon="user-group" />
-                <x-stat-card label="Peserta Penggalang" :value="$adminStats['total_participants']" unit="Orang" :description="$adminStats['boys_participants'].' putra / '.$adminStats['girls_participants'].' putri'" action-text="Direktori Peserta" href="{{ route('admin.participants.index') }}" color="indigo" icon="identification" />
-                <x-stat-card label="Pembina Pendamping" :value="$adminStats['total_chaperones']" unit="Orang" :description="$adminStats['male_chaperones'].' putra / '.$adminStats['female_chaperones'].' putri'" action-text="Direktori Bindamping" href="{{ route('admin.chaperones.index') }}" color="blue" icon="user-circle" />
+                <x-stat-card label="Regu Terdaftar" :value="$adminStats['total_patrols']" unit="Regu Sah" :description="$adminStats['boys_patrols'].' putra / '.$adminStats['girls_patrols'].' putri'" color="emerald" icon="user-group" />
+                <x-stat-card label="Peserta Penggalang" :value="$adminStats['total_participants']" unit="Orang Sah" :description="$adminStats['boys_participants'].' putra / '.$adminStats['girls_participants'].' putri'" action-text="Direktori Peserta" href="{{ route('admin.participants.index') }}" color="indigo" icon="identification" />
+                <x-stat-card label="Pembina Pendamping" :value="$adminStats['total_chaperones']" unit="Orang Sah" :description="$adminStats['male_chaperones'].' putra / '.$adminStats['female_chaperones'].' putri'" action-text="Direktori Bindamping" href="{{ route('admin.chaperones.index') }}" color="blue" icon="user-circle" />
                 <x-stat-card label="Aparatur" :value="$adminStats['officials_count']" unit="Panitia & Juri" :description="$adminStats['committee_count'].' panitia / '.$adminStats['judge_count'].' juri'" action-text="Kelola Aparatur" href="{{ route('admin.officials.index') }}" color="purple" icon="user-group" />
             </div>
 

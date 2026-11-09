@@ -49,20 +49,47 @@ class Dashboard extends Component
         $groupsByStatus = ScoutGroup::selectRaw('verification_status, count(*) as total')->groupBy('verification_status')->pluck('total', 'verification_status');
         $count = fn (RegistrationStatusEnum $status) => (int) ($groupsByStatus[$status->value] ?? 0);
 
+        // Basis data terverifikasi (sah) untuk Regu, Peserta, dan Bindamping
+        $verifiedPatrolQuery = Patrol::query()
+            ->where(function ($q) {
+                $q->where('patrols.status', RegistrationStatusEnum::Verified)
+                    ->orWhereHas('scoutGroup', fn ($sg) => $sg->where('verification_status', RegistrationStatusEnum::Verified));
+            });
+
+        $verifiedParticipantQuery = Participant::query()
+            ->where(function ($q) {
+                $q->where('participants.status', RegistrationStatusEnum::Verified)
+                    ->orWhereHas('patrol.scoutGroup', fn ($sg) => $sg->where('verification_status', RegistrationStatusEnum::Verified));
+            });
+
+        $verifiedChaperoneQuery = Chaperone::query()
+            ->where(function ($q) {
+                $q->where('chaperones.status', RegistrationStatusEnum::Verified)
+                    ->orWhereHas('scoutGroup', fn ($sg) => $sg->where('verification_status', RegistrationStatusEnum::Verified));
+            });
+
         return [
+            'total_groups' => (int) $groupsByStatus->sum(),
+            'draft_groups' => $count(RegistrationStatusEnum::Draft),
             'pending_count' => $count(RegistrationStatusEnum::Submitted),
             'verified_groups' => $count(RegistrationStatusEnum::Verified),
             'revision_groups' => $count(RegistrationStatusEnum::NeedsRevision) + $count(RegistrationStatusEnum::Rejected),
-            'total_groups' => $groupsByStatus->sum(),
-            'total_patrols' => Patrol::count(),
-            'boys_patrols' => Patrol::where('gender_category', PatrolGenderEnum::Boys)->count(),
-            'girls_patrols' => Patrol::where('gender_category', PatrolGenderEnum::Girls)->count(),
-            'total_participants' => Participant::count(),
-            'boys_participants' => Participant::whereHas('patrol', fn ($q) => $q->where('gender_category', PatrolGenderEnum::Boys))->count(),
-            'girls_participants' => Participant::whereHas('patrol', fn ($q) => $q->where('gender_category', PatrolGenderEnum::Girls))->count(),
-            'total_chaperones' => Chaperone::count(),
-            'male_chaperones' => Chaperone::where('gender', 'male')->count(),
-            'female_chaperones' => Chaperone::where('gender', 'female')->count(),
+
+            // Regu terverifikasi
+            'total_patrols' => (clone $verifiedPatrolQuery)->count(),
+            'boys_patrols' => (clone $verifiedPatrolQuery)->where('gender_category', PatrolGenderEnum::Boys)->count(),
+            'girls_patrols' => (clone $verifiedPatrolQuery)->where('gender_category', PatrolGenderEnum::Girls)->count(),
+
+            // Peserta terverifikasi
+            'total_participants' => (clone $verifiedParticipantQuery)->count(),
+            'boys_participants' => (clone $verifiedParticipantQuery)->whereHas('patrol', fn ($q) => $q->where('gender_category', PatrolGenderEnum::Boys))->count(),
+            'girls_participants' => (clone $verifiedParticipantQuery)->whereHas('patrol', fn ($q) => $q->where('gender_category', PatrolGenderEnum::Girls))->count(),
+
+            // Pembina pendamping terverifikasi
+            'total_chaperones' => (clone $verifiedChaperoneQuery)->count(),
+            'male_chaperones' => (clone $verifiedChaperoneQuery)->where('gender', 'male')->count(),
+            'female_chaperones' => (clone $verifiedChaperoneQuery)->where('gender', 'female')->count(),
+
             'committee_count' => User::whereHas('roles', fn ($q) => $q->where('name', RoleEnum::Committee->value))->count(),
             'judge_count' => User::whereHas('roles', fn ($q) => $q->where('name', RoleEnum::Judge->value))->count(),
             'officials_count' => User::whereHas('roles', fn ($q) => $q->whereIn('name', [RoleEnum::Committee->value, RoleEnum::Judge->value]))->count(),
@@ -95,9 +122,18 @@ class Dashboard extends Component
             'total_sessions' => AttendanceSession::accessibleBy($this->user)->count(),
             'active_sessions' => AttendanceSession::accessibleBy($this->user)->where('is_active', true)->count(),
             'attendances_today' => Attendance::whereHas('session', fn ($q) => $q->accessibleBy($this->user))->whereDate('scanned_at', today())->count(),
-            'total_patrols_verified' => Patrol::where('status', RegistrationStatusEnum::Verified)->count(),
-            'verified_participants' => Participant::where('status', RegistrationStatusEnum::Verified)->count(),
-            'verified_chaperones' => Chaperone::where('status', RegistrationStatusEnum::Verified)->count(),
+            'total_patrols_verified' => Patrol::where(function ($q) {
+                $q->where('status', RegistrationStatusEnum::Verified)
+                    ->orWhereHas('scoutGroup', fn ($sg) => $sg->where('verification_status', RegistrationStatusEnum::Verified));
+            })->count(),
+            'verified_participants' => Participant::where(function ($q) {
+                $q->where('status', RegistrationStatusEnum::Verified)
+                    ->orWhereHas('patrol.scoutGroup', fn ($sg) => $sg->where('verification_status', RegistrationStatusEnum::Verified));
+            })->count(),
+            'verified_chaperones' => Chaperone::where(function ($q) {
+                $q->where('status', RegistrationStatusEnum::Verified)
+                    ->orWhereHas('scoutGroup', fn ($sg) => $sg->where('verification_status', RegistrationStatusEnum::Verified));
+            })->count(),
             'schedules_today' => CompetitionSchedule::published()->where('status', '!=', 'cancelled')->whereDate('start_time', today())->count(),
             'live_schedules' => CompetitionSchedule::published()->where('status', 'in_progress')->count(),
         ];
