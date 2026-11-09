@@ -2,6 +2,7 @@
 
 namespace Database\Seeders\Support;
 
+use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 
 /**
@@ -35,9 +36,9 @@ class LiveContest
         return (int) $first->diffInDays(Carbon::now(self::TIMEZONE)->startOfDay(), false);
     }
 
-    public static function shift(Carbon|string $time): Carbon
+    public static function shift(CarbonInterface|string $time): CarbonInterface
     {
-        $time = $time instanceof Carbon ? $time->copy() : Carbon::parse($time, self::TIMEZONE);
+        $time = $time instanceof CarbonInterface ? $time->copy() : Carbon::parse($time, self::TIMEZONE);
 
         return $time->addDays(self::dayOffset());
     }
@@ -50,9 +51,9 @@ class LiveContest
      * selama 3 hari (00:00 hari ini s.d. 23:59 hari ketiga), sehingga juri dapat menilai kapan pun
      * seeder dijalankan. Lingkungan lain memakai jadwal resmi.
      *
-     * @return array{0: Carbon, 1: Carbon}
+     * @return array{0: CarbonInterface, 1: CarbonInterface}
      */
-    public static function window(Carbon $start, Carbon $end): array
+    public static function window(CarbonInterface $start, CarbonInterface $end): array
     {
         if (! self::active()) {
             return [$start, $end];
@@ -66,7 +67,7 @@ class LiveContest
     /**
      * Batas akhir pendaftaran: pada local/dev pendaftaran ditutup hari ini
      */
-    public static function registrationEnd(Carbon $official): Carbon
+    public static function registrationEnd(CarbonInterface $official): CarbonInterface
     {
         return self::active() ? Carbon::now(self::TIMEZONE)->subMinute() : $official;
     }

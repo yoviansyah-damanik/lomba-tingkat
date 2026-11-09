@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\RoleEnum;
+use App\Jobs\SendOfficialRegisteredPush;
 use App\Livewire\Admin\OfficialsManagement;
 use App\Models\Role;
 use App\Models\User;
@@ -154,5 +155,25 @@ class AdminOfficialsLivewireTest extends TestCase
         $this->assertDatabaseMissing('users', [
             'id' => $userId,
         ]);
+    }
+
+    public function test_creating_official_dispatches_notification_to_admin_and_superadmin(): void
+    {
+        \Illuminate\Support\Facades\Queue::fake();
+
+        $this->actingAs($this->admin);
+
+        Livewire::test(OfficialsManagement::class)
+            ->call('openCreateModal')
+            ->set('name', 'Kak Hendra Juri')
+            ->set('selectedRoles', ['judge'])
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $created = User::where('name', 'Kak Hendra Juri')->firstOrFail();
+
+        \Illuminate\Support\Facades\Queue::assertPushed(SendOfficialRegisteredPush::class, function ($job) use ($created) {
+            return $job->userId === $created->id;
+        });
     }
 }

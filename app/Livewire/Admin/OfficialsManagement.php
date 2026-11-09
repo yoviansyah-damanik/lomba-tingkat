@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Enums\RoleEnum;
+use App\Jobs\SendOfficialRegisteredPush;
 use App\Models\Role;
 use App\Models\User;
 use Flux\Flux;
@@ -246,6 +247,9 @@ class OfficialsManagement extends Component
             if ($designateAdmin) {
                 $official->assignRole(RoleEnum::Admin);
             }
+
+            // Notifikasi pendaftaran aparatur ke Administrator dan Superadmin
+            SendOfficialRegisteredPush::dispatch($official->id);
 
             Flux::toast(variant: 'success', heading: 'Berhasil', text: "Aparatur {$official->name} berhasil didaftarkan dengan ID {$official->id_number}.");
         }

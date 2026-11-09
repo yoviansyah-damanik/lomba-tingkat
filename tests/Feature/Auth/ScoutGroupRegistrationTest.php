@@ -399,7 +399,7 @@ class ScoutGroupRegistrationTest extends TestCase
         Queue::assertPushed(SendScoutGroupRegisteredPush::class, fn ($job) => $job->scoutGroupId === $group->id);
     }
 
-    public function test_registered_push_job_targets_admin_role_only(): void
+    public function test_registered_push_job_targets_superadmin_and_admin_roles(): void
     {
         $user = User::factory()->create();
         $group = ScoutGroup::create([
@@ -414,14 +414,23 @@ class ScoutGroupRegistrationTest extends TestCase
             'verification_status' => RegistrationStatusEnum::Draft,
         ]);
 
-        $this->mock(WebPushService::class, function ($mock) {
+        $rolesNotified = [];
+
+        $this->mock(WebPushService::class, function ($mock) use (&$rolesNotified) {
             $mock->shouldReceive('broadcastNotification')
-                ->once()
-                ->withArgs(fn ($payload, $role) => $role === RoleEnum::Admin->value
-                    && $payload['title'] === 'Pendaftaran Gugus Depan Baru')
-                ->andReturn(['total' => 1, 'sent' => 1, 'failed' => 0, 'expired' => 0, 'target_role' => 'admin']);
+                ->twice()
+                ->withArgs(function ($payload, $role) use (&$rolesNotified) {
+                    $rolesNotified[] = $role;
+
+                    return in_array($role, [RoleEnum::Superadmin->value, RoleEnum::Admin->value], true)
+                        && $payload['title'] === 'Pendaftaran Gugus Depan Baru';
+                })
+                ->andReturn(['total' => 1, 'sent' => 1, 'failed' => 0, 'expired' => 0]);
         });
 
         (new SendScoutGroupRegisteredPush($group->id))->handle(app(WebPushService::class));
+
+        $this->assertContains(RoleEnum::Superadmin->value, $rolesNotified);
+        $this->assertContains(RoleEnum::Admin->value, $rolesNotified);
     }
 }

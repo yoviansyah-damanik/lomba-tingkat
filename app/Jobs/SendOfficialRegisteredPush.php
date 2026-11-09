@@ -34,13 +34,18 @@ class SendOfficialRegisteredPush implements ShouldQueue
             ->map(fn (string $role) => match ($role) {
                 RoleEnum::Committee->value => 'Panitia',
                 RoleEnum::Judge->value => 'Dewan Juri',
+                RoleEnum::Admin->value => 'Administrator',
                 default => $role,
             })
             ->implode(' & ');
 
+        $body = $official->is_active
+            ? sprintf('%s (%s) telah didaftarkan sebagai %s.', $official->name, $official->id_number, $roles)
+            : sprintf('%s (%s) mendaftar sebagai %s dan menunggu persetujuan.', $official->name, $official->id_number, $roles);
+
         $payload = [
             'title' => 'Pendaftaran Aparatur Baru',
-            'body' => sprintf('%s (%s) mendaftar sebagai %s dan menunggu persetujuan.', $official->name, $official->id_number, $roles),
+            'body' => $body,
             'url' => route('admin.officials.index'),
             'tag' => 'lt3-official-registration-'.$official->id,
         ];
