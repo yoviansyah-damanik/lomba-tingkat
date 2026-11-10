@@ -82,7 +82,7 @@ class PdfService
     /**
      * Render view menjadi isi berkas PDF
      */
-    public function render(string $view, array $data = [], string $orientation = 'portrait'): string
+    public function render(string $view, array $data = [], string $orientation = 'portrait', string|array $paper = 'A4', bool $withFooter = true): string
     {
         $dompdf = new Dompdf((new Options)
             ->set('isRemoteEnabled', false)
@@ -91,11 +91,13 @@ class PdfService
             ->set('defaultFont', 'DejaVu Sans'));
 
         $dompdf->loadHtml(view($view, $data)->render());
-        $dompdf->setPaper('A4', $orientation);
+        $dompdf->setPaper($paper, $orientation);
         $dompdf->render();
 
-        $printedAt = now()->timezone('Asia/Jakarta');
-        $this->drawFooter($dompdf, $printedAt->format('d/m/Y H:i:s').' WIB', $this->uniqueNumber($printedAt));
+        if ($withFooter) {
+            $printedAt = now()->timezone('Asia/Jakarta');
+            $this->drawFooter($dompdf, $printedAt->format('d/m/Y H:i:s').' WIB', $this->uniqueNumber($printedAt));
+        }
 
         return $dompdf->output();
     }
@@ -103,18 +105,26 @@ class PdfService
     /**
      * Respons PDF: tampil langsung (pratinjau) atau diunduh bila $download true
      */
-    public function response(string $view, array $data, string $filename, bool $download = false, string $orientation = 'portrait'): Response
-    {
+    public function response(
+        string $view,
+        array $data,
+        string $filename,
+        bool $download = false,
+        string $orientation = 'portrait',
+        string|array $paper = 'A4',
+        bool $withFooter = true
+    ): Response {
         if ($this->wantsPreviewPage($download)) {
             return response(view('reports.pdf-preview', [
-                'title' => str_replace('_', ' ', pathinfo($filename, PATHINFO_FILENAME)),
+                'title' => $data['title'] ?? ucwords(str_replace(['_', '-'], ' ', pathinfo($filename, PATHINFO_FILENAME))),
+                'paper' => is_string($paper) ? strtoupper($paper) : 'Custom',
                 'pdfUrl' => request()->fullUrlWithQuery(['raw' => 1]),
                 'downloadUrl' => request()->fullUrlWithQuery(['download' => 1, 'raw' => null]),
                 'backUrl' => null,
             ])->render(), 200, self::VARY_HEADERS);
         }
 
-        return response($this->render($view, $data, $orientation), 200, [
+        return response($this->render($view, $data, $orientation, $paper, $withFooter), 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => ($download ? 'attachment' : 'inline').'; filename="'.$filename.'"',
         ] + self::VARY_HEADERS);

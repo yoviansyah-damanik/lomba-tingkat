@@ -4,7 +4,14 @@
             NPP Regu {{ $gender === 'boys' ? 'Putra' : 'Putri' }}
             <span class="ml-1 text-xs font-medium text-zinc-500">({{ $patrols->count() }})</span>
         </h3>
-        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Cari NPP, regu, atau pangkalan" class="ml-auto max-w-xs" />
+        <div class="ml-auto flex items-center gap-2">
+            <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Cari NPP, regu, pangkalan" class="max-w-xs" />
+            @if ($patrols->isNotEmpty())
+                <flux:button href="{{ route('admin.npp.print-bibs', ['gender' => $gender]) }}" target="_blank" size="sm" variant="subtle" icon="printer">
+                    Cetak No. Punggung (A5)
+                </flux:button>
+            @endif
+        </div>
     </div>
 
     <div class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
@@ -15,6 +22,7 @@
                         <th class="py-3 pl-5 pr-3">NPP</th>
                         <th class="px-3 py-3">Regu</th>
                         <th class="px-3 py-3">Gudep / Pangkalan</th>
+                        <th class="py-3 pr-5 text-right">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -28,10 +36,15 @@
                                 {{ $patrol->scoutGroup?->school_name ?? '-' }}
                                 <span class="block text-[11px] text-zinc-400">Gudep {{ $patrol->group_number }}</span>
                             </td>
+                            <td class="py-2.5 pr-5 text-right">
+                                <flux:button href="{{ route('admin.npp.print-bibs', ['patrol_id' => $patrol->id]) }}" target="_blank" size="xs" variant="ghost" icon="printer">
+                                    Cetak
+                                </flux:button>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="px-5 py-10 text-center text-xs text-zinc-500">Belum ada NPP yang dibuat.</td>
+                            <td colspan="4" class="px-5 py-10 text-center text-xs text-zinc-500">Belum ada NPP yang dibuat.</td>
                         </tr>
                     @endforelse
                 </tbody>

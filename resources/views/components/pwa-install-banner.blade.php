@@ -1,3 +1,5 @@
+@props(['embedded' => false])
+
 <div
     x-data="{
         deferredPrompt: null,
@@ -148,7 +150,7 @@
         }
     }"
     x-effect="window.__pwaBannerVisible = showInstallBanner; window.dispatchEvent(new CustomEvent('pwa-banner-change'))"
-    class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 max-w-sm sm:max-w-md w-[calc(100%-2rem)] sm:w-auto pointer-events-none print:hidden"
+    class="{{ $embedded ? 'pointer-events-auto w-full' : 'fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 max-w-sm sm:max-w-md w-[calc(100%-2rem)] sm:w-auto pointer-events-none print:hidden' }}"
 >
     {{-- Notifikasi Mengambang Pasang Aplikasi PWA --}}
     <div
@@ -160,7 +162,7 @@
         x-transition:leave="transition ease-in duration-200"
         x-transition:leave-start="opacity-100 translate-y-0 scale-100"
         x-transition:leave-end="opacity-0 translate-y-4 scale-95"
-        class="relative pointer-events-auto overflow-hidden rounded-3xl border border-amber-300/80 bg-white/95 p-4 sm:p-5 shadow-2xl backdrop-blur-md dark:border-amber-500/30 dark:bg-zinc-900/95 ring-1 ring-black/5 dark:ring-white/10"
+        class="relative pointer-events-auto w-full overflow-hidden rounded-2xl sm:rounded-3xl border border-amber-300/80 bg-white/95 p-3.5 sm:p-5 shadow-xl sm:shadow-2xl backdrop-blur-md dark:border-amber-500/30 dark:bg-zinc-900/95 ring-1 ring-black/5 dark:ring-white/10"
     >
         {{-- Efek Ambient Glow --}}
         <div class="absolute -right-8 -top-8 size-28 rounded-full bg-amber-400/15 blur-2xl pointer-events-none"></div>
@@ -169,16 +171,16 @@
         <button
             type="button"
             x-on:click="dismissBanner()"
-            class="absolute top-3.5 right-3.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition cursor-pointer p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            class="absolute top-3 right-3 sm:top-3.5 sm:right-3.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition cursor-pointer p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
             title="Tutup notifikasi"
         >
             <flux:icon name="x-mark" class="size-4" />
         </button>
 
-        <div class="flex items-start gap-3.5 pr-6">
+        <div class="flex items-start gap-3 sm:gap-3.5 pr-5 sm:pr-6">
             {{-- Ikon Aplikasi --}}
-            <div class="flex size-11 sm:size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-md shadow-amber-500/20">
-                <flux:icon name="device-phone-mobile" class="size-6" />
+            <div class="flex size-10 sm:size-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-md shadow-amber-500/20">
+                <flux:icon name="device-phone-mobile" class="size-5 sm:size-6" />
             </div>
 
             <div class="flex-1 min-w-0">
@@ -194,14 +196,14 @@
                 <h4 class="text-xs sm:text-sm font-extrabold text-zinc-900 dark:text-zinc-100 leading-snug">
                     Pasang Aplikasi LT III di Layar Utama (Homescreen)
                 </h4>
-                <p class="mt-1 text-[11px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                <p class="mt-1 text-[11px] text-zinc-600 dark:text-zinc-400 leading-relaxed line-clamp-2 sm:line-clamp-none">
                     Akses lebih cepat dengan mode offline terintegrasi tanpa perlu membuka browser berulang kali.
                 </p>
             </div>
         </div>
 
         {{-- Bilah Tombol Aksi --}}
-        <div class="mt-3.5 flex items-center justify-end gap-2 pt-2.5 border-t border-zinc-100 dark:border-zinc-800/80">
+        <div class="mt-3 sm:mt-3.5 flex items-center justify-end gap-2 pt-2 sm:pt-2.5 border-t border-zinc-100 dark:border-zinc-800/80">
             <flux:button
                 variant="subtle"
                 size="sm"

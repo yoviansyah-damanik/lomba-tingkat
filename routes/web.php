@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\AdminVerificationController;
 use App\Http\Controllers\AttendanceScannerController;
+use App\Http\Controllers\CertificateController;
+use App\Http\Controllers\PatrolBibPrintController;
 use App\Http\Controllers\PermissionLetterController;
 use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\PushSubscriptionController;
@@ -13,6 +15,7 @@ use App\Http\Controllers\ScoutGroupPortalController;
 use App\Http\Controllers\ZipExportController;
 use App\Livewire\Admin\AnnouncementsManagement;
 use App\Livewire\Admin\AssessmentsAudit;
+use App\Livewire\Admin\Certificates\Settings as CertificateSettings;
 use App\Livewire\Admin\ChaperoneDetail;
 use App\Livewire\Admin\ChaperonesDirectory;
 use App\Livewire\Admin\CompetitionsManagement;
@@ -64,6 +67,8 @@ use App\Livewire\Portal\TeamAssessment;
 use App\Livewire\Portal\UpcomingSchedules;
 use App\Livewire\Public\AnnouncementShow;
 use App\Livewire\Public\AnnouncementsList;
+use App\Livewire\Public\CertificatesPage;
+use App\Livewire\Public\CertificateVerification;
 use App\Livewire\Public\CompetitionsCatalog;
 use App\Livewire\Public\CredentialVerification;
 use App\Livewire\Public\GuidePage;
@@ -86,6 +91,10 @@ Route::get('/schedules/{scheduleId}/calendar.ics', [ScheduleCalendarController::
 Route::get('/guide', GuidePage::class)->name('guide');
 Route::get('/leaderboard', LeaderboardPage::class)->name('leaderboard');
 Route::get('/participants', ParticipantsPage::class)->name('participants');
+
+// Penerbitan & Verifikasi E-Sertifikat Resmi (Livewire 4 SPA)
+Route::get('/certificates', CertificatesPage::class)->name('certificates.index');
+Route::get('/certificates/verify/{id}', CertificateVerification::class)->name('certificates.verify');
 
 // Video Tutorial Pendaftaran Gugus Depan
 Route::get('/video/demo.webm', function () {
@@ -133,6 +142,12 @@ Route::middleware(['auth', 'role'])->group(function () {
     Route::get('/digital-cards/patrol/{patrolId}/batch', PatrolBatch::class)->name('digital-cards.patrol.batch');
     Route::get('/digital-cards/scout-group/{scoutGroupId}/chaperones/batch', ChaperoneBatch::class)->name('digital-cards.chaperone.batch');
     Route::get('/digital-cards/scout-group/{scoutGroupId}/batch', ScoutGroupBatch::class)->name('digital-cards.scout-group.batch');
+
+    // Unduh E-Sertifikat Resmi (Akun Terkait & Panitia)
+    Route::get('/certificates/my', [CertificateController::class, 'myCertificate'])->name('certificates.my');
+    Route::get('/certificates/download/participant/{participant}', [CertificateController::class, 'downloadParticipant'])->name('certificates.download.participant');
+    Route::get('/certificates/download/chaperone/{chaperone}', [CertificateController::class, 'downloadChaperone'])->name('certificates.download.chaperone');
+    Route::get('/certificates/download/official/{official}/{role}', [CertificateController::class, 'downloadOfficial'])->name('certificates.download.official');
 
     // Verifikasi identitas lewat scan QR: Administrator (termasuk Superadmin) dan Panitia
     Route::middleware('role:admin|committee')->prefix('admin')->name('admin.')->group(function () {
@@ -186,6 +201,7 @@ Route::middleware(['auth', 'role'])->group(function () {
 
         // Generate Nomor Pendaftaran Peserta (NPP) setelah pendaftaran ditutup
         Route::get('/npp', NppGeneration::class)->name('npp.index');
+        Route::get('/npp/print-bibs', [PatrolBibPrintController::class, 'printBibs'])->name('npp.print-bibs');
 
         // Tindakan Keputusan Verifikasi Kontingen
 
@@ -219,6 +235,10 @@ Route::middleware(['auth', 'role'])->group(function () {
         Route::get('/registration-invitations/print-recap', [RegistrationInvitationPrintController::class, 'printRecap'])->name('registration-invitations.print-recap');
         Route::get('/registration-invitations/{id}/print', [RegistrationInvitationPrintController::class, 'printSingle'])->name('registration-invitations.print-single');
         Route::get('/officials', OfficialsManagement::class)->name('officials.index');
+
+        // Konfigurasi & Pratinjau Template E-Sertifikat (Livewire 4 SPA)
+        Route::get('/certificates/settings', CertificateSettings::class)->name('certificates.settings');
+        Route::get('/certificates/preview/{role}', [CertificateController::class, 'previewSample'])->name('certificates.preview');
     });
 
     // Superadmin: audit penilaian, tata kelola pengguna & peran, konfigurasi sistem
@@ -283,6 +303,7 @@ Route::middleware(['auth', 'role'])->group(function () {
         // Patrols & participants (Livewire 4 SPA)
         Route::get('/patrols', PatrolsManagement::class)->name('patrols');
         Route::get('/patrols/{patrolId}/form-01', [ScoutGroupPortalController::class, 'form01Print'])->name('patrols.form-01');
+        Route::get('/patrols/{patrolId}/bib', [PatrolBibPrintController::class, 'printBibs'])->name('patrols.bib');
         Route::get('/patrols/{patrolId}/participants/create', ParticipantForm::class)->name('participants.create');
         Route::get('/participants/{id}', App\Livewire\Portal\ParticipantDetail::class)->name('participants.show');
         Route::get('/participants/{id}/edit', ParticipantForm::class)->name('participants.edit');

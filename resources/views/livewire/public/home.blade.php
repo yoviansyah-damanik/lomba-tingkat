@@ -38,7 +38,40 @@
                                 <flux:icon :name="$registrationOpen ? 'lock-open' : 'lock-closed'" class="size-3.5" />
                                 Pendaftaran {{ $registrationOpen ? 'Dibuka' : 'Ditutup' }}
                             </span>
+                            @if ($event?->is_certificate_published)
+                                <a href="{{ route('certificates.index') }}" wire:navigate class="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-200 backdrop-blur-sm hover:bg-amber-500/30 transition-colors">
+                                    <flux:icon name="academic-cap" class="size-3.5 text-amber-300" />
+                                    E-Sertifikat Diterbitkan
+                                </a>
+                            @endif
                         </div>
+
+                        @if ($event?->is_certificate_published)
+                            {{-- Pemberitahuan Resmi Penerbitan E-Sertifikat --}}
+                            <div class="rounded-2xl border border-amber-500/40 bg-amber-950/40 p-4 sm:p-5 backdrop-blur-md shadow-lg">
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3.5">
+                                    <div class="flex items-start gap-3">
+                                        <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs">
+                                            <flux:icon name="academic-cap" class="size-6" />
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center gap-2">
+                                                <span class="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300 border border-amber-400/30">Pengumuman Resmi</span>
+                                                <h3 class="text-sm sm:text-base font-bold text-white">Penerbitan E-Sertifikat Telah Dibuka</h3>
+                                            </div>
+                                            <p class="text-xs text-amber-100/80 mt-1 leading-relaxed">
+                                                Peserta, Pembina Pendamping, Panitia, dan Dewan Juri dapat mengunduh e-sertifikat resmi melalui dasbor akun masing-masing atau laman sertifikat.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="shrink-0">
+                                        <flux:button href="{{ route('certificates.index') }}" wire:navigate size="sm" variant="primary" icon="arrow-down-tray">
+                                            Unduh E-Sertifikat
+                                        </flux:button>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
 
                         <div>
                             <p class="text-xs font-bold uppercase tracking-[0.25em] text-amber-400">Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan</p>
@@ -75,6 +108,9 @@
                             <flux:button href="{{ route('competitions') }}" wire:navigate icon="document-text">Mata Lomba &amp; Juknis</flux:button>
                             <flux:button href="{{ route('schedules') }}" wire:navigate icon="calendar-days" variant="ghost" class="text-zinc-200!">Jadwal</flux:button>
                             <flux:button href="{{ route('guide') }}" wire:navigate icon="book-open-text" variant="ghost" class="text-zinc-200!">Panduan</flux:button>
+                            @if ($event?->is_certificate_published)
+                                <flux:button href="{{ route('certificates.index') }}" wire:navigate icon="academic-cap" variant="ghost" class="text-amber-300!">E-Sertifikat</flux:button>
+                            @endif
                         </div>
                     </div>
 

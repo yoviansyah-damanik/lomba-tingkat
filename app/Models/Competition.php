@@ -28,6 +28,8 @@ class Competition extends Model
         'guidelines_pdf_path',
         'guidelines_text',
         'scoring_formula',
+        'is_mandatory',
+        'allows_patrol_inspection',
         'is_published',
     ];
 
@@ -36,8 +38,26 @@ class Competition extends Model
         return [
             'min_participants' => 'integer',
             'max_participants' => 'integer',
+            'is_mandatory' => 'boolean',
+            'allows_patrol_inspection' => 'boolean',
             'is_published' => 'boolean',
         ];
+    }
+
+    /**
+     * Memeriksa apakah mata lomba ini wajib (mandatory) diikuti seluruh regu
+     */
+    public function isMandatory(): bool
+    {
+        return (bool) $this->is_mandatory;
+    }
+
+    /**
+     * Memeriksa apakah juri diperbolehkan meninjau seluruh data dan berkas administrasi regu
+     */
+    public function allowsPatrolInspection(): bool
+    {
+        return (bool) $this->allows_patrol_inspection;
     }
 
     /**

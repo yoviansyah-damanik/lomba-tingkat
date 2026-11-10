@@ -12,7 +12,7 @@
     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 bg-white px-4 py-3 shadow-xs sm:px-6">
         <div class="flex min-w-0 items-center gap-3">
             <span class="shrink-0 rounded-lg bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-900">PRATINJAU PDF</span>
-            <span class="truncate text-xs font-medium text-zinc-600">{{ $title }} (A4)</span>
+            <span class="truncate text-xs font-medium text-zinc-600">{{ $title }} ({{ $paper ?? 'A4' }})</span>
         </div>
 
         <div class="flex items-center gap-2">

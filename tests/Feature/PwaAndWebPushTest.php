@@ -227,15 +227,20 @@ class PwaAndWebPushTest extends TestCase
         $publicResponse = $this->get('/');
         $publicResponse->assertOk();
         $publicResponse->assertSee('Pasang Aplikasi LT III di Layar Utama (Homescreen)');
+        $publicResponse->assertSee('Aktifkan Notifikasi Aplikasi LT III');
         $publicResponse->assertSee('Akses lebih cepat dengan mode offline terintegrasi tanpa perlu membuka browser berulang kali.');
         $publicResponse->assertSee('fixed bottom-4 right-4');
+        $publicResponse->assertDontSee('fixed bottom-4 left-4');
 
         // 2. Tampilan dasbor terotentikasi
         $admin = User::whereHas('roles', fn ($q) => $q->where('name', 'admin'))->first();
         $adminResponse = $this->actingAs($admin)->get(route('dashboard'));
         $adminResponse->assertOk();
         $adminResponse->assertSee('Pasang Aplikasi LT III di Layar Utama (Homescreen)');
+        $adminResponse->assertSee('Aktifkan Notifikasi Aplikasi LT III');
         $adminResponse->assertSee('Akses lebih cepat dengan mode offline terintegrasi tanpa perlu membuka browser berulang kali.');
+        $adminResponse->assertSee('fixed bottom-4 right-4');
+        $adminResponse->assertDontSee('fixed bottom-4 left-4');
     }
 
     /**

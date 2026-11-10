@@ -44,6 +44,7 @@ class Event extends Model
         'kwarcab_chair_nta',
         'is_active',
         'hide_patrol_identities',
+        'is_certificate_published',
     ];
 
     /**
@@ -73,7 +74,32 @@ class Event extends Model
             'registration_fee_per_patrol' => 'integer',
             'is_active' => 'boolean',
             'hide_patrol_identities' => 'boolean',
+            'is_certificate_published' => 'boolean',
         ];
+    }
+
+    /**
+     * Relasi ke seluruh template sertifikat per peran
+     */
+    public function certificateTemplates(): HasMany
+    {
+        return $this->hasMany(CertificateTemplate::class);
+    }
+
+    /**
+     * Memeriksa apakah penerbitan sertifikat telah diaktifkan
+     */
+    public function isCertificatePublished(): bool
+    {
+        return (bool) $this->is_certificate_published;
+    }
+
+    /**
+     * Mengambil template sertifikat spesifik per peran (atau default)
+     */
+    public function certificateTemplateFor(string $role): ?CertificateTemplate
+    {
+        return $this->certificateTemplates->firstWhere('role', $role);
     }
 
     /**

@@ -29,6 +29,8 @@ class CompetitionSeeder extends Seeder
                     'description' => "Kelompok Kegiatan: {$item['group']} (kegiatan nomor {$item['no']}). {$item['goal']}",
                     'guidelines_text' => $this->guidelines($item),
                     'scoring_formula' => 'average',
+                    'is_mandatory' => $item['is_mandatory'] ?? ($item['code'] === 'ADM-09'),
+                    'allows_patrol_inspection' => $item['allows_patrol_inspection'] ?? ($item['code'] === 'ADM-09'),
                     'is_published' => true,
                 ]
             );

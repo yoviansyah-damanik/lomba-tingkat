@@ -39,6 +39,49 @@
         </div>
     </div>
 
+    {{-- Banner Pemberitahuan E-Sertifikat Terbit di Dasbor --}}
+    @if($activeEvent?->isCertificatePublished())
+        <div class="rounded-2xl border border-amber-500/40 bg-linear-to-r from-amber-500/10 via-amber-500/5 to-transparent p-4 sm:p-5 dark:border-amber-500/30 dark:from-amber-950/30 shadow-xs">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3.5">
+                <div class="flex items-center gap-3.5">
+                    <div class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs">
+                        <flux:icon name="academic-cap" class="size-6" />
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300 border border-amber-500/30">Pengumuman</span>
+                            <h3 class="text-sm sm:text-base font-bold text-zinc-900 dark:text-zinc-100">Penerbitan E-Sertifikat Resmi Telah Dibuka</h3>
+                        </div>
+                        <p class="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
+                            @if($user->isAdmin())
+                                Penerbitan e-sertifikat kegiatan saat ini aktif. Anda dapat mengelola template dan tata letak dokumen melalui menu Pengaturan Sertifikat.
+                            @elseif($user->isScoutGroup())
+                                Seluruh piagam peserta dan pembina pendamping pangkalan Anda telah dapat dicetak langsung.
+                            @else
+                                Piagam e-sertifikat resmi Anda telah diterbitkan dan siap diunduh.
+                            @endif
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    @if($user->isAdmin())
+                        <flux:button href="{{ route('admin.certificates.settings') }}" wire:navigate size="sm" variant="outline" icon="cog">
+                            Pengaturan Template
+                        </flux:button>
+                    @endif
+                    @if(!$user->isAdmin())
+                        <flux:button href="{{ route('certificates.my') }}" size="sm" variant="primary" icon="arrow-down-tray">
+                            Unduh Sertifikat Saya
+                        </flux:button>
+                    @endif
+                    <flux:button href="{{ route('certificates.index') }}" wire:navigate size="sm" variant="ghost" icon="magnifying-glass">
+                        Laman Sertifikat
+                    </flux:button>
+                </div>
+            </div>
+        </div>
+    @endif
+
     {{-- Tampilan Ringkasan Berdasarkan Peran Pengguna --}}
     @if($user->isAdmin())
         {{-- Statistik Administrator / Superadmin --}}
@@ -81,6 +124,9 @@
                 <x-stat-card label="Pembina Terverifikasi" :value="$committeeStats['verified_chaperones']" unit="Orang" action-text="Direktori Bindamping" href="{{ route('admin.chaperones.index') }}" color="purple" icon="user-circle" />
                 <x-stat-card label="Verifikasi Identitas" value="Pindai QR" description="Periksa kartu peserta, bindamping, panitia, dan juri" action-text="Buka Verifikasi" href="{{ route('admin.identity-verification.index') }}" color="amber" icon="viewfinder-circle" />
                 <x-stat-card label="Rekap Presensi" value="Laporan Kehadiran" description="Rekap kehadiran per sesi" action-text="Buka Rekap" href="{{ route('attendance.recap') }}" color="indigo" icon="clipboard-document-check" />
+                @if($activeEvent?->isCertificatePublished())
+                    <x-stat-card label="E-Sertifikat Panitia" value="Piagam Penghargaan" description="Unduh sertifikat kepanitiaan resmi" action-text="Unduh PDF" href="{{ route('certificates.my') }}" color="amber" icon="academic-cap" />
+                @endif
             </div>
         </section>
 
@@ -96,6 +142,9 @@
                 <x-stat-card label="Presensi Pos Aktif" :value="$judgeStats['active_attendance_sessions']" unit="Sesi" action-text="Portal Presensi" href="{{ route('attendance.index') }}" color="blue" icon="qr-code" />
                 <x-stat-card label="Sistem Penilaian" value="Blind Scoring" description="Juri menilai berdasarkan NPP tanpa identitas regu" color="indigo" icon="shield-check" />
                 <x-stat-card label="Kartu Digital" value="ID Card Juri" description="Tunjukkan QR Code saat bertugas" action-text="Buka Kartu" href="{{ route('digital-card.index') }}" color="purple" icon="qr-code" />
+                @if($activeEvent?->isCertificatePublished())
+                    <x-stat-card label="E-Sertifikat Juri" value="Piagam Penghargaan" description="Unduh sertifikat dewan juri resmi" action-text="Unduh PDF" href="{{ route('certificates.my') }}" color="amber" icon="academic-cap" />
+                @endif
             </div>
         </section>
 
@@ -137,6 +186,9 @@
                 @include('livewire.partials.achievement-card', ['achievements' => $achievements])
                 <x-stat-card label="Nilai Lomba" :value="$gs['scored_competitions'] ?? 0" unit="Lomba dinilai" description="Nilai final regu Anda" action-text="Lihat Penilaian Regu" href="{{ route('team-assessment.index') }}" color="amber" icon="trophy" />
                 <x-stat-card label="Sesi Berikutnya" :value="isset($gs['next_schedule']) && $gs['next_schedule'] ? $gs['next_schedule']->start_time->timezone('Asia/Jakarta')->format('H:i') : '-'" :description="isset($gs['next_schedule']) && $gs['next_schedule'] ? $gs['next_schedule']->session_name : 'Belum ada sesi terjadwal'" action-text="Lihat Jadwal" href="{{ route('agenda.index') }}" color="emerald" icon="clock" />
+                @if($activeEvent?->isCertificatePublished())
+                    <x-stat-card label="E-Sertifikat Kontingen" value="Siap Dicetak" description="Piagam peserta & bindamping pangkalan" action-text="Laman Sertifikat" href="{{ route('certificates.index') }}" color="amber" icon="academic-cap" />
+                @endif
             </div>
         </section>
     @else
@@ -164,6 +216,18 @@
                     href="{{ route('team-assessment.index') }}"
                     color="indigo"
                     icon="clipboard-document-check"
+                />
+            @endif
+
+            @if($activeEvent?->isCertificatePublished())
+                <x-stat-card
+                    label="E-Sertifikat Resmi"
+                    value="Piagam Penghargaan"
+                    description="Unduh berkas e-sertifikat resmi Anda"
+                    action-text="Unduh PDF"
+                    href="{{ route('certificates.my') }}"
+                    color="amber"
+                    icon="academic-cap"
                 />
             @endif
 
