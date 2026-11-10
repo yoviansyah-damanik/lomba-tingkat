@@ -39,10 +39,10 @@
                                 Pendaftaran {{ $registrationOpen ? 'Dibuka' : 'Ditutup' }}
                             </span>
                             @if ($event?->is_certificate_published)
-                                <a href="{{ route('certificates.index') }}" wire:navigate class="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-200 backdrop-blur-sm hover:bg-amber-500/30 transition-colors">
+                                <span class="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-500/20 px-3 py-1 text-xs font-semibold text-amber-200 backdrop-blur-sm">
                                     <flux:icon name="academic-cap" class="size-3.5 text-amber-300" />
                                     E-Sertifikat Diterbitkan
-                                </a>
+                                </span>
                             @endif
                         </div>
 
@@ -60,14 +60,20 @@
                                                 <h3 class="text-sm sm:text-base font-bold text-white">Penerbitan E-Sertifikat Telah Dibuka</h3>
                                             </div>
                                             <p class="text-xs text-amber-100/80 mt-1 leading-relaxed">
-                                                Peserta, Pembina Pendamping, Panitia, dan Dewan Juri dapat mengunduh e-sertifikat resmi melalui dasbor akun masing-masing atau laman sertifikat.
+                                                Peserta, Pembina Pendamping, Panitia, dan Dewan Juri dapat mengunduh e-sertifikat resmi melalui dasbor akun masing-masing.
                                             </p>
                                         </div>
                                     </div>
                                     <div class="shrink-0">
-                                        <flux:button href="{{ route('certificates.index') }}" wire:navigate size="sm" variant="primary" icon="arrow-down-tray">
-                                            Unduh E-Sertifikat
-                                        </flux:button>
+                                        @guest
+                                            <flux:button href="{{ route('login') }}" wire:navigate size="sm" variant="primary" icon="arrow-right-end-on-rectangle">
+                                                Masuk ke Dasbor
+                                            </flux:button>
+                                        @else
+                                            <flux:button href="{{ route('dashboard') }}" wire:navigate size="sm" variant="primary" icon="squares-2x2">
+                                                Buka Dasbor Saya
+                                            </flux:button>
+                                        @endguest
                                     </div>
                                 </div>
                             </div>
@@ -108,9 +114,6 @@
                             <flux:button href="{{ route('competitions') }}" wire:navigate icon="document-text">Mata Lomba &amp; Juknis</flux:button>
                             <flux:button href="{{ route('schedules') }}" wire:navigate icon="calendar-days" variant="ghost" class="text-zinc-200!">Jadwal</flux:button>
                             <flux:button href="{{ route('guide') }}" wire:navigate icon="book-open-text" variant="ghost" class="text-zinc-200!">Panduan</flux:button>
-                            @if ($event?->is_certificate_published)
-                                <flux:button href="{{ route('certificates.index') }}" wire:navigate icon="academic-cap" variant="ghost" class="text-amber-300!">E-Sertifikat</flux:button>
-                            @endif
                         </div>
                     </div>
 

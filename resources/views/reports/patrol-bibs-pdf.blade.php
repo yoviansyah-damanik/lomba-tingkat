@@ -38,292 +38,139 @@
             page-break-after: avoid;
         }
 
-        /* Tema Kategori Putra (Deep Navy + Royal Blue + Gold) */
-        .theme-boys {
-            background-color: #091326;
-        }
-
-        .theme-boys .accent-bar {
-            background-color: #1e40af;
-        }
-
-        .theme-boys .badge-category {
-            background-color: #2563eb;
-            color: #ffffff;
-            border: 1.5px solid #60a5fa;
-        }
-
-        .theme-boys .hero-container {
-            background-color: #0f1d38;
-            border: 2px solid #1e3a8a;
-        }
-
-        .theme-boys .npp-number {
-            color: #ffffff;
-        }
-
-        .theme-boys .pill-npp {
-            background-color: #f59e0b;
-            color: #0f172a;
-        }
-
-        .theme-boys .patrol-pill {
-            background-color: #3b82f6;
-            color: #ffffff;
-        }
-
-        /* Tema Kategori Putri (Deep Maroon / Wine + Magenta + Gold) */
-        .theme-girls {
-            background-color: #1f041b;
-        }
-
-        .theme-girls .accent-bar {
-            background-color: #831843;
-        }
-
-        .theme-girls .badge-category {
-            background-color: #db2777;
-            color: #ffffff;
-            border: 1.5px solid #f472b6;
-        }
-
-        .theme-girls .hero-container {
-            background-color: #2c0828;
-            border: 2px solid #831843;
-        }
-
-        .theme-girls .npp-number {
-            color: #ffffff;
-        }
-
-        .theme-girls .pill-npp {
-            background-color: #f59e0b;
-            color: #0f172a;
-        }
-
-        .theme-girls .patrol-pill {
-            background-color: #ec4899;
-            color: #ffffff;
-        }
-
-        /* Safety Pin Corner Markers */
-        .pin-marker {
-            position: absolute;
-            width: 14px;
-            height: 14px;
-            border: 1.5px dashed #f59e0b;
-            border-radius: 50%;
-            text-align: center;
-            line-height: 11px;
-            font-size: 9px;
-            color: #f59e0b;
-            font-weight: bold;
-            opacity: 0.85;
-        }
-
-        .pin-tl {
-            top: 7mm;
-            left: 7mm;
-        }
-
-        .pin-tr {
-            top: 7mm;
-            right: 7mm;
-        }
-
-        .pin-bl {
-            bottom: 7mm;
-            left: 7mm;
-        }
-
-        .pin-br {
-            bottom: 7mm;
-            right: 7mm;
-        }
-
-        /* Outer Frame & Card Canvas */
-        .bib-canvas {
-            width: 100%;
-            height: 100%;
-            padding: 8mm 10mm;
-            position: relative;
-        }
-
-        /* Header Bar */
-        .header-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 3.5mm;
-        }
-
-        .header-logo {
-            width: 52px;
-            vertical-align: middle;
-        }
-
-        .header-logo img {
-            width: 48px;
-            height: 48px;
-        }
-
-        .header-title-box {
-            vertical-align: middle;
-            padding-left: 10px;
-        }
-
-        .header-org {
-            font-size: 8px;
-            font-weight: bold;
-            color: #f59e0b;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-        }
-
-        .header-main-title {
-            font-size: 13.5px;
-            font-weight: 900;
-            color: #ffffff;
-            letter-spacing: 0.8px;
-            text-transform: uppercase;
-            margin-top: 1px;
-        }
-
-        .header-sub-title {
-            font-size: 8.5px;
-            font-weight: bold;
-            color: #cbd5e1;
-            margin-top: 1px;
-        }
-
-        .header-badge-box {
-            width: 110px;
-            text-align: right;
-            vertical-align: middle;
-        }
-
-        .badge-category {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 10.5px;
-            font-weight: 900;
-            letter-spacing: 1.2px;
-            text-transform: uppercase;
-        }
-
-        /* Hero Central NPP Display */
-        .hero-container {
-            width: 100%;
-            border-radius: 12px;
-            padding: 3mm 4mm;
-            text-align: center;
-            margin-bottom: 3.5mm;
-            position: relative;
-        }
-
-        .pill-npp {
-            display: inline-block;
-            padding: 2.5px 14px;
-            border-radius: 9999px;
-            font-size: 8.5px;
-            font-weight: 900;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
-        .npp-number {
-            font-size: 96px;
-            font-weight: 900;
-            line-height: 0.95;
-            letter-spacing: 4px;
-            margin: 2mm 0 1mm 0;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-        }
-
-        .hero-footer-label {
-            font-size: 8.5px;
-            font-weight: bold;
-            color: #94a3b8;
-            letter-spacing: 2.5px;
-            text-transform: uppercase;
-        }
-
-        /* Bottom Identity Footer */
-        .footer-table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: rgba(15, 23, 42, 0.7);
-            border-radius: 10px;
-            padding: 4px 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .patrol-pill {
-            display: inline-block;
-            padding: 2px 10px;
-            border-radius: 5px;
-            font-size: 11px;
-            font-weight: 900;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .school-name {
-            font-size: 10.5px;
-            font-weight: bold;
-            color: #ffffff;
-            margin-top: 3px;
-            line-height: 1.25;
-        }
-
-        .gudep-number {
-            font-size: 8.5px;
-            font-weight: 600;
-            color: #f59e0b;
-            margin-top: 2px;
-        }
-
-        .qr-box {
-            width: 65px;
-            text-align: right;
-            vertical-align: middle;
-            padding-right: 4px;
-        }
-
-        .qr-box img {
-            width: 52px;
-            height: 52px;
-            background: #ffffff;
-            padding: 2px;
-            border-radius: 5px;
-        }
-
-        .qr-caption {
-            font-size: 6.5px;
-            font-weight: bold;
-            color: #94a3b8;
-            margin-top: 2px;
-            text-align: right;
-            letter-spacing: 0.5px;
-        }
-
-        /* Top & Bottom Accent Stripes */
-        .top-stripe {
+        /* Background template image spanning full A5 bleed */
+        .bg-template {
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            height: 3.5mm;
-            background-color: #f59e0b;
+            width: 210mm;
+            height: 148mm;
+            z-index: 1;
         }
 
-        .bottom-stripe {
+        /* Dynamic Overlay Container */
+        .overlay-layer {
             position: absolute;
-            bottom: 0;
+            top: 0;
             left: 0;
-            right: 0;
-            height: 3.5mm;
-            background-color: #f59e0b;
+            width: 210mm;
+            height: 148mm;
+            z-index: 10;
+        }
+
+        /* 1. Category Pill (Top Right) */
+        .badge-category {
+            position: absolute;
+            top: 8.8mm;
+            left: 177mm;
+            width: 23mm;
+            height: 8.5mm;
+            line-height: 8.5mm;
+            text-align: center;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            color: #ffffff;
+            text-transform: uppercase;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+        }
+
+        /* 2. Central Giant NPP Number */
+        .npp-number-box {
+            position: absolute;
+            top: 59mm;
+            left: 55mm;
+            width: 100mm;
+            height: 25.5mm;
+            line-height: 25.5mm;
+            text-align: center;
+            font-size: 64px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            color: #ffffff;
+            text-shadow: 0 3px 0 #cbd5e1, 0 4px 10px rgba(0, 0, 0, 0.8);
+        }
+
+        /* 3. Bottom Identity Card: Text Area */
+        .identity-box {
+            position: absolute;
+            top: 114.5mm;
+            left: 59.5mm;
+            width: 92mm;
+            text-align: center;
+        }
+
+        .patrol-pill-boys {
+            display: inline-block;
+            background-color: #2563eb;
+            color: #ffffff;
+            font-size: 9px;
+            font-weight: 900;
+            padding: 1.5px 12px;
+            border-radius: 9999px;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            border: 1px solid #60a5fa;
+        }
+
+        .patrol-pill-girls {
+            display: inline-block;
+            background-color: #db2777;
+            color: #ffffff;
+            font-size: 9px;
+            font-weight: 900;
+            padding: 1.5px 12px;
+            border-radius: 9999px;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            border: 1px solid #f472b6;
+        }
+
+        .school-name {
+            font-size: 12.5px;
+            font-weight: 900;
+            color: #ffffff;
+            margin-top: 1.5mm;
+            line-height: 1.2;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .gudep-number {
+            font-size: 9.5px;
+            font-weight: bold;
+            color: #fbbf24;
+            margin-top: 1mm;
+            letter-spacing: 0.5px;
+        }
+
+        /* 4. Bottom Identity Card: QR Code */
+        .qr-box {
+            position: absolute;
+            top: 114mm;
+            left: 152mm;
+            width: 17mm;
+            text-align: center;
+        }
+
+        .qr-box img {
+            width: 14mm;
+            height: 14mm;
+            background: #ffffff;
+            padding: 1.5px;
+            border-radius: 3px;
+        }
+
+        .qr-caption {
+            font-size: 5.5px;
+            font-weight: 900;
+            color: #cbd5e1;
+            margin-top: 1px;
+            text-align: center;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
         }
     </style>
 </head>
@@ -332,68 +179,43 @@
     @foreach ($items as $item)
         @php
             $isBoys = $item['is_boys'];
-            $themeClass = $isBoys ? 'theme-boys' : 'theme-girls';
+            $bgPath = public_path($isBoys ? 'images/bibs/bib-bg-boys.jpg' : 'images/bibs/bib-bg-girls.jpg');
         @endphp
 
-        <div class="bib-page {{ $themeClass }}">
-            {{-- Aksen Garis Emas Paling Atas dan Bawah --}}
-            <div class="top-stripe"></div>
-            <div class="bottom-stripe"></div>
+        <div class="bib-page">
+            {{-- Template Latar Belakang Ornamen Emas High-Res --}}
+            <img class="bg-template" src="{{ $bgPath }}" alt="">
 
-            {{-- 4 Titik Penanda Peniti Nomor Punggung --}}
-            <div class="pin-marker pin-tl">+</div>
-            <div class="pin-marker pin-tr">+</div>
-            <div class="pin-marker pin-bl">+</div>
-            <div class="pin-marker pin-br">+</div>
-
-            <div class="bib-canvas">
-                {{-- Bagian Header: Identitas Resmi Penyelenggaraan --}}
-                <table class="header-table">
-                    <tr>
-                        <td class="header-logo">
-                            <img src="{{ \App\Services\PdfService::logoPath() }}" alt="Logo LT-III">
-                        </td>
-                        <td class="header-title-box">
-                            <div class="header-org">Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan</div>
-                            <div class="header-main-title">Lomba Tingkat Tiga (LT-III) 2026</div>
-                            <div class="header-sub-title">14 — 17 November 2026 • Lapangan Pulo Baok Padangsidimpuan
-                            </div>
-                        </td>
-                        <td class="header-badge-box">
-                            <span class="badge-category">
-                                {{ $item['gender_label'] }}
-                            </span>
-                        </td>
-                    </tr>
-                </table>
-
-                {{-- Bagian Utama: Tampilan Hero Nomor Peserta Perlombaan (NPP) --}}
-                <div class="hero-container">
-                    <span class="pill-npp">NOMOR PESERTA PERLOMBAAN (NPP)</span>
-                    <div class="npp-number">{{ $item['npp'] }}</div>
-                    <div class="hero-footer-label">★ TANGKAS • BERKARAKTER • BERPRESTASI ★</div>
+            {{-- Lapisan Data Dinamis Hasil Generate Sistem --}}
+            <div class="overlay-layer">
+                {{-- Kategori: PUTRA / PUTRI --}}
+                <div class="badge-category">
+                    {{ $item['gender_label'] }}
                 </div>
 
-                {{-- Bagian Bawah: Identitas Regu, Pangkalan Gudep & QR Code --}}
-                <table class="footer-table">
-                    <tr>
-                        <td style="vertical-align: middle; padding: 4px 6px;">
-                            <span class="patrol-pill">
-                                Regu {{ $item['patrol_name'] }}
-                            </span>
-                            <div class="school-name">
-                                {{ $item['school_name'] }}
-                            </div>
-                            <div class="gudep-number">
-                                Gugus Depan: {{ $item['group_number'] }}
-                            </div>
-                        </td>
-                        <td class="qr-box">
-                            <img src="{{ $item['qr_data_uri'] }}" alt="QR NPP">
-                            <div class="qr-caption">KREDENSIAL RESMI</div>
-                        </td>
-                    </tr>
-                </table>
+                {{-- Nomor NPP Raksasa di Tengah Plakat Emas --}}
+                <div class="npp-number-box">
+                    {{ $item['npp'] }}
+                </div>
+
+                {{-- Identitas Regu, Sekolah & Pangkalan Gudep --}}
+                <div class="identity-box">
+                    <span class="{{ $isBoys ? 'patrol-pill-boys' : 'patrol-pill-girls' }}">
+                        Regu {{ $item['patrol_name'] }}
+                    </span>
+                    <div class="school-name">
+                        {{ $item['school_name'] }}
+                    </div>
+                    <div class="gudep-number">
+                        Gugus Depan: {{ $item['group_number'] }}
+                    </div>
+                </div>
+
+                {{-- QR Code Kredensial Resmi --}}
+                <div class="qr-box">
+                    <img src="{{ $item['qr_data_uri'] }}" alt="QR Verifikasi">
+                    <div class="qr-caption">KREDENSIAL RESMI</div>
+                </div>
             </div>
         </div>
     @endforeach

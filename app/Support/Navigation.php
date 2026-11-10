@@ -101,7 +101,6 @@ class Navigation
                 'items' => [
                     ['label' => 'Presensi Saya', 'icon' => 'clipboard-document-check', 'route' => 'my-attendance.index', 'active' => ['my-attendance.*'], 'roles' => $personal, 'description' => 'Jadwal yang Anda ikuti dan status kehadiran'],
                     ['label' => 'Kartu Digital', 'icon' => 'qr-code', 'route' => 'digital-card.index', 'active' => ['digital-card.*'], 'roles' => $personal, 'description' => 'Kartu identitas dengan QR Code'],
-                    ['label' => 'E-Sertifikat Saya', 'icon' => 'academic-cap', 'route' => 'certificates.index', 'active' => ['certificates.*'], 'roles' => $personal, 'description' => 'Unduh piagam e-sertifikat kegiatan Anda'],
                 ],
             ],
             [
@@ -110,7 +109,6 @@ class Navigation
                     ['label' => 'Regu & Peserta', 'icon' => 'user-group', 'route' => 'scout-group.index', 'active' => ['scout-group.index', 'scout-group.patrols*', 'scout-group.participants*'], 'roles' => ['scout_group'], 'description' => 'Bentuk regu dan isi biodata peserta'],
                     ['label' => 'Bindamping', 'icon' => 'identification', 'route' => 'scout-group.chaperones', 'active' => ['scout-group.chaperones*'], 'roles' => ['scout_group'], 'description' => 'Daftarkan pembina pendamping putra/putri'],
                     ['label' => 'Periksa & Ajukan', 'icon' => 'paper-airplane', 'route' => 'scout-group.review', 'active' => ['scout-group.review'], 'roles' => ['scout_group'], 'description' => 'Periksa kelengkapan lalu ajukan pendaftaran'],
-                    ['label' => 'E-Sertifikat Kontingen', 'icon' => 'academic-cap', 'route' => 'certificates.index', 'active' => ['certificates.*'], 'roles' => ['scout_group'], 'description' => 'Unduh piagam e-sertifikat kontingen pangkalan'],
                 ],
             ],
             [

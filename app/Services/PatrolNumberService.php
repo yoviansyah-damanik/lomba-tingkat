@@ -10,8 +10,10 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Pembuat Nomor Pendaftaran Peserta (NPP) regu: 2 digit (01, 02, dst.), diundi acak, dan putra serta putri
- * dinomori terpisah sehingga masing-masing dimulai dari 01
+ * Pembuat Nomor Pendaftaran Peserta (NPP) regu:
+ * - Putra: LT-PA-{noUrut} (LT-PA-01, LT-PA-02, dst.)
+ * - Putri: LT-PI-{noUrut} (LT-PI-01, LT-PI-02, dst.)
+ * Diundi acak dan putra serta putri dinomori terpisah masing-masing dimulai dari 01.
  */
 class PatrolNumberService
 {
@@ -20,19 +22,53 @@ class PatrolNumberService
     /**
      * Format NPP dari kategori dan nomor urut
      */
-    public static function format(int $sequence): string
+    public static function format(int $sequence, ?string $gender = null): string
     {
-        return str_pad((string) $sequence, 2, '0', STR_PAD_LEFT);
+        $padded = str_pad((string) $sequence, 2, '0', STR_PAD_LEFT);
+
+        if ($gender) {
+            $g = strtolower(trim($gender));
+            if ($g === 'boys' || $g === 'male' || $g === 'pa' || $g === PatrolGenderEnum::Boys->value) {
+                return 'LT-PA-' . $padded;
+            }
+            if ($g === 'girls' || $g === 'female' || $g === 'pi' || $g === PatrolGenderEnum::Girls->value) {
+                return 'LT-PI-' . $padded;
+            }
+        }
+
+        return $padded;
     }
 
     /**
-     * Normalisasi masukan juri (mis. "1" atau " 01 ") menjadi bentuk baku NPP 2 digit
+     * Normalisasi masukan juri (mis. "1", " 01 ", "pa-1", "LT-PA-01") menjadi bentuk baku NPP
      */
-    public static function normalize(string $input): string
+    public static function normalize(string $input, ?string $gender = null): string
     {
         $clean = trim($input);
 
-        return preg_match('/^\d{1,3}$/', $clean) ? self::format((int) $clean) : strtoupper($clean);
+        if ($clean === '') {
+            return '';
+        }
+
+        // Jika sudah berbentuk LT-PA-01, PA-01, LT-PI-02, PI-2, dll.
+        if (preg_match('/^(?:LT-)?(PA|PI)-?(\d+)$/i', $clean, $matches)) {
+            $prefix = strtoupper($matches[1]);
+            $seq = (int) $matches[2];
+
+            return sprintf('LT-%s-%02d', $prefix, $seq);
+        }
+
+        // Jika hanya angka murni (mis. "1" atau "01")
+        if (preg_match('/^\d+$/', $clean)) {
+            $seq = (int) $clean;
+            if ($gender) {
+                return self::format($seq, $gender);
+            }
+
+            return str_pad((string) $seq, 2, '0', STR_PAD_LEFT);
+        }
+
+        return strtoupper($clean);
     }
 
     /**
@@ -77,7 +113,7 @@ class PatrolNumberService
                 $sequence = $this->lastSequence($gender);
 
                 foreach ($pending as $patrol) {
-                    $patrol->update(['npp' => self::format(++$sequence)]);
+                    $patrol->update(['npp' => self::format(++$sequence, $gender)]);
                 }
 
                 $result[$gender] = $pending->count();
@@ -88,14 +124,16 @@ class PatrolNumberService
     }
 
     /**
-     * Nomor urut NPP terakhir pada kategori
+     * Nomor urut NPP terakhir pada kategori (mengekstrak angka dari akhiran string NPP)
      */
     private function lastSequence(string $gender): int
     {
         return (int) Patrol::where('gender_category', $gender)
             ->whereNotNull('npp')
             ->pluck('npp')
-            ->map(fn (string $npp) => (int) $npp)
+            ->map(function (string $npp) {
+                return preg_match('/(\d+)$/', trim($npp), $matches) ? (int) $matches[1] : 0;
+            })
             ->max();
     }
 

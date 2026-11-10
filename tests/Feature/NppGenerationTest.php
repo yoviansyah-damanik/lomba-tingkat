@@ -71,8 +71,8 @@ class NppGenerationTest extends TestCase
         $result = app(PatrolNumberService::class)->generate();
 
         $this->assertSame(['boys' => 3, 'girls' => 2], $result);
-        $this->assertEqualsCanonicalizing(['01', '02', '03'], Patrol::where('gender_category', 'boys')->whereNotNull('npp')->pluck('npp')->all());
-        $this->assertEqualsCanonicalizing(['01', '02'], Patrol::where('gender_category', 'girls')->pluck('npp')->all());
+        $this->assertEqualsCanonicalizing(['LT-PA-01', 'LT-PA-02', 'LT-PA-03'], Patrol::where('gender_category', 'boys')->whereNotNull('npp')->pluck('npp')->all());
+        $this->assertEqualsCanonicalizing(['LT-PI-01', 'LT-PI-02'], Patrol::where('gender_category', 'girls')->pluck('npp')->all());
         $this->assertSame(0, Patrol::where('status', RegistrationStatusEnum::Submitted)->whereNotNull('npp')->count());
 
         // Generate ulang tidak mengubah nomor yang ada; regu baru mendapat nomor lanjutan
@@ -82,7 +82,7 @@ class NppGenerationTest extends TestCase
         foreach ($before as $id => $npp) {
             $this->assertSame($npp, Patrol::find($id)->npp);
         }
-        $this->assertTrue(Patrol::where('gender_category', 'girls')->where('npp', '03')->exists());
+        $this->assertTrue(Patrol::where('gender_category', 'girls')->where('npp', 'LT-PI-03')->exists());
     }
 
     public function test_npp_input_is_normalized(): void
@@ -90,6 +90,10 @@ class NppGenerationTest extends TestCase
         $this->assertSame('01', PatrolNumberService::normalize('1'));
         $this->assertSame('12', PatrolNumberService::normalize(' 12 '));
         $this->assertSame('01', PatrolNumberService::normalize('01'));
+        $this->assertSame('LT-PA-01', PatrolNumberService::normalize('1', 'boys'));
+        $this->assertSame('LT-PI-02', PatrolNumberService::normalize('2', 'girls'));
+        $this->assertSame('LT-PA-01', PatrolNumberService::normalize('lt-pa-1'));
+        $this->assertSame('LT-PI-03', PatrolNumberService::normalize('pi-3'));
     }
 
     public function test_admin_can_generate_only_after_registration_closed(): void

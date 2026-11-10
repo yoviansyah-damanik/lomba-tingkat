@@ -303,17 +303,28 @@ class AssessmentScoringService
      */
     public function resolveNpp(CompetitionSchedule $schedule, string $npp): array
     {
-        $npp = PatrolNumberService::normalize($npp);
+        $gender = $schedule->gender_category;
+        $normalized = PatrolNumberService::normalize($npp, $gender);
 
-        if ($npp === '') {
+        if ($normalized === '' && trim($npp) === '') {
             return ['patrol' => null, 'error' => 'NPP wajib diisi.'];
         }
 
-        $gender = $schedule->gender_category;
         $label = $gender === 'boys' ? ' Putra' : ($gender === 'girls' ? ' Putri' : '');
 
-        // NPP putra dan putri sama-sama dimulai dari 01, jadi pencarian dibatasi pada kategori sesi
-        $matches = Patrol::where('npp', $npp)->when($gender, fn ($q) => $q->where('gender_category', $gender))->get();
+        // Cari berdasarkan bentuk normalisasi (LT-PA-01), input langsung, atau format legacy 2 digit
+        $matches = Patrol::where(function ($q) use ($normalized, $npp) {
+                $clean = trim($npp);
+                $q->where('npp', $normalized);
+                if ($clean !== '') {
+                    $q->orWhere('npp', $clean);
+                    if (ctype_digit($clean)) {
+                        $q->orWhere('npp', str_pad($clean, 2, '0', STR_PAD_LEFT));
+                    }
+                }
+            })
+            ->when($gender, fn ($q) => $q->where('gender_category', $gender))
+            ->get();
 
         if ($matches->count() > 1) {
             return ['patrol' => null, 'error' => "NPP {$npp} ada pada kategori putra dan putri. Gunakan sesi yang sesuai kategori regu."];

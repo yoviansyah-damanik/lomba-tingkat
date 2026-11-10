@@ -266,6 +266,74 @@ class Dashboard extends Component
         return Participant::with(['patrol.scoutGroup'])->find($this->user->participant_id);
     }
 
+    /**
+     * Data e-sertifikat pribadi milik akun pengguna aktif (jika ada)
+     */
+    #[Computed]
+    public function myCertificate(): ?array
+    {
+        if (!$this->activeEvent?->isCertificatePublished() || !$this->user) {
+            return null;
+        }
+
+        $service = app(\App\Services\CertificateService::class);
+        $certs = $service->getCertificatesForUser($this->user, $this->activeEvent);
+
+        return $certs[0] ?? null;
+    }
+
+    /**
+     * Daftar seluruh e-sertifikat kontingen pangkalan (peserta & pembina pendamping)
+     */
+    #[Computed]
+    public function contingentCertificates(): array
+    {
+        if (!$this->user?->isScoutGroup() || !$this->scoutGroup) {
+            return [];
+        }
+
+        $items = [];
+
+        // 1. Peserta terverifikasi
+        $participants = Participant::with(['patrol'])
+            ->whereHas('patrol', fn ($q) => $q->where('scout_group_id', $this->scoutGroup->id))
+            ->where('status', RegistrationStatusEnum::Verified)
+            ->orderBy('full_name')
+            ->get();
+
+        foreach ($participants as $p) {
+            $items[] = [
+                'type' => 'participant',
+                'name' => $p->full_name,
+                'scout_id' => $p->scout_id ?: '-',
+                'role' => $p->role_in_patrol?->label() ?? 'Peserta Regu',
+                'patrol' => $p->patrol?->patrol_name ?? '-',
+                'gender' => $p->patrol?->gender_category?->label() ?? '-',
+                'download_url' => route('certificates.download.participant', $p),
+            ];
+        }
+
+        // 2. Pembina pendamping terverifikasi
+        $chaperones = Chaperone::where('scout_group_id', $this->scoutGroup->id)
+            ->where('status', RegistrationStatusEnum::Verified)
+            ->orderBy('full_name')
+            ->get();
+
+        foreach ($chaperones as $c) {
+            $items[] = [
+                'type' => 'chaperone',
+                'name' => $c->full_name,
+                'scout_id' => $c->scout_id ?: '-',
+                'role' => $c->chaperone_type === 'male' ? 'Pembina Pendamping Putra' : 'Pembina Pendamping Putri',
+                'patrol' => 'Bindamping',
+                'gender' => $c->chaperone_type === 'male' ? 'Putra' : 'Putri',
+                'download_url' => route('certificates.download.chaperone', $c),
+            ];
+        }
+
+        return $items;
+    }
+
     public function render()
     {
         return view('livewire.dashboard', [
@@ -279,6 +347,8 @@ class Dashboard extends Component
             'achievements' => ($this->user->isScoutGroup() || $this->user->isParticipant() || $this->user->isChaperone()) ? $this->achievements : [],
             'rankings' => ($this->user->isScoutGroup() || $this->user->isParticipant() || $this->user->isChaperone()) ? $this->rankings : [],
             'participantData' => $this->participantData,
+            'myCertificate' => $this->myCertificate,
+            'contingentCertificates' => $this->contingentCertificates,
             'menuGroups' => \App\Support\Navigation::groupsFor($this->user),
         ]);
     }

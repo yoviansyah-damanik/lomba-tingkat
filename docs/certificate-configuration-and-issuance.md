@@ -20,11 +20,13 @@ Provides certificate template customization (A4 Landscape), position fine-tuning
     - Master ON/OFF publishing toggle.
     - Per-role tabs with template upload, layout inputs (X, Y, size, color, align, bold), "Terapkan ke Semua Peran", and "Lihat Contoh PDF".
 
-4. **Public & Portal Pages**:
-    - Landing page (`/`): Prominent banner and navigation badge when certificate publishing is ON.
-    - Dedicated Certificate Page (`/certificates`): Search by name, NTA, or ID; 1-click personal certificate download; and scout group batch roster.
-    - Public Verification Page (`/certificates/verify/{id}`): Real-time authenticity validation from QR code scan.
-    - Dashboard: Download cards and announcement banners tailored to active authenticated roles.
+4. **Public & Dashboard Access**:
+    - Landing page (`/`): Prominent official announcement banner when publishing is ON, informing users to log in to their dashboard. No public certificate catalog.
+    - Dashboard: Direct certificate access for all accounts:
+        - Peserta, Pembina Pendamping, Dewan Juri, & Panitia: One-click "Unduh Sertifikat Saya" via `route('certificates.my')`.
+        - Gugus Depan / Pangkalan: Dedicated "E-Sertifikat Kontingen Pangkalan" section listing all verified participants and chaperones with individual PDF download buttons.
+        - Administrator: Instant shortcut to certificate template configuration.
+    - Public Verification Page (`/certificates/verify/{id}`): Real-time authenticity verification for certificate IDs.
 
 5. **Download Controller (`App\Http\Controllers\CertificateController`)**:
     - Authorized routes for participants, chaperones, officials, and personal `myCertificate`.

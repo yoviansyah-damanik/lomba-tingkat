@@ -221,7 +221,7 @@ class CertificateService
                 'institution' => 'Pangkalan Gugusdepan Gerakan Pramuka',
                 'role_label' => 'Sebagai: Peserta',
                 'certificate_number' => "CERT/LT3-PSP/{$year}/UMM/S000001",
-                'verification_url' => route('certificates.index'),
+                'verification_url' => url('/'),
                 'role' => self::ROLE_PARTICIPANT,
                 'is_eligible' => true,
             ],

@@ -62,9 +62,9 @@
 
                 <div
                     class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                    <flux:button href="{{ route('certificates.index') }}" wire:navigate icon="arrow-left"
+                    <flux:button href="{{ route('home') }}" wire:navigate icon="arrow-left"
                         variant="outline">
-                        Laman Sertifikat
+                        Ke Beranda
                     </flux:button>
 
                     @if ($isPublished && $downloadUrl)
@@ -90,9 +90,9 @@
                 </p>
             </div>
             <div class="pt-2">
-                <flux:button href="{{ route('certificates.index') }}" wire:navigate icon="magnifying-glass"
+                <flux:button href="{{ route('home') }}" wire:navigate icon="arrow-left"
                     variant="outline">
-                    Cari Sertifikat Lain
+                    Kembali ke Beranda
                 </flux:button>
             </div>
         </div>

@@ -34,9 +34,6 @@
             <a href="{{ route('leaderboard') }}" wire:navigate class="whitespace-nowrap rounded-lg px-2.5 py-1.5 transition-colors 2xl:px-3.5 {{ request()->routeIs('leaderboard') ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300' : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800' }}">
                 Klasemen
             </a>
-            <a href="{{ route('certificates.index') }}" wire:navigate class="whitespace-nowrap rounded-lg px-2.5 py-1.5 transition-colors 2xl:px-3.5 {{ request()->routeIs('certificates.*') ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300' : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800' }}">
-                E-Sertifikat
-            </a>
         </nav>
 
         {{-- Tombol Aksi Masuk / Data User --}}
@@ -201,7 +198,6 @@
                         <a href="{{ route('schedules') }}" wire:navigate class="rounded-lg p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800">Jadwal Kegiatan</a>
                         <a href="{{ route('participants') }}" wire:navigate class="rounded-lg p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800">Peserta Kontingen</a>
                         <a href="{{ route('leaderboard') }}" wire:navigate class="rounded-lg p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800">Klasemen</a>
-                        <a href="{{ route('certificates.index') }}" wire:navigate class="rounded-lg p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-amber-600 dark:text-amber-400 font-semibold">E-Sertifikat</a>
                     </nav>
 
                 </div>

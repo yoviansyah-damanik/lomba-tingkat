@@ -17,31 +17,53 @@ class PatrolBibPrintController extends Controller
     /**
      * Cetak berkas Nomor Punggung Regu dalam format A5 Landscape
      */
-    public function printBibs(Request $request, PdfService $pdf, QrCodeService $qrCodeService): Response
+    public function printBibs(Request $request, PdfService $pdf, QrCodeService $qrCodeService, ?string $patrolId = null): Response
     {
         $user = $request->user();
-        $patrolId = $request->query('patrol_id');
+        $targetPatrolId = $patrolId ?? $request->route('patrolId') ?? $request->query('patrol_id');
         $gender = $request->query('gender');
 
-        $query = Patrol::with(['scoutGroup'])
-            ->whereNotNull('npp');
+        // Jika mencetak nomor punggung regu tunggal
+        if ($targetPatrolId) {
+            $patrol = Patrol::with(['scoutGroup'])->find($targetPatrolId);
 
-        // Batasi akses pangkalan gugus depan hanya pada regu miliknya
-        if ($user && $user->isScoutGroup()) {
-            $scoutGroup = $user->scoutGroup;
-            abort_if(!$scoutGroup, 403, 'Profil pangkalan tidak ditemukan.');
-            $query->where('scout_group_id', $scoutGroup->id);
+            abort_if(! $patrol, 404, 'Data regu tidak ditemukan.');
+
+            // Batasi akses pangkalan gugus depan hanya pada regu miliknya
+            if ($user && $user->isScoutGroup()) {
+                $scoutGroup = $user->scoutGroup;
+                abort_if(! $scoutGroup || $patrol->scout_group_id !== $scoutGroup->id, 403, 'Anda tidak berwenang mencetak nomor punggung regu pangkalan lain.');
+            }
+
+            abort_if(
+                ! $patrol->npp,
+                404,
+                'Regu "'.$patrol->patrol_name.'" belum memiliki Nomor Peserta Perlombaan (NPP). Nomor punggung hanya dapat dicetak setelah masa pendaftaran ditutup dan panitia melakukan undi/generate NPP.'
+            );
+
+            $patrols = collect([$patrol]);
+        } else {
+            // Pencetakan massal (seluruh regu atau filter per kategori putra/putri)
+            $query = Patrol::with(['scoutGroup'])->whereNotNull('npp');
+
+            if ($user && $user->isScoutGroup()) {
+                $scoutGroup = $user->scoutGroup;
+                abort_if(! $scoutGroup, 403, 'Profil pangkalan tidak ditemukan.');
+                $query->where('scout_group_id', $scoutGroup->id);
+            }
+
+            if ($gender && in_array($gender, ['boys', 'girls'], true)) {
+                $query->where('gender_category', $gender);
+            }
+
+            $patrols = $query->orderBy('gender_category')->orderBy('npp')->get();
+
+            abort_if(
+                $patrols->isEmpty(),
+                404,
+                'Belum ada regu dengan Nomor Peserta Perlombaan (NPP) yang siap dicetak. Pastikan nomor NPP telah digenerate pada menu Generate NPP.'
+            );
         }
-
-        if ($patrolId) {
-            $query->where('id', $patrolId);
-        } elseif ($gender && in_array($gender, ['boys', 'girls'], true)) {
-            $query->where('gender_category', $gender);
-        }
-
-        $patrols = $query->orderBy('gender_category')->orderBy('npp')->get();
-
-        abort_if($patrols->isEmpty(), 404, 'Data regu dengan NPP tidak ditemukan.');
 
         $event = Event::where('is_active', true)->first();
 
@@ -51,7 +73,7 @@ class PatrolBibPrintController extends Controller
 
             return [
                 'patrol' => $patrol,
-                'npp' => str_pad((string) $patrol->npp, 2, '0', STR_PAD_LEFT),
+                'npp' => (string) $patrol->npp,
                 'is_boys' => $patrol->isBoys(),
                 'gender_label' => $patrol->isBoys() ? 'PUTRA' : 'PUTRI',
                 'patrol_name' => $patrol->patrol_name,

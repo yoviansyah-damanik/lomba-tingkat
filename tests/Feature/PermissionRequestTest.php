@@ -200,7 +200,7 @@ class PermissionRequestTest extends TestCase
             'issuedAt' => $request->created_at,
         ])->render();
         $this->assertStringContainsString($request->letterNumber(), $html);
-        $this->assertStringContainsString($c['chaperone']->full_name, $html);
+        $this->assertStringContainsString(e($c['chaperone']->full_name), $html);
         $this->assertStringContainsString((string) $request->members->pluck('participant')->filter()->first()->scout_id, $html);
         $this->assertStringContainsString('Ketua Uji', $html);
         $this->assertStringContainsString('base64,AAA', $html);

@@ -14,7 +14,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('patrols', function (Blueprint $table) {
-            $table->string('npp', 3)->nullable()->after('gender_category');
+            $table->string('npp', 20)->nullable()->after('gender_category');
             $table->unique(['gender_category', 'npp']);
         });
     }

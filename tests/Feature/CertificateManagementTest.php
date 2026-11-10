@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Enums\RegistrationStatusEnum;
 use App\Livewire\Admin\Certificates\Settings;
-use App\Livewire\Public\CertificatesPage;
 use App\Models\Chaperone;
 use App\Models\Event;
 use App\Models\Participant;
@@ -45,7 +44,7 @@ class CertificateManagementTest extends TestCase
 
         $this->event = Event::where('is_active', true)->first() ?? Event::first();
         $this->admin = User::whereHas('roles', fn ($q) => $q->where('name', 'admin'))->first();
-        $this->committeeUser = User::whereHas('roles', fn ($q) => $q->where('name', 'committee'))->first();
+        $this->committeeUser = User::where('username', 'panitia')->first();
         $this->judgeUser = User::whereHas('roles', fn ($q) => $q->where('name', 'judge'))->first();
 
         // Buat data pangkalan, regu, peserta terverifikasi, dan pembina terverifikasi
@@ -211,16 +210,58 @@ class CertificateManagementTest extends TestCase
     }
 
     /**
-     * Memastikan pencarian sertifikat publik bekerja saat sertifikat dipublikasikan
+     * Memastikan tidak ada laman /certificates untuk publik (404)
      */
-    public function test_public_certificate_page_search(): void
+    public function test_public_certificates_page_does_not_exist(): void
+    {
+        $this->get('/certificates')->assertNotFound();
+    }
+
+    /**
+     * Memastikan seluruh jenis akun dapat mengakses sertifikat langsung dari dasbor masing-masing
+     */
+    public function test_all_account_types_can_access_certificates_from_dashboard(): void
     {
         $this->event->update(['is_certificate_published' => true]);
 
-        Livewire::test(CertificatesPage::class)
-            ->set('search', 'Ilham Daulay')
+        // 1. Peserta
+        $this->actingAs($this->participantUser)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Unduh Sertifikat Saya');
+
+        // 2. Pembina Pendamping
+        $this->actingAs($this->chaperoneUser)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Unduh Sertifikat Saya');
+
+        // 3. Dewan Juri
+        $this->actingAs($this->judgeUser)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Unduh Sertifikat Saya');
+
+        // 4. Panitia
+        $this->actingAs($this->committeeUser)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Unduh Sertifikat Saya');
+
+        // 5. Gugus Depan / Kontingen
+        $scoutGroupUser = $this->scoutGroup->user;
+        $this->actingAs($scoutGroupUser)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('E-Sertifikat Kontingen Pangkalan')
             ->assertSee('Ilham Daulay')
-            ->assertSee('Garuda');
+            ->assertSee('Kak Budi Siregar, S.Pd');
+
+        // 6. Admin
+        $this->actingAs($this->admin)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Pengaturan Template');
     }
 
     /**

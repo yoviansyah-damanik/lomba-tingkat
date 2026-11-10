@@ -52,7 +52,7 @@ class PatrolBibPrintTest extends TestCase
             'scout_group_id' => $this->scoutGroup->id,
             'patrol_name' => 'Rajawali',
             'gender_category' => PatrolGenderEnum::Boys,
-            'npp' => '01',
+            'npp' => 'LT-PA-01',
             'status' => RegistrationStatusEnum::Verified,
         ]);
 
@@ -60,7 +60,7 @@ class PatrolBibPrintTest extends TestCase
             'scout_group_id' => $this->scoutGroup->id,
             'patrol_name' => 'Melati',
             'gender_category' => PatrolGenderEnum::Girls,
-            'npp' => '02',
+            'npp' => 'LT-PI-02',
             'status' => RegistrationStatusEnum::Verified,
         ]);
     }
@@ -98,12 +98,12 @@ class PatrolBibPrintTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('admin.npp.print-bibs', ['patrol_id' => $this->boysPatrol->id, 'raw' => 1]));
         $response->assertOk();
         $this->assertSame('application/pdf', $response->headers->get('Content-Type'));
-        $this->assertStringContainsString('nomor-punggung-01-rajawali.pdf', (string) $response->headers->get('Content-Disposition'));
+        $this->assertStringContainsString('nomor-punggung-LT-PA-01-rajawali.pdf', (string) $response->headers->get('Content-Disposition'));
     }
 
     public function test_scout_group_can_print_own_patrol_bib(): void
     {
-        $response = $this->actingAs($this->scoutGroupUser)->get(route('scout-group.patrols.bib', ['patrolId' => $this->boysPatrol->id, 'patrol_id' => $this->boysPatrol->id, 'raw' => 1]));
+        $response = $this->actingAs($this->scoutGroupUser)->get(route('scout-group.patrols.bib', ['patrolId' => $this->boysPatrol->id, 'raw' => 1]));
         $response->assertOk();
         $this->assertSame('application/pdf', $response->headers->get('Content-Type'));
     }
@@ -119,8 +119,26 @@ class PatrolBibPrintTest extends TestCase
             'status' => RegistrationStatusEnum::Verified,
         ]);
 
-        $response = $this->actingAs($this->scoutGroupUser)->get(route('scout-group.patrols.bib', ['patrolId' => $otherPatrol->id, 'patrol_id' => $otherPatrol->id]));
-        $response->assertNotFound();
+        $response = $this->actingAs($this->scoutGroupUser)->get(route('scout-group.patrols.bib', ['patrolId' => $otherPatrol->id]));
+        $response->assertForbidden();
+    }
+
+    public function test_single_patrol_bib_renders_exactly_one_page(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('admin.npp.print-bibs', ['patrol_id' => $this->boysPatrol->id, 'raw' => 1]));
+        $response->assertOk();
+
+        preg_match_all('/\/Type\s*\/Page\b/', $response->getContent(), $matches);
+        $this->assertCount(1, $matches[0], 'Berkas nomor punggung A5 harus tepat 1 halaman per regu.');
+    }
+
+    public function test_committee_can_access_patrol_bibs_print(): void
+    {
+        $committee = User::factory()->create(['is_active' => true]);
+        $committee->assignRole(RoleEnum::Committee);
+
+        $response = $this->actingAs($committee)->get(route('admin.npp.print-bibs'));
+        $response->assertOk();
     }
 
     public function test_patrol_without_npp_returns_404(): void

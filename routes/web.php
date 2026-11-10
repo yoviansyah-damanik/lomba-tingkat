@@ -67,7 +67,6 @@ use App\Livewire\Portal\TeamAssessment;
 use App\Livewire\Portal\UpcomingSchedules;
 use App\Livewire\Public\AnnouncementShow;
 use App\Livewire\Public\AnnouncementsList;
-use App\Livewire\Public\CertificatesPage;
 use App\Livewire\Public\CertificateVerification;
 use App\Livewire\Public\CompetitionsCatalog;
 use App\Livewire\Public\CredentialVerification;
@@ -92,8 +91,7 @@ Route::get('/guide', GuidePage::class)->name('guide');
 Route::get('/leaderboard', LeaderboardPage::class)->name('leaderboard');
 Route::get('/participants', ParticipantsPage::class)->name('participants');
 
-// Penerbitan & Verifikasi E-Sertifikat Resmi (Livewire 4 SPA)
-Route::get('/certificates', CertificatesPage::class)->name('certificates.index');
+// Verifikasi E-Sertifikat Resmi
 Route::get('/certificates/verify/{id}', CertificateVerification::class)->name('certificates.verify');
 
 // Video Tutorial Pendaftaran Gugus Depan
@@ -152,6 +150,7 @@ Route::middleware(['auth', 'role'])->group(function () {
     // Verifikasi identitas lewat scan QR: Administrator (termasuk Superadmin) dan Panitia
     Route::middleware('role:admin|committee')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/identity-verification', IdentityVerification::class)->name('identity-verification.index');
+        Route::get('/npp/print-bibs', [PatrolBibPrintController::class, 'printBibs'])->name('npp.print-bibs');
     });
 
     // Cetak PDF daftar Pangkalan Gudep, Peserta (satu gudep per halaman), dan Bindamping
@@ -201,7 +200,6 @@ Route::middleware(['auth', 'role'])->group(function () {
 
         // Generate Nomor Pendaftaran Peserta (NPP) setelah pendaftaran ditutup
         Route::get('/npp', NppGeneration::class)->name('npp.index');
-        Route::get('/npp/print-bibs', [PatrolBibPrintController::class, 'printBibs'])->name('npp.print-bibs');
 
         // Tindakan Keputusan Verifikasi Kontingen
 

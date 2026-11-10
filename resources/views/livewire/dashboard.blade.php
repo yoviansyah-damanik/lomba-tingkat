@@ -68,15 +68,15 @@
                         <flux:button href="{{ route('admin.certificates.settings') }}" wire:navigate size="sm" variant="outline" icon="cog">
                             Pengaturan Template
                         </flux:button>
-                    @endif
-                    @if(!$user->isAdmin())
+                    @elseif($user->isScoutGroup())
+                        <flux:button href="#kontingen-certificates" size="sm" variant="primary" icon="academic-cap">
+                            Lihat Sertifikat Kontingen
+                        </flux:button>
+                    @else
                         <flux:button href="{{ route('certificates.my') }}" size="sm" variant="primary" icon="arrow-down-tray">
                             Unduh Sertifikat Saya
                         </flux:button>
                     @endif
-                    <flux:button href="{{ route('certificates.index') }}" wire:navigate size="sm" variant="ghost" icon="magnifying-glass">
-                        Laman Sertifikat
-                    </flux:button>
                 </div>
             </div>
         </div>
@@ -109,6 +109,9 @@
                 <x-stat-card label="Mata Lomba" :value="$adminStats['total_competitions']" unit="Cabang" action-text="Mata Lomba & Rubrik" href="{{ route('admin.competitions.index') }}" color="purple" icon="trophy" />
                 <x-stat-card label="Presensi Hari Ini" :value="$adminStats['attendances_today']" unit="Pemindaian" :description="$adminStats['active_sessions'].' sesi aktif'" action-text="Portal Presensi" href="{{ route('attendance.index') }}" color="emerald" icon="qr-code" />
                 <x-stat-card label="Izin Belum Kembali" :value="$adminStats['outstanding_permissions']" unit="Izin sementara" action-text="Permohonan Izin" href="{{ route('admin.permission-requests.index') }}" color="rose" icon="clipboard-document-check" />
+                @if($activeEvent?->isCertificatePublished())
+                    <x-stat-card label="Penerbitan E-Sertifikat" value="Status Aktif" description="Dapat diunduh akun terkait di dasbor" action-text="Kelola Template" href="{{ route('admin.certificates.settings') }}" color="amber" icon="academic-cap" />
+                @endif
             </div>
         </section>
 
@@ -187,9 +190,57 @@
                 <x-stat-card label="Nilai Lomba" :value="$gs['scored_competitions'] ?? 0" unit="Lomba dinilai" description="Nilai final regu Anda" action-text="Lihat Penilaian Regu" href="{{ route('team-assessment.index') }}" color="amber" icon="trophy" />
                 <x-stat-card label="Sesi Berikutnya" :value="isset($gs['next_schedule']) && $gs['next_schedule'] ? $gs['next_schedule']->start_time->timezone('Asia/Jakarta')->format('H:i') : '-'" :description="isset($gs['next_schedule']) && $gs['next_schedule'] ? $gs['next_schedule']->session_name : 'Belum ada sesi terjadwal'" action-text="Lihat Jadwal" href="{{ route('agenda.index') }}" color="emerald" icon="clock" />
                 @if($activeEvent?->isCertificatePublished())
-                    <x-stat-card label="E-Sertifikat Kontingen" value="Siap Dicetak" description="Piagam peserta & bindamping pangkalan" action-text="Laman Sertifikat" href="{{ route('certificates.index') }}" color="amber" icon="academic-cap" />
+                    <x-stat-card label="E-Sertifikat Kontingen" :value="count($contingentCertificates).' Berkas'" description="Piagam peserta & bindamping pangkalan" action-text="Lihat Piagam" href="#kontingen-certificates" color="amber" icon="academic-cap" />
                 @endif
             </div>
+
+            @if($activeEvent?->isCertificatePublished())
+                {{-- Daftar Berkas E-Sertifikat Kontingen Pangkalan --}}
+                <div id="kontingen-certificates" class="space-y-3 pt-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                                <flux:icon name="academic-cap" class="size-5 text-amber-600 dark:text-amber-400" />
+                                E-Sertifikat Kontingen Pangkalan
+                            </h3>
+                            <p class="text-xs text-zinc-500 dark:text-zinc-400">
+                                Unduh berkas piagam penghargaan resmi untuk seluruh peserta dan pembina pendamping pangkalan Anda.
+                            </p>
+                        </div>
+                        <span class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                            {{ count($contingentCertificates) }} Berkas Tersedia
+                        </span>
+                    </div>
+
+                    @if(empty($contingentCertificates))
+                        <div class="rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 p-6 text-center text-xs text-zinc-500 dark:text-zinc-400">
+                            Belum ada peserta atau pembina pendamping berstatus Terverifikasi di pangkalan ini.
+                        </div>
+                    @else
+                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            @foreach($contingentCertificates as $cert)
+                                <div class="flex items-center justify-between gap-3 rounded-2xl border border-zinc-200/80 bg-white p-3.5 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <div class="flex size-10 shrink-0 items-center justify-center rounded-xl {{ $cert['type'] === 'participant' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300' }}">
+                                            <flux:icon :name="$cert['type'] === 'participant' ? 'user' : 'user-circle'" class="size-5" />
+                                        </div>
+                                        <div class="min-w-0">
+                                            <h4 class="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">{{ $cert['name'] }}</h4>
+                                            <p class="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">{{ $cert['role'] }} &bull; {{ $cert['patrol'] }}</p>
+                                            <p class="text-[10px] text-zinc-400 dark:text-zinc-500">NTA: {{ $cert['scout_id'] }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="shrink-0">
+                                        <flux:button href="{{ $cert['download_url'] }}" size="xs" variant="primary" icon="arrow-down-tray">
+                                            Unduh
+                                        </flux:button>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            @endif
         </section>
     @else
         {{-- Panel Peserta & Bindamping --}}
