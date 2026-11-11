@@ -1260,10 +1260,11 @@ class ContingentRegistrationTest extends TestCase
             'gender_category' => PatrolGenderEnum::Boys,
         ]);
 
-        // Buat peserta dengan 6 berkas wajib terisi, namun tanpa berkas KTA dan BPJS
-        Participant::factory()->create([
+        // Buat peserta dengan 7 berkas wajib terisi (Pas Foto + 6 PDF wajib), namun tanpa berkas opsional KTA dan BPJS
+        $participant = Participant::factory()->create([
             'patrol_id' => $patrol->id,
             'full_name' => 'Peserta Tanpa KTA BPJS',
+            'photo_path' => 'participants/foto.jpg',
             'doc_kta_path' => null,
             'doc_bpjs_path' => null,
             'doc_health_certificate_path' => 'participants/documents/sehat.pdf',
@@ -1282,6 +1283,12 @@ class ContingentRegistrationTest extends TestCase
         $this->assertSame(0, $summary['incomplete']);
         $this->assertSame(1, $summary['complete']);
         $this->assertEmpty($warnings);
+
+        // Jika salah satu dari 7 berkas wajib kosong (misal hanya 1/7 Berkas: Pas Foto saja), submit registrasi harus tertahan
+        $participant->update(['doc_sku_path' => null]);
+        $incompleteComponent = Livewire::actingAs($this->scoutGroupUser)->test(ReviewRegistration::class);
+        $missingTitles = collect($incompleteComponent->get('missingRequirements'))->pluck('title');
+        $this->assertTrue($missingTitles->contains('Berkas Wajib Peserta Belum Lengkap (7 Berkas Wajib)'));
     }
 
     /**

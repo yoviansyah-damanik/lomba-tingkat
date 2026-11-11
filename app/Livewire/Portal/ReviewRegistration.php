@@ -198,7 +198,21 @@ class ReviewRegistration extends Component
             }
         }
 
-        // 4. Surat Tugas / Mandat Gugus Depan
+        // 4. Kelengkapan 7 Berkas Persyaratan Wajib Peserta (Pas Foto 3x4 + 6 PDF Wajib)
+        $docsSummary = $this->participantDocumentsSummary;
+        if ($docsSummary['total'] > 0 && $docsSummary['incomplete'] > 0) {
+            $missing[] = [
+                'category' => 'Berkas Peserta',
+                'title' => 'Berkas Wajib Peserta Belum Lengkap (7 Berkas Wajib)',
+                'description' => "Sebanyak {$docsSummary['incomplete']} dari {$docsSummary['total']} peserta belum melengkapi 7 berkas wajib (Pas Foto 3x4, Surat Keterangan Sehat, Surat Izin Orang Tua, Akta Kelahiran, Kartu Keluarga, SKU, dan SKK). Berkas KTA dan Kartu BPJS bersifat opsional.",
+                'action_url' => route('scout-group.patrols'),
+                'action_label' => 'Lengkapi Berkas Peserta',
+                'icon' => 'document-check',
+                'badge_color' => 'amber',
+            ];
+        }
+
+        // 5. Surat Tugas / Mandat Gugus Depan
         $hasMandateLetter = ! empty($group->mandate_letter_path) || ! empty($this->mandate_letter);
         if (! $hasMandateLetter) {
             $missing[] = [
@@ -212,7 +226,7 @@ class ReviewRegistration extends Component
             ];
         }
 
-        // 5. Bukti Pembayaran Pendaftaran
+        // 6. Bukti Pembayaran Pendaftaran
         $hasPaymentProof = ! empty($group->payment_proof_path) || ! empty($this->payment_proof);
         if (! $hasPaymentProof) {
             $billing = $this->billingSummary;
@@ -246,6 +260,7 @@ class ReviewRegistration extends Component
             'Profil Pangkalan' => 'profile',
             'Regu Peserta' => 'patrols',
             'Pembina Pendamping' => 'chaperones',
+            'Berkas Peserta' => 'participant_docs',
             'Berkas Pangkalan' => 'documents',
         ];
 
@@ -256,7 +271,7 @@ class ReviewRegistration extends Component
     }
 
     /**
-     * Ringkasan kelengkapan 8 berkas persyaratan peserta
+     * Ringkasan kelengkapan 7 berkas persyaratan wajib peserta (Pas Foto 3x4 + 6 PDF wajib)
      */
     #[Computed]
     public function participantDocumentsSummary(): array
@@ -269,8 +284,9 @@ class ReviewRegistration extends Component
         foreach ($group->patrols as $patrol) {
             foreach ($patrol->participants as $participant) {
                 $totalParticipants++;
-                $hasAllDocs = collect(Participant::REQUIRED_DOCUMENTS)
-                    ->every(fn ($doc) => ! empty($participant->{$doc[0]}));
+                $hasAllDocs = ! empty($participant->photo_path)
+                    && collect(Participant::REQUIRED_DOCUMENTS)
+                        ->every(fn ($doc) => ! empty($participant->{$doc[0]}));
 
                 if (! $hasAllDocs) {
                     $incompleteParticipantsCount++;
@@ -286,7 +302,7 @@ class ReviewRegistration extends Component
     }
 
     /**
-     * Peringatan berkas persyaratan wajib peserta yang belum diunggah, satu baris per peserta
+     * Peringatan berkas persyaratan wajib peserta (7 berkas) yang belum diunggah, satu baris per peserta
      *
      * @return array<int, string>
      */
@@ -299,10 +315,15 @@ class ReviewRegistration extends Component
 
         foreach ($group->patrols as $patrol) {
             foreach ($patrol->participants as $participant) {
-                $missing = collect(Participant::REQUIRED_DOCUMENTS)
-                    ->filter(fn ($doc) => empty($participant->{$doc[0]}))
-                    ->map(fn ($doc) => str_replace('Scan ', '', $doc[1]))
-                    ->values();
+                $missing = collect();
+                if (empty($participant->photo_path)) {
+                    $missing->push('Pas Foto 3x4');
+                }
+                $missing = $missing->merge(
+                    collect(Participant::REQUIRED_DOCUMENTS)
+                        ->filter(fn ($doc) => empty($participant->{$doc[0]}))
+                        ->map(fn ($doc) => str_replace('Scan ', '', $doc[1]))
+                )->values();
 
                 if ($missing->isNotEmpty()) {
                     $warnings[] = "{$participant->full_name} (Regu {$patrol->patrol_name}) belum mengunggah: {$missing->join(', ')}.";
@@ -322,6 +343,8 @@ class ReviewRegistration extends Component
         $hasPatrol = $group->patrols->isNotEmpty();
         $hasChaperone = $group->chaperones->isNotEmpty();
         $isProfileComplete = ! empty($group->school_name) && $group->group_number !== 'Belum Diisi' && ! empty($group->group_number);
+        $docsSummary = $this->participantDocumentsSummary;
+        $hasCompleteParticipantDocs = $docsSummary['total'] > 0 && $docsSummary['incomplete'] === 0;
         $hasMandateLetter = ! empty($group->mandate_letter_path) || ! empty($this->mandate_letter);
         $hasPaymentProof = ! empty($group->payment_proof_path) || ! empty($this->payment_proof);
 
@@ -332,6 +355,7 @@ class ReviewRegistration extends Component
             'has_patrol' => $hasPatrol,
             'has_chaperone' => $hasChaperone,
             'is_profile_complete' => $isProfileComplete,
+            'has_complete_participant_docs' => $hasCompleteParticipantDocs,
             'has_mandate_letter' => $hasMandateLetter,
             'has_payment_proof' => $hasPaymentProof,
             'missing_count' => count($this->missingRequirements),

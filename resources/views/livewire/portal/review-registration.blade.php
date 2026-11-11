@@ -38,7 +38,7 @@
             @endif
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
             <div class="flex items-center gap-2.5 rounded-xl border {{ $readiness['is_profile_complete'] ? 'border-emerald-200 bg-emerald-50/60 dark:border-emerald-900/40 dark:bg-emerald-950/20' : 'border-amber-200 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/20' }} p-3 text-xs">
                 @if($readiness['is_profile_complete'])
                     <flux:icon name="check-circle" class="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -66,6 +66,16 @@
                 @else
                     <flux:icon name="exclamation-circle" class="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
                     <span class="font-medium text-amber-900 dark:text-amber-200">Belum Ada Bindamping</span>
+                @endif
+            </div>
+
+            <div class="flex items-center gap-2.5 rounded-xl border {{ ($readiness['has_complete_participant_docs'] ?? false) ? 'border-emerald-200 bg-emerald-50/60 dark:border-emerald-900/40 dark:bg-emerald-950/20' : 'border-amber-200 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/20' }} p-3 text-xs">
+                @if($readiness['has_complete_participant_docs'] ?? false)
+                    <flux:icon name="check-circle" class="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span class="font-medium text-emerald-900 dark:text-emerald-200">7 Berkas Wajib Peserta</span>
+                @else
+                    <flux:icon name="exclamation-circle" class="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <span class="font-medium text-amber-900 dark:text-amber-200">Berkas Peserta ({{ $participantDocs['complete'] ?? 0 }}/{{ $participantDocs['total'] ?? 0 }})</span>
                 @endif
             </div>
 
@@ -334,12 +344,12 @@
                             </div>
                             @php
                                 $requiredDocKeys = array_keys(\App\Models\Participant::REQUIRED_DOCUMENTS);
-                                $requiredUploadedCount = collect($requiredDocKeys)->filter(fn($key) => !empty($participant->{$key . '_path'}))->count();
-                                $totalRequiredDocs = count($requiredDocKeys);
+                                $requiredUploadedCount = ($participant->photo_path ? 1 : 0) + collect($requiredDocKeys)->filter(fn($key) => !empty($participant->{$key . '_path'}))->count();
+                                $totalRequiredDocs = 1 + count($requiredDocKeys);
                                 $isRequiredDocsComplete = $requiredUploadedCount === $totalRequiredDocs;
                             @endphp
                             <span class="text-[11px] font-semibold {{ $isRequiredDocsComplete ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400' }}">
-                                {{ $requiredUploadedCount }}/{{ $totalRequiredDocs }} Wajib
+                                {{ $requiredUploadedCount }}/{{ $totalRequiredDocs }} Berkas
                             </span>
                         </div>
 
@@ -349,9 +359,14 @@
                                 @php
                                     $filePath = $participant->{$pathCol};
                                     $isOptionalDoc = \App\Models\Participant::isDocumentOptional($key);
+                                    $cellBgClasses = $filePath
+                                        ? 'bg-emerald-50/40 dark:bg-emerald-950/20'
+                                        : ($isOptionalDoc
+                                            ? 'bg-zinc-50/70 dark:bg-zinc-900/70'
+                                            : 'bg-amber-50/70 dark:bg-amber-950/25');
                                 @endphp
-                                <div class="flex flex-col items-center gap-1.5 bg-white dark:bg-zinc-900 p-2.5 text-center">
-                                    <div class="flex size-8 items-center justify-center rounded-lg {{ $filePath ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-300 dark:bg-zinc-800' }}">
+                                <div class="flex flex-col items-center gap-1.5 {{ $cellBgClasses }} p-2.5 text-center">
+                                    <div class="flex size-8 items-center justify-center rounded-lg {{ $filePath ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : ($isOptionalDoc ? 'bg-zinc-100 text-zinc-300 dark:bg-zinc-800' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400') }}">
                                         <flux:icon name="{{ $filePath ? 'document-check' : 'document' }}" class="size-4" />
                                     </div>
                                     <span class="text-[10px] leading-tight text-zinc-600 dark:text-zinc-400 font-medium line-clamp-2">
@@ -362,7 +377,7 @@
                                     @elseif($isOptionalDoc)
                                         <span class="text-[10px] text-zinc-400">Opsional</span>
                                     @else
-                                        <span class="text-[10px] text-zinc-400">Belum</span>
+                                        <span class="text-[10px] font-semibold text-amber-700 dark:text-amber-400">Wajib</span>
                                     @endif
                                 </div>
                             @endforeach
@@ -629,10 +644,10 @@
 
             {{-- Catatan Berkas Peserta --}}
             @if(isset($participantDocs['incomplete']) && $participantDocs['incomplete'] > 0)
-                <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-800/40 dark:text-zinc-400 flex items-start gap-2.5">
-                    <flux:icon name="information-circle" class="size-4 text-zinc-500 shrink-0 mt-0.5" />
+                <div class="rounded-xl border border-amber-200 bg-amber-50/60 p-3 text-xs text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-200 flex items-start gap-2.5">
+                    <flux:icon name="information-circle" class="size-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                     <div class="leading-relaxed">
-                        <strong>Catatan Berkas Peserta:</strong> Sebanyak <strong>{{ $participantDocs['incomplete'] }}</strong> dari <strong>{{ $participantDocs['total'] }}</strong> peserta belum mengunggah lengkap 7 dokumen scan persyaratan (KTA, BPJS, SKU, dll). Anda dapat melengkapinya secara berkala melalui menu <a href="{{ route('scout-group.patrols') }}" wire:navigate class="text-amber-700 font-semibold underline dark:text-amber-400">Kelola Regu</a>.
+                        <strong>Catatan Berkas Wajib Peserta:</strong> Sebanyak <strong>{{ $participantDocs['incomplete'] }}</strong> dari <strong>{{ $participantDocs['total'] }}</strong> peserta belum mengunggah lengkap <strong>7 berkas wajib</strong> (Pas Foto 3x4, Surat Keterangan Sehat, Surat Izin Orang Tua, Akta Kelahiran, Kartu Keluarga, SKU, dan SKK; sedangkan Scan KTA &amp; Kartu BPJS bersifat opsional). Silakan lengkapi melalui menu <a href="{{ route('scout-group.patrols') }}" wire:navigate class="text-amber-700 font-semibold underline dark:text-amber-400">Kelola Regu</a>.
                     </div>
                 </div>
             @endif

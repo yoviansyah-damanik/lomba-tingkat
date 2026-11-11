@@ -282,18 +282,7 @@
                         <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
                             @forelse($patrol->orderedParticipants() as $participant)
                                 @php
-                                    // Hitung kelengkapan dokumen peserta (7 wajib + 2 opsional)
-                                    $docsCheck = [
-                                        $participant->photo_path,
-                                        $participant->doc_kta_path,
-                                        $participant->doc_bpjs_path,
-                                        $participant->doc_health_certificate_path,
-                                        $participant->doc_parent_consent_path,
-                                        $participant->doc_birth_certificate_path,
-                                        $participant->doc_family_card_path,
-                                        $participant->doc_sku_path,
-                                        $participant->doc_skk_path,
-                                    ];
+                                    // Hitung kelengkapan berkas wajib peserta (7 berkas wajib: Pas Foto + 6 PDF Wajib)
                                     $requiredDocsCheck = [
                                         $participant->photo_path,
                                         $participant->doc_health_certificate_path,
@@ -303,8 +292,8 @@
                                         $participant->doc_sku_path,
                                         $participant->doc_skk_path,
                                     ];
-                                    $uploadedDocsCount = collect($docsCheck)->filter(fn($d) => !empty($d))->count();
-                                    $isFullDocs = collect($requiredDocsCheck)->every(fn($d) => !empty($d));
+                                    $uploadedDocsCount = collect($requiredDocsCheck)->filter(fn($d) => !empty($d))->count();
+                                    $isFullDocs = $uploadedDocsCount === 7;
                                 @endphp
                                 <tr class="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40">
                                     <td class="px-5 py-2.5 font-semibold text-zinc-900 dark:text-zinc-100">
@@ -344,7 +333,7 @@
                                     </td>
                                     <td class="px-5 py-2.5 text-center">
                                         <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold {{ $isFullDocs ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' : ($uploadedDocsCount > 0 ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300') }}">
-                                            {{ $uploadedDocsCount }}/9 Berkas
+                                            {{ $uploadedDocsCount }}/7 Berkas
                                         </span>
                                     </td>
                                     <td class="px-5 py-2.5 text-right">
@@ -450,25 +439,42 @@
 
                         {{-- Section 1: Seluruh Dokumen Persyaratan yang Diunggah --}}
                         <div>
-                            <h4 class="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-3">
-                                1. Seluruh Dokumen Persyaratan Yang Diunggah (9 Berkas)
-                            </h4>
+                            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                                    1. Seluruh Dokumen Persyaratan Yang Diunggah (7 Wajib &bull; 2 Opsional)
+                                </h4>
+                                <div class="flex items-center gap-2 text-[10px] font-semibold">
+                                    <span class="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-amber-800 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300">
+                                        <span class="size-1.5 rounded-full bg-amber-500"></span> Wajib Diunggah
+                                    </span>
+                                    <span class="inline-flex items-center gap-1 rounded-md border border-dashed border-zinc-300 bg-zinc-50 px-2 py-0.5 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800/40 dark:text-zinc-400">
+                                        Opsional
+                                    </span>
+                                </div>
+                            </div>
                             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
                                 @foreach($participantDocsList as $doc)
                                     @php
                                         $ext = strtolower(pathinfo($doc['path'] ?? '', PATHINFO_EXTENSION));
                                         $isImg = in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif']);
+                                        $hasDocFile = !empty($doc['path']);
+                                        $isOptionalDoc = !empty($doc['optional']);
+                                        $boxClasses = $hasDocFile
+                                            ? 'border-emerald-200 bg-emerald-50/30 dark:border-emerald-800/40 dark:bg-emerald-950/20'
+                                            : ($isOptionalDoc
+                                                ? 'border-dashed border-zinc-200 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-800/20'
+                                                : 'border-amber-300 bg-amber-50/55 ring-1 ring-amber-200/60 dark:border-amber-700/60 dark:bg-amber-950/25 dark:ring-amber-800/30');
                                     @endphp
-                                    <div class="rounded-xl border {{ !empty($doc['path']) ? 'border-emerald-200 bg-emerald-50/30 dark:border-emerald-800/40 dark:bg-emerald-950/20' : 'border-zinc-200 bg-zinc-50/60 dark:border-zinc-800 dark:bg-zinc-800/30' }} p-3 flex flex-col justify-between">
+                                    <div class="rounded-xl border {{ $boxClasses }} p-3 flex flex-col justify-between">
                                         <div>
-                                            <div class="flex items-center justify-between">
+                                            <div class="flex items-center justify-between gap-1.5">
                                                 <span class="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate" title="{{ $doc['label'] }}">{{ $doc['label'] }}</span>
-                                                @if(!empty($doc['path']))
-                                                    <span class="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">Ada</span>
-                                                @elseif(!empty($doc['optional']))
-                                                    <span class="text-[10px] font-bold text-zinc-500 dark:text-zinc-400">Opsional</span>
+                                                @if($hasDocFile)
+                                                    <span class="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">Ada</span>
+                                                @elseif($isOptionalDoc)
+                                                    <span class="rounded bg-zinc-200/80 px-1.5 py-0.5 text-[10px] font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">Opsional</span>
                                                 @else
-                                                    <span class="text-[10px] font-bold text-rose-600 dark:text-rose-400">Kosong</span>
+                                                    <span class="rounded bg-amber-200/80 px-1.5 py-0.5 text-[10px] font-bold text-amber-900 dark:bg-amber-900/70 dark:text-amber-200">Wajib</span>
                                                 @endif
                                             </div>
                                             <p class="mt-0.5 text-[10px] text-zinc-500 dark:text-zinc-400 line-clamp-1">

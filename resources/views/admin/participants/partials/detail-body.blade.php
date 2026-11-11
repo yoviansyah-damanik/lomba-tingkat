@@ -36,17 +36,6 @@
                 </div>
 
                 @php
-                    $docsCheck = [
-                        $participant->photo_path,
-                        $participant->doc_kta_path,
-                        $participant->doc_bpjs_path,
-                        $participant->doc_health_certificate_path,
-                        $participant->doc_parent_consent_path,
-                        $participant->doc_birth_certificate_path,
-                        $participant->doc_family_card_path,
-                        $participant->doc_sku_path,
-                        $participant->doc_skk_path,
-                    ];
                     $requiredDocsCheck = [
                         $participant->photo_path,
                         $participant->doc_health_certificate_path,
@@ -56,13 +45,13 @@
                         $participant->doc_sku_path,
                         $participant->doc_skk_path,
                     ];
-                    $uploadedCount = collect($docsCheck)->filter(fn($d) => !empty($d))->count();
-                    $isRequiredComplete = collect($requiredDocsCheck)->every(fn($d) => !empty($d));
+                    $uploadedCount = collect($requiredDocsCheck)->filter(fn($d) => !empty($d))->count();
+                    $isRequiredComplete = $uploadedCount === 7;
                 @endphp
                 <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-right text-xs dark:border-zinc-800 dark:bg-zinc-800/50">
-                    <span class="text-zinc-400 block text-[11px]">Kelengkapan Berkas:</span>
+                    <span class="text-zinc-400 block text-[11px]">Kelengkapan Berkas Wajib:</span>
                     <span class="text-sm font-bold {{ $isRequiredComplete ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400' }}">
-                        {{ $uploadedCount }} dari 9 Berkas Terunggah
+                        {{ $uploadedCount }}/7 Berkas
                     </span>
                 </div>
             </div>
@@ -84,13 +73,13 @@
         @endphp
 
         <div class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <div class="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-zinc-100 dark:border-zinc-800">
                 <div>
                     <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100">Berkas &amp; Dokumen Persyaratan Yang Diunggah</h3>
-                    <p class="text-xs text-zinc-500 dark:text-zinc-400">Klik tombol pratinjau untuk melihat file langsung di dalam modal (mendukung zoom foto &amp; preview PDF)</p>
+                    <p class="text-xs text-zinc-500 dark:text-zinc-400">Kotak berwarna kuning keemasan menandakan berkas yang wajib diunggah (7 berkas wajib &bull; 2 opsional)</p>
                 </div>
                 <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $isRequiredComplete ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300' }}">
-                    {{ $uploadedCount }}/9 Berkas
+                    {{ $uploadedCount }}/7 Berkas
                 </span>
             </div>
 
@@ -99,23 +88,29 @@
                     @php
                         $ext = strtolower(pathinfo($doc['path'] ?? '', PATHINFO_EXTENSION));
                         $hasFile = !empty($doc['path']);
+                        $isOptional = !empty($doc['optional']);
                         $isImg = in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif']);
+                        $cardBoxClasses = $hasFile
+                            ? 'border-emerald-200 bg-emerald-50/25 dark:border-emerald-800/40 dark:bg-emerald-950/15'
+                            : ($isOptional
+                                ? 'border-dashed border-zinc-200 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-800/20'
+                                : 'border-amber-300 bg-amber-50/55 ring-1 ring-amber-200/60 dark:border-amber-700/60 dark:bg-amber-950/25 dark:ring-amber-800/30');
                     @endphp
-                    <div class="flex flex-col justify-between rounded-xl border {{ $hasFile ? 'border-emerald-200 bg-emerald-50/20 dark:border-emerald-800/40 dark:bg-emerald-950/10' : 'border-zinc-200 bg-zinc-50/60 dark:border-zinc-800 dark:bg-zinc-800/30' }} p-4">
+                    <div class="flex flex-col justify-between rounded-xl border {{ $cardBoxClasses }} p-4">
                         <div>
-                            <div class="flex items-center justify-between">
+                            <div class="flex items-center justify-between gap-1.5">
                                 <span class="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate" title="{{ $doc['label'] }}">{{ $doc['label'] }}</span>
                                 @if($hasFile)
                                     <span class="rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 uppercase">
                                         {{ $ext ?: 'Ada' }}
                                     </span>
-                                @elseif(!empty($doc['optional']))
+                                @elseif($isOptional)
                                     <span class="rounded-md bg-zinc-200/80 px-1.5 py-0.5 text-[10px] font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
                                         Opsional
                                     </span>
                                 @else
-                                    <span class="rounded-md bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
-                                        Kosong
+                                    <span class="rounded-md bg-amber-200/80 px-1.5 py-0.5 text-[10px] font-bold text-amber-900 dark:bg-amber-900/70 dark:text-amber-200">
+                                        Wajib
                                     </span>
                                 @endif
                             </div>

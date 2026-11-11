@@ -183,7 +183,7 @@
                 <x-stat-card label="Regu Terdaftar" :value="$gs['patrols'] ?? 0" unit="Regu" :description="($gs['boys_patrols'] ?? 0).' putra / '.($gs['girls_patrols'] ?? 0).' putri'" action-text="Kelola Regu" href="{{ route('scout-group.patrols') }}" color="emerald" icon="user-group" />
                 <x-stat-card label="Regu Lengkap" :value="($gs['full_patrols'] ?? 0).' / '.($gs['patrols'] ?? 0)" unit="Regu" description="8 peserta + Pinru & Wapinru" color="indigo" icon="check-circle" />
                 <x-stat-card label="Anggota Peserta" :value="($gs['participants'] ?? 0).' / '.($gs['participants_target'] ?? 0)" unit="Peserta" description="Terisi dari target 8 per regu" color="blue" icon="user" />
-                <x-stat-card label="Berkas Peserta Lengkap" :value="($gs['docs_complete'] ?? 0).' / '.($gs['participants'] ?? 0)" unit="Peserta" description="Pas foto + 7 dokumen" color="purple" icon="document-check" />
+                <x-stat-card label="Berkas Peserta Lengkap" :value="($gs['docs_complete'] ?? 0).' / '.($gs['participants'] ?? 0)" unit="Peserta" description="Pas foto + 6 dokumen wajib" color="purple" icon="document-check" />
                 <x-stat-card label="Bindamping" :value="$gs['chaperones'] ?? 0" unit="Orang" action-text="Kelola Bindamping" href="{{ route('scout-group.chaperones') }}" color="blue" icon="user-circle" />
                 @include('livewire.partials.ranking-cards', ['rankings' => $rankings])
                 @include('livewire.partials.achievement-card', ['achievements' => $achievements])

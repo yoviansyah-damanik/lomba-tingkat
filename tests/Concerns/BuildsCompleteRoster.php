@@ -27,6 +27,13 @@ trait BuildsCompleteRoster
                 'patrol_id' => $patrol->id,
                 'role_in_patrol' => $role,
                 'gender' => $patrol->isBoys() ? 'male' : 'female',
+                'photo_path' => 'participants/photo.jpg',
+                'doc_health_certificate_path' => 'participants/documents/health.pdf',
+                'doc_parent_consent_path' => 'participants/documents/consent.pdf',
+                'doc_birth_certificate_path' => 'participants/documents/birth.pdf',
+                'doc_family_card_path' => 'participants/documents/kk.pdf',
+                'doc_sku_path' => 'participants/documents/sku.pdf',
+                'doc_skk_path' => 'participants/documents/skk.pdf',
             ]),
             $roles
         );

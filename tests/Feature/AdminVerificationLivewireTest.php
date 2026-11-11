@@ -2,13 +2,21 @@
 
 namespace Tests\Feature;
 
+use App\Enums\PatrolGenderEnum;
+use App\Enums\PatrolRoleEnum;
 use App\Enums\RegistrationStatusEnum;
 use App\Enums\RoleEnum;
+use App\Livewire\Admin\ScoutGroupVerificationActions;
 use App\Livewire\Admin\VerificationManagement;
+use App\Models\Chaperone;
+use App\Models\Participant;
+use App\Models\Patrol;
 use App\Models\ScoutGroup;
 use App\Models\User;
+use Database\Seeders\EventSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -22,7 +30,7 @@ class AdminVerificationLivewireTest extends TestCase
     {
         parent::setUp();
         $this->seed(RoleSeeder::class);
-        $this->seed(\Database\Seeders\EventSeeder::class);
+        $this->seed(EventSeeder::class);
 
         $this->admin = User::factory()->create([
             'is_active' => true,
@@ -67,8 +75,8 @@ class AdminVerificationLivewireTest extends TestCase
             'verification_status' => RegistrationStatusEnum::Submitted,
         ]);
 
-        \Livewire\Livewire::withoutLazyLoading()->actingAs($this->admin)
-            ->test(\App\Livewire\Admin\ScoutGroupVerificationActions::class, ['scoutGroupId' => $scoutGroup->id])
+        Livewire::withoutLazyLoading()->actingAs($this->admin)
+            ->test(ScoutGroupVerificationActions::class, ['scoutGroupId' => $scoutGroup->id])
             ->call('verify');
 
         $this->assertEquals(RegistrationStatusEnum::Verified, $scoutGroup->fresh()->verification_status);
@@ -90,8 +98,8 @@ class AdminVerificationLivewireTest extends TestCase
             'verification_status' => RegistrationStatusEnum::Submitted,
         ]);
 
-        \Livewire\Livewire::withoutLazyLoading()->actingAs($this->admin)
-            ->test(\App\Livewire\Admin\ScoutGroupVerificationActions::class, ['scoutGroupId' => $scoutGroup->id])
+        Livewire::withoutLazyLoading()->actingAs($this->admin)
+            ->test(ScoutGroupVerificationActions::class, ['scoutGroupId' => $scoutGroup->id])
             ->set('revisionNotes', 'Mohon lengkapi NTA seluruh peserta regu putri.')
             ->call('requestRevision')
             ->assertHasNoErrors();
@@ -117,17 +125,17 @@ class AdminVerificationLivewireTest extends TestCase
             'payment_proof_path' => 'payments/payment_test.jpg',
         ]);
 
-        $patrol = \App\Models\Patrol::create([
+        $patrol = Patrol::create([
             'scout_group_id' => $scoutGroup->id,
             'patrol_name' => 'Rajawali Sakti',
-            'gender_category' => \App\Enums\PatrolGenderEnum::Boys,
+            'gender_category' => PatrolGenderEnum::Boys,
             'status' => RegistrationStatusEnum::Submitted,
         ]);
 
-        $participant = \App\Models\Participant::create([
+        $participant = Participant::create([
             'patrol_id' => $patrol->id,
             'full_name' => 'Bintang Alamsyah',
-            'role_in_patrol' => \App\Enums\PatrolRoleEnum::PatrolLeader,
+            'role_in_patrol' => PatrolRoleEnum::PatrolLeader,
             'scout_id' => '02.08.01.123',
             'gender' => 'male',
             'class_grade' => 'VIII',
@@ -145,7 +153,7 @@ class AdminVerificationLivewireTest extends TestCase
             'status' => RegistrationStatusEnum::Submitted,
         ]);
 
-        $chaperone = \App\Models\Chaperone::create([
+        $chaperone = Chaperone::create([
             'scout_group_id' => $scoutGroup->id,
             'full_name' => 'Kak Hendra Gunawan, u.Pd',
             'gender' => 'male',
@@ -169,7 +177,7 @@ class AdminVerificationLivewireTest extends TestCase
             ->assertSee('mandate_test.pdf')
             ->assertSee('payment_test.jpg')
             // Participant uploads & review modal
-            ->assertSee('9/9 Berkas')
+            ->assertSee('7/7 Berkas')
             ->assertSee('review-participant-'.$participant->id)
             ->assertSee('Surat Izin Orang Tua')
             ->assertSee('Scan Kartu Keluarga (KK)')
@@ -202,7 +210,7 @@ class AdminVerificationLivewireTest extends TestCase
 
     public function test_admin_can_download_all_contingent_files_as_zip(): void
     {
-        \Illuminate\Support\Facades\Storage::fake('public');
+        Storage::fake('public');
 
         $groupUser = User::factory()->create();
         $scoutGroup = ScoutGroup::create([
@@ -219,17 +227,17 @@ class AdminVerificationLivewireTest extends TestCase
             'payment_proof_path' => 'payments/payment.jpg',
         ]);
 
-        \Illuminate\Support\Facades\Storage::disk('public')->put('mandates/mandate.pdf', 'dummy-mandate-content');
-        \Illuminate\Support\Facades\Storage::disk('public')->put('payments/payment.jpg', 'dummy-payment-content');
+        Storage::disk('public')->put('mandates/mandate.pdf', 'dummy-mandate-content');
+        Storage::disk('public')->put('payments/payment.jpg', 'dummy-payment-content');
 
-        $patrol = \App\Models\Patrol::create([
+        $patrol = Patrol::create([
             'scout_group_id' => $scoutGroup->id,
-            'gender_category' => \App\Enums\PatrolGenderEnum::Boys,
+            'gender_category' => PatrolGenderEnum::Boys,
             'patrol_name' => 'Garuda Perkasa',
             'status' => RegistrationStatusEnum::Submitted,
         ]);
 
-        $participant = \App\Models\Participant::create([
+        $participant = Participant::create([
             'patrol_id' => $patrol->id,
             'full_name' => 'Budi Santoso',
             'birth_place' => 'Padangsidimpuan',
@@ -237,13 +245,13 @@ class AdminVerificationLivewireTest extends TestCase
             'gender' => 'male',
             'religion' => 'Islam',
             'scout_level' => 'rakit',
-            'role_in_patrol' => \App\Enums\PatrolRoleEnum::PatrolLeader,
+            'role_in_patrol' => PatrolRoleEnum::PatrolLeader,
             'status' => RegistrationStatusEnum::Submitted,
             'photo_path' => 'participants/budi.jpg',
         ]);
-        \Illuminate\Support\Facades\Storage::disk('public')->put('participants/budi.jpg', 'dummy-photo-content');
+        Storage::disk('public')->put('participants/budi.jpg', 'dummy-photo-content');
 
-        $chaperone = \App\Models\Chaperone::create([
+        $chaperone = Chaperone::create([
             'scout_group_id' => $scoutGroup->id,
             'full_name' => 'Ahmad Fauzi',
             'birth_place' => 'Medan',
@@ -255,7 +263,7 @@ class AdminVerificationLivewireTest extends TestCase
             'photo_path' => 'chaperones/fauzi.jpg',
             'status' => RegistrationStatusEnum::Submitted,
         ]);
-        \Illuminate\Support\Facades\Storage::disk('public')->put('chaperones/fauzi.jpg', 'dummy-chaperone-photo');
+        Storage::disk('public')->put('chaperones/fauzi.jpg', 'dummy-chaperone-photo');
 
         // Check show page has the zip button
         $showResponse = $this->actingAs($this->admin)->get(route('admin.scout-groups.show', $scoutGroup->id));
@@ -312,5 +320,3 @@ class AdminVerificationLivewireTest extends TestCase
         $f03Response->assertHeader('Content-Type', 'application/pdf');
     }
 }
-
-

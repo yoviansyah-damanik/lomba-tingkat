@@ -45,10 +45,18 @@
                     <div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
                         {{-- Pas Foto Box --}}
                         <div class="lg:col-span-1" x-data="{ photoPreview: '{{ $participant?->photo_path ? asset('storage/' . $participant?->photo_path) : '' }}' }">
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-2">
-                                Pas Foto 3 x 4 <span class="text-red-500">*</span>
-                            </label>
-                            <div class="relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-zinc-300 bg-zinc-50 p-4 text-center dark:border-zinc-700 dark:bg-zinc-800/50">
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
+                                    Pas Foto 3 x 4 <span class="text-red-500">*</span>
+                                </label>
+                                <span class="rounded bg-amber-200/80 px-1.5 py-0.5 text-[10px] font-bold text-amber-900 dark:bg-amber-900/70 dark:text-amber-200">
+                                    Wajib
+                                </span>
+                            </div>
+                            <div
+                                :class="photoPreview ? 'border-emerald-300 bg-emerald-50/35 dark:border-emerald-800/60 dark:bg-emerald-950/20' : 'border-amber-300 bg-amber-50/55 ring-1 ring-amber-200/60 dark:border-amber-700/60 dark:bg-amber-950/25 dark:ring-amber-800/30'"
+                                class="relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-4 text-center transition-colors"
+                            >
                                 <template x-if="photoPreview">
                                     <img :src="photoPreview" class="h-40 w-30 rounded-lg object-cover shadow-sm mb-2" />
                                 </template>
@@ -713,16 +721,22 @@
                         <div>
                             <span class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Bagian 6</span>
                             <h2 class="text-base font-bold text-zinc-900 dark:text-zinc-100">Berkas Persyaratan Peserta</h2>
-                            <p class="text-xs text-zinc-500 mt-0.5">Unggah berkas dokumen persyaratan peserta dalam format PDF (maksimal 4MB per berkas). Berkas NTA/KTA dan Kartu BPJS bersifat opsional.</p>
+                            <p class="text-xs text-zinc-500 mt-0.5">Unggah berkas dokumen persyaratan peserta dalam format PDF (maksimal 4MB per berkas). Kotak berwarna kuning keemasan wajib diunggah, sedangkan KTA dan BPJS bersifat opsional.</p>
                         </div>
-                        <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
-                            6 Wajib &bull; 2 Opsional
-                        </span>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/60 dark:text-amber-300">
+                                <span class="size-2 rounded-full bg-amber-500"></span>
+                                6 Berkas Wajib
+                            </span>
+                            <span class="inline-flex items-center gap-1.5 rounded-full border border-dashed border-zinc-300 bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-300">
+                                2 Opsional
+                            </span>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                         {{-- 1. Scan KTA (Opsional) --}}
-                        <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
+                        <div class="rounded-xl border {{ $participant?->doc_kta_path ? 'border-emerald-300 bg-emerald-50/35 dark:border-emerald-800/60 dark:bg-emerald-950/20' : 'border-dashed border-zinc-300 bg-zinc-50/50 dark:border-zinc-700 dark:bg-zinc-800/20' }} p-4">
                             <div class="flex items-center justify-between mb-1 gap-2">
                                 <label class="flex flex-wrap items-center gap-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
                                     <span>1. Scan Kartu Tanda Anggota (KTA) Pramuka</span>
@@ -739,13 +753,13 @@
                                 type="file"
                                 wire:model="doc_kta"
                                 accept=".pdf,application/pdf"
-                                class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
+                                class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-zinc-200/80 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-zinc-700 hover:file:bg-zinc-300/80 dark:file:bg-zinc-800 dark:file:text-zinc-300"
                             >
                             @error('doc_kta') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                         </div>
 
                         {{-- 2. Scan BPJS (Opsional) --}}
-                        <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
+                        <div class="rounded-xl border {{ $participant?->doc_bpjs_path ? 'border-emerald-300 bg-emerald-50/35 dark:border-emerald-800/60 dark:bg-emerald-950/20' : 'border-dashed border-zinc-300 bg-zinc-50/50 dark:border-zinc-700 dark:bg-zinc-800/20' }} p-4">
                             <div class="flex items-center justify-between mb-1 gap-2">
                                 <label class="flex flex-wrap items-center gap-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
                                     <span>2. Scan Kartu BPJS / Asuransi Kesehatan</span>
@@ -762,139 +776,145 @@
                                 type="file"
                                 wire:model="doc_bpjs"
                                 accept=".pdf,application/pdf"
-                                class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
+                                class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-zinc-200/80 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-zinc-700 hover:file:bg-zinc-300/80 dark:file:bg-zinc-800 dark:file:text-zinc-300"
                             >
                             @error('doc_bpjs') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                         </div>
 
-                        {{-- 3. Scan Surat Keterangan Sehat --}}
-                        <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                                    3. Scan Surat Keterangan Sehat
+                        {{-- 3. Scan Surat Keterangan Sehat (Wajib) --}}
+                        <div class="rounded-xl border {{ $participant?->doc_health_certificate_path ? 'border-emerald-300 bg-emerald-50/35 dark:border-emerald-800/60 dark:bg-emerald-950/20' : 'border-amber-300 bg-amber-50/55 ring-1 ring-amber-200/60 dark:border-amber-700/60 dark:bg-amber-950/25 dark:ring-amber-800/30' }} p-4">
+                            <div class="flex items-center justify-between mb-1 gap-2">
+                                <label class="flex flex-wrap items-center gap-1.5 text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                                    <span>3. Scan Surat Keterangan Sehat</span>
+                                    <span class="rounded bg-amber-200/80 px-1.5 py-0.5 text-[10px] font-bold text-amber-900 dark:bg-amber-900/70 dark:text-amber-200">Wajib</span>
                                 </label>
                                 @if($participant?->doc_health_certificate_path)
                                     <x-file-viewer-trigger :path="$participant?->doc_health_certificate_path" :title="'Berkas Peserta — '.$participant?->full_name" label="Lihat Berkas" icon="document-check" />
                                 @else
-                                    <span class="text-[10px] text-zinc-400">Belum diunggah</span>
+                                    <span class="text-[10px] font-semibold text-amber-700 dark:text-amber-400 shrink-0">Wajib diunggah</span>
                                 @endif
                             </div>
-                            <p class="text-[11px] text-zinc-500 mb-2">Surat keterangan berbadan sehat dari dokter/puskesmas.</p>
+                            <p class="text-[11px] text-zinc-600 dark:text-zinc-400 mb-2">Surat keterangan berbadan sehat dari dokter/puskesmas.</p>
                             <input
                                 type="file"
                                 wire:model="doc_health_certificate"
                                 accept=".pdf,application/pdf"
-                                class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
+                                class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-200/80 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-900 hover:file:bg-amber-300/80 dark:file:bg-amber-900/70 dark:file:text-amber-200"
                             >
                             @error('doc_health_certificate') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                         </div>
 
-                        {{-- 4. Scan Surat Izin Orang Tua --}}
-                        <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                                    4. Scan Surat Izin Orang Tua
+                        {{-- 4. Scan Surat Izin Orang Tua (Wajib) --}}
+                        <div class="rounded-xl border {{ $participant?->doc_parent_consent_path ? 'border-emerald-300 bg-emerald-50/35 dark:border-emerald-800/60 dark:bg-emerald-950/20' : 'border-amber-300 bg-amber-50/55 ring-1 ring-amber-200/60 dark:border-amber-700/60 dark:bg-amber-950/25 dark:ring-amber-800/30' }} p-4">
+                            <div class="flex items-center justify-between mb-1 gap-2">
+                                <label class="flex flex-wrap items-center gap-1.5 text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                                    <span>4. Scan Surat Izin Orang Tua</span>
+                                    <span class="rounded bg-amber-200/80 px-1.5 py-0.5 text-[10px] font-bold text-amber-900 dark:bg-amber-900/70 dark:text-amber-200">Wajib</span>
                                 </label>
                                 @if($participant?->doc_parent_consent_path)
                                     <x-file-viewer-trigger :path="$participant?->doc_parent_consent_path" :title="'Berkas Peserta — '.$participant?->full_name" label="Lihat Berkas" icon="document-check" />
                                 @else
-                                    <span class="text-[10px] text-zinc-400">Belum diunggah</span>
+                                    <span class="text-[10px] font-semibold text-amber-700 dark:text-amber-400 shrink-0">Wajib diunggah</span>
                                 @endif
                             </div>
-                            <p class="text-[11px] text-zinc-500 mb-2">Surat izin / persetujuan orang tua atau wali untuk mengikuti kegiatan LT III.</p>
+                            <p class="text-[11px] text-zinc-600 dark:text-zinc-400 mb-2">Surat izin / persetujuan orang tua atau wali untuk mengikuti kegiatan LT III.</p>
                             <input
                                 type="file"
                                 wire:model="doc_parent_consent"
                                 accept=".pdf,application/pdf"
-                                class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
+                                class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-200/80 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-900 hover:file:bg-amber-300/80 dark:file:bg-amber-900/70 dark:file:text-amber-200"
                             >
                             @error('doc_parent_consent') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                         </div>
 
-                        {{-- 5. Scan Akta Kelahiran --}}
-                        <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                                    5. Scan Akta Kelahiran
+                        {{-- 5. Scan Akta Kelahiran (Wajib) --}}
+                        <div class="rounded-xl border {{ $participant?->doc_birth_certificate_path ? 'border-emerald-300 bg-emerald-50/35 dark:border-emerald-800/60 dark:bg-emerald-950/20' : 'border-amber-300 bg-amber-50/55 ring-1 ring-amber-200/60 dark:border-amber-700/60 dark:bg-amber-950/25 dark:ring-amber-800/30' }} p-4">
+                            <div class="flex items-center justify-between mb-1 gap-2">
+                                <label class="flex flex-wrap items-center gap-1.5 text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                                    <span>5. Scan Akta Kelahiran</span>
+                                    <span class="rounded bg-amber-200/80 px-1.5 py-0.5 text-[10px] font-bold text-amber-900 dark:bg-amber-900/70 dark:text-amber-200">Wajib</span>
                                 </label>
                                 @if($participant?->doc_birth_certificate_path)
                                     <x-file-viewer-trigger :path="$participant?->doc_birth_certificate_path" :title="'Berkas Peserta — '.$participant?->full_name" label="Lihat Berkas" icon="document-check" />
                                 @else
-                                    <span class="text-[10px] text-zinc-400">Belum diunggah</span>
+                                    <span class="text-[10px] font-semibold text-amber-700 dark:text-amber-400 shrink-0">Wajib diunggah</span>
                                 @endif
                             </div>
-                            <p class="text-[11px] text-zinc-500 mb-2">Akta kelahiran resmi untuk verifikasi batas usia penggalang.</p>
+                            <p class="text-[11px] text-zinc-600 dark:text-zinc-400 mb-2">Akta kelahiran resmi untuk verifikasi batas usia penggalang.</p>
                             <input
                                 type="file"
                                 wire:model="doc_birth_certificate"
                                 accept=".pdf,application/pdf"
-                                class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
+                                class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-200/80 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-900 hover:file:bg-amber-300/80 dark:file:bg-amber-900/70 dark:file:text-amber-200"
                             >
                             @error('doc_birth_certificate') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                         </div>
 
-                        {{-- 6. Scan Kartu Keluarga --}}
-                        <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                                    6. Scan Kartu Keluarga (KK)
+                        {{-- 6. Scan Kartu Keluarga (Wajib) --}}
+                        <div class="rounded-xl border {{ $participant?->doc_family_card_path ? 'border-emerald-300 bg-emerald-50/35 dark:border-emerald-800/60 dark:bg-emerald-950/20' : 'border-amber-300 bg-amber-50/55 ring-1 ring-amber-200/60 dark:border-amber-700/60 dark:bg-amber-950/25 dark:ring-amber-800/30' }} p-4">
+                            <div class="flex items-center justify-between mb-1 gap-2">
+                                <label class="flex flex-wrap items-center gap-1.5 text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                                    <span>6. Scan Kartu Keluarga (KK)</span>
+                                    <span class="rounded bg-amber-200/80 px-1.5 py-0.5 text-[10px] font-bold text-amber-900 dark:bg-amber-900/70 dark:text-amber-200">Wajib</span>
                                 </label>
                                 @if($participant?->doc_family_card_path)
                                     <x-file-viewer-trigger :path="$participant?->doc_family_card_path" :title="'Berkas Peserta — '.$participant?->full_name" label="Lihat Berkas" icon="document-check" />
                                 @else
-                                    <span class="text-[10px] text-zinc-400">Belum diunggah</span>
+                                    <span class="text-[10px] font-semibold text-amber-700 dark:text-amber-400 shrink-0">Wajib diunggah</span>
                                 @endif
                             </div>
-                            <p class="text-[11px] text-zinc-500 mb-2">Kartu Keluarga orang tua / wali peserta.</p>
+                            <p class="text-[11px] text-zinc-600 dark:text-zinc-400 mb-2">Kartu Keluarga orang tua / wali peserta.</p>
                             <input
                                 type="file"
                                 wire:model="doc_family_card"
                                 accept=".pdf,application/pdf"
-                                class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
+                                class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-200/80 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-900 hover:file:bg-amber-300/80 dark:file:bg-amber-900/70 dark:file:text-amber-200"
                             >
                             @error('doc_family_card') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                         </div>
 
-                        {{-- 7. Scan SKU --}}
-                        <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                                    7. Scan Syarat Kecakapan Umum (SKU)
+                        {{-- 7. Scan SKU (Wajib) --}}
+                        <div class="rounded-xl border {{ $participant?->doc_sku_path ? 'border-emerald-300 bg-emerald-50/35 dark:border-emerald-800/60 dark:bg-emerald-950/20' : 'border-amber-300 bg-amber-50/55 ring-1 ring-amber-200/60 dark:border-amber-700/60 dark:bg-amber-950/25 dark:ring-amber-800/30' }} p-4">
+                            <div class="flex items-center justify-between mb-1 gap-2">
+                                <label class="flex flex-wrap items-center gap-1.5 text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                                    <span>7. Scan Syarat Kecakapan Umum (SKU)</span>
+                                    <span class="rounded bg-amber-200/80 px-1.5 py-0.5 text-[10px] font-bold text-amber-900 dark:bg-amber-900/70 dark:text-amber-200">Wajib</span>
                                 </label>
                                 @if($participant?->doc_sku_path)
                                     <x-file-viewer-trigger :path="$participant?->doc_sku_path" :title="'Berkas Peserta — '.$participant?->full_name" label="Lihat Berkas" icon="document-check" />
                                 @else
-                                    <span class="text-[10px] text-zinc-400">Belum diunggah</span>
+                                    <span class="text-[10px] font-semibold text-amber-700 dark:text-amber-400 shrink-0">Wajib diunggah</span>
                                 @endif
                             </div>
-                            <p class="text-[11px] text-zinc-500 mb-2">Buku SKU / surat pengesahan pelantikan SKU tingkat Ramu/Rakit/Terap.</p>
+                            <p class="text-[11px] text-zinc-600 dark:text-zinc-400 mb-2">Buku SKU / surat pengesahan pelantikan SKU tingkat Ramu/Rakit/Terap.</p>
                             <input
                                 type="file"
                                 wire:model="doc_sku"
                                 accept=".pdf,application/pdf"
-                                class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
+                                class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-200/80 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-900 hover:file:bg-amber-300/80 dark:file:bg-amber-900/70 dark:file:text-amber-200"
                             >
                             @error('doc_sku') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                         </div>
 
-                        {{-- 8. Scan SKK --}}
-                        <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                                    8. Scan Syarat Kecakapan Khusus (SKK)
+                        {{-- 8. Scan SKK (Wajib) --}}
+                        <div class="rounded-xl border {{ $participant?->doc_skk_path ? 'border-emerald-300 bg-emerald-50/35 dark:border-emerald-800/60 dark:bg-emerald-950/20' : 'border-amber-300 bg-amber-50/55 ring-1 ring-amber-200/60 dark:border-amber-700/60 dark:bg-amber-950/25 dark:ring-amber-800/30' }} p-4">
+                            <div class="flex items-center justify-between mb-1 gap-2">
+                                <label class="flex flex-wrap items-center gap-1.5 text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                                    <span>8. Scan Syarat Kecakapan Khusus (SKK)</span>
+                                    <span class="rounded bg-amber-200/80 px-1.5 py-0.5 text-[10px] font-bold text-amber-900 dark:bg-amber-900/70 dark:text-amber-200">Wajib</span>
                                 </label>
                                 @if($participant?->doc_skk_path)
                                     <x-file-viewer-trigger :path="$participant?->doc_skk_path" :title="'Berkas Peserta — '.$participant?->full_name" label="Lihat Berkas" icon="document-check" />
                                 @else
-                                    <span class="text-[10px] text-zinc-400">Belum diunggah</span>
+                                    <span class="text-[10px] font-semibold text-amber-700 dark:text-amber-400 shrink-0">Wajib diunggah</span>
                                 @endif
                             </div>
-                            <p class="text-[11px] text-zinc-500 mb-2">Surat keterangan / sertifikat Tanda Kecakapan Khusus (TKK) yang dimiliki peserta.</p>
+                            <p class="text-[11px] text-zinc-600 dark:text-zinc-400 mb-2">Surat keterangan / sertifikat Tanda Kecakapan Khusus (TKK) yang dimiliki peserta.</p>
                             <input
                                 type="file"
                                 wire:model="doc_skk"
                                 accept=".pdf,application/pdf"
-                                class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-800 hover:file:bg-amber-200 dark:file:bg-amber-950/60 dark:file:text-amber-300"
+                                class="block w-full text-xs text-zinc-500 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-200/80 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-amber-900 hover:file:bg-amber-300/80 dark:file:bg-amber-900/70 dark:file:text-amber-200"
                             >
                             @error('doc_skk') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                         </div>
