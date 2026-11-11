@@ -47,11 +47,21 @@
                         $participant->doc_sku_path,
                         $participant->doc_skk_path,
                     ];
+                    $requiredDocsCheck = [
+                        $participant->photo_path,
+                        $participant->doc_health_certificate_path,
+                        $participant->doc_parent_consent_path,
+                        $participant->doc_birth_certificate_path,
+                        $participant->doc_family_card_path,
+                        $participant->doc_sku_path,
+                        $participant->doc_skk_path,
+                    ];
                     $uploadedCount = collect($docsCheck)->filter(fn($d) => !empty($d))->count();
+                    $isRequiredComplete = collect($requiredDocsCheck)->every(fn($d) => !empty($d));
                 @endphp
                 <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-right text-xs dark:border-zinc-800 dark:bg-zinc-800/50">
                     <span class="text-zinc-400 block text-[11px]">Kelengkapan Berkas:</span>
-                    <span class="text-sm font-bold {{ $uploadedCount === 9 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400' }}">
+                    <span class="text-sm font-bold {{ $isRequiredComplete ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400' }}">
                         {{ $uploadedCount }} dari 9 Berkas Terunggah
                     </span>
                 </div>
@@ -61,15 +71,15 @@
         {{-- Section 1: Seluruh File Yang Diunggah (Dapat Ditampilkan dalam Modal) --}}
         @php
             $docsList = [
-                ['label' => 'Pas Foto 3x4', 'path' => $participant->photo_path, 'desc' => 'Foto resmi berseragam pramuka lengkap'],
-                ['label' => 'Scan KTA Pramuka', 'path' => $participant->doc_kta_path, 'desc' => 'Kartu Tanda Anggota aktif'],
-                ['label' => 'Scan BPJS / Asuransi', 'path' => $participant->doc_bpjs_path, 'desc' => 'Kartu jaminan kesehatan aktif'],
-                ['label' => 'Surat Keterangan Sehat', 'path' => $participant->doc_health_certificate_path, 'desc' => 'Dari dokter / faskes pemerintah'],
-                ['label' => 'Surat Izin Orang Tua', 'path' => $participant->doc_parent_consent_path, 'desc' => 'Persetujuan orang tua / wali'],
-                ['label' => 'Scan Akta Kelahiran', 'path' => $participant->doc_birth_certificate_path, 'desc' => 'Akta otentik catatan sipil'],
-                ['label' => 'Scan Kartu Keluarga (KK)', 'path' => $participant->doc_family_card_path, 'desc' => 'Kartu keluarga terbaru'],
-                ['label' => 'Scan SKU Penggalang', 'path' => $participant->doc_sku_path, 'desc' => 'Syarat Kecakapan Umum'],
-                ['label' => 'Scan SKK Penggalang', 'path' => $participant->doc_skk_path, 'desc' => 'Syarat Kecakapan Khusus'],
+                ['label' => 'Pas Foto 3x4', 'path' => $participant->photo_path, 'desc' => 'Foto resmi berseragam pramuka lengkap', 'optional' => false],
+                ['label' => 'Scan KTA Pramuka', 'path' => $participant->doc_kta_path, 'desc' => 'Kartu Tanda Anggota aktif (Opsional)', 'optional' => true],
+                ['label' => 'Scan BPJS / Asuransi', 'path' => $participant->doc_bpjs_path, 'desc' => 'Kartu jaminan kesehatan aktif (Opsional)', 'optional' => true],
+                ['label' => 'Surat Keterangan Sehat', 'path' => $participant->doc_health_certificate_path, 'desc' => 'Dari dokter / faskes pemerintah', 'optional' => false],
+                ['label' => 'Surat Izin Orang Tua', 'path' => $participant->doc_parent_consent_path, 'desc' => 'Persetujuan orang tua / wali', 'optional' => false],
+                ['label' => 'Scan Akta Kelahiran', 'path' => $participant->doc_birth_certificate_path, 'desc' => 'Akta otentik catatan sipil', 'optional' => false],
+                ['label' => 'Scan Kartu Keluarga (KK)', 'path' => $participant->doc_family_card_path, 'desc' => 'Kartu keluarga terbaru', 'optional' => false],
+                ['label' => 'Scan SKU Penggalang', 'path' => $participant->doc_sku_path, 'desc' => 'Syarat Kecakapan Umum', 'optional' => false],
+                ['label' => 'Scan SKK Penggalang', 'path' => $participant->doc_skk_path, 'desc' => 'Syarat Kecakapan Khusus', 'optional' => false],
             ];
         @endphp
 
@@ -79,7 +89,7 @@
                     <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100">Berkas &amp; Dokumen Persyaratan Yang Diunggah</h3>
                     <p class="text-xs text-zinc-500 dark:text-zinc-400">Klik tombol pratinjau untuk melihat file langsung di dalam modal (mendukung zoom foto &amp; preview PDF)</p>
                 </div>
-                <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $uploadedCount === 9 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300' }}">
+                <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $isRequiredComplete ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300' }}">
                     {{ $uploadedCount }}/9 Berkas
                 </span>
             </div>
@@ -98,6 +108,10 @@
                                 @if($hasFile)
                                     <span class="rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 uppercase">
                                         {{ $ext ?: 'Ada' }}
+                                    </span>
+                                @elseif(!empty($doc['optional']))
+                                    <span class="rounded-md bg-zinc-200/80 px-1.5 py-0.5 text-[10px] font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+                                        Opsional
                                     </span>
                                 @else
                                     <span class="rounded-md bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-800 dark:bg-rose-950/60 dark:text-rose-300">

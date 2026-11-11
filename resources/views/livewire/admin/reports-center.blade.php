@@ -76,47 +76,6 @@
         </div>
     </div>
 
-    {{-- Section: Dokumen Cetak Nomor Punggung Regu (A5) --}}
-    <div class="rounded-2xl border border-indigo-200/80 bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent p-6 shadow-xs dark:border-indigo-900/40 dark:bg-indigo-950/20 space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div class="flex items-start gap-3.5">
-                <span class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-xs">
-                    <flux:icon name="identification" class="size-6" />
-                </span>
-                <div>
-                    <span class="rounded bg-indigo-200/80 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-900 dark:bg-indigo-900/60 dark:text-indigo-200">
-                        Kelengkapan Peserta & Penjurian
-                    </span>
-                    <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-1">
-                        Nomor Punggung Regu (Bibs A5)
-                    </h3>
-                    <p class="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5 leading-relaxed max-w-2xl">
-                        Nomor dada/punggung regu berbasis Nomor Peserta Perlombaan (NPP) dalam ukuran A5 Landscape dengan desain modern full background, penanda peniti, identitas kontingen, dan kode QR verifikasi resmi.
-                    </p>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-2 shrink-0">
-                <flux:dropdown>
-                    <flux:button icon="printer" variant="primary">
-                        Cetak No. Punggung (A5)
-                    </flux:button>
-                    <flux:menu>
-                        <flux:menu.item href="{{ route('admin.npp.print-bibs') }}" target="_blank" icon="printer">
-                            Semua Regu (Putra & Putri)
-                        </flux:menu.item>
-                        <flux:menu.item href="{{ route('admin.npp.print-bibs', ['gender' => 'boys']) }}" target="_blank" icon="user">
-                            Regu Putra Saja
-                        </flux:menu.item>
-                        <flux:menu.item href="{{ route('admin.npp.print-bibs', ['gender' => 'girls']) }}" target="_blank" icon="user">
-                            Regu Putri Saja
-                        </flux:menu.item>
-                    </flux:menu>
-                </flux:dropdown>
-            </div>
-        </div>
-    </div>
-
     {{-- Section: Katalog Unduhan Berkas Spreadsheet (CSV / Excel) --}}
     <div>
         <div class="mb-4">

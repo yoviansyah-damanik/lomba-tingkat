@@ -3,13 +3,12 @@
 namespace Tests\Feature;
 
 use App\Livewire\Admin\PushBroadcastManagement;
-use App\Models\AuditLog;
 use App\Models\PushSubscription;
 use App\Models\User;
+use App\Services\WebPushService;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Services\WebPushService;
 use Livewire\Livewire;
 use Mockery\MockInterface;
 use Tests\TestCase;
@@ -45,6 +44,15 @@ class PwaAndWebPushTest extends TestCase
         $this->assertEquals('standalone', $json['display']);
         $this->assertEquals('#d97706', $json['theme_color']);
         $this->assertNotEmpty($json['icons']);
+
+        // Pastikan setiap ikon di manifest benar-benar ada di disk dan memiliki dimensi piksel sesuai deklarasi sizes
+        foreach ($json['icons'] as $icon) {
+            $iconFile = public_path(ltrim($icon['src'], '/'));
+            $this->assertFileExists($iconFile);
+            $imageSize = getimagesize($iconFile);
+            $this->assertNotFalse($imageSize);
+            $this->assertSame($icon['sizes'], "{$imageSize[0]}x{$imageSize[1]}");
+        }
     }
 
     /**

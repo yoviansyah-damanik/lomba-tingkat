@@ -12,7 +12,7 @@ Provides certificate template customization (A4 Landscape), position fine-tuning
 
 2. **Core Service (`App\Services\CertificateService`)**:
     - Prepares certificate data: Full Name (_Nama Lengkap_), NTA (_Nomor Tanda Anggota_), Institution (_Gugusdepan / Pangkalan_), Role (_Sebagai: Peserta / Pembina Pendamping / Panitia / Dewan Juri_), and Certificate Number (without QR code).
-    - Generates A4 landscape PDFs via Dompdf with full-bleed custom image background or default vector/CSS frame.
+    - Generates A4 landscape PDFs (`297mm x 210mm`) via Dompdf using pure-code SVG/CSS vector artwork (`resources/views/certificates/vector-artwork.blade.php` & `pdf-single.blade.php`) without external background PNG/JPG files.
 
 3. **Admin Configuration (`App\Livewire\Admin\Certificates\Settings`)**:
     - Route: `/admin/certificates/settings` (`admin.certificates.settings`).

@@ -7,28 +7,37 @@
 ])
 
 @php
-    $idTextClasses = [
-        'boys' => 'text-[#b45309]',
-        'girls' => 'text-[#b45309]',
-        'chaperone-male' => 'text-[#047857]',
-        'chaperone-female' => 'text-[#7e22ce]',
-        'staff' => 'text-[#b91c1c]',
-        'judge' => 'text-[#b45309]',
+    $idBadgeClasses = [
+        'boys' => 'bg-[#091326] text-[#fbbf24] border-[#f59e0b]/60',
+        'girls' => 'bg-[#1f041b] text-[#fbbf24] border-[#f59e0b]/60',
+        'chaperone-male' => 'bg-[#022c22] text-[#fcd34d] border-[#f59e0b]/60',
+        'chaperone-female' => 'bg-[#19053b] text-[#fcd34d] border-[#f59e0b]/60',
+        'staff' => 'bg-[#2b0303] text-[#fcd34d] border-[#f59e0b]/60',
+        'judge' => 'bg-[#270f02] text-[#fcd34d] border-[#f59e0b]/60',
     ];
 
-    $resolvedIdClass = $idTextClasses[$theme] ?? 'text-[#b45309]';
+    $resolvedIdBadge = $idBadgeClasses[$theme] ?? $idBadgeClasses['boys'];
 @endphp
 
-<div class="w-full text-center shrink-0 my-0.5">
-    {{-- Nama (tepat di bawah Pas Foto) --}}
-    <div class="text-[9.5pt] font-black text-slate-900 leading-tight uppercase max-w-full overflow-hidden text-ellipsis whitespace-nowrap px-1" title="{{ $name }}">
+<div class="w-full text-center shrink-0">
+    {{-- Nama Lengkap (Tepat di bawah Pas Foto) --}}
+    <div class="text-[8.8pt] font-black text-slate-900 leading-tight uppercase max-w-full overflow-hidden text-ellipsis whitespace-nowrap px-1" title="{{ $name }}">
         {{ $name }}
     </div>
 
-    {{-- NTA dan ID (tepat di bawah Nama) --}}
-    <div class="flex items-center justify-center gap-[1.8mm] mt-[1mm] mb-[1.5mm] font-mono text-[6.8pt] leading-none">
-        <span class="text-slate-600 font-bold tracking-[0.3px]">NTA: {{ $scoutId ?: '-' }}</span>
-        <span class="text-slate-400 text-[7.5pt]">•</span>
-        <span class="font-extrabold tracking-[0.5px] {{ $resolvedIdClass }}" @if($idColor) style="color: {{ $idColor }};" @endif>{{ $idNumber }}</span>
+    {{-- Garis Aksen Ornamen Emas di Bawah Nama --}}
+    <div class="mx-auto mt-[0.5mm] mb-[0.6mm] flex items-center justify-center gap-1">
+        <div class="h-[0.6px] w-[13mm] bg-gradient-to-r from-transparent to-[#d97706]/70"></div>
+        <span class="text-[4pt] text-[#d97706] leading-none">◆</span>
+        <div class="h-[0.6px] w-[13mm] bg-gradient-to-l from-transparent to-[#d97706]/70"></div>
+    </div>
+
+    {{-- NTA dan Pill ID Resmi --}}
+    <div class="flex items-center justify-center gap-[1.4mm] font-mono text-[6.1pt] leading-none">
+        <span class="text-slate-700 font-bold tracking-[0.2px]">NTA: {{ $scoutId ?: '-' }}</span>
+        <span class="text-[#d97706] text-[6pt]">•</span>
+        <span class="px-[1.4mm] py-[0.4mm] rounded-[1mm] border font-extrabold tracking-[0.4px] {{ $resolvedIdBadge }}">
+            {{ $idNumber }}
+        </span>
     </div>
 </div>

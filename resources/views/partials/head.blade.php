@@ -17,6 +17,19 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="LT III Kwarcab Padangsidimpuan 2026">
+<script>
+    window.pwaDeferredPrompt = window.pwaDeferredPrompt || null;
+    window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        window.pwaDeferredPrompt = e;
+        window.dispatchEvent(new CustomEvent('pwa-prompt-ready'));
+    });
+    window.addEventListener('appinstalled', function () {
+        window.pwaDeferredPrompt = null;
+        window.__pwaIsInstalled = true;
+        window.dispatchEvent(new CustomEvent('pwa-app-installed'));
+    });
+</script>
 
 @fonts
 

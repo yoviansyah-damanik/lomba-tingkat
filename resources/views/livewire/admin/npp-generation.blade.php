@@ -51,22 +51,6 @@
         <flux:button wire:click="openReshuffleModal" variant="subtle" icon="arrow-path" :disabled="! $registrationClosed || $hasAssessments">
             Undi Ulang Semua NPP
         </flux:button>
-        <flux:dropdown>
-            <flux:button variant="subtle" icon="printer">
-                Cetak No. Punggung (A5)
-            </flux:button>
-            <flux:menu>
-                <flux:menu.item href="{{ route('admin.npp.print-bibs') }}" target="_blank" icon="printer">
-                    Semua Regu (Putra & Putri)
-                </flux:menu.item>
-                <flux:menu.item href="{{ route('admin.npp.print-bibs', ['gender' => 'boys']) }}" target="_blank" icon="user">
-                    Regu Putra Saja
-                </flux:menu.item>
-                <flux:menu.item href="{{ route('admin.npp.print-bibs', ['gender' => 'girls']) }}" target="_blank" icon="user">
-                    Regu Putri Saja
-                </flux:menu.item>
-            </flux:menu>
-        </flux:dropdown>
         <p class="text-xs text-zinc-500">
             @if ($hasAssessments)
                 NPP terkunci karena penilaian juri sudah masuk. Regu baru yang terverifikasi tetap dapat diberi NPP lanjutan.

@@ -8,8 +8,8 @@
                 <span>Pengaturan Template Sertifikat</span>
             </h1>
             <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                Unggah desain template gambar (A4 landscape) dan atur penempatan teks Nama Lengkap, NTA,
-                Gugusdepan/Pangkalan, dan Peran secara visual dan presisi.
+                Atur penempatan, ukuran, dan warna teks Nama Lengkap, NTA,
+                Gugusdepan/Pangkalan, dan Peran secara visual pada desain vektor Piagam Penghargaan LT-III (A4 Landscape).
             </p>
         </div>
 
@@ -93,7 +93,7 @@
                         </div>
                         <div class="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
                             <span class="size-2 rounded-full bg-emerald-500"></span>
-                            <span>Teks &amp; QR dapat digeser langsung di kanvas</span>
+                            <span>Elemen teks dapat digeser langsung di kanvas</span>
                         </div>
                     </div>
 
@@ -179,50 +179,72 @@
                         <div x-ref="canvas"
                             class="relative w-full rounded-xl overflow-hidden border-2 border-zinc-200 dark:border-zinc-700 shadow-md bg-white dark:bg-zinc-950"
                             style="aspect-ratio: 297 / 210;">
-                            {{-- Template Background: Custom Image atau Default Frame --}}
-                            @if ($template_file)
-                                <img src="{{ $template_file->temporaryUrl() }}" alt="Template Baru"
-                                    class="absolute inset-0 w-full h-full object-fill pointer-events-none" />
-                            @elseif ($template_url)
-                                <img src="{{ $template_url }}" alt="Template Tersimpan"
-                                    class="absolute inset-0 w-full h-full object-fill pointer-events-none" />
-                            @else
-                                {{-- Default Vector/CSS Frame Preview --}}
-                                <div
-                                    class="absolute inset-0 p-4 sm:p-6 bg-gradient-to-br from-amber-50 via-white to-amber-100/50 dark:from-zinc-900 dark:via-zinc-950 dark:to-zinc-900 pointer-events-none flex flex-col justify-between">
-                                    <div
-                                        class="h-full w-full border-2 border-amber-600/60 dark:border-amber-500/40 rounded-lg p-3 sm:p-4 flex flex-col justify-between text-center relative">
-                                        <div class="space-y-0.5">
-                                            <p
-                                                class="text-[9px] sm:text-xs font-bold uppercase tracking-wider text-amber-900 dark:text-amber-400">
-                                                Gerakan Pramuka Kwartir Cabang Kota Padangsidimpuan</p>
-                                            <p class="text-[8px] sm:text-[10px] text-zinc-600 dark:text-zinc-400">Lomba
-                                                Tingkat Tiga (LT-III) Regu Penggalang</p>
-                                            <h3
-                                                class="text-sm sm:text-lg font-black uppercase tracking-widest text-amber-700 dark:text-amber-500 mt-1">
-                                                Piagam Penghargaan</h3>
-                                            <p
-                                                class="text-[8px] sm:text-[10px] italic text-zinc-500 dark:text-zinc-400">
-                                                Diberikan secara resmi dan sah kepada:</p>
-                                        </div>
+                            {{-- Desain Vektor Buatan Sendiri LT-III (Tanpa Background PNG/JPG) --}}
+                            <div class="absolute inset-0 pointer-events-none [&>svg]:w-full [&>svg]:h-full">
+                                @include('certificates.vector-artwork')
+                            </div>
 
-                                        <div
-                                            class="flex justify-between items-end text-[8px] sm:text-[10px] text-zinc-600 dark:text-zinc-400 px-4 pb-1">
-                                            <div>
-                                                <p>Ketua Panitia Pelaksana,</p>
-                                                <p class="mt-4 font-bold underline text-zinc-900 dark:text-zinc-200">
-                                                    {{ $event?->committee_chair_name ?: 'Kak Fahri Siregar, S.Pd' }}
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <p>Ketua Kwarcab Padangsidimpuan,</p>
-                                                <p class="mt-4 font-bold underline text-zinc-900 dark:text-zinc-200">
-                                                    {{ $event?->kwarcab_chair_name ?: 'Ketua Kwartir Cabang' }}</p>
-                                            </div>
-                                        </div>
+                            <img src="{{ asset('logo.png') }}" alt="Watermark LT-III"
+                                class="absolute top-[29%] left-[38.5%] w-[23%] opacity-5 pointer-events-none" />
+                            <img src="{{ asset('logo.png') }}" alt="Logo LT-III"
+                                class="absolute top-[9.8%] left-[9.8%] w-[5.7%] pointer-events-none" />
+
+                            <div class="absolute inset-0 pointer-events-none text-center">
+                                <div class="absolute top-[7.8%] left-[18%] w-[64%] space-y-0.5">
+                                    <p class="text-[8px] sm:text-[11px] font-bold uppercase tracking-widest text-amber-900">
+                                        Gerakan Pramuka Kwartir Cabang Kota Padangsidimpuan
+                                    </p>
+                                    <p class="text-[7px] sm:text-[9.5px] font-bold uppercase tracking-wider text-amber-800">
+                                        Lomba Tingkat Tiga (LT-III) Regu Penggalang Tahun
+                                        {{ $event?->start_date ? $event->start_date->year : 2026 }}
+                                    </p>
+                                    <h3 class="text-xs sm:text-xl font-black uppercase tracking-widest text-[#260c36] pt-0.5">
+                                        Piagam Penghargaan
+                                    </h3>
+                                </div>
+
+                                <p class="absolute top-[35.8%] left-[15%] w-[70%] text-[8px] sm:text-[10.5px] italic text-zinc-600">
+                                    Diberikan secara resmi dan sah kepada:
+                                </p>
+
+                                <div class="absolute top-[69.5%] left-[12%] w-[76%] text-[7px] sm:text-[8.8px] leading-snug text-zinc-700">
+                                    <p>
+                                        Atas partisipasi aktif, dedikasi, dan prestasi dalam kegiatan
+                                        <span class="font-bold">{{ $event?->name ?: 'Lomba Tingkat Tiga (LT-III) Regu Pramuka Penggalang' }}</span>
+                                        Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan.
+                                    </p>
+                                    <p class="font-bold text-amber-900 mt-0.5">
+                                        {{ $event?->location ?: 'Lapangan Pulo Baok, Kota Padangsidimpuan' }}
+                                    </p>
+                                </div>
+
+                                <div class="absolute top-[78.2%] left-[8%] w-[84%] flex justify-between items-start text-[7px] sm:text-[8.5px] text-zinc-700">
+                                    <div class="w-[41%] text-center">
+                                        <p class="text-zinc-500 text-[6.5px] sm:text-[7.5px]">Mengetahui,</p>
+                                        <p class="font-bold">Ketua Panitia Pelaksana,</p>
+                                        <p class="mt-4 sm:mt-6 font-bold underline text-zinc-900">
+                                            {{ $event?->committee_chair_name ?: 'Kak Fahri Siregar, S.Pd' }}
+                                        </p>
+                                        <p class="text-[6.5px] sm:text-[7.5px] text-zinc-500">
+                                            NTA: {{ $event?->committee_chair_nta ?: '-' }}
+                                        </p>
+                                    </div>
+                                    <div class="w-[18%]"></div>
+                                    <div class="w-[41%] text-center">
+                                        <p class="text-zinc-500 text-[6.5px] sm:text-[7.5px]">
+                                            Padangsidimpuan,
+                                            {{ $event?->end_date ? $event->end_date->translatedFormat('d F Y') : '17 November 2026' }}
+                                        </p>
+                                        <p class="font-bold">Ketua Kwartir Cabang Kota Padangsidimpuan,</p>
+                                        <p class="mt-4 sm:mt-6 font-bold underline text-zinc-900">
+                                            {{ $event?->kwarcab_chair_name ?: 'Ketua Kwarcab Padangsidimpuan' }}
+                                        </p>
+                                        <p class="text-[6.5px] sm:text-[7.5px] text-zinc-500">
+                                            NTA: {{ $event?->kwarcab_chair_nta ?: '-' }}
+                                        </p>
                                     </div>
                                 </div>
-                            @endif
+                            </div>
 
                             {{-- Draggable Sample: Nomor Sertifikat --}}
                             <div @mousedown="startDrag('cert_no', $event)" @touchstart="startDrag('cert_no', $event)"
@@ -261,48 +283,16 @@
                         </div>
                     </div>
 
-                    {{-- Upload Gambar Template & Opsi Cepat --}}
-                    <div class="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
-                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                            <div>
-                                <label class="text-xs font-bold text-zinc-900 dark:text-zinc-100">Gambar Desain Template
-                                    (A4 Landscape)</label>
-                                <p class="text-[11px] text-zinc-500 dark:text-zinc-400">PNG, JPG, atau WebP (maks. 5MB).
-                                    Rasio ideal 297:210.</p>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                @if ($template_url)
-                                    <flux:button type="button" wire:click="deleteTemplate" variant="ghost"
-                                        size="sm" icon="trash" class="text-rose-600 hover:text-rose-700">
-                                        Hapus Template (Pakai Bingkai Bawaan)
-                                    </flux:button>
-                                @endif
-                            </div>
-                        </div>
+                    {{-- Opsi Cepat Tata Letak --}}
+                    <div class="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
+                        <flux:button type="button" wire:click="applyToAllRoles" variant="subtle" size="sm"
+                            icon="document-duplicate">
+                            Terapkan Tata Letak Ini ke Semua Peran
+                        </flux:button>
 
-                        <div class="flex items-center gap-3">
-                            <input type="file" wire:model="template_file" accept="image/png,image/jpeg,image/webp"
-                                class="text-xs file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 dark:file:bg-zinc-800 dark:file:text-zinc-200" />
-                            <div wire:loading wire:target="template_file"
-                                class="text-xs text-amber-600 flex items-center gap-1.5">
-                                <flux:icon name="arrow-path" class="size-3.5 animate-spin" />
-                                <span>Mengunggah...</span>
-                            </div>
-                        </div>
-                        @error('template_file')
-                            <p class="text-xs text-rose-600">{{ $message }}</p>
-                        @enderror
-
-                        <div class="pt-2 flex flex-wrap items-center justify-between gap-2">
-                            <flux:button type="button" wire:click="applyToAllRoles" variant="subtle" size="sm"
-                                icon="document-duplicate">
-                                Terapkan Tata Letak Ini ke Semua Peran
-                            </flux:button>
-
-                            <flux:button type="submit" variant="primary" icon="check">
-                                Simpan Pengaturan {{ $roles[$activeRole] }}
-                            </flux:button>
-                        </div>
+                        <flux:button type="submit" variant="primary" icon="check">
+                            Simpan Pengaturan {{ $roles[$activeRole] }}
+                        </flux:button>
                     </div>
                 </div>
             </div>

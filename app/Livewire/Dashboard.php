@@ -8,17 +8,20 @@ use App\Enums\RoleEnum;
 use App\Models\Assessment;
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
+use App\Models\Chaperone;
 use App\Models\Competition;
 use App\Models\CompetitionSchedule;
-use App\Models\Chaperone;
+use App\Models\CompetitionScore;
 use App\Models\Event;
 use App\Models\Participant;
 use App\Models\Patrol;
 use App\Models\PermissionRequest;
 use App\Models\ScoutGroup;
 use App\Models\User;
+use App\Services\CertificateService;
 use App\Services\StandingsService;
-use Carbon\Carbon;
+use App\Support\Navigation;
+use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -106,7 +109,7 @@ class Dashboard extends Component
     #[Computed]
     public function scoutGroup(): ?ScoutGroup
     {
-        if (!$this->user?->isScoutGroup()) {
+        if (! $this->user?->isScoutGroup()) {
             return null;
         }
 
@@ -168,8 +171,8 @@ class Dashboard extends Component
         }
 
         $participants = $group->patrols->flatMap->participants;
-        $docColumns = array_column(array_values(Participant::DOCUMENTS), 0);
-        $docsComplete = $participants->filter(fn (Participant $p) => collect($docColumns)->every(fn ($column) => filled($p->{$column}) ) && filled($p->photo_path))->count();
+        $docColumns = array_column(array_values(Participant::REQUIRED_DOCUMENTS), 0);
+        $docsComplete = $participants->filter(fn (Participant $p) => collect($docColumns)->every(fn ($column) => filled($p->{$column})) && filled($p->photo_path))->count();
         $fullPatrols = $group->patrols->filter(fn (Patrol $patrol) => $group->rosterProblemsFor($patrol) === [])->count();
         $patrolIds = $group->patrols->pluck('id');
 
@@ -182,15 +185,16 @@ class Dashboard extends Component
             'participants_target' => $group->patrols->count() * Patrol::REQUIRED_MEMBERS,
             'docs_complete' => $docsComplete,
             'chaperones' => $group->chaperones->count(),
-            'scored_competitions' => \App\Models\CompetitionScore::whereIn('patrol_id', $patrolIds)->where('is_locked', true)->count(),
+            'scored_competitions' => CompetitionScore::whereIn('patrol_id', $patrolIds)->where('is_locked', true)->count(),
             'next_schedule' => CompetitionSchedule::published()->where('status', '!=', 'cancelled')->where('end_time', '>=', now())->first(),
         ];
     }
+
     /**
      * Regu yang relevan bagi pengguna (Gugus Depan: seluruh regu; Peserta: regu sendiri; Bindamping: regu sesuai kategori)
      */
     #[Computed]
-    public function userPatrols(): \Illuminate\Support\Collection
+    public function userPatrols(): Collection
     {
         $user = $this->user;
 
@@ -210,7 +214,7 @@ class Dashboard extends Component
     #[Computed]
     public function achievements(): array
     {
-        $counts = \App\Models\CompetitionScore::whereIn('patrol_id', $this->userPatrols->pluck('id'))
+        $counts = CompetitionScore::whereIn('patrol_id', $this->userPatrols->pluck('id'))
             ->where('is_locked', true)
             ->selectRaw('predicate, count(*) as total')
             ->groupBy('predicate')
@@ -256,10 +260,11 @@ class Dashboard extends Component
             ];
         })->values()->all();
     }
+
     #[Computed]
     public function participantData(): ?Participant
     {
-        if (!$this->user?->isParticipant()) {
+        if (! $this->user?->isParticipant()) {
             return null;
         }
 
@@ -272,11 +277,11 @@ class Dashboard extends Component
     #[Computed]
     public function myCertificate(): ?array
     {
-        if (!$this->activeEvent?->isCertificatePublished() || !$this->user) {
+        if (! $this->activeEvent?->isCertificatePublished() || ! $this->user) {
             return null;
         }
 
-        $service = app(\App\Services\CertificateService::class);
+        $service = app(CertificateService::class);
         $certs = $service->getCertificatesForUser($this->user, $this->activeEvent);
 
         return $certs[0] ?? null;
@@ -288,7 +293,7 @@ class Dashboard extends Component
     #[Computed]
     public function contingentCertificates(): array
     {
-        if (!$this->user?->isScoutGroup() || !$this->scoutGroup) {
+        if (! $this->user?->isScoutGroup() || ! $this->scoutGroup) {
             return [];
         }
 
@@ -349,7 +354,7 @@ class Dashboard extends Component
             'participantData' => $this->participantData,
             'myCertificate' => $this->myCertificate,
             'contingentCertificates' => $this->contingentCertificates,
-            'menuGroups' => \App\Support\Navigation::groupsFor($this->user),
+            'menuGroups' => Navigation::groupsFor($this->user),
         ]);
     }
 }

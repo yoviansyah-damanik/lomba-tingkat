@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -31,6 +32,34 @@ class Participant extends Model
         'doc_sku' => ['doc_sku_path', 'Scan SKU'],
         'doc_skk' => ['doc_skk_path', 'Scan SKK'],
     ];
+
+    /**
+     * Kunci berkas persyaratan peserta yang bersifat opsional (tidak wajib diunggah)
+     */
+    public const OPTIONAL_DOCUMENTS = [
+        'doc_kta',
+        'doc_bpjs',
+    ];
+
+    /**
+     * Berkas persyaratan peserta yang wajib diunggah: nama input => [kolom, label]
+     */
+    public const REQUIRED_DOCUMENTS = [
+        'doc_health_certificate' => ['doc_health_certificate_path', 'Scan Surat Keterangan Sehat'],
+        'doc_parent_consent' => ['doc_parent_consent_path', 'Scan Surat Izin Orang Tua'],
+        'doc_birth_certificate' => ['doc_birth_certificate_path', 'Scan Akta Kelahiran'],
+        'doc_family_card' => ['doc_family_card_path', 'Scan Kartu Keluarga (KK)'],
+        'doc_sku' => ['doc_sku_path', 'Scan SKU'],
+        'doc_skk' => ['doc_skk_path', 'Scan SKK'],
+    ];
+
+    /**
+     * Periksa apakah kunci dokumen peserta bersifat opsional
+     */
+    public static function isDocumentOptional(string $key): bool
+    {
+        return in_array($key, self::OPTIONAL_DOCUMENTS, true);
+    }
 
     protected $fillable = [
         'patrol_id',
@@ -93,7 +122,7 @@ class Participant extends Model
     {
         do {
             $digits = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            $code = 'P-' . $digits;
+            $code = 'P-'.$digits;
         } while (
             static::where('id_number', $code)->exists()
             || User::where('id_number', $code)->exists()
@@ -136,7 +165,7 @@ class Participant extends Model
             ->all();
 
         if ($paths) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($paths);
+            Storage::disk('public')->delete($paths);
         }
     }
 
@@ -148,11 +177,20 @@ class Participant extends Model
         $penggalang = $this->scout_penggalang;
         if (is_array($penggalang) && isset($penggalang['levels'])) {
             $levels = $penggalang['levels'];
-            if (!empty($levels['garuda'])) return 'Garuda';
-            if (!empty($levels['terap'])) return 'Terap';
-            if (!empty($levels['rakit'])) return 'Rakit';
-            if (!empty($levels['ramu'])) return 'Ramu';
+            if (! empty($levels['garuda'])) {
+                return 'Garuda';
+            }
+            if (! empty($levels['terap'])) {
+                return 'Terap';
+            }
+            if (! empty($levels['rakit'])) {
+                return 'Rakit';
+            }
+            if (! empty($levels['ramu'])) {
+                return 'Ramu';
+            }
         }
+
         return 'Penggalang';
     }
 
@@ -161,13 +199,13 @@ class Participant extends Model
      */
     public function getGradeLabelAttribute(): string
     {
-        if (!empty($this->class_grade)) {
+        if (! empty($this->class_grade)) {
             return $this->class_grade;
         }
 
         if (is_array($this->formal_education)) {
             foreach ($this->formal_education as $edu) {
-                if (($edu['level'] ?? '') === 'SMP' && !empty($edu['notes'])) {
+                if (($edu['level'] ?? '') === 'SMP' && ! empty($edu['notes'])) {
                     return $edu['notes'];
                 }
             }

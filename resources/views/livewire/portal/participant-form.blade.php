@@ -709,31 +709,32 @@
 
                 {{-- 6. UNGGAH BERKAS PERSYARATAN PESERTA --}}
                 <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:p-8">
-                    <div class="flex items-center justify-between border-b border-zinc-100 pb-4 mb-6 dark:border-zinc-800">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 pb-4 mb-6 dark:border-zinc-800">
                         <div>
                             <span class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Bagian 6</span>
                             <h2 class="text-base font-bold text-zinc-900 dark:text-zinc-100">Berkas Persyaratan Peserta</h2>
-                            <p class="text-xs text-zinc-500 mt-0.5">Unggah atau perbarui berkas dokumen persyaratan peserta dalam format PDF, maksimal 4MB per berkas.</p>
+                            <p class="text-xs text-zinc-500 mt-0.5">Unggah berkas dokumen persyaratan peserta dalam format PDF (maksimal 4MB per berkas). Berkas NTA/KTA dan Kartu BPJS bersifat opsional.</p>
                         </div>
                         <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
-                            8 Berkas Persyaratan
+                            6 Wajib &bull; 2 Opsional
                         </span>
                     </div>
 
                     <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
-                        {{-- 1. Scan KTA --}}
+                        {{-- 1. Scan KTA (Opsional) --}}
                         <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                                    1. Scan Kartu Tanda Anggota (KTA) Pramuka
+                            <div class="flex items-center justify-between mb-1 gap-2">
+                                <label class="flex flex-wrap items-center gap-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                                    <span>1. Scan Kartu Tanda Anggota (KTA) Pramuka</span>
+                                    <span class="rounded bg-zinc-200/80 px-1.5 py-0.5 text-[10px] font-medium text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">Opsional</span>
                                 </label>
                                 @if($participant?->doc_kta_path)
                                     <x-file-viewer-trigger :path="$participant?->doc_kta_path" :title="'Berkas Peserta — '.$participant?->full_name" label="Lihat Berkas" icon="document-check" />
                                 @else
-                                    <span class="text-[10px] text-zinc-400">Belum diunggah</span>
+                                    <span class="text-[10px] text-zinc-400 shrink-0">Opsional</span>
                                 @endif
                             </div>
-                            <p class="text-[11px] text-zinc-500 mb-2">Kartu Tanda Anggota Pramuka resmi peserta.</p>
+                            <p class="text-[11px] text-zinc-500 mb-2">Kartu Tanda Anggota / NTA Pramuka peserta (opsional jika belum dicetak).</p>
                             <input
                                 type="file"
                                 wire:model="doc_kta"
@@ -743,19 +744,20 @@
                             @error('doc_kta') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                         </div>
 
-                        {{-- 2. Scan BPJS --}}
+                        {{-- 2. Scan BPJS (Opsional) --}}
                         <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                                    2. Scan Kartu BPJS / Asuransi Kesehatan
+                            <div class="flex items-center justify-between mb-1 gap-2">
+                                <label class="flex flex-wrap items-center gap-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                                    <span>2. Scan Kartu BPJS / Asuransi Kesehatan</span>
+                                    <span class="rounded bg-zinc-200/80 px-1.5 py-0.5 text-[10px] font-medium text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">Opsional</span>
                                 </label>
                                 @if($participant?->doc_bpjs_path)
                                     <x-file-viewer-trigger :path="$participant?->doc_bpjs_path" :title="'Berkas Peserta — '.$participant?->full_name" label="Lihat Berkas" icon="document-check" />
                                 @else
-                                    <span class="text-[10px] text-zinc-400">Belum diunggah</span>
+                                    <span class="text-[10px] text-zinc-400 shrink-0">Opsional</span>
                                 @endif
                             </div>
-                            <p class="text-[11px] text-zinc-500 mb-2">Kartu BPJS Kesehatan aktif atau asuransi sejenis.</p>
+                            <p class="text-[11px] text-zinc-500 mb-2">Kartu BPJS Kesehatan aktif atau asuransi sejenis (opsional).</p>
                             <input
                                 type="file"
                                 wire:model="doc_bpjs"

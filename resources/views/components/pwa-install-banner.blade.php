@@ -2,7 +2,7 @@
 
 <div
     x-data="{
-        deferredPrompt: null,
+        deferredPrompt: window.pwaDeferredPrompt || null,
         showInstallBanner: false,
         isInstalled: false,
         pushSubscribed: false,
@@ -10,7 +10,9 @@
 
         init() {
             // Cek apakah aplikasi sudah berjalan dalam mode standalone PWA
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            const isStandalone = (typeof window.isPwaStandalone === 'function' && window.isPwaStandalone())
+                || window.matchMedia('(display-mode: standalone)').matches
+                || window.navigator.standalone === true;
             if (isStandalone) {
                 this.isInstalled = true;
                 this.showInstallBanner = false;
@@ -21,23 +23,11 @@
             const dismissedAt = localStorage.getItem('pwa_prompt_dismissed_at');
             const isDismissed = dismissedAt && (Date.now() - parseInt(dismissedAt, 10) < 3 * 24 * 60 * 60 * 1000);
 
-            // Tangkap event sebelum instalasi browser
-            window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                this.deferredPrompt = e;
-                window.pwaDeferredPrompt = e;
-                if (!isDismissed && !this.isInstalled) {
-                    this.showInstallBanner = true;
-                }
-            });
-
-            // Hubungkan trigger instalasi global (misal dari Footer)
-            window.addEventListener('trigger-pwa-install', () => {
-                this.installPwa();
-            });
-            window.installPwaApp = () => {
-                this.installPwa();
-            };
+            // Jika event beforeinstallprompt sudah tertangkap lebih awal di window
+            if (window.pwaDeferredPrompt && !isDismissed && !this.isInstalled) {
+                this.deferredPrompt = window.pwaDeferredPrompt;
+                this.showInstallBanner = true;
+            }
 
             // Tampilkan notifikasi mengambang secara halus setelah jeda pembukaan halaman
             if (!isDismissed && !this.isInstalled) {
@@ -57,15 +47,37 @@
             }
         },
 
+        onPromptReady() {
+            this.deferredPrompt = window.pwaDeferredPrompt;
+            const dismissedAt = localStorage.getItem('pwa_prompt_dismissed_at');
+            const isDismissed = dismissedAt && (Date.now() - parseInt(dismissedAt, 10) < 3 * 24 * 60 * 60 * 1000);
+            if (!isDismissed && !this.isInstalled) {
+                this.showInstallBanner = true;
+            }
+        },
+
+        onAppInstalled() {
+            this.deferredPrompt = null;
+            this.isInstalled = true;
+            this.showInstallBanner = false;
+        },
+
         installPwa() {
-            if (this.deferredPrompt) {
-                this.deferredPrompt.prompt();
-                this.deferredPrompt.userChoice.then((choice) => {
-                    if (choice.outcome === 'accepted') {
+            if (typeof window.installPwaApp === 'function') {
+                window.installPwaApp();
+                return;
+            }
+
+            const promptEvent = this.deferredPrompt || window.pwaDeferredPrompt;
+            if (promptEvent && typeof promptEvent.prompt === 'function') {
+                promptEvent.prompt();
+                promptEvent.userChoice.then((choice) => {
+                    if (choice && choice.outcome === 'accepted') {
                         this.showInstallBanner = false;
                         this.isInstalled = true;
                     }
                     this.deferredPrompt = null;
+                    window.pwaDeferredPrompt = null;
                 });
             } else {
                 const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
@@ -149,6 +161,8 @@
             return outputArray;
         }
     }"
+    x-on:pwa-prompt-ready.window="onPromptReady()"
+    x-on:pwa-app-installed.window="onAppInstalled()"
     x-effect="window.__pwaBannerVisible = showInstallBanner; window.dispatchEvent(new CustomEvent('pwa-banner-change'))"
     class="{{ $embedded ? 'pointer-events-auto w-full' : 'fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 max-w-sm sm:max-w-md w-[calc(100%-2rem)] sm:w-auto pointer-events-none print:hidden' }}"
 >

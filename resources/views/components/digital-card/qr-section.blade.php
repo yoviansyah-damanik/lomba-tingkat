@@ -1,7 +1,7 @@
 @props([
     'qrDataUri',
     'token',
-    'title' => 'PINDAI VERIFIKASI QR',
+    'title' => 'KREDENSIAL VERIFIKASI QR',
     'description' => null,
     'theme' => 'boys',
     'titleColor' => null,
@@ -10,35 +10,36 @@
 ])
 
 @php
-    $themeClasses = [
-        'boys' => ['title' => 'text-[#0f172a]', 'token' => 'text-[#b45309]'],
-        'girls' => ['title' => 'text-[#0f172a]', 'token' => 'text-[#b45309]'],
-        'chaperone-male' => ['title' => 'text-[#065f46]', 'token' => 'text-[#047857]'],
-        'chaperone-female' => ['title' => 'text-[#581c87]', 'token' => 'text-[#7e22ce]'],
-        'staff' => ['title' => 'text-[#7f1d1d]', 'token' => 'text-[#b91c1c]'],
-        'judge' => ['title' => 'text-[#78350f]', 'token' => 'text-[#b45309]'],
+    $themeBoxes = [
+        'boys' => 'bg-gradient-to-r from-[#091326] via-[#102142] to-[#091326] border-[#f59e0b]/70',
+        'girls' => 'bg-gradient-to-r from-[#1f041b] via-[#380831] to-[#1f041b] border-[#f59e0b]/70',
+        'chaperone-male' => 'bg-gradient-to-r from-[#022c22] via-[#064e3b] to-[#022c22] border-[#f59e0b]/70',
+        'chaperone-female' => 'bg-gradient-to-r from-[#19053b] via-[#3b0764] to-[#19053b] border-[#f59e0b]/70',
+        'staff' => 'bg-gradient-to-r from-[#2b0303] via-[#450a0a] to-[#2b0303] border-[#f59e0b]/70',
+        'judge' => 'bg-gradient-to-r from-[#270f02] via-[#451a03] to-[#270f02] border-[#f59e0b]/70',
     ];
 
-    $resolvedTitleClass = $titleColor ? '' : $themeClasses[$theme]['title'] ?? 'text-[#0f172a]';
-    $resolvedTokenClass = $tokenColor ? '' : $themeClasses[$theme]['token'] ?? 'text-[#b45309]';
-    $defaultDescription = 'Kartu digital resmi ' . config('app.name') . ' ' . config('app.description') . '.';
+    $resolvedBox = $themeBoxes[$theme] ?? $themeBoxes['boys'];
+    $defaultDescription = 'Kartu tanda pengenal resmi ' . config('app.name') . ' Kwarcab Kota Padangsidimpuan.';
     $resolvedAppUrl = $appUrl ?? config('app.url');
 @endphp
 
 <div
-    class="w-full mt-[2.5mm] flex items-center bg-slate-50/95 border border-slate-200 rounded-[2.8mm] p-[1.8mm] relative z-[5] shadow-xs shrink-0 text-left">
+    class="w-full flex items-center rounded-[2.2mm] border-[1.2px] p-[1.4mm] relative z-[5] shadow-xs shrink-0 text-left {{ $resolvedBox }}">
     <img src="{{ $qrDataUri }}" alt="QR Code"
-        class="w-[22mm] h-[22mm] block rounded-[2mm] bg-white p-[0.6mm] border-[1.5px] border-slate-300 shrink-0">
-    <div class="flex-1 pl-[2.5mm] text-[5.6pt] text-slate-700 leading-tight">
-        <span class="text-[6.2pt] font-extrabold block mb-px tracking-[0.2px] {{ $resolvedTitleClass }}"
-            @if ($titleColor) style="color: {{ $titleColor }};" @endif>{{ $title }}</span>
-        <div class="text-[5.6pt] text-slate-600 leading-tight">{{ $description ?? $defaultDescription }}</div>
+        class="w-[18.5mm] h-[18.5mm] block rounded-[1.5mm] bg-white p-[0.5mm] border border-[#fbbf24] shrink-0">
+    <div class="flex-1 pl-[2.2mm] text-[5.1pt] text-slate-200 leading-tight min-w-0">
+        <span class="text-[5.7pt] font-black block mb-[0.3mm] tracking-[0.4px] text-[#fbbf24] uppercase">
+            ◆ {{ $title }}
+        </span>
+        <div class="text-[5pt] text-slate-200/90 leading-snug">{{ $description ?? $defaultDescription }}</div>
         <span
-            class="font-mono font-bold block mt-[1.5px] text-[5.5pt] tracking-[0.3px] break-all {{ $resolvedTokenClass }}"
-            @if ($tokenColor) style="color: {{ $tokenColor }};" @endif>{{ $token }}</span>
+            class="font-mono font-bold block mt-[0.4mm] text-[4.9pt] tracking-[0.2px] break-all text-amber-300">
+            {{ $token }}
+        </span>
         @if ($resolvedAppUrl)
             <span
-                class="block text-[4.8pt] text-slate-400 font-mono tracking-tight mt-[1px] truncate">{{ $resolvedAppUrl }}</span>
+                class="block text-[4.4pt] text-slate-400 font-mono tracking-tight mt-[0.2mm] truncate">{{ $resolvedAppUrl }}</span>
         @endif
     </div>
 </div>

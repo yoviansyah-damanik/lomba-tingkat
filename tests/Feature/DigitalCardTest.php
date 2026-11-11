@@ -147,20 +147,22 @@ class DigitalCardTest extends TestCase
             ->assertOk()
             ->assertDontSee('npp-badge');
 
-        $this->patrol->update(['npp' => '07']);
+        $this->patrol->update(['npp' => 'LT-PA-07']);
 
         foreach ([route('digital-cards.participant', $this->participant->id), route('digital-cards.patrol.batch', $this->patrol->id)] as $url) {
             $html = $this->actingAs($this->scoutUser)->get($url)->assertOk()->getContent();
 
             $this->assertStringContainsString('npp-badge', $html);
             $this->assertStringContainsString('Nomor Pendaftaran Peserta (NPP)', $html);
-            $this->assertLessThan(strpos($html, 'photo-member') + 2000, strpos($html, 'npp-badge'));
+            $this->assertStringContainsString('LT', $html);
+            $this->assertStringContainsString('PA', $html);
+            $this->assertLessThan(strpos($html, 'photo-member') + 2500, strpos($html, 'npp-badge'));
             $this->assertGreaterThan(strpos($html, 'photo-member'), strpos($html, 'npp-badge'));
         }
 
         $this->participant->update(['role_in_patrol' => PatrolRoleEnum::PatrolLeader]);
         $html = $this->actingAs($this->scoutUser)->get(route('digital-cards.participant', $this->participant->id))->getContent();
-        $this->assertLessThan(strpos($html, 'title="Pimpinan Regu (PINRU)">') + 1500, strpos($html, 'npp-badge'));
+        $this->assertLessThan(strpos($html, 'title="Pimpinan Regu (PINRU)">') + 2000, strpos($html, 'npp-badge'));
     }
 
     /**

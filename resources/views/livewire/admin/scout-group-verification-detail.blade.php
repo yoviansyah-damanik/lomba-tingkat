@@ -25,14 +25,23 @@
              this.imageViewerTitle = title || 'Pratinjau Foto';
              this.imageZoomScale = 1;
              this.imageViewerOpen = true;
+             this.$nextTick(() => {
+                 const dlg = this.$refs.imageViewerDialog;
+                 if (dlg && !dlg.open) {
+                     dlg.showModal();
+                 }
+             });
          },
          closeModal() {
+             const dlg = this.$refs.imageViewerDialog;
+             if (dlg && dlg.open) {
+                 dlg.close();
+             }
              this.imageViewerOpen = false;
              this.imageViewerSrc = '';
              this.imageZoomScale = 1;
          }
-     }"
-     @keydown.escape.window="if (imageViewerOpen) closeModal()">
+     }">
     <x-official-header />
 
     {{-- Top Breadcrumb & Status Navigation --}}
@@ -273,7 +282,7 @@
                         <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
                             @forelse($patrol->orderedParticipants() as $participant)
                                 @php
-                                    // Hitung kelengkapan dokumen peserta (9 berkas)
+                                    // Hitung kelengkapan dokumen peserta (7 wajib + 2 opsional)
                                     $docsCheck = [
                                         $participant->photo_path,
                                         $participant->doc_kta_path,
@@ -285,8 +294,17 @@
                                         $participant->doc_sku_path,
                                         $participant->doc_skk_path,
                                     ];
+                                    $requiredDocsCheck = [
+                                        $participant->photo_path,
+                                        $participant->doc_health_certificate_path,
+                                        $participant->doc_parent_consent_path,
+                                        $participant->doc_birth_certificate_path,
+                                        $participant->doc_family_card_path,
+                                        $participant->doc_sku_path,
+                                        $participant->doc_skk_path,
+                                    ];
                                     $uploadedDocsCount = collect($docsCheck)->filter(fn($d) => !empty($d))->count();
-                                    $isFullDocs = $uploadedDocsCount === 9;
+                                    $isFullDocs = collect($requiredDocsCheck)->every(fn($d) => !empty($d));
                                 @endphp
                                 <tr class="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40">
                                     <td class="px-5 py-2.5 font-semibold text-zinc-900 dark:text-zinc-100">
@@ -370,15 +388,15 @@
             @foreach($patrol->orderedParticipants() as $participant)
                 @php
                     $participantDocsList = [
-                        ['label' => 'Pas Foto 3x4', 'path' => $participant->photo_path, 'desc' => 'Foto berseragam pramuka lengkap'],
-                        ['label' => 'Scan KTA Pramuka', 'path' => $participant->doc_kta_path, 'desc' => 'Kartu Tanda Anggota aktif'],
-                        ['label' => 'Scan BPJS / Asuransi', 'path' => $participant->doc_bpjs_path, 'desc' => 'Kartu jaminan kesehatan aktif'],
-                        ['label' => 'Surat Keterangan Sehat', 'path' => $participant->doc_health_certificate_path, 'desc' => 'Dari dokter / faskes pemerintah'],
-                        ['label' => 'Surat Izin Orang Tua', 'path' => $participant->doc_parent_consent_path, 'desc' => 'Persetujuan orang tua / wali'],
-                        ['label' => 'Scan Akta Kelahiran', 'path' => $participant->doc_birth_certificate_path, 'desc' => 'Akta otentik catatan sipil'],
-                        ['label' => 'Scan Kartu Keluarga (KK)', 'path' => $participant->doc_family_card_path, 'desc' => 'Kartu keluarga terbaru'],
-                        ['label' => 'Scan SKU Penggalang', 'path' => $participant->doc_sku_path, 'desc' => 'Syarat Kecakapan Umum'],
-                        ['label' => 'Scan SKK Penggalang', 'path' => $participant->doc_skk_path, 'desc' => 'Syarat Kecakapan Khusus'],
+                        ['label' => 'Pas Foto 3x4', 'path' => $participant->photo_path, 'desc' => 'Foto berseragam pramuka lengkap', 'optional' => false],
+                        ['label' => 'Scan KTA Pramuka', 'path' => $participant->doc_kta_path, 'desc' => 'Kartu Tanda Anggota aktif (Opsional)', 'optional' => true],
+                        ['label' => 'Scan BPJS / Asuransi', 'path' => $participant->doc_bpjs_path, 'desc' => 'Kartu jaminan kesehatan aktif (Opsional)', 'optional' => true],
+                        ['label' => 'Surat Keterangan Sehat', 'path' => $participant->doc_health_certificate_path, 'desc' => 'Dari dokter / faskes pemerintah', 'optional' => false],
+                        ['label' => 'Surat Izin Orang Tua', 'path' => $participant->doc_parent_consent_path, 'desc' => 'Persetujuan orang tua / wali', 'optional' => false],
+                        ['label' => 'Scan Akta Kelahiran', 'path' => $participant->doc_birth_certificate_path, 'desc' => 'Akta otentik catatan sipil', 'optional' => false],
+                        ['label' => 'Scan Kartu Keluarga (KK)', 'path' => $participant->doc_family_card_path, 'desc' => 'Kartu keluarga terbaru', 'optional' => false],
+                        ['label' => 'Scan SKU Penggalang', 'path' => $participant->doc_sku_path, 'desc' => 'Syarat Kecakapan Umum', 'optional' => false],
+                        ['label' => 'Scan SKK Penggalang', 'path' => $participant->doc_skk_path, 'desc' => 'Syarat Kecakapan Khusus', 'optional' => false],
                     ];
                     $formalEdu = $participant->formal_education ?: \App\Models\Participant::defaultFormalEducation();
                     $scoutSiaga = $participant->scout_siaga ?: \App\Models\Participant::defaultScoutSiaga();
@@ -447,6 +465,8 @@
                                                 <span class="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate" title="{{ $doc['label'] }}">{{ $doc['label'] }}</span>
                                                 @if(!empty($doc['path']))
                                                     <span class="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">Ada</span>
+                                                @elseif(!empty($doc['optional']))
+                                                    <span class="text-[10px] font-bold text-zinc-500 dark:text-zinc-400">Opsional</span>
                                                 @else
                                                     <span class="text-[10px] font-bold text-rose-600 dark:text-rose-400">Kosong</span>
                                                 @endif
@@ -1005,64 +1025,68 @@
     {{-- Panel keputusan verifikasi (Livewire): modal konfirmasi, toast langsung, dan pemantauan perubahan --}}
     <livewire:admin.scout-group-verification-actions :scout-group-id="$scoutGroup->id" lazy />
 
-    {{-- Lightbox Image Zoom Viewer Modal --}}
-    <div x-show="imageViewerOpen"
-         x-cloak
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-50 flex flex-col items-center justify-between bg-black/85 backdrop-blur-xs p-4 sm:p-6"
-         @click.self="closeModal()">
+    {{-- Lightbox Image Zoom Viewer Modal (menggunakan <dialog>.showModal() agar berada di top-layer di atas flux:modal) --}}
+    <template x-teleport="body">
+        <dialog x-ref="imageViewerDialog"
+                @close="imageViewerOpen = false; imageViewerSrc = ''; imageZoomScale = 1;"
+                @keydown.escape.stop.prevent="closeModal()"
+                @click.self="closeModal()"
+                class="m-0 h-dvh max-h-none w-screen max-w-none overflow-hidden bg-black/85 p-0 text-white backdrop-blur-xs backdrop:bg-black/80"
+                :aria-label="imageViewerTitle">
+            <div class="flex h-full w-full flex-col items-center justify-between p-4 sm:p-6"
+                 @click.self="closeModal()">
 
-        {{-- Viewer Header & Controls --}}
-        <div class="flex w-full max-w-5xl items-center justify-between gap-3 rounded-2xl bg-zinc-900/90 px-4 py-3 text-white border border-zinc-700/60 shadow-xl shrink-0">
-            <div class="flex items-center gap-2.5 min-w-0">
-                <flux:icon name="photo" class="size-5 text-amber-400 shrink-0" />
-                <div class="truncate">
-                    <div class="text-xs sm:text-sm font-bold truncate text-zinc-100" x-text="imageViewerTitle"></div>
-                    <div class="text-[11px] text-zinc-400">Gunakan roda mouse atau tombol kontrol untuk zoom in / out</div>
+                {{-- Viewer Header & Controls --}}
+                <div class="flex w-full max-w-5xl items-center justify-between gap-3 rounded-2xl bg-zinc-900/95 px-4 py-3 text-white border border-zinc-700/60 shadow-xl shrink-0">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <flux:icon name="photo" class="size-5 text-amber-400 shrink-0" />
+                        <div class="truncate">
+                            <div class="text-xs sm:text-sm font-bold truncate text-zinc-100" x-text="imageViewerTitle"></div>
+                            <div class="text-[11px] text-zinc-400">Gunakan roda mouse atau tombol kontrol untuk zoom in / out</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span class="rounded-lg bg-zinc-800 px-2 py-1 font-mono text-xs font-semibold text-amber-300 border border-zinc-700/50"
+                              x-text="Math.round(imageZoomScale * 100) + '%'">
+                        </span>
+
+                        <flux:button size="xs" variant="subtle" icon="magnifying-glass-plus" @click="zoomIn()">
+                            Zoom In
+                        </flux:button>
+                        <flux:button size="xs" variant="subtle" icon="magnifying-glass-minus" @click="zoomOut()">
+                            Zoom Out
+                        </flux:button>
+                        <flux:button size="xs" variant="subtle" icon="arrow-path" @click="resetZoom()">
+                            Reset
+                        </flux:button>
+                        <flux:button size="xs" variant="danger" icon="x-mark" @click="closeModal()">
+                            Tutup
+                        </flux:button>
+                    </div>
+                </div>
+
+                {{-- Viewer Canvas Container --}}
+                <div class="flex flex-1 w-full max-w-5xl items-center justify-center overflow-auto p-4 my-2 select-none"
+                     @click.self="closeModal()"
+                     @wheel.prevent="if ($event.deltaY < 0) zoomIn(); else zoomOut();"
+                     @dblclick="toggleZoom()">
+                    <template x-if="imageViewerOpen && imageViewerSrc">
+                        <img :src="imageViewerSrc"
+                             :alt="imageViewerTitle"
+                             class="max-h-[75vh] max-w-full rounded-xl object-contain shadow-2xl transition-transform duration-150 ease-out cursor-pointer"
+                             :style="'transform: scale(' + imageZoomScale + ');'"
+                             title="Klik ganda untuk toggle 2x / 1x zoom, scroll roda mouse untuk zoom in/out">
+                    </template>
+                </div>
+
+                {{-- Viewer Footer Hint --}}
+                <div class="text-[11px] text-zinc-400 text-center shrink-0">
+                    Tip: Scroll roda mouse ke atas/bawah untuk zoom in/out &bull; Klik ganda foto untuk toggle zoom &bull; Tekan tombol ESC untuk menutup
                 </div>
             </div>
-
-            <div class="flex items-center gap-2 shrink-0">
-                <span class="rounded-lg bg-zinc-800 px-2 py-1 font-mono text-xs font-semibold text-amber-300 border border-zinc-700/50"
-                      x-text="Math.round(imageZoomScale * 100) + '%'">
-                </span>
-
-                <flux:button size="xs" variant="subtle" icon="magnifying-glass-plus" @click="zoomIn()">
-                    Zoom In
-                </flux:button>
-                <flux:button size="xs" variant="subtle" icon="magnifying-glass-minus" @click="zoomOut()">
-                    Zoom Out
-                </flux:button>
-                <flux:button size="xs" variant="subtle" icon="arrow-path" @click="resetZoom()">
-                    Reset
-                </flux:button>
-                <flux:button size="xs" variant="danger" icon="x-mark" @click="closeModal()">
-                    Tutup
-                </flux:button>
-            </div>
-        </div>
-
-        {{-- Viewer Canvas Container --}}
-        <div class="flex flex-1 w-full max-w-5xl items-center justify-center overflow-auto p-4 my-2 select-none"
-             @wheel.prevent="if ($event.deltaY < 0) zoomIn(); else zoomOut();"
-             @dblclick="toggleZoom()">
-            <img :src="imageViewerSrc"
-                 :alt="imageViewerTitle"
-                 class="max-h-[75vh] max-w-full rounded-xl object-contain shadow-2xl transition-transform duration-150 ease-out cursor-pointer"
-                 :style="'transform: scale(' + imageZoomScale + ');'"
-                 title="Klik ganda untuk toggle 2x / 1x zoom, scroll roda mouse untuk zoom in/out">
-        </div>
-
-        {{-- Viewer Footer Hint --}}
-        <div class="text-[11px] text-zinc-400 text-center shrink-0">
-            Tip: Scroll roda mouse ke atas/bawah untuk zoom in/out &bull; Klik ganda foto untuk toggle zoom &bull; Tekan tombol ESC untuk menutup
-        </div>
-    </div>
+        </dialog>
+    </template>
 
     <x-file-viewer />
 </div>

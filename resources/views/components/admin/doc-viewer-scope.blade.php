@@ -21,8 +21,18 @@
              }
              this.imageZoomScale = 1;
              this.docModalOpen = true;
+             this.$nextTick(() => {
+                 const dlg = this.$refs.docModalDialog;
+                 if (dlg && !dlg.open) {
+                     dlg.showModal();
+                 }
+             });
          },
          closeDocModal() {
+             const dlg = this.$refs.docModalDialog;
+             if (dlg && dlg.open) {
+                 dlg.close();
+             }
              this.docModalOpen = false;
              this.docModalSrc = '';
              this.imageZoomScale = 1;

@@ -113,13 +113,6 @@
                         </flux:button>
                         @endif
 
-                        @if($patrol->npp)
-                        <flux:button href="{{ route('scout-group.patrols.bib', $patrol->id) }}" target="_blank" variant="subtle" size="sm" icon="printer"
-                            data-loading="Mencetak Nomor Punggung Regu {{ $patrol->patrol_name }} (PDF)...">
-                            No. Punggung (A5)
-                        </flux:button>
-                        @endif
-
                         @if($scoutGroup->isEditable())
                             <flux:button href="{{ route('scout-group.participants.create', $patrol->id) }}" wire:navigate variant="primary" size="sm" icon="plus">
                                 Tambah Peserta

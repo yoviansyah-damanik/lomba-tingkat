@@ -12,4 +12,8 @@ Realigned and unified the floating prompts for **PWA Installation** and **Web Pu
    - Added `@props(['embedded' => false])`.
    - Harmonized compact card styling (`rounded-2xl sm:rounded-3xl`, `p-3.5 sm:p-5`, `size-10 sm:size-12` icons).
    - Coordinated sequencing (Desktop & Mobile): PWA install banner displays first; push notification card politely waits until the PWA prompt is resolved or dismissed (`!installBannerVisible`), ensuring only one modal prompt ever appears at a time.
+3. **PWA Installability & Trigger Reliability ([manifest.json](file:///d:/WebApps/lomba-tingkat/public/manifest.json), [pwa-install.js](file:///d:/WebApps/lomba-tingkat/resources/js/pwa-install.js), [official-footer.blade.php](file:///d:/WebApps/lomba-tingkat/resources/views/components/official-footer.blade.php))**:
+   - Generated exact square icons (`pwa-icon-192.png` `192x192`, `pwa-icon-512.png` `512x512`, `pwa-icon-maskable-512.png` `512x512`) so Chromium browsers validate the Web App Manifest and fire `beforeinstallprompt`.
+   - Added early inline `beforeinstallprompt` and `appinstalled` capture in `<head>` plus a centralized [`installPwaApp()`](file:///d:/WebApps/lomba-tingkat/resources/js/pwa-install.js#L162-L202) handler that persists across `wire:navigate` transitions and falls back to a platform-aware installation guide modal on iOS/Safari/non-Chromium browsers.
+
 

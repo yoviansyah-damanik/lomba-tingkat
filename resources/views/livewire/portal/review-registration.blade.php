@@ -333,19 +333,23 @@
                                 </div>
                             </div>
                             @php
-                                $docKeys = array_keys(\App\Models\Participant::DOCUMENTS);
-                                $uploadedCount = collect($docKeys)->filter(fn($key) => !empty($participant->{$key . '_path'}))->count();
-                                $totalDocs = count($docKeys);
+                                $requiredDocKeys = array_keys(\App\Models\Participant::REQUIRED_DOCUMENTS);
+                                $requiredUploadedCount = collect($requiredDocKeys)->filter(fn($key) => !empty($participant->{$key . '_path'}))->count();
+                                $totalRequiredDocs = count($requiredDocKeys);
+                                $isRequiredDocsComplete = $requiredUploadedCount === $totalRequiredDocs;
                             @endphp
-                            <span class="text-[11px] font-semibold {{ $uploadedCount === $totalDocs ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400' }}">
-                                {{ $uploadedCount }}/{{ $totalDocs }} Berkas
+                            <span class="text-[11px] font-semibold {{ $isRequiredDocsComplete ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400' }}">
+                                {{ $requiredUploadedCount }}/{{ $totalRequiredDocs }} Wajib
                             </span>
                         </div>
 
                         {{-- Grid Dokumen Peserta --}}
                         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-px bg-zinc-200/50 dark:bg-zinc-700/30 p-px">
                             @foreach(\App\Models\Participant::DOCUMENTS as $key => [$pathCol, $label])
-                                @php $filePath = $participant->{$pathCol}; @endphp
+                                @php
+                                    $filePath = $participant->{$pathCol};
+                                    $isOptionalDoc = \App\Models\Participant::isDocumentOptional($key);
+                                @endphp
                                 <div class="flex flex-col items-center gap-1.5 bg-white dark:bg-zinc-900 p-2.5 text-center">
                                     <div class="flex size-8 items-center justify-center rounded-lg {{ $filePath ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-zinc-100 text-zinc-300 dark:bg-zinc-800' }}">
                                         <flux:icon name="{{ $filePath ? 'document-check' : 'document' }}" class="size-4" />
@@ -355,6 +359,8 @@
                                     </span>
                                     @if($filePath)
                                         <x-file-viewer-trigger :path="$filePath" :title="Str::after($label, 'Scan ').' — '.$participant->full_name" label="Lihat" />
+                                    @elseif($isOptionalDoc)
+                                        <span class="text-[10px] text-zinc-400">Opsional</span>
                                     @else
                                         <span class="text-[10px] text-zinc-400">Belum</span>
                                     @endif

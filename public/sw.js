@@ -1,8 +1,11 @@
 // Progressive Web App (PWA) Service Worker — LT III Kwarcab Padangsidimpuan 2026
-const CACHE_NAME = 'lt3-pwa-v4';
+const CACHE_NAME = 'lt3-pwa-v5';
 const PRECACHE_ASSETS = [
     '/offline.html',
     '/manifest.json',
+    '/pwa-icon-192.png',
+    '/pwa-icon-512.png',
+    '/pwa-icon-maskable-512.png',
     '/favicon.png',
     '/logo.png'
 ];

@@ -8,15 +8,16 @@ Implements document upload capabilities for contingent participants (8 requireme
   - `2026_10_22_160000_add_document_paths_to_participants_and_scout_groups.php`
   - `2026_10_28_000001_add_doc_parent_consent_path_to_participants_table.php`
 - **Participant Model (`app/Models/Participant.php`):**
-  - Added constants `Participant::DOCUMENTS` mapping input fields to database columns:
-    - `doc_kta` => `doc_kta_path` (Kartu Tanda Anggota)
-    - `doc_bpjs` => `doc_bpjs_path` (BPJS)
-    - `doc_health_certificate` => `doc_health_certificate_path` (Surat Sehat)
-    - `doc_parent_consent` => `doc_parent_consent_path` (Surat Izin Orang Tua)
-    - `doc_birth_certificate` => `doc_birth_certificate_path` (Akta Kelahiran)
-    - `doc_family_card` => `doc_family_card_path` (Kartu Keluarga)
-    - `doc_sku` => `doc_sku_path` (SKU)
-    - `doc_skk` => `doc_skk_path` (SKK)
+  - Added constants `Participant::DOCUMENTS`, `Participant::REQUIRED_DOCUMENTS`, and `Participant::OPTIONAL_DOCUMENTS`:
+    - `doc_kta` => `doc_kta_path` (Kartu Tanda Anggota — **Optional**)
+    - `doc_bpjs` => `doc_bpjs_path` (BPJS / Asuransi Kesehatan — **Optional**)
+    - `doc_health_certificate` => `doc_health_certificate_path` (Surat Sehat — **Required**)
+    - `doc_parent_consent` => `doc_parent_consent_path` (Surat Izin Orang Tua — **Required**)
+    - `doc_birth_certificate` => `doc_birth_certificate_path` (Akta Kelahiran — **Required**)
+    - `doc_family_card` => `doc_family_card_path` (Kartu Keluarga — **Required**)
+    - `doc_sku` => `doc_sku_path` (SKU — **Required**)
+    - `doc_skk` => `doc_skk_path` (SKK — **Required**)
+  - Helper `Participant::isDocumentOptional(string $key)` checks whether a document key is optional.
   - Updated `$fillable` array.
 - **ScoutGroup Model (`app/Models/ScoutGroup.php`):**
   - Added `$fillable`: `mandate_letter_path`, `payment_proof_path`.

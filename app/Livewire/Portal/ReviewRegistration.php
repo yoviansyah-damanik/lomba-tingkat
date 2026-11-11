@@ -269,7 +269,7 @@ class ReviewRegistration extends Component
         foreach ($group->patrols as $patrol) {
             foreach ($patrol->participants as $participant) {
                 $totalParticipants++;
-                $hasAllDocs = collect(Participant::DOCUMENTS)
+                $hasAllDocs = collect(Participant::REQUIRED_DOCUMENTS)
                     ->every(fn ($doc) => ! empty($participant->{$doc[0]}));
 
                 if (! $hasAllDocs) {
@@ -286,7 +286,7 @@ class ReviewRegistration extends Component
     }
 
     /**
-     * Peringatan berkas persyaratan peserta yang belum diunggah, satu baris per peserta
+     * Peringatan berkas persyaratan wajib peserta yang belum diunggah, satu baris per peserta
      *
      * @return array<int, string>
      */
@@ -299,7 +299,7 @@ class ReviewRegistration extends Component
 
         foreach ($group->patrols as $patrol) {
             foreach ($patrol->participants as $participant) {
-                $missing = collect(Participant::DOCUMENTS)
+                $missing = collect(Participant::REQUIRED_DOCUMENTS)
                     ->filter(fn ($doc) => empty($participant->{$doc[0]}))
                     ->map(fn ($doc) => str_replace('Scan ', '', $doc[1]))
                     ->values();

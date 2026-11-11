@@ -22,7 +22,7 @@
             height: 210mm;
             font-family: 'DejaVu Sans', sans-serif;
             position: relative;
-            background-color: #ffffff;
+            background-color: #fffdf7;
             color: #1f2937;
             overflow: hidden;
         }
@@ -33,13 +33,30 @@
             height: 210mm;
         }
 
-        .background-template {
+        .vector-bg {
             position: absolute;
             top: 0;
             left: 0;
             width: 297mm;
             height: 210mm;
             z-index: 1;
+        }
+
+        .watermark-logo {
+            position: absolute;
+            top: 29%;
+            left: 38.5%;
+            width: 23%;
+            opacity: 0.055;
+            z-index: 2;
+        }
+
+        .top-left-logo {
+            position: absolute;
+            top: 9.8%;
+            left: 9.8%;
+            width: 5.7%;
+            z-index: 4;
         }
 
         .field-container {
@@ -47,28 +64,23 @@
             z-index: 10;
         }
 
-        /* Desain Bawaan (Default Vector/CSS Frame bila belum unggah gambar template) */
-        .default-frame {
+        /* Lapisan teks statis untuk desain vektor resmi LT-III */
+        .default-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 297mm;
             height: 210mm;
-            padding: 12mm;
-            background: linear-gradient(135deg, #fffbeb 0%, #ffffff 50%, #fef3c7 100%);
-            z-index: 1;
+            z-index: 5;
+            text-align: center;
         }
 
-        .inner-border {
-            width: 100%;
-            height: 100%;
-            border: 4px solid #b45309;
-            outline: 2px solid #d97706;
-            outline-offset: -8px;
-            padding: 8mm 15mm;
-            position: relative;
+        .header-block {
+            position: absolute;
+            top: 7.8%;
+            left: 18%;
+            width: 64%;
             text-align: center;
-            background: #ffffff;
         }
 
         .header-title {
@@ -77,89 +89,175 @@
             color: #78350f;
             text-transform: uppercase;
             letter-spacing: 2px;
-            margin-bottom: 2px;
+            margin-bottom: 3px;
         }
 
         .header-subtitle {
-            font-size: 9pt;
+            font-size: 9.5pt;
+            font-weight: bold;
             color: #92400e;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
         }
 
         .cert-main-title {
-            margin-top: 10px;
-            font-size: 24pt;
+            margin-top: 8px;
+            font-size: 27pt;
             font-weight: bold;
-            color: #b45309;
-            letter-spacing: 3px;
+            color: #260c36;
+            letter-spacing: 4px;
             text-transform: uppercase;
         }
 
         .cert-statement {
-            font-size: 11pt;
+            position: absolute;
+            top: 35.8%;
+            left: 15%;
+            width: 70%;
+            font-size: 10.5pt;
             color: #4b5563;
             font-style: italic;
-            margin-top: 4px;
+        }
+
+        .cert-appreciation {
+            position: absolute;
+            top: 69.5%;
+            left: 12%;
+            width: 76%;
+            font-size: 8.8pt;
+            line-height: 1.4;
+            color: #374151;
+        }
+
+        .cert-event-meta {
+            margin-top: 2px;
+            font-size: 8.2pt;
+            font-weight: bold;
+            color: #78350f;
+            letter-spacing: 0.3px;
         }
 
         .signatures {
             position: absolute;
-            bottom: 12mm;
-            left: 15mm;
-            right: 15mm;
+            top: 78.2%;
+            left: 8%;
+            width: 84%;
             display: table;
-            width: calc(100% - 30mm);
         }
 
         .sig-col {
             display: table-cell;
-            width: 50%;
+            width: 41%;
             text-align: center;
-            font-size: 9pt;
+            font-size: 8.8pt;
             color: #1f2937;
+            vertical-align: top;
+        }
+
+        .sig-spacer {
+            display: table-cell;
+            width: 18%;
+        }
+
+        .sig-role {
+            font-weight: bold;
+            color: #374151;
+        }
+
+        .sig-name {
+            font-size: 9.5pt;
+            font-weight: bold;
+            color: #111827;
+            text-decoration: underline;
+        }
+
+        .sig-nta {
+            font-size: 8pt;
+            color: #6b7280;
+            margin-top: 1px;
         }
     </style>
 </head>
 
 <body>
     <div class="canvas">
-        @if ($templateBase64)
-            <img src="{{ $templateBase64 }}" class="background-template" alt="Background Template">
-        @else
-            {{-- Default Pramuka Certificate Frame --}}
-            <div class="default-frame">
-                <div class="inner-border">
-                    <div class="header-title">Gerakan Pramuka Kwartir Cabang Kota Padangsidimpuan</div>
-                    <div class="header-subtitle">Lomba Tingkat Tiga (LT-III) Regu Penggalang Tahun
-                        {{ $event?->start_date ? $event->start_date->year : 2026 }}</div>
-                    <div class="cert-main-title">PIAGAM PENGHARGAAN</div>
-                    <div class="cert-statement">Diberikan secara resmi dan sah kepada:</div>
+        @php
+            $svgMarkup = trim(view('certificates.vector-artwork')->render());
+            $svgDataUri = 'data:image/svg+xml;base64,' . base64_encode($svgMarkup);
+        @endphp
 
-                    {{-- Signatures --}}
-                    <div class="signatures">
-                        <div class="sig-col">
-                            <div>Ketua Panitia Pelaksana,</div>
-                            <div style="height: 40px;"></div>
-                            <div style="font-weight: bold; text-decoration: underline;">
-                                {{ $event?->committee_chair_name ?: 'Kak Fahri Siregar, S.Pd' }}</div>
-                            <div style="font-size: 8pt; color: #6b7280;">NTA: {{ $event?->committee_chair_nta ?: '-' }}
-                            </div>
-                        </div>
-                        <div class="sig-col">
-                            <div>Ketua Kwartir Cabang Kota Padangsidimpuan,</div>
-                            <div style="height: 40px;"></div>
-                            <div style="font-weight: bold; text-decoration: underline;">
-                                {{ $event?->kwarcab_chair_name ?: 'Ketua Kwarcab Padangsidimpuan' }}</div>
-                            <div style="font-size: 8pt; color: #6b7280;">NTA: {{ $event?->kwarcab_chair_nta ?: '-' }}
-                            </div>
-                        </div>
+        {{-- Desain Vektor Buatan Sendiri (Pure SVG tanpa file background PNG/JPG) --}}
+        <img src="{{ $svgDataUri }}" class="vector-bg" alt="Certificate Vector Frame">
+
+        @if (!empty($logoBase64))
+            <img src="{{ $logoBase64 }}" class="watermark-logo" alt="Watermark LT-III">
+            <img src="{{ $logoBase64 }}" class="top-left-logo" alt="Logo LT-III">
+        @endif
+
+        {{-- Informasi Statis Piagam Penghargaan --}}
+        <div class="default-overlay">
+            <div class="header-block">
+                <div class="header-title">Gerakan Pramuka Kwartir Cabang Kota Padangsidimpuan</div>
+                <div class="header-subtitle">
+                    Lomba Tingkat Tiga (LT-III) Regu Penggalang Tahun
+                    {{ $event?->start_date ? $event->start_date->year : 2026 }}
+                </div>
+                <div class="cert-main-title">PIAGAM PENGHARGAAN</div>
+            </div>
+
+            <div class="cert-statement">Diberikan secara resmi dan sah kepada:</div>
+
+            <div class="cert-appreciation">
+                <div>
+                    Atas partisipasi aktif, dedikasi, dan prestasi dalam kegiatan
+                    <strong>{{ $event?->name ?: 'Lomba Tingkat Tiga (LT-III) Regu Pramuka Penggalang' }}</strong>
+                    Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan.
+                </div>
+                <div class="cert-event-meta">
+                    {{ $event?->location ?: 'Lapangan Pulo Baok, Kota Padangsidimpuan' }}
+                    &bull;
+                    @if ($event?->start_date && $event?->end_date)
+                        {{ $event->start_date->translatedFormat('d') }} &ndash; {{ $event->end_date->translatedFormat('d F Y') }}
+                    @else
+                        14 &ndash; 17 November 2026
+                    @endif
+                </div>
+            </div>
+
+            {{-- Kolom Tanda Tangan Resmi --}}
+            <div class="signatures">
+                <div class="sig-col">
+                    <div style="font-size: 8pt; color: #6b7280; margin-bottom: 1px;">Mengetahui,</div>
+                    <div class="sig-role">Ketua Panitia Pelaksana,</div>
+                    <div style="height: 38px;"></div>
+                    <div class="sig-name">
+                        {{ $event?->committee_chair_name ?: 'Kak Fahri Siregar, S.Pd' }}
+                    </div>
+                    <div class="sig-nta">
+                        NTA: {{ $event?->committee_chair_nta ?: '-' }}
+                    </div>
+                </div>
+
+                <div class="sig-spacer"></div>
+
+                <div class="sig-col">
+                    <div style="font-size: 8pt; color: #6b7280; margin-bottom: 1px;">
+                        Padangsidimpuan,
+                        {{ $event?->end_date ? $event->end_date->translatedFormat('d F Y') : '17 November 2026' }}
+                    </div>
+                    <div class="sig-role">Ketua Kwartir Cabang Kota Padangsidimpuan,</div>
+                    <div style="height: 38px;"></div>
+                    <div class="sig-name">
+                        {{ $event?->kwarcab_chair_name ?: 'Ketua Kwarcab Padangsidimpuan' }}
+                    </div>
+                    <div class="sig-nta">
+                        NTA: {{ $event?->kwarcab_chair_nta ?: '-' }}
                     </div>
                 </div>
             </div>
-        @endif
+        </div>
 
-        {{-- Dynamic Text Elements --}}
+        {{-- Elemen Teks Dinamis Penerima --}}
         @php
             $fields = [
                 'certificate_number' => $recipient['certificate_number'] ?? '',

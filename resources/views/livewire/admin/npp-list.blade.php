@@ -6,11 +6,6 @@
         </h3>
         <div class="ml-auto flex items-center gap-2">
             <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Cari NPP, regu, pangkalan" class="max-w-xs" />
-            @if ($patrols->isNotEmpty())
-                <flux:button href="{{ route('admin.npp.print-bibs', ['gender' => $gender]) }}" target="_blank" size="sm" variant="subtle" icon="printer">
-                    Cetak No. Punggung (A5)
-                </flux:button>
-            @endif
         </div>
     </div>
 
@@ -21,8 +16,7 @@
                     <tr>
                         <th class="py-3 pl-5 pr-3">NPP</th>
                         <th class="px-3 py-3">Regu</th>
-                        <th class="px-3 py-3">Gudep / Pangkalan</th>
-                        <th class="py-3 pr-5 text-right">Aksi</th>
+                        <th class="py-3 pl-3 pr-5">Gudep / Pangkalan</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -32,19 +26,14 @@
                                 <span class="rounded-lg bg-zinc-100 px-2 py-0.5 font-mono text-xs font-extrabold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100">{{ $patrol->npp }}</span>
                             </td>
                             <td class="px-3 py-2.5 font-semibold text-zinc-900 dark:text-zinc-100">{{ $patrol->patrol_name }}</td>
-                            <td class="px-3 py-2.5 text-xs text-zinc-600 dark:text-zinc-400">
+                            <td class="py-2.5 pl-3 pr-5 text-xs text-zinc-600 dark:text-zinc-400">
                                 {{ $patrol->scoutGroup?->school_name ?? '-' }}
                                 <span class="block text-[11px] text-zinc-400">Gudep {{ $patrol->group_number }}</span>
-                            </td>
-                            <td class="py-2.5 pr-5 text-right">
-                                <flux:button href="{{ route('admin.npp.print-bibs', ['patrol_id' => $patrol->id]) }}" target="_blank" size="xs" variant="ghost" icon="printer">
-                                    Cetak
-                                </flux:button>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-5 py-10 text-center text-xs text-zinc-500">Belum ada NPP yang dibuat.</td>
+                            <td colspan="3" class="px-5 py-10 text-center text-xs text-zinc-500">Belum ada NPP yang dibuat.</td>
                         </tr>
                     @endforelse
                 </tbody>

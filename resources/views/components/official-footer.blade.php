@@ -12,15 +12,15 @@
             &mdash; Bidang Humas dan Informatika Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan. <x-app-version />
         </p>
         <div class="flex items-center shrink-0" x-data="{
-            isStandalone: window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true,
+            isStandalone: (typeof window.isPwaStandalone === 'function' && window.isPwaStandalone()) || window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true,
             installApp() {
-                if (window.installPwaApp) {
+                if (typeof window.installPwaApp === 'function') {
                     window.installPwaApp();
                 } else {
                     window.dispatchEvent(new CustomEvent('trigger-pwa-install'));
                 }
             }
-        }">
+        }" x-on:pwa-app-installed.window="isStandalone = true">
             <template x-if="!isStandalone">
                 <flux:button icon="arrow-down-tray" variant="subtle" size="xs" x-on:click="installApp()">
                     Pasang Aplikasi
@@ -64,15 +64,15 @@
 
                 {{-- KOLOM 2: Pasang Aplikasi LT (Pengganti Situs Terkait) --}}
                 <div class="lg:col-span-4 space-y-3.5" x-data="{
-                    isStandalone: window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true,
+                    isStandalone: (typeof window.isPwaStandalone === 'function' && window.isPwaStandalone()) || window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true,
                     installApp() {
-                        if (window.installPwaApp) {
+                        if (typeof window.installPwaApp === 'function') {
                             window.installPwaApp();
                         } else {
                             window.dispatchEvent(new CustomEvent('trigger-pwa-install'));
                         }
                     }
-                }">
+                }" x-on:pwa-app-installed.window="isStandalone = true">
                     <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
                         <flux:icon name="device-phone-mobile" class="size-4 text-amber-400" />
                         Pasang Aplikasi LT
@@ -200,15 +200,15 @@
                     &mdash; Bidang Humas dan Informatika Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan. <x-app-version />
                 </p>
                 <div class="flex items-center shrink-0" x-data="{
-                    isStandalone: window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true,
+                    isStandalone: (typeof window.isPwaStandalone === 'function' && window.isPwaStandalone()) || window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true,
                     installApp() {
-                        if (window.installPwaApp) {
+                        if (typeof window.installPwaApp === 'function') {
                             window.installPwaApp();
                         } else {
                             window.dispatchEvent(new CustomEvent('trigger-pwa-install'));
                         }
                     }
-                }">
+                }" x-on:pwa-app-installed.window="isStandalone = true">
                     <template x-if="!isStandalone">
                         <flux:button icon="arrow-down-tray" variant="subtle" size="xs" x-on:click="installApp()"
                             class="text-amber-400 hover:text-amber-300">

@@ -3,7 +3,6 @@
 use App\Http\Controllers\AdminVerificationController;
 use App\Http\Controllers\AttendanceScannerController;
 use App\Http\Controllers\CertificateController;
-use App\Http\Controllers\PatrolBibPrintController;
 use App\Http\Controllers\PermissionLetterController;
 use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\PushSubscriptionController;
@@ -13,6 +12,7 @@ use App\Http\Controllers\RosterPrintController;
 use App\Http\Controllers\ScheduleCalendarController;
 use App\Http\Controllers\ScoutGroupPortalController;
 use App\Http\Controllers\ZipExportController;
+use App\Livewire\Admin\AnnouncementForm;
 use App\Livewire\Admin\AnnouncementsManagement;
 use App\Livewire\Admin\AssessmentsAudit;
 use App\Livewire\Admin\Certificates\Settings as CertificateSettings;
@@ -150,7 +150,6 @@ Route::middleware(['auth', 'role'])->group(function () {
     // Verifikasi identitas lewat scan QR: Administrator (termasuk Superadmin) dan Panitia
     Route::middleware('role:admin|committee')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/identity-verification', IdentityVerification::class)->name('identity-verification.index');
-        Route::get('/npp/print-bibs', [PatrolBibPrintController::class, 'printBibs'])->name('npp.print-bibs');
     });
 
     // Cetak PDF daftar Pangkalan Gudep, Peserta (satu gudep per halaman), dan Bindamping
@@ -224,8 +223,8 @@ Route::middleware(['auth', 'role'])->group(function () {
 
         // Phase 11: Manajemen Publikasi Pengumuman (Livewire 4 SPA)
         Route::get('/announcements', AnnouncementsManagement::class)->name('announcements.index');
-        Route::get('/announcements/create', \App\Livewire\Admin\AnnouncementForm::class)->name('announcements.create');
-        Route::get('/announcements/{id}/edit', \App\Livewire\Admin\AnnouncementForm::class)->name('announcements.edit');
+        Route::get('/announcements/create', AnnouncementForm::class)->name('announcements.create');
+        Route::get('/announcements/{id}/edit', AnnouncementForm::class)->name('announcements.edit');
 
         // Aparatur Panitia & Dewan Juri (Admin & Superadmin)
         Route::get('/registration-invitations', RegistrationInvitations::class)->name('registration-invitations.index');
@@ -301,7 +300,6 @@ Route::middleware(['auth', 'role'])->group(function () {
         // Patrols & participants (Livewire 4 SPA)
         Route::get('/patrols', PatrolsManagement::class)->name('patrols');
         Route::get('/patrols/{patrolId}/form-01', [ScoutGroupPortalController::class, 'form01Print'])->name('patrols.form-01');
-        Route::get('/patrols/{patrolId}/bib', [PatrolBibPrintController::class, 'printBibs'])->name('patrols.bib');
         Route::get('/patrols/{patrolId}/participants/create', ParticipantForm::class)->name('participants.create');
         Route::get('/participants/{id}', App\Livewire\Portal\ParticipantDetail::class)->name('participants.show');
         Route::get('/participants/{id}/edit', ParticipantForm::class)->name('participants.edit');

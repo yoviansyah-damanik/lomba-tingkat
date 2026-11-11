@@ -7,7 +7,6 @@ use App\Models\CertificateTemplate;
 use App\Models\Chaperone;
 use App\Models\Event;
 use App\Models\Participant;
-use App\Models\ScoutGroup;
 use App\Models\User;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -21,8 +20,11 @@ use Illuminate\Support\Str;
 class CertificateService
 {
     public const ROLE_PARTICIPANT = 'participant';
+
     public const ROLE_CHAPERONE = 'chaperone';
+
     public const ROLE_COMMITTEE = 'committee';
+
     public const ROLE_JUDGE = 'judge';
 
     public const ROLES = [
@@ -48,37 +50,37 @@ class CertificateService
                 'x' => 50.0,
                 'y' => 28.0,
                 'font_size' => 11.0,
-                'color' => '#6b7280',
+                'color' => '#78350f',
                 'align' => 'center',
-                'bold' => false,
+                'bold' => true,
             ],
             'full_name' => [
                 'x' => 50.0,
-                'y' => 45.0,
+                'y' => 42.0,
                 'font_size' => 28.0,
-                'color' => '#111827',
+                'color' => '#260c36',
                 'align' => 'center',
                 'bold' => true,
             ],
             'scout_id' => [
                 'x' => 50.0,
                 'y' => 51.5,
-                'font_size' => 13.0,
+                'font_size' => 12.5,
                 'color' => '#4b5563',
                 'align' => 'center',
-                'bold' => false,
+                'bold' => true,
             ],
             'institution' => [
                 'x' => 50.0,
-                'y' => 57.5,
-                'font_size' => 15.0,
+                'y' => 57.0,
+                'font_size' => 14.5,
                 'color' => '#1f2937',
                 'align' => 'center',
-                'bold' => false,
+                'bold' => true,
             ],
             'role_label' => [
                 'x' => 50.0,
-                'y' => 64.5,
+                'y' => 63.5,
                 'font_size' => 16.0,
                 'color' => '#b45309',
                 'align' => 'center',
@@ -244,7 +246,7 @@ class CertificateService
             'id' => $participant->id,
             'id_number' => $participant->id_number,
             'full_name' => $participant->full_name,
-            'scout_id' => $participant->scout_id ? 'NTA: ' . $participant->scout_id : 'NTA: -',
+            'scout_id' => $participant->scout_id ? 'NTA: '.$participant->scout_id : 'NTA: -',
             'institution' => $institution,
             'role_label' => $roleLabel,
             'certificate_number' => $this->generateCertificateNumber(self::ROLE_PARTICIPANT, $participant->id_number, $event),
@@ -267,7 +269,7 @@ class CertificateService
             'id' => $chaperone->id,
             'id_number' => $chaperone->id_number,
             'full_name' => $chaperone->full_name,
-            'scout_id' => $chaperone->scout_id ? 'NTA: ' . $chaperone->scout_id : 'NTA: -',
+            'scout_id' => $chaperone->scout_id ? 'NTA: '.$chaperone->scout_id : 'NTA: -',
             'institution' => $institution,
             'role_label' => 'Sebagai: Pembina Pendamping',
             'certificate_number' => $this->generateCertificateNumber(self::ROLE_CHAPERONE, $chaperone->id_number, $event),
@@ -284,7 +286,7 @@ class CertificateService
     {
         $institution = $user->institution ?: 'Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan';
         $roleLabel = match ($role) {
-            self::ROLE_COMMITTEE => $user->committee_position ? 'Sebagai: Panitia (' . $user->committee_position . ')' : 'Sebagai: Panitia Pelaksana',
+            self::ROLE_COMMITTEE => $user->committee_position ? 'Sebagai: Panitia ('.$user->committee_position.')' : 'Sebagai: Panitia Pelaksana',
             self::ROLE_JUDGE => 'Sebagai: Dewan Juri',
             default => 'Sebagai: Aparatur Kegiatan',
         };
@@ -293,7 +295,7 @@ class CertificateService
             'id' => $user->id,
             'id_number' => $user->id_number,
             'full_name' => $user->name,
-            'scout_id' => $user->scout_id ? 'NTA: ' . $user->scout_id : 'NTA: -',
+            'scout_id' => $user->scout_id ? 'NTA: '.$user->scout_id : 'NTA: -',
             'institution' => $institution,
             'role_label' => $roleLabel,
             'certificate_number' => $this->generateCertificateNumber($role, $user->id_number, $event),
@@ -348,30 +350,23 @@ class CertificateService
     }
 
     /**
-     * Render PDF sertifikat tunggal (A4 landscape)
+     * Render PDF sertifikat tunggal (A4 landscape) dengan desain vektor kode murni
      */
     public function renderPdf(Event $event, string $role, array $recipient): string
     {
         $layout = $this->getLayout($event, $role);
-        $templatePath = $this->getTemplateAbsolutePath($event, $role);
 
-        $templateBase64 = null;
-        if ($templatePath && is_file($templatePath)) {
-            $ext = pathinfo($templatePath, PATHINFO_EXTENSION);
-            $mime = match (strtolower($ext)) {
-                'jpg', 'jpeg' => 'image/jpeg',
-                'webp' => 'image/webp',
-                default => 'image/png',
-            };
-            $templateBase64 = 'data:' . $mime . ';base64,' . base64_encode((string) file_get_contents($templatePath));
-        }
+        $logoPath = public_path('logo.png');
+        $logoBase64 = is_file($logoPath)
+            ? 'data:image/png;base64,'.base64_encode((string) file_get_contents($logoPath))
+            : null;
 
         $html = view('certificates.pdf-single', [
             'event' => $event,
             'role' => $role,
             'recipient' => $recipient,
             'layout' => $layout,
-            'templateBase64' => $templateBase64,
+            'logoBase64' => $logoBase64,
         ])->render();
 
         $dompdf = new Dompdf((new Options)
@@ -398,7 +393,7 @@ class CertificateService
 
         return response($pdfContent, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => ($download ? 'attachment' : 'inline') . '; filename="' . $filename . '"',
+            'Content-Disposition' => ($download ? 'attachment' : 'inline').'; filename="'.$filename.'"',
             'Cache-Control' => 'no-store, private',
         ]);
     }

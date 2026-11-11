@@ -1242,6 +1242,49 @@ class ContingentRegistrationTest extends TestCase
     }
 
     /**
+     * Memastikan berkas KTA/NTA dan Kartu BPJS bersifat opsional pada ringkasan dan peringatan dokumen peserta
+     */
+    public function test_kta_and_bpjs_documents_are_optional_for_participant_completeness(): void
+    {
+        $this->assertTrue(Participant::isDocumentOptional('doc_kta'));
+        $this->assertTrue(Participant::isDocumentOptional('doc_bpjs'));
+        $this->assertFalse(Participant::isDocumentOptional('doc_health_certificate'));
+
+        $scoutGroup = ScoutGroup::factory()->create([
+            'user_id' => $this->scoutGroupUser->id,
+            'verification_status' => RegistrationStatusEnum::Draft,
+        ]);
+
+        $patrol = Patrol::factory()->create([
+            'scout_group_id' => $scoutGroup->id,
+            'gender_category' => PatrolGenderEnum::Boys,
+        ]);
+
+        // Buat peserta dengan 6 berkas wajib terisi, namun tanpa berkas KTA dan BPJS
+        Participant::factory()->create([
+            'patrol_id' => $patrol->id,
+            'full_name' => 'Peserta Tanpa KTA BPJS',
+            'doc_kta_path' => null,
+            'doc_bpjs_path' => null,
+            'doc_health_certificate_path' => 'participants/documents/sehat.pdf',
+            'doc_parent_consent_path' => 'participants/documents/izin.pdf',
+            'doc_birth_certificate_path' => 'participants/documents/akta.pdf',
+            'doc_family_card_path' => 'participants/documents/kk.pdf',
+            'doc_sku_path' => 'participants/documents/sku.pdf',
+            'doc_skk_path' => 'participants/documents/skk.pdf',
+        ]);
+
+        $component = Livewire::actingAs($this->scoutGroupUser)->test(ReviewRegistration::class);
+        $summary = $component->instance()->participantDocumentsSummary;
+        $warnings = $component->instance()->participantDocumentWarnings;
+
+        $this->assertSame(1, $summary['total']);
+        $this->assertSame(0, $summary['incomplete']);
+        $this->assertSame(1, $summary['complete']);
+        $this->assertEmpty($warnings);
+    }
+
+    /**
      * Memastikan alur streaming real-time ekspor ZIP kontingen mengembalikan stream SSE
      */
     public function test_admin_can_stream_zip_export(): void
