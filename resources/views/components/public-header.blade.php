@@ -1,14 +1,14 @@
 {{-- Header Navigasi Publik (dipakai di seluruh halaman depan: beranda, auth, register, dll.) --}}
 <header class="sticky top-0 z-50 border-b border-amber-200/50 bg-white/80 backdrop-blur-md dark:border-amber-500/20 dark:bg-zinc-900/80">
-    <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8 2xl:gap-8">
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-2.5 sm:gap-4 sm:px-6 sm:py-3 lg:px-8 2xl:gap-8">
         {{-- Logo Brand --}}
-        <a href="{{ route('home') }}" wire:navigate class="flex shrink-0 items-center gap-3 transition-transform hover:scale-[1.01]">
-            <img src="{{ asset('logo.png') }}" alt="Logo LT III" class="size-10 object-contain drop-shadow-sm">
-            <div>
-                <span class="block text-sm font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-base">
+        <a href="{{ route('home') }}" wire:navigate class="flex min-w-0 shrink items-center gap-2 sm:gap-3 transition-transform hover:scale-[1.01]">
+            <img src="{{ asset('logo.png') }}" alt="Logo LT III" class="size-9 sm:size-10 shrink-0 object-contain drop-shadow-sm">
+            <div class="min-w-0">
+                <span class="block truncate text-xs sm:text-base font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
                     {{ config('app.name', 'LT III Kwarcab Padangsidimpuan') }}
                 </span>
-                <span class="block text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                <span class="block truncate text-[10px] sm:text-[11px] font-medium text-amber-700 dark:text-amber-400">
                     {{ config('app.description', 'Gerakan Pramuka Kota Padangsidimpuan') }}
                 </span>
             </div>
@@ -37,7 +37,7 @@
         </nav>
 
         {{-- Tombol Aksi Masuk / Data User --}}
-        <div class="flex items-center gap-2.5">
+        <div class="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
             @auth
                 @php
                     $user = auth()->user();
