@@ -8,7 +8,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 /**
- * ID Card digital individual peserta (ukuran resmi B2)
+ * ID Card digital individual peserta (ukuran resmi A6)
  */
 #[Layout('layouts.digital-card')]
 class ParticipantCard extends Component
@@ -33,6 +33,6 @@ class ParticipantCard extends Component
             'participant' => $participant,
             'scoutGroup' => $participant->patrol?->scoutGroup,
             'qrDataUri' => $cards->qr($participant->qr_token),
-        ])->title('KARTU PESERTA (B2) - '.$participant->full_name);
+        ])->title('KARTU PESERTA (A6) - '.$participant->full_name);
     }
 }

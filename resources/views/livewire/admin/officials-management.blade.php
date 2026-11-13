@@ -2,7 +2,7 @@
     {{-- Header --}}
     <x-heading-section
         title="Aparatur Panitia & Dewan Juri"
-        description="Pengelolaan aparatur pelaksana lapangan, dewan juri penilai, serta penerbitan Kartu Tanda Pengenal Digital (B2)."
+        description="Pengelolaan aparatur pelaksana lapangan, dewan juri penilai, serta penerbitan Kartu Tanda Pengenal Digital (A6)."
         badge="Manajemen Aparatur & Juri"
         badge-icon="shield-check"
         badge-color="amber"
@@ -153,10 +153,10 @@
                             </td>
                             <td class="py-3 px-4 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
-                                    {{-- Tombol Lihat ID Card B2 --}}
+                                    {{-- Tombol Lihat ID Card A6 --}}
                                     <a href="{{ route('digital-cards.staff', $official->id) }}" target="_blank"
                                        class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-[11px] font-bold text-zinc-700 hover:bg-zinc-50 hover:text-amber-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 shadow-xs"
-                                       title="Lihat Kartu Aparatur (B2)">
+                                       title="Lihat Kartu Aparatur (A6)">
                                         <flux:icon name="identification" class="size-3" />
                                         <span>ID Card</span>
                                     </a>

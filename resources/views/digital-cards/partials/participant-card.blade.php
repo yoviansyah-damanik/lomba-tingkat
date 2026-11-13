@@ -4,7 +4,7 @@
     $photoUrl = $participant->photo_path ? asset('storage/' . $participant->photo_path) : null;
 @endphp
 
-{{-- KARTU UKURAN RESMI B2 --}}
+{{-- KARTU UKURAN RESMI A6 --}}
 <x-digital-card.card data-card-name="{{ $participant->full_name }}" data-card-id="{{ $participant->id_number }}">
     {{-- Header Kartu --}}
     <x-digital-card.header :theme="$theme" />

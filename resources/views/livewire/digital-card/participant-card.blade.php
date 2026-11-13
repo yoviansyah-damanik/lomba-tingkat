@@ -6,7 +6,7 @@
     @endphp
 
         {{-- Toolbar Aksi --}}
-        <x-digital-card.toolbar :subtitle="'Peserta: ' . $participant->full_name" :batch-url="$participant->patrol_id ? route('digital-cards.patrol.batch', $participant->patrol_id) : null" :batch-label="'Kartu Seluruh Regu'" :download-filename="'KARTU_B2_' . Str::slug($participant->full_name)" />
+        <x-digital-card.toolbar :subtitle="'Peserta: ' . $participant->full_name" :batch-url="$participant->patrol_id ? route('digital-cards.patrol.batch', $participant->patrol_id) : null" :batch-label="'Kartu Seluruh Regu'" :download-filename="'KARTU_A6_' . Str::slug($participant->full_name)" />
 
         @include('digital-cards.partials.participant-card')
 </div>

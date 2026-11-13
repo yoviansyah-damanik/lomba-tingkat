@@ -475,7 +475,7 @@
                                         <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7h.01"/><path d="M17 7h.01"/><path d="M7 17h.01"/><path d="M17 17h.01"/></svg>
                                     </div>
                                     <div class="text-xs font-medium text-zinc-500">Menunggu pemindaian kartu peserta...</div>
-                                    <div class="text-[11px] text-zinc-400 mt-0.5">Arahkan kartu B2 atau lencana PINRU ke depan kamera.</div>
+                                    <div class="text-[11px] text-zinc-400 mt-0.5">Arahkan kartu A6 atau lencana PINRU ke depan kamera.</div>
                                 @endif
                             </div>
                         </template>

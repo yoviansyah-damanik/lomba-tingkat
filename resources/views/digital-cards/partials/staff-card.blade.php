@@ -6,7 +6,7 @@
         : ($staff->isJudge() ? 'DEWAN JURI PERLOMBAAN' : 'PANITIA PELAKSANA');
 @endphp
 
-{{-- KARTU UKURAN RESMI B2 --}}
+{{-- KARTU UKURAN RESMI A6 --}}
 <x-digital-card.card data-card-name="{{ $staff->name }}" data-card-id="{{ $staff->id_number }}">
     {{-- Header Kartu --}}
     <x-digital-card.header :theme="$theme" />

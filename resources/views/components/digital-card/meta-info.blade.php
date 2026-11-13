@@ -21,22 +21,22 @@
 
 <div class="w-full text-center shrink-0">
     {{-- Nama Lengkap (Tepat di bawah Pas Foto) --}}
-    <div class="text-[8.8pt] font-black text-slate-900 leading-tight uppercase max-w-full overflow-hidden text-ellipsis whitespace-nowrap px-1" title="{{ $name }}">
+    <div class="text-[11pt] font-black text-slate-900 leading-tight uppercase max-w-full overflow-hidden text-ellipsis whitespace-nowrap px-1" title="{{ $name }}">
         {{ $name }}
     </div>
 
     {{-- Garis Aksen Ornamen Emas di Bawah Nama --}}
-    <div class="mx-auto mt-[0.5mm] mb-[0.6mm] flex items-center justify-center gap-1">
-        <div class="h-[0.6px] w-[13mm] bg-gradient-to-r from-transparent to-[#d97706]/70"></div>
-        <span class="text-[4pt] text-[#d97706] leading-none">◆</span>
-        <div class="h-[0.6px] w-[13mm] bg-gradient-to-l from-transparent to-[#d97706]/70"></div>
+    <div class="mx-auto mt-[0.7mm] mb-[0.8mm] flex items-center justify-center gap-1.5">
+        <div class="h-[0.8px] w-[18mm] bg-gradient-to-r from-transparent to-[#d97706]/70"></div>
+        <span class="text-[5pt] text-[#d97706] leading-none">◆</span>
+        <div class="h-[0.8px] w-[18mm] bg-gradient-to-l from-transparent to-[#d97706]/70"></div>
     </div>
 
     {{-- NTA dan Pill ID Resmi --}}
-    <div class="flex items-center justify-center gap-[1.4mm] font-mono text-[6.1pt] leading-none">
-        <span class="text-slate-700 font-bold tracking-[0.2px]">NTA: {{ $scoutId ?: '-' }}</span>
-        <span class="text-[#d97706] text-[6pt]">•</span>
-        <span class="px-[1.4mm] py-[0.4mm] rounded-[1mm] border font-extrabold tracking-[0.4px] {{ $resolvedIdBadge }}">
+    <div class="flex items-center justify-center gap-[1.8mm] font-mono text-[7.4pt] leading-none">
+        <span class="text-slate-700 font-bold tracking-[0.25px]">NTA: {{ $scoutId ?: '-' }}</span>
+        <span class="text-[#d97706] text-[7pt]">•</span>
+        <span class="px-[1.8mm] py-[0.5mm] rounded-[1.2mm] border font-extrabold tracking-[0.45px] {{ $resolvedIdBadge }}">
             {{ $idNumber }}
         </span>
     </div>

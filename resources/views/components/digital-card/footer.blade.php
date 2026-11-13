@@ -17,8 +17,8 @@
     $resolvedBgClass = $bgClasses[$theme] ?? $bgClasses['boys'];
 @endphp
 
-<div {{ $attributes->merge(['class' => "h-[5.4mm] w-full shrink-0 text-[#fbbf24] text-[4.9pt] font-extrabold uppercase tracking-[0.5px] flex items-center justify-center gap-1.5 relative z-[5] $resolvedBgClass"]) }}>
-    <span class="text-[4.2pt]">★</span>
+<div {{ $attributes->merge(['class' => "h-[6.4mm] w-full shrink-0 text-[#fbbf24] text-[5.8pt] font-extrabold uppercase tracking-[0.6px] flex items-center justify-center gap-1.5 relative z-[5] $resolvedBgClass"]) }}>
+    <span class="text-[5pt]">★</span>
     <span class="text-white">{{ $slot->isNotEmpty() ? $slot : $text }}</span>
-    <span class="text-[4.2pt]">★</span>
+    <span class="text-[5pt]">★</span>
 </div>

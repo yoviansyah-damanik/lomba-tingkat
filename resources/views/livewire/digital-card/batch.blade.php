@@ -79,7 +79,7 @@
                 <span class="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-slate-300">{{ $items->count() }} kartu</span>
             </h2>
 
-            <div class="grid grid-cols-[repeat(auto-fill,minmax(79mm,1fr))] justify-items-center gap-6">
+            <div class="grid grid-cols-[repeat(auto-fill,minmax(105mm,1fr))] justify-items-center gap-6">
                 @foreach ($items as $item)
                     <div class="flex flex-col items-center gap-2">
                         <x-digital-card.item :item="$item" :scout-group="$scoutGroup" />

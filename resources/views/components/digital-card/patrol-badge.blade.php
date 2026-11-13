@@ -12,11 +12,11 @@
 
     // Sesuaikan ukuran font berdasarkan panjang nama regu
     $fontSizeClass = match (true) {
-        $charCount >= 12 => 'text-[3.4pt] leading-[1.0]',
-        $charCount >= 10 => 'text-[3.8pt] leading-[1.05]',
-        $charCount >= 8  => 'text-[4.3pt] leading-[1.12]',
-        $charCount >= 6  => 'text-[5pt] leading-[1.18]',
-        default          => 'text-[5.5pt] leading-[1.22]',
+        $charCount >= 12 => 'text-[4.2pt] leading-[1.0]',
+        $charCount >= 10 => 'text-[4.8pt] leading-[1.05]',
+        $charCount >= 8  => 'text-[5.4pt] leading-[1.12]',
+        $charCount >= 6  => 'text-[6.2pt] leading-[1.18]',
+        default          => 'text-[6.8pt] leading-[1.22]',
     };
 
     $themeGradients = [
@@ -29,7 +29,7 @@
 
 @if($cleanName)
     <div
-        class="absolute right-[2.5mm] top-[2mm] z-[6] w-[6.6mm] h-[38mm] rounded-[2.8mm] border-[1.2px] {{ $resolvedGradient }} flex flex-col items-center justify-between py-[1.4mm] px-[0.4mm] text-white select-none pointer-events-none"
+        class="absolute right-[3.5mm] top-[2.8mm] z-[6] w-[8mm] h-[44mm] rounded-[3.2mm] border-[1.2px] {{ $resolvedGradient }} flex flex-col items-center justify-between py-[1.6mm] px-[0.5mm] text-white select-none pointer-events-none"
         title="Regu {{ $name }}">
 
         {{-- Nama Asli untuk Aksesibilitas & Screen Reader --}}
@@ -37,7 +37,7 @@
 
         {{-- Ikon Tenda Berkemah Pramuka Berwarna Emas --}}
         <div class="shrink-0 flex items-center justify-center">
-            <svg class="w-[3.9mm] h-[3.9mm] text-[#fbbf24] drop-shadow-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="w-[4.6mm] h-[4.6mm] text-[#fbbf24] drop-shadow-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M19 20 12 5 5 20h14Z" fill="currentColor" fill-opacity="0.2" />
                 <path d="m12 5 4 15" />
                 <path d="m12 5-4 15" />

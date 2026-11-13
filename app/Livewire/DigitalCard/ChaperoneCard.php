@@ -8,7 +8,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 /**
- * ID Card digital pembina pendamping (ukuran resmi B2)
+ * ID Card digital pembina pendamping (ukuran resmi A6)
  */
 #[Layout('layouts.digital-card')]
 class ChaperoneCard extends Component
@@ -32,7 +32,7 @@ class ChaperoneCard extends Component
             'chaperone' => $chaperone,
             'scoutGroup' => $chaperone->scoutGroup,
             'qrDataUri' => $cards->qr($chaperone->qr_token),
-        ])->title('KARTU PEMBINA PENDAMPING (B2) - '.$chaperone->full_name)
+        ])->title('KARTU PEMBINA PENDAMPING (A6) - '.$chaperone->full_name)
             ->layoutData(['bodyClass' => $chaperone->isFemale() ? 'bg-[#1e0938]' : 'bg-[#064e3b]']);
     }
 }

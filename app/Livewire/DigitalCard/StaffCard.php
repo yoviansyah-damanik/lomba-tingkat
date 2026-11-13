@@ -8,7 +8,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 /**
- * ID Card digital aparatur staf: Panitia / Dewan Juri (ukuran resmi B2)
+ * ID Card digital aparatur staf: Panitia / Dewan Juri (ukuran resmi A6)
  */
 #[Layout('layouts.digital-card')]
 class StaffCard extends Component
@@ -37,7 +37,7 @@ class StaffCard extends Component
         return view('livewire.digital-card.staff-card', [
             'staff' => $staff,
             'qrDataUri' => $cards->qr($staff->qr_token),
-        ])->title('KARTU APARATUR (B2) - '.$staff->name)
+        ])->title('KARTU APARATUR (A6) - '.$staff->name)
             ->layoutData(['bodyClass' => $staff->isJudge() ? 'bg-[#1c0d02]' : 'bg-[#1a0505]']);
     }
 }

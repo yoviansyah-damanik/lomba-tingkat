@@ -326,7 +326,7 @@
                                 @elseif($session->session_type === 'judge')
                                     Pemindaian kartu aparatur dewan juri
                                 @else
-                                    Pemindaian kartu identitas peserta (B2) perorangan
+                                    Pemindaian kartu identitas peserta (A6) perorangan
                                 @endif
                             @endif
                         </div>

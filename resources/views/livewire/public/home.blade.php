@@ -339,7 +339,7 @@
                         <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-zinc-700 dark:text-zinc-300">
                             <div class="flex items-center gap-2.5 rounded-xl border border-amber-200/80 bg-white/80 p-3 dark:border-zinc-800 dark:bg-zinc-800/60">
                                 <flux:icon name="check-circle" class="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                <span>ID Card Kontingen format B2 bertoken QR</span>
+                                <span>ID Card Kontingen format A6 bertoken QR</span>
                             </div>
                             <div class="flex items-center gap-2.5 rounded-xl border border-amber-200/80 bg-white/80 p-3 dark:border-zinc-800 dark:bg-zinc-800/60">
                                 <flux:icon name="check-circle" class="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />

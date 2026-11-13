@@ -3,7 +3,7 @@
     $photoUrl = $chaperone->photo_path ? asset('storage/' . $chaperone->photo_path) : null;
 @endphp
 
-{{-- KARTU UKURAN RESMI B2 --}}
+{{-- KARTU UKURAN RESMI A6 --}}
 <x-digital-card.card data-card-name="{{ $chaperone->full_name }}" data-card-id="{{ $chaperone->id_number }}">
     {{-- Header Kartu --}}
     <x-digital-card.header :theme="$theme" />

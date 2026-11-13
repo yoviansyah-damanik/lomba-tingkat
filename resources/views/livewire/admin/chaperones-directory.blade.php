@@ -304,7 +304,7 @@
                                         @endif
                                     @endif
 
-                                    {{-- Cetak Kartu Digital B2 Bindamping --}}
+                                    {{-- Cetak Kartu Digital A6 Bindamping --}}
                                     @if($chaperone->scoutGroup?->canDownloadDocuments())
                                     <a
                                         href="{{ route('digital-cards.chaperone', $chaperone->id) }}"

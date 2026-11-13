@@ -1,5 +1,5 @@
 @props([
-    'title' => 'ID Card B2 (79 x 126 mm)',
+    'title' => 'ID Card A6 (105 x 148 mm)',
     'subtitle' => null,
     'batchUrl' => null,
     'batchLabel' => 'Lihat & Simpan Seluruh Kartu (ZIP)',

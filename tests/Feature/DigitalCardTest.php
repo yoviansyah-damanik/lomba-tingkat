@@ -94,6 +94,8 @@ class DigitalCardTest extends TestCase
             ->get(route('digital-cards.participant', $this->participant->id));
 
         $response->assertOk();
+        $response->assertSee('w-[105mm] h-[148mm]', false);
+        $response->assertSee('ID Card A6 (105 x 148 mm)');
         $response->assertSee('Rizky Ramadhan');
         $response->assertSee('Rajawali');
         $response->assertSee('Nomor Gudep');

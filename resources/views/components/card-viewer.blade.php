@@ -42,7 +42,7 @@
                 stage.replaceChildren(source.cloneNode(true));
                 const card = stage.firstElementChild;
                 const available = stage.clientHeight - 32;
-                // Kartu B2 diperbesar mengikuti tinggi layar, dibatasi agar tetap tajam
+                // Kartu A6 diperbesar mengikuti tinggi layar, dibatasi agar tetap tajam
                 const scale = Math.min(2.6, Math.max(1, available / card.offsetHeight));
                 card.style.zoom = scale;
             });

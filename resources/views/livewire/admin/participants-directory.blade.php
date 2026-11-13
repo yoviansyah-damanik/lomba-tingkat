@@ -328,14 +328,14 @@
                                         @endif
                                     @endif
 
-                                    {{-- Cetak Kartu Digital B2 --}}
+                                    {{-- Cetak Kartu Digital A6 --}}
                                     @if($participant->patrol?->scoutGroup?->canDownloadDocuments())
                                     <a
                                         href="{{ route('digital-cards.participant', $participant->id) }}"
                                         target="_blank"
                                         data-loading="Memuat Kartu Digital Peserta..."
                                         class="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-semibold text-zinc-700 shadow-2xs hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
-                                        title="Simpan Kartu Tanda Peserta B2 (.PNG)"
+                                        title="Simpan Kartu Tanda Peserta A6 (.PNG)"
                                     >
                                         <flux:icon name="qr-code" class="size-3.5" />
                                         <span>Kartu</span>

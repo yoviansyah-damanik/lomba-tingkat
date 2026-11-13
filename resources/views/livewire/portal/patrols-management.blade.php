@@ -199,7 +199,7 @@
                                             </flux:button>
                                             @endif
                                             @if($scoutGroup->canDownloadDocuments())
-                                            <flux:button href="{{ route('digital-cards.participant', $participant->id) }}" target="_blank" variant="subtle" size="xs" icon="qr-code" title="Simpan Kartu Peserta B2 (.PNG)"
+                                            <flux:button href="{{ route('digital-cards.participant', $participant->id) }}" target="_blank" variant="subtle" size="xs" icon="qr-code" title="Simpan Kartu Peserta A6 (.PNG)"
                                                 data-loading="Memuat Kartu Digital {{ $participant->full_name }}...">
                                                 Kartu
                                             </flux:button>

@@ -17,8 +17,8 @@
 @endphp
 
 <div
-    {{ $attributes->merge(['class' => "relative z-[5] shrink-0 px-[2.5mm] py-[1mm] text-[6.5pt] font-black text-center uppercase tracking-[0.8px] flex items-center justify-center gap-1.5 shadow-2xs $classes"]) }}>
-    <span class="text-[#f59e0b] text-[5pt] leading-none">◆</span>
+    {{ $attributes->merge(['class' => "relative z-[5] shrink-0 px-[3.2mm] py-[1.2mm] text-[7.8pt] font-black text-center uppercase tracking-[0.9px] flex items-center justify-center gap-1.5 shadow-2xs $classes"]) }}>
+    <span class="text-[#f59e0b] text-[6pt] leading-none">◆</span>
     <span>{{ $label ?? $slot }}</span>
-    <span class="text-[#f59e0b] text-[5pt] leading-none">◆</span>
+    <span class="text-[#f59e0b] text-[6pt] leading-none">◆</span>
 </div>

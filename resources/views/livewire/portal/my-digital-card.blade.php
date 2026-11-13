@@ -31,11 +31,11 @@
         {{-- Kartu layar: identitas dan QR diperbesar untuk ditunjukkan ke petugas --}}
         @include('livewire.portal.partials.display-card', ['display' => $display, 'qrDataUri' => $card['qrDataUri'], 'token' => $card['token']])
 
-        {{-- ID Card resmi (ukuran B2) untuk diunduh sebagai PNG --}}
+        {{-- ID Card resmi (ukuran A6) untuk diunduh sebagai PNG --}}
         <section class="space-y-3 rounded-2xl border border-zinc-200 bg-white p-5 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100">ID Card Resmi (79 x 126 mm)</h3>
+                    <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100">ID Card Resmi (105 x 148 mm)</h3>
                     <p class="text-xs text-zinc-500 dark:text-zinc-400">Format cetak resmi kegiatan. Unduh sebagai gambar PNG untuk dicetak atau disimpan.</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">

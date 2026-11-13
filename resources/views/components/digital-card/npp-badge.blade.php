@@ -26,28 +26,28 @@
 
 {{-- Lencana NPP di sisi kiri foto, sepasang dengan lencana PINRU/WAPINRU di sisi kanan:
      mendukung format LT-PA-01 / LT-PI-01 maupun 2 digit dengan ornamen emas BIB --}}
-<div class="npp-badge w-[6.5mm] h-full shrink-0 flex flex-col items-center justify-between py-[1mm] px-[0.3mm] {{ $gradientBg }} border-r border-[#f59e0b]/60 text-white font-black leading-none select-none" title="Nomor Pendaftaran Peserta (NPP)">
+<div class="npp-badge w-[8mm] h-full shrink-0 flex flex-col items-center justify-between py-[1.2mm] px-[0.5mm] {{ $gradientBg }} border-r border-[#f59e0b]/60 text-white font-black leading-none select-none" title="Nomor Pendaftaran Peserta (NPP)">
     {{-- Kepala Lencana: Kode Kategori LT-PA / LT-PI --}}
     <div class="flex flex-col items-center justify-center text-[#fbbf24] font-black tracking-wider leading-[1.08]">
-        <span class="text-[4.5pt]">{{ $prefixTop }}</span>
+        <span class="text-[5.4pt]">{{ $prefixTop }}</span>
         @if($prefixSub)
-            <span class="text-[4.8pt] text-white bg-[#f59e0b]/25 px-[0.7mm] py-[0.15mm] rounded-[0.5mm] border border-[#f59e0b]/50 mt-[0.2mm]">{{ $prefixSub }}</span>
+            <span class="text-[5.6pt] text-white bg-[#f59e0b]/25 px-[0.9mm] py-[0.2mm] rounded-[0.6mm] border border-[#f59e0b]/50 mt-[0.3mm]">{{ $prefixSub }}</span>
         @endif
     </div>
 
-    <div class="w-[4.2mm] h-[0.6px] bg-[#f59e0b]/60 my-[0.3mm] shrink-0"></div>
+    <div class="w-[5.2mm] h-[0.6px] bg-[#f59e0b]/60 my-[0.4mm] shrink-0"></div>
 
     {{-- Nomor Urut Regu Berukuran Besar --}}
-    <div class="flex flex-col items-center justify-center flex-1 gap-[0.6mm] text-[12pt] tracking-normal text-white drop-shadow-xs">
+    <div class="flex flex-col items-center justify-center flex-1 gap-[0.8mm] text-[14pt] tracking-normal text-white drop-shadow-xs">
         @foreach($seqDigits as $digit)
             <span>{{ $digit }}</span>
         @endforeach
     </div>
 
-    <div class="w-[4.2mm] h-[0.6px] bg-[#f59e0b]/60 my-[0.3mm] shrink-0"></div>
+    <div class="w-[5.2mm] h-[0.6px] bg-[#f59e0b]/60 my-[0.4mm] shrink-0"></div>
 
     {{-- Kaki Lencana --}}
-    <div class="text-[3.8pt] font-extrabold text-[#fbbf24] tracking-widest uppercase">
+    <div class="text-[4.5pt] font-extrabold text-[#fbbf24] tracking-widest uppercase">
         {{ $prefixSub ? 'NPP' : '★' }}
     </div>
 </div>

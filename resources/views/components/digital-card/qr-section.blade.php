@@ -25,21 +25,21 @@
 @endphp
 
 <div
-    class="w-full flex items-center rounded-[2.2mm] border-[1.2px] p-[1.4mm] relative z-[5] shadow-xs shrink-0 text-left {{ $resolvedBox }}">
+    class="w-full flex items-center rounded-[2.6mm] border-[1.2px] p-[1.8mm] relative z-[5] shadow-xs shrink-0 text-left {{ $resolvedBox }}">
     <img src="{{ $qrDataUri }}" alt="QR Code"
-        class="w-[18.5mm] h-[18.5mm] block rounded-[1.5mm] bg-white p-[0.5mm] border border-[#fbbf24] shrink-0">
-    <div class="flex-1 pl-[2.2mm] text-[5.1pt] text-slate-200 leading-tight min-w-0">
-        <span class="text-[5.7pt] font-black block mb-[0.3mm] tracking-[0.4px] text-[#fbbf24] uppercase">
+        class="w-[22mm] h-[22mm] block rounded-[1.8mm] bg-white p-[0.6mm] border border-[#fbbf24] shrink-0">
+    <div class="flex-1 pl-[2.8mm] text-[6.2pt] text-slate-200 leading-tight min-w-0">
+        <span class="text-[7pt] font-black block mb-[0.4mm] tracking-[0.45px] text-[#fbbf24] uppercase">
             ◆ {{ $title }}
         </span>
-        <div class="text-[5pt] text-slate-200/90 leading-snug">{{ $description ?? $defaultDescription }}</div>
+        <div class="text-[6pt] text-slate-200/90 leading-snug">{{ $description ?? $defaultDescription }}</div>
         <span
-            class="font-mono font-bold block mt-[0.4mm] text-[4.9pt] tracking-[0.2px] break-all text-amber-300">
+            class="font-mono font-bold block mt-[0.5mm] text-[5.8pt] tracking-[0.25px] break-all text-amber-300">
             {{ $token }}
         </span>
         @if ($resolvedAppUrl)
             <span
-                class="block text-[4.4pt] text-slate-400 font-mono tracking-tight mt-[0.2mm] truncate">{{ $resolvedAppUrl }}</span>
+                class="block text-[5.2pt] text-slate-400 font-mono tracking-tight mt-[0.3mm] truncate">{{ $resolvedAppUrl }}</span>
         @endif
     </div>
 </div>

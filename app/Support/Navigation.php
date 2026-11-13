@@ -170,7 +170,7 @@ class Navigation
             [
                 'heading' => 'Pengguna & Akses',
                 'items' => [
-                    ['label' => 'Aparatur Panitia & Juri', 'icon' => 'user-group', 'route' => 'admin.officials.index', 'active' => ['admin.officials.*'], 'roles' => ['admin'], 'description' => 'Kelola aparatur dan kartu B2'],
+                    ['label' => 'Aparatur Panitia & Juri', 'icon' => 'user-group', 'route' => 'admin.officials.index', 'active' => ['admin.officials.*'], 'roles' => ['admin'], 'description' => 'Kelola aparatur dan kartu A6'],
                     ['label' => 'Pengguna & Hak Akses', 'icon' => 'users', 'route' => 'admin.users.index', 'active' => ['admin.users.*'], 'roles' => ['superadmin'], 'description' => 'Akun pengguna dan peran'],
                 ],
             ],

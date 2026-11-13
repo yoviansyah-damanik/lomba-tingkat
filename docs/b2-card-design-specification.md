@@ -1,10 +1,10 @@
-# B2 ID Card Design Specification (BIB-Harmonized Gold Edition)
+# A6 ID Card Design Specification (BIB-Harmonized Gold Edition)
 
 ## Overview
-Kartu Tanda Peserta, Pembina Pendamping, dan Aparatur (ukuran B2: `79mm x 126mm`) diselaraskan dengan identitas visual **BIB Nomor Punggung LT-III 2026** (ornamen geometris emas Mandailing/Gorga, aksen *metallic gold* `#f59e0b`/`#fbbf24`, dan tema warna kontras tinggi).
+Kartu Tanda Peserta, Pembina Pendamping, dan Aparatur (ukuran cetak A6: `105mm x 148mm`) diselaraskan dengan identitas visual **BIB Nomor Punggung LT-III 2026** (ornamen geometris emas Mandailing/Gorga, aksen *metallic gold* `#f59e0b`/`#fbbf24`, dan tema warna kontras tinggi).
 
 ## Key Specifications
-- **Dimensions**: B2 Standard — `79mm x 126mm`.
+- **Dimensions**: A6 Standard — `105mm x 148mm`.
 - **BIB-Harmonized Visual Elements**:
   - **Outer & Inner Frame**: Bingkai emas (`border-[#d97706]/70`) dengan garis ornamen dalam dan aksen sudut geometris SVG emas di kiri/kanan atas badan kartu.
   - **Header**: Pita emas teratas (`1.2mm`), gradien warna kategori pekat, dan siluet ornamen belah ketupat Gorga/Mandailing emas.

@@ -1,6 +1,6 @@
 @props(['item', 'scoutGroup'])
 
-{{-- Satu kartu B2 peserta/bindamping dari data item yang sudah disiapkan controller --}}
+{{-- Satu kartu A6 peserta/bindamping dari data item yang sudah disiapkan controller --}}
 <x-digital-card.card
     data-card-name="{{ $item['name'] }}"
     data-card-id="{{ $item['id_number'] }}"
@@ -18,7 +18,7 @@
         <x-digital-card.meta-info :name="$item['name']" :scout-id="$item['scout_id']" :id-number="$item['id_number']" :theme="$item['theme']" />
         <x-digital-card.details-table>
             <x-digital-card.details-row label="Nomor Gudep" :value="$item['group_number']" />
-            <x-digital-card.details-row label="Pangkalan" :value="Str::limit($scoutGroup->school_name, 22)" />
+            <x-digital-card.details-row label="Pangkalan" :value="$scoutGroup->school_name" />
             <x-digital-card.details-row label="Kwartir Ranting" :value="$scoutGroup->kwarran_name ?? 'Padangsidimpuan'" />
             <x-digital-card.details-row label="Kontak/WA" :value="$item['contact']" />
         </x-digital-card.details-table>
