@@ -1,6 +1,6 @@
 @props([
     'title' => 'LOMBA TINGKAT TIGA (LT-III) 2026',
-    'subtitle' => 'KWARCAB KOTA PADANGSIDIMPUAN',
+    'subtitle' => 'Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan',
     'kwarcab' => '14 — 17 November 2026 • Pulo Baok',
     'logo' => null,
     'theme' => 'boys',
@@ -37,7 +37,7 @@
                 class="w-[13.5mm] h-[13.5mm] object-contain drop-shadow-md shrink-0">
         </div>
         <div class="flex-1 flex flex-col justify-center drop-shadow-xs text-left gap-[0.4mm] min-w-0">
-            <h2 class="text-[6.4pt] font-extrabold tracking-[0.5px] text-[#fbbf24] uppercase leading-tight truncate">
+            <h2 class="text-[5.4pt] font-extrabold tracking-[0.25px] text-[#fbbf24] uppercase leading-tight">
                 {{ $subtitle }}
             </h2>
             <h1 class="text-[9pt] font-black tracking-[0.4px] uppercase leading-tight text-white">

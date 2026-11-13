@@ -343,17 +343,23 @@ class DigitalCardTest extends TestCase
         $judge = User::factory()->create(['name' => 'Kak Rina Juri', 'is_active' => true, 'position' => 'Juri Pionering']);
         $judge->assignRole(RoleEnum::Judge);
 
-        // 1. Unduh PDF (A4) seluruh Panitia & Dewan Juri
+        // 1. Unduh PDF (A4) seluruh Panitia & Dewan Juri beserta panel pemilih kartu
         $this->actingAs($this->admin)
             ->get(route('admin.officials.id-cards'))
             ->assertOk()
             ->assertSee('ID Card Panitia Pelaksana & Dewan Juri (Susunan A4)')
+            ->assertSee('Pilih Kartu yang Akan Diunduh / Dicetak')
+            ->assertSee('Pilih Semua')
+            ->assertSee('Kosongkan')
+            ->assertSee('Balik Pilihan')
             ->assertSee('Kak Andi Panitia')
             ->assertSee('Kak Rina Juri')
+            ->assertSee('Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan')
             ->assertSee('data-a4-sheet', false)
+            ->assertSee('data-card-slot', false)
             ->assertSee('w-[210mm] h-[297mm]', false)
             ->assertSee('Unduh PDF (A4)')
-            ->assertSee('Simpan Lembar A4 (.PNG)');
+            ->assertSee('Unduh PNG (A4)');
 
         // Filter khusus panitia
         $this->actingAs($this->admin)

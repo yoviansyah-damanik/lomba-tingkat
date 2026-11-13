@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Portal;
 
+use App\Models\ScoutGroup;
 use App\Services\QrCodeService;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
@@ -45,7 +46,7 @@ class MyDigitalCard extends Component
                     'Kontak/WA' => $participant->phone ?: $participant->parent_phone,
                 ],
             ];
-            $lockedMessage = $scoutGroup?->canDownloadDocuments() ? null : \App\Models\ScoutGroup::DOWNLOAD_LOCKED_MESSAGE;
+            $lockedMessage = $scoutGroup?->canDownloadDocuments() ? null : ScoutGroup::DOWNLOAD_LOCKED_MESSAGE;
         } elseif ($user->isChaperone() && $chaperone = $user->chaperone) {
             $chaperone->loadMissing('scoutGroup');
             $scoutGroup = $chaperone->scoutGroup;
@@ -66,7 +67,7 @@ class MyDigitalCard extends Component
                     'Kontak/WA' => $chaperone->phone_number,
                 ],
             ];
-            $lockedMessage = $scoutGroup?->canDownloadDocuments() ? null : \App\Models\ScoutGroup::DOWNLOAD_LOCKED_MESSAGE;
+            $lockedMessage = $scoutGroup?->canDownloadDocuments() ? null : ScoutGroup::DOWNLOAD_LOCKED_MESSAGE;
         } elseif ($user->isCommittee() || $user->isJudge()) {
             $type = 'staff';
             $card = ['staff' => $user, 'token' => $user->qr_token, 'name' => $user->name];
@@ -81,8 +82,9 @@ class MyDigitalCard extends Component
                 'scout_id' => $user->scout_id,
                 'photo' => $user->avatar_path,
                 'rows' => [
-                    'Jabatan/Tugas' => $user->cardPositionLabel(),
+                    'Kepanitiaan' => $user->cardPositionLabel(),
                     'Instansi' => $user->institution ?? 'Kwartir Cabang Kota Padangsidimpuan',
+                    'Jabatan' => $user->position ?: '-',
                     'Kontak/WA' => $user->phone_number,
                 ],
             ];

@@ -147,7 +147,7 @@ class DigitalCardService
             ? 'Panitia Pelaksana & Dewan Juri'
             : ($isJudge ? 'Dewan Juri Perlombaan' : 'Panitia Pelaksana');
         $institution = $staff->institution ?? 'Kwartir Cabang Kota Padangsidimpuan';
-        $kwarran = $staff->kwarran ?? 'Padangsidimpuan';
+        $position = $staff->position ?: '-';
         $contact = $staff->phone_number ?: '-';
 
         return [
@@ -166,12 +166,12 @@ class DigitalCardService
             'category_label' => $roleName,
             'group_number' => '-',
             'school_name' => $institution,
-            'kwarran_name' => $kwarran,
+            'kwarran_name' => $position,
             'contact' => $contact,
             'rows' => [
-                'Jabatan/Tugas' => $staff->cardPositionLabel(),
+                'Kepanitiaan' => $staff->cardPositionLabel(),
                 'Pangkalan/Instansi' => $institution,
-                'Kwartir Ranting' => $kwarran,
+                'Jabatan' => $position,
                 'Kontak/WA' => $contact,
             ],
         ];

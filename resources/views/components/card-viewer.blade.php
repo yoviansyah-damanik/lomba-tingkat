@@ -90,6 +90,11 @@
                             </flux:button>
                         </template>
                         <template x-if="mode === 'iframe'">
+                            <flux:button size="sm" icon="photo" x-on:click="$refs.frame?.contentWindow?.saveSheetsAsPng?.()">
+                                Unduh PNG (A4)
+                            </flux:button>
+                        </template>
+                        <template x-if="mode === 'iframe'">
                             <flux:button size="sm" icon="arrow-top-right-on-square" x-bind:href="url" target="_blank" rel="noopener">
                                 Buka Tab Baru
                             </flux:button>

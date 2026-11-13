@@ -26,9 +26,9 @@
 
         {{-- Informasi Rincian --}}
         <x-digital-card.details-table>
-            <x-digital-card.details-row label="Jabatan/Tugas" :value="$staff->cardPositionLabel()" />
+            <x-digital-card.details-row label="Kepanitiaan" :value="$staff->cardPositionLabel()" />
             <x-digital-card.details-row label="Pangkalan/Instansi" :value="$staff->institution ?? 'Kwartir Cabang Kota Padangsidimpuan'" />
-            <x-digital-card.details-row label="Kwartir Ranting" :value="$staff->kwarran ?? 'Padangsidimpuan'" />
+            <x-digital-card.details-row label="Jabatan" :value="$staff->position ?: '-'" />
             <x-digital-card.details-row label="Kontak/WA" :value="$staff->phone_number ?: '-'" />
         </x-digital-card.details-table>
 

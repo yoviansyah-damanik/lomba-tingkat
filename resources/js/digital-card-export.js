@@ -222,14 +222,19 @@ function buildA4PdfBlob(pages) {
 }
 
 /**
- * Unduh seluruh lembar A4 (atau satu lembar A4 tertentu) sebagai berkas .PDF siap cetak
+ * Unduh seluruh lembar A4 aktif (atau satu lembar A4 tertentu) sebagai berkas .PDF siap cetak
  */
 export async function saveSheetsAsPdf(pdfFilename = null, sheetElement = null) {
+    const allSheets = [...document.querySelectorAll('[data-a4-sheet]')];
     const sheets = sheetElement
         ? [sheetElement]
-        : [...document.querySelectorAll('[data-a4-sheet]')];
+        : [...document.querySelectorAll('[data-a4-sheet]:not([data-sheet-empty="true"])')];
 
     if (sheets.length === 0) {
+        if (allSheets.length > 0) {
+            alert('Tidak ada kartu yang dipilih untuk diunduh. Silakan pilih minimal satu kartu terlebih dahulu.');
+            return;
+        }
         window.print();
         return;
     }
@@ -277,13 +282,121 @@ export async function saveSheetsAsPdf(pdfFilename = null, sheetElement = null) {
 }
 
 /**
- * Simpan seluruh kartu pada halaman sebagai .ZIP berisi satu .PNG per kartu.
+ * Unduh seluruh lembar A4 aktif (atau satu lembar A4 tertentu) sebagai berkas gambar .PNG (A4)
+ */
+export async function saveSheetsAsPng(pngFilename = null, sheetElement = null) {
+    const allSheets = [...document.querySelectorAll('[data-a4-sheet]')];
+    const sheets = sheetElement
+        ? [sheetElement]
+        : [...document.querySelectorAll('[data-a4-sheet]:not([data-sheet-empty="true"])')];
+
+    if (sheets.length === 0) {
+        if (allSheets.length > 0) {
+            alert('Tidak ada kartu yang dipilih untuk diunduh. Silakan pilih minimal satu kartu terlebih dahulu.');
+            return;
+        }
+        return;
+    }
+
+    const resolvedName = pngFilename
+        || document.querySelector('[data-pdf-filename]')?.getAttribute('data-pdf-filename')
+        || 'KARTU_ID_A4';
+
+    const { overlay, text, bar } = progressOverlay('Menyiapkan Gambar PNG (A4)');
+
+    try {
+        await waitForAssets();
+
+        if (sheets.length === 1) {
+            text.innerText = 'Merender Lembar A4 ke gambar PNG...';
+            bar.style.width = '60%';
+
+            const canvas = await window.html2canvas(sheets[0], {
+                scale: 3,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                logging: false,
+                scrollX: 0,
+                scrollY: -window.scrollY,
+            });
+
+            const blob = await canvasToBlob(canvas);
+            bar.style.width = '100%';
+            download(blob, `${safeName(resolvedName, 'KARTU_ID_A4')}.png`);
+            return;
+        }
+
+        if (sheets.length <= 5 || !window.JSZip) {
+            for (let i = 0; i < sheets.length; i++) {
+                const pageNo = String(i + 1).padStart(2, '0');
+                text.innerText = `Merender Lembar A4 ${i + 1} dari ${sheets.length}...`;
+                bar.style.width = `${Math.round(((i + 0.5) / sheets.length) * 95)}%`;
+
+                const canvas = await window.html2canvas(sheets[i], {
+                    scale: 3,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    scrollX: 0,
+                    scrollY: -window.scrollY,
+                });
+
+                const blob = await canvasToBlob(canvas);
+                download(blob, `${safeName(resolvedName, 'KARTU_ID_A4')}_A4_LEMBAR_${pageNo}.png`);
+            }
+            bar.style.width = '100%';
+            return;
+        }
+
+        const zip = new window.JSZip();
+        const root = zip.folder(safeName(`${resolvedName}_A4_PNG`, 'KARTU_ID_A4_PNG'));
+
+        for (let i = 0; i < sheets.length; i++) {
+            const pageNo = String(i + 1).padStart(2, '0');
+            text.innerText = `Merender Lembar A4 ${i + 1} dari ${sheets.length}...`;
+            bar.style.width = `${Math.round((i / sheets.length) * 92)}%`;
+
+            const canvas = await window.html2canvas(sheets[i], {
+                scale: 3,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                logging: false,
+                scrollX: 0,
+                scrollY: -window.scrollY,
+            });
+
+            const blob = await canvasToBlob(canvas);
+            root.file(`${pageNo}_LEMBAR_A4.png`, blob);
+        }
+
+        text.innerText = 'Mengompresi seluruh lembar A4 PNG...';
+        bar.style.width = '96%';
+        const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+        bar.style.width = '100%';
+        download(zipBlob, `${safeName(resolvedName, 'KARTU_ID_A4')}_A4_PNG.zip`);
+    } catch (err) {
+        console.error('Gagal mengekspor lembar A4 ke PNG:', err);
+        alert('Terjadi kesalahan saat memproses gambar .PNG (A4).');
+    } finally {
+        setTimeout(() => overlay.classList.add('hidden'), 400);
+    }
+}
+
+/**
+ * Simpan seluruh kartu yang dipilih pada halaman sebagai .ZIP berisi satu .PNG per kartu.
  * Atribut data-card-group pada kartu dipakai sebagai nama subfolder di dalam ZIP.
  */
-export async function saveCardsAsZip(zipFilename = 'KARTU_DIGITAL', cardSelector = '[data-digital-card]') {
-    const cards = [...document.querySelectorAll(cardSelector)];
+export async function saveCardsAsZip(zipFilename = 'KARTU_DIGITAL', cardSelector = '[data-a4-sheet]:not([data-sheet-empty="true"]) [data-digital-card]') {
+    let cards = [...document.querySelectorAll(cardSelector)];
+    if (cards.length === 0 && cardSelector !== '[data-digital-card]') {
+        // Jika bukan halaman lembar A4, fallback ke kartu tunggal bila ada
+        const hasSheets = document.querySelectorAll('[data-a4-sheet]').length > 0;
+        if (!hasSheets) {
+            cards = [...document.querySelectorAll('[data-digital-card]')];
+        }
+    }
     if (cards.length === 0) {
-        alert('Tidak ada kartu digital yang ditemukan untuk diekspor.');
+        alert('Tidak ada kartu yang dipilih untuk diekspor. Silakan pilih minimal satu kartu terlebih dahulu.');
         return;
     }
 
@@ -336,4 +449,5 @@ if (typeof window !== 'undefined') {
     window.saveCardAsPng = saveCardAsPng;
     window.saveCardsAsZip = saveCardsAsZip;
     window.saveSheetsAsPdf = saveSheetsAsPdf;
+    window.saveSheetsAsPng = saveSheetsAsPng;
 }
