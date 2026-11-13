@@ -38,20 +38,22 @@
                 });
             }
         },
-        initPdf() {
+        async initPdf() {
             const container = document.getElementById('pdf-canvas-container');
-            if (!container || !window.PdfViewer) return;
+            if (!container || !window.loadPdfViewer) return;
             this.pdfLoading = true;
-            if (!this.pdfViewer) {
-                this.pdfViewer = new window.PdfViewer(container);
+            try {
+                if (!this.pdfViewer) {
+                    this.pdfViewer = await window.loadPdfViewer(container);
+                }
+                await this.pdfViewer.load(this.url, (info) => {
+                    this.pdfPages = info.numPages;
+                    this.pdfCurrentPage = info.currentPage;
+                    this.pdfLoading = false;
+                });
+            } catch (e) {
+                this.pdfLoading = false;
             }
-            this.pdfViewer.load(this.url, (info) => {
-                this.pdfPages = info.numPages;
-                this.pdfCurrentPage = info.currentPage;
-                this.pdfLoading = false;
-            }).catch(() => {
-                this.pdfLoading = false;
-            });
         },
         pdfPrev() {
             if (this.pdfViewer) {

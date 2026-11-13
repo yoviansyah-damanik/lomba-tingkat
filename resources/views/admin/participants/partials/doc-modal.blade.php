@@ -11,20 +11,22 @@
                         pdfLoading: false,
                         pdfPages: 0,
                         pdfCurrentPage: 1,
-                        initPdf() {
+                        async initPdf() {
                             const container = this.$refs.docModalPdfContainer;
-                            if (!container || !window.PdfViewer) return;
+                            if (!container || !window.loadPdfViewer) return;
                             this.pdfLoading = true;
-                            if (!this.pdfViewer) {
-                                this.pdfViewer = new window.PdfViewer(container);
+                            try {
+                                if (!this.pdfViewer) {
+                                    this.pdfViewer = await window.loadPdfViewer(container);
+                                }
+                                await this.pdfViewer.load(docModalSrc, (info) => {
+                                    this.pdfPages = info.numPages;
+                                    this.pdfCurrentPage = info.currentPage;
+                                    this.pdfLoading = false;
+                                });
+                            } catch (e) {
+                                this.pdfLoading = false;
                             }
-                            this.pdfViewer.load(docModalSrc, (info) => {
-                                this.pdfPages = info.numPages;
-                                this.pdfCurrentPage = info.currentPage;
-                                this.pdfLoading = false;
-                            }).catch(() => {
-                                this.pdfLoading = false;
-                            });
                         },
                         pdfPrev() {
                             if (this.pdfViewer) {
