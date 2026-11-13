@@ -2,9 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\User;
+use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -33,28 +36,28 @@ class AppServiceProvider extends ServiceProvider
     protected function registerAuthorizationGates(): void
     {
         // Gerbang khusus Administrator penuh
-        \Illuminate\Support\Facades\Gate::define('admin', fn(\App\Models\User $user): bool => $user->isAdmin());
+        Gate::define('admin', fn (User $user): bool => $user->isAdmin());
 
         // Gerbang Panitia (monitoring operasional)
-        \Illuminate\Support\Facades\Gate::define('committee', fn(\App\Models\User $user): bool => $user->isCommittee());
+        Gate::define('committee', fn (User $user): bool => $user->isCommittee());
 
         // Gerbang Juri (penilaian)
-        \Illuminate\Support\Facades\Gate::define('judge', fn(\App\Models\User $user): bool => $user->isJudge());
+        Gate::define('judge', fn (User $user): bool => $user->isJudge());
 
         // Gerbang Gugus Depan
-        \Illuminate\Support\Facades\Gate::define('scout_group', fn(\App\Models\User $user): bool => $user->isScoutGroup());
+        Gate::define('scout_group', fn (User $user): bool => $user->isScoutGroup());
 
         // Gerbang Peserta
-        \Illuminate\Support\Facades\Gate::define('participant', fn(\App\Models\User $user): bool => $user->isParticipant());
+        Gate::define('participant', fn (User $user): bool => $user->isParticipant());
 
         // Otorisasi spesifik: Verifikasi pendaftaran hanya oleh Admin
-        \Illuminate\Support\Facades\Gate::define('verify-registrations', fn(\App\Models\User $user): bool => $user->isAdmin());
+        Gate::define('verify-registrations', fn (User $user): bool => $user->isAdmin());
 
         // Otorisasi spesifik: Eksekusi scanner absensi pos kegiatan hanya oleh Admin
-        \Illuminate\Support\Facades\Gate::define('execute-pos-scanning', fn(\App\Models\User $user): bool => $user->isAdmin());
+        Gate::define('execute-pos-scanning', fn (User $user): bool => $user->isAdmin());
 
         // Otorisasi spesifik: Monitoring operasional lapangan oleh Admin & Panitia
-        \Illuminate\Support\Facades\Gate::define('monitor-operations', fn(\App\Models\User $user): bool => $user->isAdmin() || $user->isCommittee());
+        Gate::define('monitor-operations', fn (User $user): bool => $user->isAdmin() || $user->isCommittee());
     }
 
     /**
@@ -63,8 +66,8 @@ class AppServiceProvider extends ServiceProvider
     protected function configureDefaults(): void
     {
         Date::use(CarbonImmutable::class);
-        \Carbon\Carbon::setLocale('id');
-        \Carbon\CarbonImmutable::setLocale('id');
+        Carbon::setLocale('id');
+        CarbonImmutable::setLocale('id');
         \Illuminate\Support\Carbon::setLocale('id');
 
         // DB::prohibitDestructiveCommands(
@@ -72,14 +75,14 @@ class AppServiceProvider extends ServiceProvider
         // );
 
         Password::defaults(
-            fn(): ?Password => app()->isProduction()
-                ? Password::min(12)
+            fn (): Password => app()->isProduction()
+                ? Password::min(8)
                     ->mixedCase()
                     ->letters()
                     ->numbers()
                     ->symbols()
                     ->uncompromised()
-                : null,
+                : Password::min(8),
         );
     }
 }
