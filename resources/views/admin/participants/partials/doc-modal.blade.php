@@ -1,53 +1,54 @@
         {{-- Modal Viewer Berkas / Dokumen yang Diunggah (menggunakan <dialog>.showModal() agar berada di top-layer) --}}
         <template x-teleport="body">
             <dialog x-ref="docModalDialog"
-                    @close="docModalOpen = false; docModalSrc = ''; imageZoomScale = 1; if (pdfViewer) { pdfViewer.destroy(); pdfViewer = null; }"
+                    @close="docModalOpen = false; docModalSrc = ''; imageZoomScale = 1; window.pdfViewerManager?.destroy('doc-modal-viewer');"
                     @keydown.escape.stop.prevent="closeDocModal()"
                     @click.self="closeDocModal()"
                     class="m-0 h-dvh max-h-none w-screen max-w-none overflow-hidden bg-black/85 p-0 text-white backdrop-blur-xs backdrop:bg-black/80"
                     :aria-label="docModalTitle"
                     x-data="{
-                        pdfViewer: null,
                         pdfLoading: false,
                         pdfPages: 0,
                         pdfCurrentPage: 1,
+                        viewerId: 'doc-modal-viewer',
                         async initPdf() {
                             const container = this.$refs.docModalPdfContainer;
-                            if (!container || !window.loadPdfViewer) return;
+                            if (!container || !window.pdfViewerManager) return;
                             this.pdfLoading = true;
                             try {
-                                if (!this.pdfViewer) {
-                                    this.pdfViewer = await window.loadPdfViewer(container);
-                                }
-                                await this.pdfViewer.load(docModalSrc, (info) => {
+                                const viewer = await window.pdfViewerManager.getOrCreate(this.viewerId, container);
+                                await viewer.load(docModalSrc, (info) => {
                                     this.pdfPages = info.numPages;
                                     this.pdfCurrentPage = info.currentPage;
                                     this.pdfLoading = false;
                                 });
                             } catch (e) {
+                                console.error(e);
                                 this.pdfLoading = false;
                             }
                         },
                         pdfPrev() {
-                            if (this.pdfViewer) {
-                                this.pdfViewer.prevPage();
-                                this.pdfCurrentPage = this.pdfViewer.pageNum;
+                            const viewer = window.pdfViewerManager?.get(this.viewerId);
+                            if (viewer) {
+                                this.pdfCurrentPage = viewer.prevPage();
                             }
                         },
                         pdfNext() {
-                            if (this.pdfViewer) {
-                                this.pdfViewer.nextPage();
-                                this.pdfCurrentPage = this.pdfViewer.pageNum;
+                            const viewer = window.pdfViewerManager?.get(this.viewerId);
+                            if (viewer) {
+                                this.pdfCurrentPage = viewer.nextPage();
                             }
                         },
                         pdfZoom(step) {
-                            if (this.pdfViewer) {
-                                this.pdfViewer.zoom(step);
+                            const viewer = window.pdfViewerManager?.get(this.viewerId);
+                            if (viewer) {
+                                viewer.zoom(step);
                             }
                         },
                         pdfReset() {
-                            if (this.pdfViewer) {
-                                this.pdfViewer.resetZoom();
+                            const viewer = window.pdfViewerManager?.get(this.viewerId);
+                            if (viewer) {
+                                viewer.resetZoom();
                             }
                         }
                     }"

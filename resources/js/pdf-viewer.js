@@ -5,6 +5,9 @@
  */
 let pdfViewerClassPromise = null;
 
+// Keep active viewers outside Alpine proxies to avoid JavaScript Private Member access errors
+const viewerInstances = new Map();
+
 async function getPdfViewerClass() {
     if (!pdfViewerClassPromise) {
         pdfViewerClassPromise = (async () => {
@@ -91,15 +94,17 @@ async function getPdfViewerClass() {
                 }
 
                 prevPage() {
-                    if (this.pageNum <= 1) return;
+                    if (this.pageNum <= 1) return this.pageNum;
                     this.pageNum--;
                     this.queueRenderPage(this.pageNum);
+                    return this.pageNum;
                 }
 
                 nextPage() {
-                    if (!this.pdfDoc || this.pageNum >= this.pdfDoc.numPages) return;
+                    if (!this.pdfDoc || this.pageNum >= this.pdfDoc.numPages) return this.pageNum;
                     this.pageNum++;
                     this.queueRenderPage(this.pageNum);
+                    return this.pageNum;
                 }
 
                 zoom(delta) {
@@ -127,7 +132,22 @@ async function getPdfViewerClass() {
     return pdfViewerClassPromise;
 }
 
-window.loadPdfViewer = async function(container) {
-    const PdfViewer = await getPdfViewerClass();
-    return new PdfViewer(container);
+window.pdfViewerManager = {
+    async getOrCreate(id, container) {
+        if (!viewerInstances.has(id)) {
+            const PdfViewer = await getPdfViewerClass();
+            viewerInstances.set(id, new PdfViewer(container));
+        }
+        return viewerInstances.get(id);
+    },
+    get(id) {
+        return viewerInstances.get(id);
+    },
+    destroy(id) {
+        const viewer = viewerInstances.get(id);
+        if (viewer) {
+            viewer.destroy();
+            viewerInstances.delete(id);
+        }
+    }
 };

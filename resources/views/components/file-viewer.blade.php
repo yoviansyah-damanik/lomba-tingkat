@@ -6,10 +6,10 @@
         url: '',
         title: '',
         scale: 1,
-        pdfViewer: null,
         pdfLoading: false,
         pdfPages: 0,
         pdfCurrentPage: 1,
+        viewerId: 'global-file-viewer',
         get isMobile() {
             return window.innerWidth < 768 || /android|iphone|ipad|ipod/i.test(navigator.userAgent);
         },
@@ -40,41 +40,42 @@
         },
         async initPdf() {
             const container = document.getElementById('pdf-canvas-container');
-            if (!container || !window.loadPdfViewer) return;
+            if (!container || !window.pdfViewerManager) return;
             this.pdfLoading = true;
             try {
-                if (!this.pdfViewer) {
-                    this.pdfViewer = await window.loadPdfViewer(container);
-                }
-                await this.pdfViewer.load(this.url, (info) => {
+                const viewer = await window.pdfViewerManager.getOrCreate(this.viewerId, container);
+                await viewer.load(this.url, (info) => {
                     this.pdfPages = info.numPages;
                     this.pdfCurrentPage = info.currentPage;
                     this.pdfLoading = false;
                 });
             } catch (e) {
+                console.error(e);
                 this.pdfLoading = false;
             }
         },
         pdfPrev() {
-            if (this.pdfViewer) {
-                this.pdfViewer.prevPage();
-                this.pdfCurrentPage = this.pdfViewer.pageNum;
+            const viewer = window.pdfViewerManager?.get(this.viewerId);
+            if (viewer) {
+                this.pdfCurrentPage = viewer.prevPage();
             }
         },
         pdfNext() {
-            if (this.pdfViewer) {
-                this.pdfViewer.nextPage();
-                this.pdfCurrentPage = this.pdfViewer.pageNum;
+            const viewer = window.pdfViewerManager?.get(this.viewerId);
+            if (viewer) {
+                this.pdfCurrentPage = viewer.nextPage();
             }
         },
         pdfZoom(step) {
-            if (this.pdfViewer) {
-                this.pdfViewer.zoom(step);
+            const viewer = window.pdfViewerManager?.get(this.viewerId);
+            if (viewer) {
+                viewer.zoom(step);
             }
         },
         pdfReset() {
-            if (this.pdfViewer) {
-                this.pdfViewer.resetZoom();
+            const viewer = window.pdfViewerManager?.get(this.viewerId);
+            if (viewer) {
+                viewer.resetZoom();
             }
         },
         close() {
@@ -86,10 +87,7 @@
             this.open = false;
             this.url = '';
             this.scale = 1;
-            if (this.pdfViewer) {
-                this.pdfViewer.destroy();
-                this.pdfViewer = null;
-            }
+            window.pdfViewerManager?.destroy(this.viewerId);
         },
         zoom(step) {
             this.scale = Math.min(3.5, Math.max(0.5, +(this.scale + step).toFixed(2)));
