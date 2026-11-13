@@ -98,6 +98,10 @@
 
             <div class="flex shrink-0 flex-wrap gap-2">
                 @if($scoutGroup->canDownloadDocuments())
+                    <flux:button href="{{ route('digital-cards.scout-group.batch', $scoutGroup->id) }}" target="_blank" variant="subtle" icon="document-arrow-down"
+                        data-loading="Menyiapkan Lembar ID Card Kontingen (A4)...">
+                        Unduh PDF (A4) ID Card
+                    </flux:button>
                     <flux:button href="{{ route('scout-group.registration-certificate', ['download' => 1]) }}" variant="primary" icon="document-text"
                         data-loading="Mencetak Bukti Registrasi (PDF)...">
                         Bukti Registrasi (PDF)
@@ -180,6 +184,8 @@
                             <div class="mt-3 flex flex-wrap gap-2">
                                 <flux:button href="{{ route('scout-group.patrols') }}" wire:navigate variant="subtle" size="xs" icon-trailing="arrow-right">Kelola Peserta</flux:button>
                                 @if($scoutGroup->canDownloadDocuments())
+                                    <flux:button href="{{ route('digital-cards.patrol.batch', $patrol->id) }}" target="_blank" variant="subtle" size="xs" icon="document-arrow-down"
+                                        data-loading="Menyiapkan ID Card Regu (A4)...">Unduh PDF (A4) ID Card</flux:button>
                                     <flux:button href="{{ route('scout-group.patrols.form-01', $patrol->id) }}" target="_blank" variant="subtle" size="xs" icon="printer"
                                         data-loading="Mencetak FORM 01 Regu {{ $patrol->patrol_name }} (PDF)...">FORM 01</flux:button>
                                 @endif

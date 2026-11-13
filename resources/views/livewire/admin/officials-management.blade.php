@@ -11,10 +11,10 @@
             <flux:button
                 href="{{ route('admin.officials.id-cards', array_filter(['role' => $roleFilter !== 'all' ? $roleFilter : null])) }}"
                 target="_blank"
-                icon="printer"
-                title="Cetak Seluruh Kartu Panitia & Dewan Juri (Susunan A4)"
+                icon="document-arrow-down"
+                title="Unduh PDF (A4) Seluruh Kartu Panitia & Dewan Juri"
             >
-                Cetak ID Card (A4)
+                Unduh PDF (A4)
             </flux:button>
             <flux:button wire:click="openCreateModal" variant="primary" icon="user-plus">
                 Tambah Aparatur Baru

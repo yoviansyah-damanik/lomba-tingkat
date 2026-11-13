@@ -5,10 +5,17 @@
     @forelse($g->patrols as $patrol)
         <div class="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900" wire:key="patrol-{{ $patrol->id }}">
             <div class="flex items-center justify-between border-b border-zinc-100 px-6 py-3 dark:border-zinc-800">
-                <span class="text-sm font-bold text-zinc-900 dark:text-white">Regu {{ $patrol->patrol_name }}</span>
-                <span class="rounded px-2 py-0.5 text-[10px] font-bold {{ $patrol->isBoys() ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' }}">
-                    {{ $patrol->isBoys() ? 'Putra' : 'Putri' }}
-                </span>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-bold text-zinc-900 dark:text-white">Regu {{ $patrol->patrol_name }}</span>
+                    <span class="rounded px-2 py-0.5 text-[10px] font-bold {{ $patrol->isBoys() ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' }}">
+                        {{ $patrol->isBoys() ? 'Putra' : 'Putri' }}
+                    </span>
+                </div>
+                @if($g->canDownloadDocuments())
+                    <flux:button href="{{ route('admin.scout-groups.patrols.id-cards', [$g->id, $patrol->id]) }}" target="_blank" variant="subtle" size="xs" icon="document-arrow-down">
+                        Unduh PDF (A4) Regu
+                    </flux:button>
+                @endif
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs">

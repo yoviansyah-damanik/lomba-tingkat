@@ -85,8 +85,8 @@
                             </flux:button>
                         </template>
                         <template x-if="mode === 'iframe'">
-                            <flux:button size="sm" variant="primary" icon="printer" x-on:click="$refs.frame?.contentWindow?.print()">
-                                Cetak A4
+                            <flux:button size="sm" variant="primary" icon="document-arrow-down" x-on:click="$refs.frame?.contentWindow?.saveSheetsAsPdf ? $refs.frame.contentWindow.saveSheetsAsPdf() : $refs.frame?.contentWindow?.print()">
+                                Unduh PDF (A4)
                             </flux:button>
                         </template>
                         <template x-if="mode === 'iframe'">

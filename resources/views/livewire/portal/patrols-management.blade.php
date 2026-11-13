@@ -11,9 +11,9 @@
         <x-slot:actions>
             @if($scoutGroup->patrols->count() > 0)
                 @if($scoutGroup->canDownloadDocuments())
-                <flux:button href="{{ route('digital-cards.scout-group.batch', $scoutGroup->id) }}" target="_blank" variant="subtle" icon="qr-code"
-                    data-loading="Menyiapkan ID Card Kontingen (.ZIP)...">
-                    ID Card Kontingen (.ZIP / .PNG)
+                <flux:button href="{{ route('digital-cards.scout-group.batch', $scoutGroup->id) }}" target="_blank" variant="subtle" icon="document-arrow-down"
+                    data-loading="Menyiapkan ID Card Kontingen (A4)...">
+                    Unduh PDF (A4) ID Card Kontingen
                 </flux:button>
                 @endif
             @endif
@@ -100,9 +100,9 @@
 
                     <div class="flex flex-wrap items-center gap-2 self-start sm:self-center">
                         @if($scoutGroup->canDownloadDocuments())
-                        <flux:button href="{{ route('digital-cards.patrol.batch', $patrol->id) }}" target="_blank" variant="subtle" size="sm" icon="qr-code"
-                            data-loading="Menyiapkan ID Card Regu (.ZIP)...">
-                            ID Card Regu (.ZIP / .PNG)
+                        <flux:button href="{{ route('digital-cards.patrol.batch', $patrol->id) }}" target="_blank" variant="subtle" size="sm" icon="document-arrow-down"
+                            data-loading="Menyiapkan ID Card Regu (A4)...">
+                            Unduh PDF (A4) ID Card Regu
                         </flux:button>
                         @endif
 

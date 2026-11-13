@@ -1,6 +1,13 @@
 {{-- Pembina Pendamping --}}
 <section class="space-y-4">
-    <h3 class="text-sm font-bold text-zinc-900 dark:text-white">Pembina Pendamping</h3>
+    <div class="flex items-center justify-between gap-2">
+        <h3 class="text-sm font-bold text-zinc-900 dark:text-white">Pembina Pendamping</h3>
+        @if($g->chaperones->isNotEmpty() && $g->canDownloadDocuments())
+            <flux:button href="{{ route('admin.scout-groups.chaperones.id-cards', $g->id) }}" target="_blank" variant="subtle" size="xs" icon="document-arrow-down">
+                Unduh PDF (A4) Bindamping
+            </flux:button>
+        @endif
+    </div>
 
     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
         @forelse($g->chaperones as $chaperone)

@@ -76,15 +76,15 @@
         </div>
     </div>
 
-    {{-- Section: Cetak Kumulatif ID Card Resmi (Susunan A4 — 4 Kartu A6 / Lembar) --}}
+    {{-- Section: Unduh PDF Kumulatif ID Card Resmi (Susunan A4 — 4 Kartu A6 / Lembar) --}}
     <div class="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
                 <h3 class="text-sm font-bold uppercase tracking-wider text-zinc-800 dark:text-zinc-200">
-                    Cetak Kumulatif ID Card Resmi (Susunan A4)
+                    Unduh PDF (A4) Kumulatif ID Card Resmi
                 </h3>
                 <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                    Setiap lembar kertas A4 (210 &times; 297 mm) memuat 4 kartu ID ukuran A6 (105 &times; 148 mm) lengkap dengan garis bantu potong, opsi cetak langsung, dan unduhan ZIP.
+                    Setiap lembar kertas A4 (210 &times; 297 mm) memuat 4 kartu ID ukuran A6 (105 &times; 148 mm) lengkap dengan garis bantu potong, unduhan PDF (A4), dan unduhan ZIP.
                 </p>
             </div>
         </div>
@@ -99,12 +99,12 @@
                         Seluruh ID Card Peserta (A4)
                     </h4>
                     <p class="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-                        Susunan cetak A4 seluruh anggota regu putra &amp; putri dari kontingen terverifikasi.
+                        Susunan lembar A4 seluruh anggota regu putra &amp; putri dari kontingen terverifikasi.
                     </p>
                 </div>
                 <div class="flex justify-end">
-                    <flux:button href="{{ route('admin.participants.id-cards') }}" target="_blank" size="sm" variant="primary" icon="printer">
-                        Cetak Peserta (A4)
+                    <flux:button href="{{ route('admin.participants.id-cards') }}" target="_blank" size="sm" variant="primary" icon="document-arrow-down">
+                        Unduh PDF (A4)
                     </flux:button>
                 </div>
             </div>
@@ -118,12 +118,12 @@
                         Seluruh ID Card Bindamping (A4)
                     </h4>
                     <p class="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-                        Susunan cetak A4 seluruh pembina pendamping putra &amp; putri dari kontingen terverifikasi.
+                        Susunan lembar A4 seluruh pembina pendamping putra &amp; putri dari kontingen terverifikasi.
                     </p>
                 </div>
                 <div class="flex justify-end">
-                    <flux:button href="{{ route('admin.chaperones.id-cards') }}" target="_blank" size="sm" variant="primary" icon="printer">
-                        Cetak Bindamping (A4)
+                    <flux:button href="{{ route('admin.chaperones.id-cards') }}" target="_blank" size="sm" variant="primary" icon="document-arrow-down">
+                        Unduh PDF (A4)
                     </flux:button>
                 </div>
             </div>
@@ -137,12 +137,12 @@
                         Seluruh ID Card Panitia &amp; Juri (A4)
                     </h4>
                     <p class="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-                        Susunan cetak A4 seluruh aparatur panitia pelaksana dan dewan juri perlombaan aktif.
+                        Susunan lembar A4 seluruh aparatur panitia pelaksana dan dewan juri perlombaan aktif.
                     </p>
                 </div>
                 <div class="flex justify-end">
-                    <flux:button href="{{ route('admin.officials.id-cards') }}" target="_blank" size="sm" variant="primary" icon="printer">
-                        Cetak Panitia &amp; Juri (A4)
+                    <flux:button href="{{ route('admin.officials.id-cards') }}" target="_blank" size="sm" variant="primary" icon="document-arrow-down">
+                        Unduh PDF (A4)
                     </flux:button>
                 </div>
             </div>

@@ -66,9 +66,9 @@
 
         <div class="flex items-center gap-2 flex-wrap">
             @if($scoutGroup->canDownloadDocuments())
-                <flux:button href="{{ route('admin.scout-groups.id-cards', $scoutGroup->id) }}" target="_blank" variant="subtle" size="sm" icon="qr-code"
-                    data-loading="Menyiapkan ID Card Kontingen (.ZIP)...">
-                    ID Card Kontingen (.ZIP / .PNG)
+                <flux:button href="{{ route('admin.scout-groups.id-cards', $scoutGroup->id) }}" target="_blank" variant="subtle" size="sm" icon="document-arrow-down"
+                    data-loading="Menyiapkan PDF (A4) ID Card Kontingen...">
+                    Unduh PDF (A4) ID Card Kontingen
                 </flux:button>
             @endif
 
@@ -255,9 +255,9 @@
 
                     <div class="flex items-center gap-2 flex-wrap">
                         @if($scoutGroup->canDownloadDocuments())
-                            <flux:button href="{{ route('admin.scout-groups.patrols.id-cards', [$scoutGroup->id, $patrol->id]) }}" target="_blank" variant="subtle" size="xs" icon="qr-code"
-                                data-loading="Menyiapkan ID Card Regu (.ZIP)...">
-                                ID Card Regu (.ZIP / .PNG)
+                            <flux:button href="{{ route('admin.scout-groups.patrols.id-cards', [$scoutGroup->id, $patrol->id]) }}" target="_blank" variant="subtle" size="xs" icon="document-arrow-down"
+                                data-loading="Menyiapkan PDF (A4) ID Card Regu...">
+                                Unduh PDF (A4) ID Card Regu
                             </flux:button>
                             <flux:button href="{{ route('admin.scout-groups.patrols.form-01', [$scoutGroup->id, $patrol->id]) }}" target="_blank" variant="subtle" size="xs" icon="printer"
                                 data-loading="Mencetak FORM 01 Regu {{ $patrol->patrol_name }} (PDF)...">
@@ -646,9 +646,9 @@
                 Pembina Pendamping (Bindamping) &bull; {{ $scoutGroup->chaperones->count() }} Orang
             </h3>
             @if($scoutGroup->chaperones->count() > 0 && $scoutGroup->canDownloadDocuments())
-                <flux:button href="{{ route('admin.scout-groups.chaperones.id-cards', $scoutGroup->id) }}" target="_blank" variant="subtle" size="xs" icon="qr-code"
-                    data-loading="Menyiapkan ID Card Bindamping (.ZIP)...">
-                    ID Card Bindamping (.ZIP / .PNG)
+                <flux:button href="{{ route('admin.scout-groups.chaperones.id-cards', $scoutGroup->id) }}" target="_blank" variant="subtle" size="xs" icon="document-arrow-down"
+                    data-loading="Menyiapkan PDF (A4) ID Card Bindamping...">
+                    Unduh PDF (A4) ID Card Bindamping
                 </flux:button>
             @endif
         </div>

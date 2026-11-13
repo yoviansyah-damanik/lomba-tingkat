@@ -10,6 +10,11 @@
             <flux:button href="{{ route('admin.gudep-directory') }}" wire:navigate variant="subtle" icon="arrow-left">
                 Pangkalan Gugusdepan
             </flux:button>
+            @if($g->canDownloadDocuments())
+                <flux:button href="{{ route('admin.scout-groups.id-cards', $g->id) }}" target="_blank" icon="document-arrow-down">
+                    Unduh PDF (A4) ID Card
+                </flux:button>
+            @endif
             @if(auth()->user()->isAdmin())
                 <flux:button href="{{ route('admin.scout-groups.show', $g->id) }}" wire:navigate variant="primary" icon="shield-check">
                     Halaman Verifikasi

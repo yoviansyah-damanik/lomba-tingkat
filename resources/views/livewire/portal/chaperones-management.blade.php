@@ -11,8 +11,8 @@
         <x-slot:actions>
             @if($scoutGroup->chaperones->count() > 0)
                 @if($scoutGroup->canDownloadDocuments())
-                <flux:button href="{{ route('digital-cards.chaperone.batch', $scoutGroup->id) }}" target="_blank" variant="subtle" icon="qr-code">
-                    ID Card Bindamping (.ZIP / .PNG)
+                <flux:button href="{{ route('digital-cards.chaperone.batch', $scoutGroup->id) }}" target="_blank" variant="subtle" icon="document-arrow-down">
+                    Unduh PDF (A4) ID Card Bindamping
                 </flux:button>
                 @endif
             @endif

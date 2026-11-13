@@ -93,9 +93,16 @@
                             <td class="px-3 py-4 text-center align-top font-semibold">{{ $group->participants_count }}</td>
                             <td class="px-3 py-4 text-center align-top font-semibold">{{ $group->chaperones_count }}</td>
                             <td class="py-4 pl-3 pr-6 text-right align-top">
-                                <flux:button wire:click="openDetail('{{ $group->id }}')" variant="subtle" size="sm" icon="eye">
-                                    Lihat
-                                </flux:button>
+                                <div class="inline-flex items-center justify-end gap-1.5">
+                                    @if($group->canDownloadDocuments())
+                                        <flux:button href="{{ route('admin.scout-groups.id-cards', $group->id) }}" target="_blank" variant="subtle" size="sm" icon="document-arrow-down" title="Unduh PDF (A4) ID Card Kontingen {{ $group->school_name }}">
+                                            Unduh PDF (A4)
+                                        </flux:button>
+                                    @endif
+                                    <flux:button wire:click="openDetail('{{ $group->id }}')" variant="subtle" size="sm" icon="eye">
+                                        Lihat
+                                    </flux:button>
+                                </div>
                             </td>
                         </tr>
                     @empty

@@ -56,21 +56,21 @@
         })();
     </script>
 
-    {{-- Bilah aksi: Cetak A4 (4 kartu A6 per halaman) & Simpan .ZIP --}}
-    <div class="print:hidden sticky top-3 z-40 w-full max-w-5xl mb-6 flex flex-wrap justify-between items-center gap-3 bg-slate-800/95 backdrop-blur-sm p-3.5 rounded-xl border border-slate-700 text-slate-50 shadow-md">
+    {{-- Bilah aksi: Unduh PDF (A4) (4 kartu A6 per halaman) & Simpan .ZIP --}}
+    <div data-pdf-filename="{{ $zipName }}" class="print:hidden sticky top-3 z-40 w-full max-w-5xl mb-6 flex flex-wrap justify-between items-center gap-3 bg-slate-800/95 backdrop-blur-sm p-3.5 rounded-xl border border-slate-700 text-slate-50 shadow-md">
         <div>
             <strong class="text-[13px] font-bold text-slate-100 block">{{ $title }}</strong>
             <div class="text-[11px] text-amber-400 mt-0.5">
-                {{ $subtitle }} &bull; Total {{ $cards->count() }} kartu A6 (105 &times; 148 mm) &bull; {{ $a4Pages->count() }} Lembar Cetak A4
+                {{ $subtitle }} &bull; Total {{ $cards->count() }} kartu A6 (105 &times; 148 mm) &bull; {{ $a4Pages->count() }} Lembar A4
             </div>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
             <flux:button
                 variant="primary"
-                icon="printer"
+                icon="document-arrow-down"
                 size="sm"
-                onclick="window.print()"
-            >Cetak A4 ({{ $a4Pages->count() }} Lembar)</flux:button>
+                onclick="window.saveSheetsAsPdf('{{ $zipName }}')"
+            >Unduh PDF (A4)</flux:button>
             <flux:button
                 icon="arrow-down-tray"
                 size="sm"
@@ -100,11 +100,19 @@
                         </span>
                     @endforeach
                 </div>
-                <flux:button
-                    size="xs"
-                    icon="photo"
-                    onclick="window.saveCardAsPng('{{ $zipName }}_A4_LEMBAR_{{ str_pad((string) ($pageIndex + 1), 2, '0', STR_PAD_LEFT) }}', this.closest('section').querySelector('[data-a4-sheet]'))"
-                >Simpan Lembar A4 (.PNG)</flux:button>
+                <div class="flex items-center gap-1.5">
+                    <flux:button
+                        size="xs"
+                        variant="primary"
+                        icon="document-arrow-down"
+                        onclick="window.saveSheetsAsPdf('{{ $zipName }}_A4_LEMBAR_{{ str_pad((string) ($pageIndex + 1), 2, '0', STR_PAD_LEFT) }}', this.closest('section').querySelector('[data-a4-sheet]'))"
+                    >Unduh PDF (A4)</flux:button>
+                    <flux:button
+                        size="xs"
+                        icon="photo"
+                        onclick="window.saveCardAsPng('{{ $zipName }}_A4_LEMBAR_{{ str_pad((string) ($pageIndex + 1), 2, '0', STR_PAD_LEFT) }}', this.closest('section').querySelector('[data-a4-sheet]'))"
+                    >Simpan Lembar A4 (.PNG)</flux:button>
+                </div>
             </div>
 
             <div class="w-full overflow-x-auto flex justify-center pb-2 print:overflow-visible print:pb-0 print:block">
