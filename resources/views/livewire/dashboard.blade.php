@@ -27,6 +27,9 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2.5">
+            <flux:button href="{{ route('home') }}" wire:navigate variant="subtle" icon="globe-alt" class="text-xs">
+                Halaman Depan
+            </flux:button>
             <div class="flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-2 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-800/60 dark:text-zinc-300">
                 <flux:icon name="clock" class="size-4 text-amber-600 dark:text-amber-400" />
                 <span>Waktu Server Resmi:</span>

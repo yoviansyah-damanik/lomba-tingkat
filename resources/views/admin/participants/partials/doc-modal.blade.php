@@ -1,27 +1,71 @@
         {{-- Modal Viewer Berkas / Dokumen yang Diunggah (menggunakan <dialog>.showModal() agar berada di top-layer) --}}
         <template x-teleport="body">
             <dialog x-ref="docModalDialog"
-                    @close="docModalOpen = false; docModalSrc = ''; imageZoomScale = 1;"
+                    @close="docModalOpen = false; docModalSrc = ''; imageZoomScale = 1; if (pdfViewer) { pdfViewer.destroy(); pdfViewer = null; }"
                     @keydown.escape.stop.prevent="closeDocModal()"
                     @click.self="closeDocModal()"
                     class="m-0 h-dvh max-h-none w-screen max-w-none overflow-hidden bg-black/85 p-0 text-white backdrop-blur-xs backdrop:bg-black/80"
-                    :aria-label="docModalTitle">
-                <div class="flex h-full w-full flex-col items-center justify-between p-4 sm:p-6"
+                    :aria-label="docModalTitle"
+                    x-data="{
+                        pdfViewer: null,
+                        pdfLoading: false,
+                        pdfPages: 0,
+                        pdfCurrentPage: 1,
+                        initPdf() {
+                            const container = this.$refs.docModalPdfContainer;
+                            if (!container || !window.PdfViewer) return;
+                            this.pdfLoading = true;
+                            if (!this.pdfViewer) {
+                                this.pdfViewer = new window.PdfViewer(container);
+                            }
+                            this.pdfViewer.load(docModalSrc, (info) => {
+                                this.pdfPages = info.numPages;
+                                this.pdfCurrentPage = info.currentPage;
+                                this.pdfLoading = false;
+                            }).catch(() => {
+                                this.pdfLoading = false;
+                            });
+                        },
+                        pdfPrev() {
+                            if (this.pdfViewer) {
+                                this.pdfViewer.prevPage();
+                                this.pdfCurrentPage = this.pdfViewer.pageNum;
+                            }
+                        },
+                        pdfNext() {
+                            if (this.pdfViewer) {
+                                this.pdfViewer.nextPage();
+                                this.pdfCurrentPage = this.pdfViewer.pageNum;
+                            }
+                        },
+                        pdfZoom(step) {
+                            if (this.pdfViewer) {
+                                this.pdfViewer.zoom(step);
+                            }
+                        },
+                        pdfReset() {
+                            if (this.pdfViewer) {
+                                this.pdfViewer.resetZoom();
+                            }
+                        }
+                    }"
+                    x-effect="if (docModalOpen && docModalType === 'pdf') { $nextTick(() => initPdf()); }">
+                <div class="flex h-full w-full flex-col items-center justify-between p-3 sm:p-6"
                      @click.self="closeDocModal()">
 
                     {{-- Modal Header & Controls --}}
-                    <div class="flex w-full max-w-5xl items-center justify-between gap-3 rounded-2xl bg-zinc-900/95 px-4 py-3 text-white border border-zinc-700/60 shadow-xl shrink-0">
-                        <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="flex w-full max-w-5xl items-center justify-between gap-2.5 rounded-2xl bg-zinc-900/95 px-3 py-2.5 sm:px-4 sm:py-3 text-white border border-zinc-700/60 shadow-xl shrink-0 flex-wrap">
+                        <div class="flex items-center gap-2 min-w-0">
                             <flux:icon name="document-text" class="size-5 text-amber-400 shrink-0" />
                             <div class="truncate">
                                 <div class="text-xs sm:text-sm font-bold truncate text-zinc-100" x-text="docModalTitle"></div>
-                                <div class="text-[11px] text-zinc-400" x-text="docModalType === 'image' ? 'Gunakan tombol kontrol atau scroll mouse untuk zoom in/out' : 'Pratinjau Dokumen Resmi'"></div>
+                                <div class="text-[10px] sm:text-[11px] text-zinc-400" x-text="docModalType === 'image' ? 'Kontrol zoom in / out' : (docModalType === 'pdf' ? (pdfPages > 1 ? `Halaman ${pdfCurrentPage} dari ${pdfPages}` : 'Dokumen PDF') : 'Pratinjau Dokumen Resmi')"></div>
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-2 shrink-0">
+                        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
                             <template x-if="docModalType === 'image'">
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-1 sm:gap-2">
                                     <span class="rounded-lg bg-zinc-800 px-2 py-1 font-mono text-xs font-semibold text-amber-300 border border-zinc-700/50"
                                           x-text="Math.round(imageZoomScale * 100) + '%'">
                                     </span>
@@ -37,8 +81,23 @@
                                 </div>
                             </template>
 
+                            <template x-if="docModalType === 'pdf'">
+                                <div class="flex items-center gap-1 sm:gap-1.5">
+                                    <template x-if="pdfPages > 1">
+                                        <div class="flex items-center gap-1 mr-1">
+                                            <flux:button size="xs" variant="subtle" icon="chevron-left" x-bind:disabled="pdfCurrentPage <= 1" @click="pdfPrev()">Hal</flux:button>
+                                            <span class="rounded-md border border-zinc-700/50 bg-zinc-800 px-1.5 py-0.5 font-mono text-[11px] text-amber-300" x-text="`${pdfCurrentPage}/${pdfPages}`"></span>
+                                            <flux:button size="xs" variant="subtle" icon="chevron-right" x-bind:disabled="pdfCurrentPage >= pdfPages" @click="pdfNext()">Hal</flux:button>
+                                        </div>
+                                    </template>
+                                    <flux:button size="xs" variant="subtle" icon="magnifying-glass-plus" @click="pdfZoom(0.25)"></flux:button>
+                                    <flux:button size="xs" variant="subtle" icon="magnifying-glass-minus" @click="pdfZoom(-0.25)"></flux:button>
+                                    <flux:button size="xs" variant="subtle" icon="arrow-path" @click="pdfReset()"></flux:button>
+                                </div>
+                            </template>
+
                             <flux:button size="xs" variant="subtle" icon="arrow-top-right-on-square" as="a" x-bind:href="docModalSrc" target="_blank">
-                                Buka Tab Baru
+                                Tab Baru
                             </flux:button>
 
                             <flux:button size="xs" variant="danger" icon="x-mark" @click="closeDocModal()">
@@ -47,8 +106,8 @@
                         </div>
                     </div>
 
-                    {{-- Modal Content: Gambar dengan Zoom atau PDF Viewer --}}
-                    <div class="flex flex-1 w-full max-w-5xl items-center justify-center overflow-auto p-4 my-2 select-none"
+                    {{-- Modal Content: Gambar dengan Zoom atau PDF Canvas Viewer --}}
+                    <div class="flex flex-1 w-full max-w-5xl items-center justify-center overflow-auto p-2 sm:p-4 my-2 select-none"
                          @click.self="closeDocModal()">
                         {{-- Jika file gambar --}}
                         <template x-if="docModalOpen && docModalType === 'image'">
@@ -64,12 +123,14 @@
                             </div>
                         </template>
 
-                        {{-- Jika file PDF --}}
-                        <template x-if="docModalOpen && docModalType === 'pdf'">
-                            <div class="size-full max-h-[75vh] rounded-xl overflow-hidden bg-white shadow-2xl">
-                                <iframe :src="docModalSrc" class="size-full border-0"></iframe>
+                        {{-- Jika file PDF (HTML5 Canvas via PDF.js) --}}
+                        <div x-show="docModalOpen && docModalType === 'pdf'" class="relative size-full max-h-[75vh] rounded-xl overflow-auto bg-zinc-950 p-2 sm:p-4 shadow-2xl text-center">
+                            <div x-show="pdfLoading" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-zinc-900/80 backdrop-blur-xs">
+                                <flux:icon name="arrow-path" class="size-8 animate-spin text-amber-500 mb-2" />
+                                <span class="text-xs text-zinc-300 font-medium">Memuat dokumen PDF...</span>
                             </div>
-                        </template>
+                            <div x-ref="docModalPdfContainer" class="flex min-h-full items-center justify-center"></div>
+                        </div>
 
                         {{-- Jika tipe berkas lainnya --}}
                         <template x-if="docModalOpen && docModalType === 'other'">
@@ -85,7 +146,7 @@
                     </div>
 
                     {{-- Modal Footer Tip --}}
-                    <div class="text-[11px] text-zinc-400 text-center shrink-0">
+                    <div class="text-[10px] sm:text-[11px] text-zinc-400 text-center shrink-0">
                         Tekan tombol ESC atau klik di luar area untuk menutup modal pratinjau
                     </div>
                 </div>

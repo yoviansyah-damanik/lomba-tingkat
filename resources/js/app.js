@@ -3,6 +3,7 @@ import JSZip from 'jszip';
 import './app-dialog';
 import './digital-card-export';
 import './pwa-install';
+import './pdf-viewer';
 
 window.html2canvas = html2canvas;
 window.JSZip = JSZip;
