@@ -9,8 +9,8 @@ async function getPdfViewerClass() {
     if (!pdfViewerClassPromise) {
         pdfViewerClassPromise = (async () => {
             const [pdfjsLib, { default: pdfWorker }] = await Promise.all([
-                import('pdfjs-dist'),
-                import('pdfjs-dist/build/pdf.worker.min.mjs?url')
+                import('pdfjs-dist/build/pdf'),
+                import('pdfjs-dist/build/pdf.worker.min.js?url')
             ]);
 
             pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;

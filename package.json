@@ -13,7 +13,7 @@
         "html2canvas-pro": "^1.6.7",
         "jszip": "^3.10.2",
         "laravel-vite-plugin": "^3.1",
-        "pdfjs-dist": "^5.6.205",
+        "pdfjs-dist": "^3.11.174",
         "tailwindcss": "^4.0.7",
         "vite": "^8.0.0",
         "vite-plus": "0.3.0"
