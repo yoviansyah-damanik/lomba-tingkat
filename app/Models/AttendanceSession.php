@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Builder;
 
 class AttendanceSession extends Model
 {
@@ -55,6 +57,74 @@ class AttendanceSession extends Model
     }
 
     /**
+     * Scope untuk sesi presensi yang sedang dibuka (aktif scan)
+     */
+    public function scopeOpen(Builder $query, ?CarbonInterface $now = null): Builder
+    {
+        $now ??= now();
+
+        return $query->where('is_active', true)
+            ->where(function ($q) use ($now) {
+                $q->where(function ($sub) use ($now) {
+                    $sub->whereNull('competition_schedule_id')
+                        ->where(fn ($s) => $s->whereNull('opened_at')->orWhere('opened_at', '<=', $now))
+                        ->where(fn ($s) => $s->whereNull('closed_at')->orWhere('closed_at', '>=', $now));
+                })->orWhere(function ($sub) use ($now) {
+                    $sub->whereNotNull('competition_schedule_id')
+                        ->whereHas('schedule', function ($sq) use ($now) {
+                            $sq->where(fn ($s) => $s->whereNull('checkin_open_time')->orWhere('checkin_open_time', '<=', $now))
+                                ->where(fn ($s) => $s->whereNull('checkin_close_time')->orWhere('checkin_close_time', '>=', $now));
+                        });
+                });
+            });
+    }
+
+    /**
+     * Scope untuk sesi presensi yang belum dibuka
+     */
+    public function scopeNotYetOpen(Builder $query, ?CarbonInterface $now = null): Builder
+    {
+        $now ??= now();
+
+        return $query->where('is_active', true)
+            ->where(function ($q) use ($now) {
+                $q->where(function ($sub) use ($now) {
+                    $sub->whereNull('competition_schedule_id')
+                        ->whereNotNull('opened_at')
+                        ->where('opened_at', '>', $now);
+                })->orWhere(function ($sub) use ($now) {
+                    $sub->whereNotNull('competition_schedule_id')
+                        ->whereHas('schedule', function ($sq) use ($now) {
+                            $sq->whereNotNull('checkin_open_time')->where('checkin_open_time', '>', $now);
+                        });
+                });
+            });
+    }
+
+    /**
+     * Scope untuk sesi presensi yang telah ditutup atau dinonaktifkan
+     */
+    public function scopeClosed(Builder $query, ?CarbonInterface $now = null): Builder
+    {
+        $now ??= now();
+
+        return $query->where(function ($q) use ($now) {
+            $q->where('is_active', false)
+                ->orWhere(function ($sub) use ($now) {
+                    $sub->whereNull('competition_schedule_id')
+                        ->whereNotNull('closed_at')
+                        ->where('closed_at', '<', $now);
+                })
+                ->orWhere(function ($sub) use ($now) {
+                    $sub->whereNotNull('competition_schedule_id')
+                        ->whereHas('schedule', function ($sq) use ($now) {
+                            $sq->whereNotNull('checkin_close_time')->where('checkin_close_time', '<', $now);
+                        });
+                });
+        });
+    }
+
+    /**
      * Scope untuk sesi presensi kehadiran (bukan lomba)
      */
     public function scopeGeneralAttendance(Builder $query): Builder
@@ -95,7 +165,7 @@ class AttendanceSession extends Model
                 })->orWhere(function ($sub) use ($user) {
                     $sub->whereNotNull('competition_schedule_id')
                         ->where('is_competition', true)
-                        ->whereHas('schedule.judgeAssignments', fn($ja) => $ja->where('user_id', $user->id));
+                        ->whereHas('schedule.judgeAssignments', fn ($ja) => $ja->where('user_id', $user->id));
                 });
             });
         }
@@ -197,25 +267,25 @@ class AttendanceSession extends Model
     /**
      * Waktu buka presensi (paling cepat 30 menit sebelum jadwal lomba dimulai)
      */
-    public function getEffectiveOpenTime(): ?\Carbon\CarbonInterface
+    public function getEffectiveOpenTime(): ?CarbonInterface
     {
         if ($this->schedule && $this->schedule->start_time) {
-            return \Carbon\Carbon::parse($this->schedule->start_time)->subMinutes(30);
+            return Carbon::parse($this->schedule->start_time)->subMinutes(30);
         }
 
-        return $this->opened_at ? \Carbon\Carbon::parse($this->opened_at) : null;
+        return $this->opened_at ? Carbon::parse($this->opened_at) : null;
     }
 
     /**
      * Waktu tutup presensi (sesuai waktu jadwal lomba berakhir)
      */
-    public function getEffectiveCloseTime(): ?\Carbon\CarbonInterface
+    public function getEffectiveCloseTime(): ?CarbonInterface
     {
         if ($this->schedule && $this->schedule->end_time) {
-            return \Carbon\Carbon::parse($this->schedule->end_time);
+            return Carbon::parse($this->schedule->end_time);
         }
 
-        return $this->closed_at ? \Carbon\Carbon::parse($this->closed_at) : null;
+        return $this->closed_at ? Carbon::parse($this->closed_at) : null;
     }
 
     /**
@@ -268,20 +338,22 @@ class AttendanceSession extends Model
             }
 
             if ($open->isToday()) {
-                return 'Belum Dibuka (Hari Ini, Pukul ' . $open->format('H:i') . ' WIB)';
+                return 'Belum Dibuka (Hari Ini, Pukul '.$open->format('H:i').' WIB)';
             }
 
-            return 'Belum Dibuka (Buka: ' . $open->isoFormat('D MMM Y, [Pk] HH:mm') . ' WIB)';
+            return 'Belum Dibuka (Buka: '.$open->isoFormat('D MMM Y, [Pk] HH:mm').' WIB)';
         }
 
         if ($this->isScheduleClosed()) {
             $close = $this->getEffectiveCloseTime()?->setTimezone('Asia/Jakarta');
             if ($close) {
                 if ($close->isToday()) {
-                    return 'Presensi Telah Ditutup (Hari Ini, ' . $close->format('H:i') . ' WIB)';
+                    return 'Presensi Telah Ditutup (Hari Ini, '.$close->format('H:i').' WIB)';
                 }
-                return 'Presensi Telah Ditutup (' . $close->isoFormat('D MMM Y, HH:mm') . ' WIB)';
+
+                return 'Presensi Telah Ditutup ('.$close->isoFormat('D MMM Y, HH:mm').' WIB)';
             }
+
             return 'Presensi Telah Ditutup';
         }
 

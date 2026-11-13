@@ -2,9 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Enums\PatrolGenderEnum;
+use App\Enums\PatrolRoleEnum;
 use App\Enums\RoleEnum;
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
+use App\Models\Chaperone;
 use App\Models\Competition;
 use App\Models\CompetitionSchedule;
 use App\Models\Event;
@@ -13,6 +16,7 @@ use App\Models\Participant;
 use App\Models\Patrol;
 use App\Models\ScoutGroup;
 use App\Models\User;
+use Database\Seeders\EventSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -23,23 +27,34 @@ class AttendanceScannerTest extends TestCase
     use RefreshDatabase;
 
     protected User $admin;
+
     protected User $committee;
+
     protected User $assignedJudge;
+
     protected User $unassignedJudge;
+
     protected User $dualRoleUser;
+
     protected User $regularUser;
+
     protected AttendanceSession $activeSession; // Sesi Lomba Aktif
+
     protected AttendanceSession $inactiveSession; // Sesi Lomba Nonaktif
+
     protected AttendanceSession $generalSession; // Sesi Kehadiran Umum Aktif
+
     protected AttendanceSession $inactiveGeneralSession; // Sesi Kehadiran Umum Nonaktif
+
     protected CompetitionSchedule $schedule;
+
     protected Participant $participant;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->seed(RoleSeeder::class);
-        $this->seed(\Database\Seeders\EventSeeder::class);
+        $this->seed(EventSeeder::class);
 
         // Buat berbagai akun pengguna sesuai peran
         $this->admin = User::factory()->create(['is_active' => true]);
@@ -152,14 +167,14 @@ class AttendanceScannerTest extends TestCase
         $patrol = Patrol::create([
             'scout_group_id' => $scoutGroup->id,
             'patrol_name' => 'Rajawali',
-            'gender_category' => \App\Enums\PatrolGenderEnum::Boys,
+            'gender_category' => PatrolGenderEnum::Boys,
             'group_number' => '01.001',
         ]);
 
         $this->participant = Participant::create([
             'patrol_id' => $patrol->id,
             'full_name' => 'Budi Santoso',
-            'role_in_patrol' => \App\Enums\PatrolRoleEnum::PatrolLeader,
+            'role_in_patrol' => PatrolRoleEnum::PatrolLeader,
             'gender' => 'male',
             'birth_place' => 'Padangsidimpuan',
             'birth_date' => '2011-05-12',
@@ -486,6 +501,8 @@ class AttendanceScannerTest extends TestCase
             ])
             ->assertJsonFragment([
                 'name' => 'Budi Santoso',
+                'patrol_name' => 'Rajawali',
+                'school_name' => 'SMP Negeri 1 Padangsidimpuan',
             ]);
     }
 
@@ -521,7 +538,7 @@ class AttendanceScannerTest extends TestCase
         $member = Participant::create([
             'patrol_id' => $this->participant->patrol_id,
             'full_name' => 'Andi Anggota',
-            'role_in_patrol' => \App\Enums\PatrolRoleEnum::Member,
+            'role_in_patrol' => PatrolRoleEnum::Member,
             'gender' => 'male',
             'birth_place' => 'Padangsidimpuan',
             'birth_date' => '2011-06-15',
@@ -554,7 +571,7 @@ class AttendanceScannerTest extends TestCase
         $assistantLeader = Participant::create([
             'patrol_id' => $this->participant->patrol_id,
             'full_name' => 'Doni Wapinru',
-            'role_in_patrol' => \App\Enums\PatrolRoleEnum::AssistantPatrolLeader,
+            'role_in_patrol' => PatrolRoleEnum::AssistantPatrolLeader,
             'gender' => 'male',
             'birth_place' => 'Padangsidimpuan',
             'birth_date' => '2011-07-20',
@@ -616,7 +633,7 @@ class AttendanceScannerTest extends TestCase
         $memberRep = Participant::create([
             'patrol_id' => $this->participant->patrol_id,
             'full_name' => 'Fajar Orator',
-            'role_in_patrol' => \App\Enums\PatrolRoleEnum::Member,
+            'role_in_patrol' => PatrolRoleEnum::Member,
             'gender' => 'male',
             'birth_place' => 'Padangsidimpuan',
             'birth_date' => '2011-08-10',
@@ -693,7 +710,7 @@ class AttendanceScannerTest extends TestCase
         $member2 = Participant::create([
             'patrol_id' => $patrolId,
             'full_name' => 'Peserta Kelompok Dua',
-            'role_in_patrol' => \App\Enums\PatrolRoleEnum::Member,
+            'role_in_patrol' => PatrolRoleEnum::Member,
             'gender' => 'male',
             'birth_place' => 'Padangsidimpuan',
             'birth_date' => '2011-04-12',
@@ -703,7 +720,7 @@ class AttendanceScannerTest extends TestCase
         $member3 = Participant::create([
             'patrol_id' => $patrolId,
             'full_name' => 'Peserta Kelompok Tiga',
-            'role_in_patrol' => \App\Enums\PatrolRoleEnum::Member,
+            'role_in_patrol' => PatrolRoleEnum::Member,
             'gender' => 'male',
             'birth_place' => 'Padangsidimpuan',
             'birth_date' => '2011-05-15',
@@ -938,7 +955,7 @@ class AttendanceScannerTest extends TestCase
         $girlsPatrol = Patrol::create([
             'scout_group_id' => $scoutGroup->id,
             'patrol_name' => 'Melati',
-            'gender_category' => \App\Enums\PatrolGenderEnum::Girls,
+            'gender_category' => PatrolGenderEnum::Girls,
             'group_number' => '01.002',
         ]);
 
@@ -946,7 +963,7 @@ class AttendanceScannerTest extends TestCase
             'patrol_id' => $girlsPatrol->id,
             'full_name' => 'Siti Aminah',
             'gender' => 'female',
-            'role_in_patrol' => \App\Enums\PatrolRoleEnum::PatrolLeader,
+            'role_in_patrol' => PatrolRoleEnum::PatrolLeader,
             'birth_place' => 'Padangsidimpuan',
             'birth_date' => '2012-05-10',
             'qr_token' => (string) Str::uuid(),
@@ -1005,5 +1022,168 @@ class AttendanceScannerTest extends TestCase
             ]);
 
         $this->assertEquals(1, Attendance::where('attendance_session_id', $session->id)->count());
+    }
+
+    public function test_competition_session_allows_assigned_judge_to_attend_and_rejects_duplicate(): void
+    {
+        // Juri yang ditugaskan memindai presensinya pada sesi lomba
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('attendance.scan', $this->activeSession), [
+                'token' => $this->assignedJudge->qr_token,
+            ]);
+
+        $response->assertOk()
+            ->assertJson([
+                'success' => true,
+                'code' => 'RECORDED',
+            ]);
+
+        $this->assertDatabaseHas('attendances', [
+            'attendance_session_id' => $this->activeSession->id,
+            'entity_type' => 'user',
+            'user_id' => $this->assignedJudge->id,
+        ]);
+
+        // Pindai ulang juri yang sama -> Ditolak (ALREADY_SCANNED)
+        $repeatResponse = $this->actingAs($this->admin)
+            ->postJson(route('attendance.scan', $this->activeSession), [
+                'token' => $this->assignedJudge->qr_token,
+            ]);
+
+        $repeatResponse->assertStatus(409)
+            ->assertJson([
+                'success' => false,
+                'code' => 'ALREADY_SCANNED',
+            ]);
+    }
+
+    public function test_competition_session_rejects_unassigned_judge(): void
+    {
+        // Juri yang tidak ditugaskan ke jadwal ini memindai QR pada sesi lomba
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('attendance.scan', $this->activeSession), [
+                'token' => $this->unassignedJudge->qr_token,
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'code' => 'JUDGE_NOT_ASSIGNED',
+                'attendee' => [
+                    'name' => $this->unassignedJudge->name,
+                    'id_number' => $this->unassignedJudge->id_number,
+                ],
+            ]);
+
+        $this->assertStringContainsString('tidak ditugaskan pada jadwal lomba ini', $response->json('message'));
+        $this->assertEquals(0, Attendance::where('attendance_session_id', $this->activeSession->id)->where('user_id', $this->unassignedJudge->id)->count());
+    }
+
+    public function test_competition_session_rejects_committee_attendance(): void
+    {
+        // Panitia pelaksana mencoba presensi pada sesi lomba -> Ditolak, data panitia tetap ditampilkan di flash card
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('attendance.scan', $this->activeSession), [
+                'token' => $this->committee->qr_token,
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'code' => 'COMMITTEE_NOT_ELIGIBLE',
+                'attendee' => [
+                    'name' => $this->committee->name,
+                    'id_number' => $this->committee->id_number,
+                ],
+            ]);
+
+        $this->assertStringContainsString('Panitia pelaksana tidak memerlukan absensi lomba', $response->json('message'));
+        $this->assertEquals(0, Attendance::where('attendance_session_id', $this->activeSession->id)->where('user_id', $this->committee->id)->count());
+    }
+
+    public function test_competition_session_rejects_chaperone_attendance(): void
+    {
+        $scoutGroup = ScoutGroup::first();
+        $chaperone = Chaperone::create([
+            'scout_group_id' => $scoutGroup->id,
+            'full_name' => 'Kak Pembina Pendamping',
+            'gender' => 'male',
+            'phone_number' => '081299998888',
+            'qr_token' => (string) Str::uuid(),
+            'id_number' => 'ID-CHAP001',
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('attendance.scan', $this->activeSession), [
+                'token' => $chaperone->qr_token,
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'code' => 'CHAPERONE_NOT_ELIGIBLE',
+            ]);
+
+        $this->assertStringContainsString('Pembina Pendamping tidak memerlukan absensi lomba', $response->json('message'));
+    }
+
+    public function test_manual_checkin_enforces_competition_rules_for_judge_and_committee(): void
+    {
+        // 1. Panitia input manual di sesi lomba -> Ditolak
+        $resCommittee = $this->actingAs($this->admin)
+            ->postJson(route('attendance.manual', $this->activeSession), [
+                'entity_type' => 'user',
+                'entity_id' => $this->committee->id,
+            ]);
+
+        $resCommittee->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'code' => 'COMMITTEE_NOT_ELIGIBLE',
+            ]);
+
+        // 2. Juri tidak ditugaskan input manual -> Ditolak
+        $resUnassigned = $this->actingAs($this->admin)
+            ->postJson(route('attendance.manual', $this->activeSession), [
+                'entity_type' => 'user',
+                'entity_id' => $this->unassignedJudge->id,
+            ]);
+
+        $resUnassigned->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'code' => 'JUDGE_NOT_ASSIGNED',
+            ]);
+
+        // 3. Juri yang ditugaskan input manual -> Berhasil
+        $resAssigned = $this->actingAs($this->admin)
+            ->postJson(route('attendance.manual', $this->activeSession), [
+                'entity_type' => 'user',
+                'entity_id' => $this->assignedJudge->id,
+            ]);
+
+        $resAssigned->assertOk()
+            ->assertJson([
+                'success' => true,
+                'code' => 'RECORDED',
+            ]);
+    }
+
+    public function test_search_candidates_in_competition_session_includes_assigned_judges(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->getJson(route('attendance.search', [
+                'session' => $this->activeSession->id,
+                'q' => substr($this->assignedJudge->name, 0, 4),
+            ]));
+
+        $response->assertOk();
+        $candidates = collect($response->json('candidates'));
+
+        // Juri yang ditugaskan harus muncul di kandidat sesi lomba
+        $found = $candidates->firstWhere('id', $this->assignedJudge->id);
+        $this->assertNotNull($found);
+        $this->assertEquals('user', $found['type']);
+        $this->assertEquals('Dewan Juri', $found['role_label']);
     }
 }

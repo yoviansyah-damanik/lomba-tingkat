@@ -116,17 +116,25 @@ class AttendanceScannerController extends Controller
             ], 403);
         }
 
-        $attendances = Attendance::with(['participant.patrol.scoutGroup', 'chaperone.scoutGroup', 'user', 'scannedBy'])
+        $attendances = Attendance::with(['participant.patrol.scoutGroup', 'patrol.scoutGroup', 'chaperone.scoutGroup', 'user', 'scannedBy'])
             ->where('attendance_session_id', $session->id)
             ->orderByDesc('scanned_at')
             ->limit(30)
             ->get()
             ->map(function ($att) {
+                $isParticipant = $att->entity_type === 'participant';
+                $patrol = $att->participant?->patrol ?: $att->patrol;
+                $patrolName = $isParticipant ? $patrol?->patrol_name : null;
+                $schoolName = $isParticipant ? $patrol?->scoutGroup?->school_name : null;
+
                 return [
                     'id' => $att->id,
+                    'entity_type' => $att->entity_type,
                     'name' => $att->entity_name,
                     'id_number' => $att->entity_id_number,
                     'role' => $att->entity_role,
+                    'patrol_name' => $patrolName,
+                    'school_name' => $schoolName,
                     'group' => $att->entity_group,
                     'photo_url' => $att->entity_photo_url,
                     'scanned_at' => $att->scanned_at->format('H:i:s').' WIB',

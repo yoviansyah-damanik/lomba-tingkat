@@ -64,7 +64,7 @@
     @endif
 
     {{-- Stats Cards Overview --}}
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <x-stat-card
             label="Total Sesi Presensi"
             value="{{ $stats['total_sessions'] }}"
@@ -73,17 +73,24 @@
         />
 
         <x-stat-card
-            label="Sesi Aktif Siap Scan"
-            value="{{ $stats['active_sessions'] }}"
-            description="Peserta dapat memindai kehadiran"
+            label="Presensi Dibuka"
+            value="{{ $stats['open_sessions'] }}"
+            description="Sedang berlangsung / aktif scan"
             color="emerald"
         />
 
         <x-stat-card
-            label="Total Presensi Hari Ini"
-            value="{{ $stats['total_attendances_today'] }}"
-            description="Peserta tercatat masuk pos"
-            color="blue"
+            label="Presensi Belum Buka"
+            value="{{ $stats['upcoming_sessions'] }}"
+            description="Menunggu jadwal dimulai"
+            color="amber"
+        />
+
+        <x-stat-card
+            label="Presensi Telah Ditutup"
+            value="{{ $stats['closed_sessions'] }}"
+            description="Selesai atau dinonaktifkan"
+            color="rose"
         />
     </div>
 
@@ -96,19 +103,26 @@
                     placeholder="Cari sesi presensi, pos arena, atau cabang lomba..." clearable />
             </div>
 
-            <div class="flex items-center gap-2">
-                <button type="button" wire:click="$set('statusFilter', 'all')"
-                    class="rounded-xl px-3 py-1.5 text-xs font-semibold transition-all {{ $statusFilter === 'all' ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300' }}">
-                    Semua
-                </button>
-                <button type="button" wire:click="$set('statusFilter', 'active')"
-                    class="rounded-xl px-3 py-1.5 text-xs font-semibold transition-all {{ $statusFilter === 'active' ? 'bg-emerald-600 text-white' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300' }}">
-                    Sesi Aktif
-                </button>
-                <button type="button" wire:click="$set('statusFilter', 'inactive')"
-                    class="rounded-xl px-3 py-1.5 text-xs font-semibold transition-all {{ $statusFilter === 'inactive' ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300' }}">
-                    Sesi Nonaktif
-                </button>
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <flux:button type="button" size="xs" wire:click="$set('statusFilter', 'all')"
+                    :variant="$statusFilter === 'all' ? 'primary' : 'subtle'">
+                    Semua ({{ $stats['total_sessions'] }})
+                </flux:button>
+                <flux:button type="button" size="xs" wire:click="$set('statusFilter', 'open')"
+                    :variant="$statusFilter === 'open' ? 'primary' : 'subtle'"
+                    class="{{ $statusFilter === 'open' ? '!bg-emerald-600 hover:!bg-emerald-700 !text-white' : '' }}">
+                    Dibuka ({{ $stats['open_sessions'] }})
+                </flux:button>
+                <flux:button type="button" size="xs" wire:click="$set('statusFilter', 'upcoming')"
+                    :variant="$statusFilter === 'upcoming' ? 'primary' : 'subtle'"
+                    class="{{ $statusFilter === 'upcoming' ? '!bg-amber-600 hover:!bg-amber-700 !text-white' : '' }}">
+                    Belum Buka ({{ $stats['upcoming_sessions'] }})
+                </flux:button>
+                <flux:button type="button" size="xs" wire:click="$set('statusFilter', 'closed')"
+                    :variant="$statusFilter === 'closed' ? 'primary' : 'subtle'"
+                    class="{{ $statusFilter === 'closed' ? '!bg-rose-600 hover:!bg-rose-700 !text-white' : '' }}">
+                    Ditutup ({{ $stats['closed_sessions'] }})
+                </flux:button>
             </div>
         </div>
 
@@ -1150,10 +1164,26 @@
                                             </span>
                                         </div>
 
-                                        <div class="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-400 truncate">
-                                            <flux:icon name="building-office-2" class="size-3.5 text-zinc-400 shrink-0" />
-                                            <span class="truncate">{{ $att->entity_group }}</span>
-                                        </div>
+                                        @if($isParticipant)
+                                            @php
+                                                $patrol = $att->participant?->patrol ?: $att->patrol;
+                                                $patrolName = $patrol?->patrol_name;
+                                                $schoolName = $patrol?->scoutGroup?->school_name;
+                                            @endphp
+                                            <div class="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-400 truncate">
+                                                @if($patrolName)
+                                                    <span class="font-semibold text-amber-700 dark:text-amber-400">Regu {{ $patrolName }}</span>
+                                                    <span>&bull;</span>
+                                                @endif
+                                                <flux:icon name="building-office-2" class="size-3.5 text-zinc-400 shrink-0" />
+                                                <span class="truncate">{{ $schoolName ?: '-' }}</span>
+                                            </div>
+                                        @else
+                                            <div class="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-400 truncate">
+                                                <flux:icon name="building-office-2" class="size-3.5 text-zinc-400 shrink-0" />
+                                                <span class="truncate">{{ $att->entity_group }}</span>
+                                            </div>
+                                        @endif
 
                                         <div class="mt-1 flex items-center gap-3 text-[11px] text-zinc-500 dark:text-zinc-400 flex-wrap">
                                             <span class="flex items-center gap-1 font-mono">

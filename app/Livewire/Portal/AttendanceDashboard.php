@@ -5,6 +5,7 @@ namespace App\Livewire\Portal;
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
 use App\Models\CompetitionSchedule;
+use Carbon\Carbon;
 use Flux\Flux;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -22,38 +23,59 @@ class AttendanceDashboard extends Component
     use WithPagination;
 
     public string $search = '';
+
     public string $statusFilter = 'all';
 
     // State Modal Tambah Sesi Presensi Kehadiran (Khusus Admin)
     public bool $showCreateModal = false;
+
     public string $newTitle = '';
+
     public string $newSessionType = 'participant';
+
     public string $newOpenedAt = '';
+
     public string $newClosedAt = '';
+
     public bool $newIsActive = true;
 
     // State Modal Edit Sesi Presensi Kehadiran (Khusus Admin)
     public bool $showEditModal = false;
+
     public ?string $editingSessionId = null;
+
     public string $editTitle = '';
+
     public string $editSessionType = 'participant';
+
     public ?string $editScheduleId = null;
+
     public string $editOpenedAt = '';
+
     public string $editClosedAt = '';
+
     public bool $editIsActive = true;
 
     // Properti Penyesuaian Jadwal Terkait (jika terhubung ke jadwal lomba)
     public string $editScheduleName = '';
+
     public string $editScheduleArena = '';
+
     public string $editScheduleStartTime = '';
+
     public string $editScheduleEndTime = '';
+
     public string $editScheduleGenderCategory = 'all';
+
     public string $editScheduleStatus = 'scheduled';
 
     // State Modal Log Presensi Interaktif
     public bool $showLogsModal = false;
+
     public ?string $selectedLogsSessionId = null;
+
     public string $logsSearch = '';
+
     public string $logsStatusFilter = 'all';
 
     protected $queryString = [
@@ -75,11 +97,15 @@ class AttendanceDashboard extends Component
     public function stats(): array
     {
         $user = auth()->user();
+        $base = AttendanceSession::accessibleBy($user);
 
         return [
-            'total_sessions' => AttendanceSession::accessibleBy($user)->count(),
-            'active_sessions' => AttendanceSession::accessibleBy($user)->where('is_active', true)->count(),
-            'total_attendances_today' => Attendance::whereHas('session', fn($q) => $q->accessibleBy($user))->whereDate('scanned_at', today())->count(),
+            'total_sessions' => (clone $base)->count(),
+            'open_sessions' => (clone $base)->open()->count(),
+            'upcoming_sessions' => (clone $base)->notYetOpen()->count(),
+            'closed_sessions' => (clone $base)->closed()->count(),
+            'active_sessions' => (clone $base)->where('is_active', true)->count(),
+            'total_attendances_today' => Attendance::whereHas('session', fn ($q) => $q->accessibleBy($user))->whereDate('scanned_at', today())->count(),
         ];
     }
 
@@ -91,9 +117,16 @@ class AttendanceDashboard extends Component
         $query = AttendanceSession::accessibleBy($user)
             ->with(['schedule.competition', 'attendances'])
             ->orderByDesc('is_active')
+            ->orderBy('opened_at')
             ->orderBy('title');
 
-        if ($this->statusFilter === 'active') {
+        if ($this->statusFilter === 'open') {
+            $query->open();
+        } elseif ($this->statusFilter === 'upcoming' || $this->statusFilter === 'not_open') {
+            $query->notYetOpen();
+        } elseif ($this->statusFilter === 'closed') {
+            $query->closed();
+        } elseif ($this->statusFilter === 'active') {
             $query->where('is_active', true);
         } elseif ($this->statusFilter === 'inactive') {
             $query->where('is_active', false);
@@ -165,8 +198,8 @@ class AttendanceDashboard extends Component
             'is_competition' => false,
             'session_type' => $this->newSessionType,
             'title' => $this->newTitle,
-            'opened_at' => $this->newOpenedAt ? \Carbon\Carbon::parse($this->newOpenedAt) : now(),
-            'closed_at' => $this->newClosedAt ? \Carbon\Carbon::parse($this->newClosedAt) : null,
+            'opened_at' => $this->newOpenedAt ? Carbon::parse($this->newOpenedAt) : now(),
+            'closed_at' => $this->newClosedAt ? Carbon::parse($this->newClosedAt) : null,
             'is_active' => $this->newIsActive,
         ]);
 
@@ -259,8 +292,8 @@ class AttendanceDashboard extends Component
             'session_type' => $this->editSessionType,
             'is_competition' => ! empty($this->editScheduleId),
             'competition_schedule_id' => $this->editScheduleId ?: null,
-            'opened_at' => $this->editOpenedAt ? \Carbon\Carbon::parse($this->editOpenedAt) : null,
-            'closed_at' => $this->editClosedAt ? \Carbon\Carbon::parse($this->editClosedAt) : null,
+            'opened_at' => $this->editOpenedAt ? Carbon::parse($this->editOpenedAt) : null,
+            'closed_at' => $this->editClosedAt ? Carbon::parse($this->editClosedAt) : null,
             'is_active' => $this->editIsActive,
         ]);
 
@@ -276,10 +309,10 @@ class AttendanceDashboard extends Component
                     $scheduleUpdate['arena_location'] = $this->editScheduleArena;
                 }
                 if (! empty($this->editScheduleStartTime)) {
-                    $scheduleUpdate['start_time'] = \Carbon\Carbon::parse($this->editScheduleStartTime);
+                    $scheduleUpdate['start_time'] = Carbon::parse($this->editScheduleStartTime);
                 }
                 if (! empty($this->editScheduleEndTime)) {
-                    $scheduleUpdate['end_time'] = \Carbon\Carbon::parse($this->editScheduleEndTime);
+                    $scheduleUpdate['end_time'] = Carbon::parse($this->editScheduleEndTime);
                 }
                 if (! empty($this->editScheduleGenderCategory)) {
                     $scheduleUpdate['gender_category'] = $this->editScheduleGenderCategory;
@@ -313,7 +346,7 @@ class AttendanceDashboard extends Component
         Flux::toast(
             variant: 'success',
             heading: 'Sesi Presensi Diperbarui',
-            text: "Perubahan sesi presensi dan jadwal berhasil disimpan."
+            text: 'Perubahan sesi presensi dan jadwal berhasil disimpan.'
         );
     }
 
@@ -427,8 +460,8 @@ class AttendanceDashboard extends Component
             'user',
             'scannedBy',
         ])
-        ->where('attendance_session_id', $this->selectedLogsSessionId)
-        ->orderByDesc('scanned_at');
+            ->where('attendance_session_id', $this->selectedLogsSessionId)
+            ->orderByDesc('scanned_at');
 
         if ($this->logsStatusFilter !== 'all') {
             $query->where('status', $this->logsStatusFilter);
@@ -443,13 +476,13 @@ class AttendanceDashboard extends Component
                             ->orWhere('id_number', 'like', "%{$term}%")
                             ->orWhereHas('patrol', function ($ptq) use ($term) {
                                 $ptq->where('patrol_name', 'like', "%{$term}%")
-                                    ->orWhereHas('scoutGroup', fn($sq) => $sq->where('school_name', 'like', "%{$term}%"));
+                                    ->orWhereHas('scoutGroup', fn ($sq) => $sq->where('school_name', 'like', "%{$term}%"));
                             });
                     })
                     ->orWhereHas('chaperone', function ($cq) use ($term) {
                         $cq->where('full_name', 'like', "%{$term}%")
                             ->orWhere('id_number', 'like', "%{$term}%")
-                            ->orWhereHas('scoutGroup', fn($sq) => $sq->where('school_name', 'like', "%{$term}%"));
+                            ->orWhereHas('scoutGroup', fn ($sq) => $sq->where('school_name', 'like', "%{$term}%"));
                     })
                     ->orWhereHas('user', function ($uq) use ($term) {
                         $uq->where('name', 'like', "%{$term}%")

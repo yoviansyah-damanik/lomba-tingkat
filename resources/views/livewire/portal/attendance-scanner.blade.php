@@ -343,9 +343,9 @@
                                     @if($session->schedule?->isPatrol())
                                         <span class="text-[10px] sm:text-[11px] text-amber-200/90 font-medium pl-2 border-l border-zinc-700">Khusus PINRU / WAPINRU</span>
                                     @elseif($session->schedule?->isGroup())
-                                        <span class="text-[10px] sm:text-[11px] text-indigo-300 font-medium pl-2 border-l border-zinc-700">Wajib Seluruh Peserta</span>
+                                        <span class="text-[10px] sm:text-[11px] text-indigo-300 font-medium pl-2 border-l border-zinc-700">Kelompok ({{ $session->schedule->competition?->max_participants ?: ($session->schedule->competition?->min_participants ?: 'N') }} Peserta)</span>
                                     @elseif($session->schedule?->isIndividual())
-                                        <span class="text-[10px] sm:text-[11px] text-amber-200/90 font-medium pl-2 border-l border-zinc-700">Perwakilan Regu</span>
+                                        <span class="text-[10px] sm:text-[11px] text-amber-200/90 font-medium pl-2 border-l border-zinc-700">1 Peserta Perwakilan Regu</span>
                                     @endif
                                 </div>
                             </div>
@@ -439,12 +439,26 @@
                                     </div>
                                     <h3 class="text-base font-black text-zinc-900 dark:text-zinc-100 truncate mt-0.5" x-text="lastAttendee.name"></h3>
                                     <p class="text-xs text-zinc-600 dark:text-zinc-400 truncate mt-0.5">
-                                        <span x-text="lastAttendee.school_name"></span> &bull; <span x-text="lastAttendee.patrol_name"></span>
+                                        <span x-text="lastAttendee.school_name"></span><span x-show="lastAttendee.patrol_name && lastAttendee.patrol_name !== '-'"> &bull; <span x-text="lastAttendee.patrol_name"></span></span>
                                     </p>
-                                    <div class="mt-2 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
-                                        <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                                        <span x-text="'Pukul ' + lastAttendee.scanned_at_formatted"></span>
-                                    </div>
+                                    <template x-if="lastResult && lastResult.success">
+                                        <div class="mt-2 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                                            <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                            <span x-text="'Hadir Pukul ' + lastAttendee.scanned_at_formatted"></span>
+                                        </div>
+                                    </template>
+                                    <template x-if="lastResult && !lastResult.success && lastResult.code === 'ALREADY_SCANNED'">
+                                        <div class="mt-2 text-[11px] font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                                            <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                            <span x-text="'Tercatat Hadir: ' + lastAttendee.scanned_at_formatted"></span>
+                                        </div>
+                                    </template>
+                                    <template x-if="lastResult && !lastResult.success && lastResult.code !== 'ALREADY_SCANNED'">
+                                        <div class="mt-2 text-[11px] font-semibold text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
+                                            <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                            <span x-text="'Dipindai Pukul ' + lastAttendee.scanned_at_formatted"></span>
+                                        </div>
+                                    </template>
                                 </div>
                             </div>
                         </template>
@@ -524,6 +538,11 @@
                                             <div class="text-[10px] text-zinc-500 dark:text-zinc-400 truncate">
                                                 <span x-text="item.id_number"></span> &bull; <span x-text="item.role"></span>
                                             </div>
+                                            <template x-if="item.entity_type === 'participant' && (item.patrol_name || item.school_name)">
+                                                <div class="text-[10px] text-zinc-600 dark:text-zinc-400 truncate mt-0.5">
+                                                    <span class="font-semibold text-amber-700 dark:text-amber-400" x-text="item.patrol_name ? (item.patrol_name.toLowerCase().startsWith('regu ') ? item.patrol_name : 'Regu ' + item.patrol_name) : ''"></span><span x-show="item.patrol_name && item.school_name"> &bull; </span><span x-text="item.school_name"></span>
+                                                </div>
+                                            </template>
                                         </div>
                                     </div>
                                     <div class="text-right shrink-0 flex items-center gap-2">

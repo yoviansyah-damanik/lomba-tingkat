@@ -2,15 +2,22 @@
 
 namespace App\Models;
 
+use App\Enums\RoleEnum;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -56,7 +63,7 @@ class User extends Authenticatable implements PasskeyUser
     {
         do {
             $digits = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            $code = 'A-' . $digits;
+            $code = 'A-'.$digits;
         } while (
             static::where('id_number', $code)->exists()
             || Participant::where('id_number', $code)->exists()
@@ -110,20 +117,30 @@ class User extends Authenticatable implements PasskeyUser
     /**
      * Relasi many-to-many ke peran (Role)
      */
-    public function roles(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class)->using(RoleUser::class)->withTimestamps();
     }
 
     /**
+     * Scope untuk menyaring pengguna berdasarkan nama peran
+     */
+    public function scopeRole(Builder $query, string|RoleEnum $role): Builder
+    {
+        $roleName = $role instanceof RoleEnum ? $role->value : $role;
+
+        return $query->whereHas('roles', fn ($q) => $q->where('name', $roleName));
+    }
+
+    /**
      * Memeriksa apakah pengguna memiliki peran tertentu
      */
-    public function hasRole(string|\App\Enums\RoleEnum $role): bool
+    public function hasRole(string|RoleEnum $role): bool
     {
-        $roleName = $role instanceof \App\Enums\RoleEnum ? $role->value : $role;
+        $roleName = $role instanceof RoleEnum ? $role->value : $role;
 
         // Superadmin mewarisi seluruh wewenang Administrator
-        if ($roleName === \App\Enums\RoleEnum::Admin->value && $this->roles->contains('name', \App\Enums\RoleEnum::Superadmin->value)) {
+        if ($roleName === RoleEnum::Admin->value && $this->roles->contains('name', RoleEnum::Superadmin->value)) {
             return true;
         }
 
@@ -147,9 +164,9 @@ class User extends Authenticatable implements PasskeyUser
     /**
      * Menetapkan peran ke pengguna
      */
-    public function assignRole(string|\App\Enums\RoleEnum $role): void
+    public function assignRole(string|RoleEnum $role): void
     {
-        $roleName = $role instanceof \App\Enums\RoleEnum ? $role->value : $role;
+        $roleName = $role instanceof RoleEnum ? $role->value : $role;
         $roleModel = Role::firstOrCreate(
             ['name' => $roleName],
             ['label' => ucfirst(str_replace('_', ' ', $roleName))]
@@ -161,9 +178,9 @@ class User extends Authenticatable implements PasskeyUser
     /**
      * Melepas peran dari pengguna
      */
-    public function removeRole(string|\App\Enums\RoleEnum $role): void
+    public function removeRole(string|RoleEnum $role): void
     {
-        $roleName = $role instanceof \App\Enums\RoleEnum ? $role->value : $role;
+        $roleName = $role instanceof RoleEnum ? $role->value : $role;
         $roleModel = Role::where('name', $roleName)->first();
 
         if ($roleModel) {
@@ -176,7 +193,7 @@ class User extends Authenticatable implements PasskeyUser
      */
     public function isSuperadmin(): bool
     {
-        return $this->hasRole(\App\Enums\RoleEnum::Superadmin);
+        return $this->hasRole(RoleEnum::Superadmin);
     }
 
     /**
@@ -184,7 +201,7 @@ class User extends Authenticatable implements PasskeyUser
      */
     public function isAdmin(): bool
     {
-        return $this->hasRole(\App\Enums\RoleEnum::Admin);
+        return $this->hasRole(RoleEnum::Admin);
     }
 
     /**
@@ -192,7 +209,7 @@ class User extends Authenticatable implements PasskeyUser
      */
     public function isAdministrator(): bool
     {
-        return $this->roles->contains('name', \App\Enums\RoleEnum::Admin->value);
+        return $this->roles->contains('name', RoleEnum::Admin->value);
     }
 
     /**
@@ -216,7 +233,7 @@ class User extends Authenticatable implements PasskeyUser
      */
     public function isCommittee(): bool
     {
-        return $this->hasRole(\App\Enums\RoleEnum::Committee);
+        return $this->hasRole(RoleEnum::Committee);
     }
 
     /**
@@ -224,7 +241,7 @@ class User extends Authenticatable implements PasskeyUser
      */
     public function isJudge(): bool
     {
-        return $this->hasRole(\App\Enums\RoleEnum::Judge);
+        return $this->hasRole(RoleEnum::Judge);
     }
 
     /**
@@ -232,7 +249,7 @@ class User extends Authenticatable implements PasskeyUser
      */
     public function isCommitteeAndJudge(): bool
     {
-        return $this->hasRole(\App\Enums\RoleEnum::Committee) && $this->hasRole(\App\Enums\RoleEnum::Judge);
+        return $this->hasRole(RoleEnum::Committee) && $this->hasRole(RoleEnum::Judge);
     }
 
     /**
@@ -256,7 +273,7 @@ class User extends Authenticatable implements PasskeyUser
      */
     public function isScoutGroup(): bool
     {
-        return $this->hasRole(\App\Enums\RoleEnum::ScoutGroup);
+        return $this->hasRole(RoleEnum::ScoutGroup);
     }
 
     /**
@@ -264,7 +281,7 @@ class User extends Authenticatable implements PasskeyUser
      */
     public function isParticipant(): bool
     {
-        return $this->hasRole(\App\Enums\RoleEnum::Participant);
+        return $this->hasRole(RoleEnum::Participant);
     }
 
     /**
@@ -278,7 +295,7 @@ class User extends Authenticatable implements PasskeyUser
             'regex:/^[A-Za-z0-9._-]+$/',
             'min:3',
             'max:50',
-            \Illuminate\Validation\Rule::unique('users', 'username')->ignore($ignoreId),
+            Rule::unique('users', 'username')->ignore($ignoreId),
         ];
     }
 
@@ -309,7 +326,7 @@ class User extends Authenticatable implements PasskeyUser
      */
     public function isChaperone(): bool
     {
-        return $this->hasRole(\App\Enums\RoleEnum::Chaperone);
+        return $this->hasRole(RoleEnum::Chaperone);
     }
 
     /**
@@ -324,7 +341,7 @@ class User extends Authenticatable implements PasskeyUser
     /**
      * Data peserta yang ditautkan ke akun peserta
      */
-    public function participant(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function participant(): BelongsTo
     {
         return $this->belongsTo(Participant::class, 'participant_id');
     }
@@ -332,7 +349,7 @@ class User extends Authenticatable implements PasskeyUser
     /**
      * Data bindamping yang ditautkan ke akun bindamping
      */
-    public function chaperone(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function chaperone(): HasOne
     {
         return $this->hasOne(Chaperone::class, 'user_id');
     }
@@ -340,7 +357,7 @@ class User extends Authenticatable implements PasskeyUser
     /**
      * Relasi penugasan juri ke jadwal sesi lomba
      */
-    public function judgeAssignments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function judgeAssignments(): HasMany
     {
         return $this->hasMany(JudgeAssignment::class, 'user_id');
     }
@@ -348,7 +365,7 @@ class User extends Authenticatable implements PasskeyUser
     /**
      * Relasi ke pangkalan Gugus Depan
      */
-    public function scoutGroup(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function scoutGroup(): HasOne
     {
         return $this->hasOne(ScoutGroup::class, 'user_id');
     }
@@ -356,7 +373,7 @@ class User extends Authenticatable implements PasskeyUser
     /**
      * Relasi penilaian juri
      */
-    public function assessments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function assessments(): HasMany
     {
         return $this->hasMany(Assessment::class, 'judge_id');
     }
@@ -364,7 +381,7 @@ class User extends Authenticatable implements PasskeyUser
     /**
      * Relasi langganan Web Push Notification
      */
-    public function pushSubscriptions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function pushSubscriptions(): HasMany
     {
         return $this->hasMany(PushSubscription::class);
     }

@@ -2,15 +2,23 @@
 
 namespace Tests\Feature;
 
+use App\Enums\PatrolGenderEnum;
+use App\Enums\PatrolRoleEnum;
 use App\Enums\RoleEnum;
 use App\Livewire\Portal\AttendanceDashboard;
+use App\Models\Attendance;
 use App\Models\AttendanceSession;
 use App\Models\Competition;
 use App\Models\CompetitionSchedule;
 use App\Models\Event;
+use App\Models\Participant;
+use App\Models\Patrol;
+use App\Models\ScoutGroup;
 use App\Models\User;
+use Database\Seeders\EventSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -19,14 +27,16 @@ class AttendanceDashboardLivewireTest extends TestCase
     use RefreshDatabase;
 
     protected User $admin;
+
     protected User $committee;
+
     protected Event $event;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->seed(RoleSeeder::class);
-        $this->seed(\Database\Seeders\EventSeeder::class);
+        $this->seed(EventSeeder::class);
 
         $this->event = Event::first();
 
@@ -288,7 +298,7 @@ class AttendanceDashboardLivewireTest extends TestCase
             'is_active' => true,
         ]);
 
-        $scoutGroup = \App\Models\ScoutGroup::create([
+        $scoutGroup = ScoutGroup::create([
             'user_id' => $this->admin->id,
             'registration_code' => 'REG-SMP-LOG',
             'school_name' => 'SMP Negeri 2 Padangsidimpuan',
@@ -300,26 +310,26 @@ class AttendanceDashboardLivewireTest extends TestCase
             'verification_status' => 'verified',
         ]);
 
-        $patrol = \App\Models\Patrol::create([
+        $patrol = Patrol::create([
             'scout_group_id' => $scoutGroup->id,
             'patrol_name' => 'Garuda Sakti',
-            'gender_category' => \App\Enums\PatrolGenderEnum::Boys,
+            'gender_category' => PatrolGenderEnum::Boys,
             'group_number' => '02.001',
         ]);
 
-        $participant = \App\Models\Participant::create([
+        $participant = Participant::create([
             'patrol_id' => $patrol->id,
             'full_name' => 'Ahmad Fakhri',
             'gender' => 'male',
-            'role_in_patrol' => \App\Enums\PatrolRoleEnum::PatrolLeader,
+            'role_in_patrol' => PatrolRoleEnum::PatrolLeader,
             'birth_place' => 'Padangsidimpuan',
             'birth_date' => '2011-04-12',
-            'qr_token' => (string) \Illuminate\Support\Str::uuid(),
+            'qr_token' => (string) Str::uuid(),
             'id_number' => 'ID-FAKHRI01',
             'status' => 'verified',
         ]);
 
-        $attendance = \App\Models\Attendance::create([
+        $attendance = Attendance::create([
             'attendance_session_id' => $session->id,
             'entity_type' => 'participant',
             'participant_id' => $participant->id,
@@ -354,7 +364,7 @@ class AttendanceDashboardLivewireTest extends TestCase
             'is_active' => true,
         ]);
 
-        $attendance = \App\Models\Attendance::create([
+        $attendance = Attendance::create([
             'attendance_session_id' => $session->id,
             'entity_type' => 'user',
             'user_id' => $this->admin->id,
@@ -371,5 +381,83 @@ class AttendanceDashboardLivewireTest extends TestCase
 
         $this->assertEquals('late', $attendance->fresh()->status);
     }
-}
 
+    /**
+     * Memastikan dashboard dapat memfilter sesi berdasarkan status Dibuka, Belum Buka, dan Ditutup
+     */
+    public function test_attendance_dashboard_can_filter_by_schedule_status(): void
+    {
+        $comp = Competition::create([
+            'event_id' => $this->event->id,
+            'title' => 'Lomba Pionering Status Test',
+            'code' => 'PION-STAT',
+            'category' => 'ketangkasan',
+            'participant_type' => 'patrol',
+            'min_participants' => 8,
+            'max_participants' => 8,
+            'is_published' => true,
+        ]);
+
+        // Sesi 1: Dibuka (aktif, opened_at lampau, closed_at masa depan)
+        $openSession = AttendanceSession::create([
+            'title' => 'Sesi Sedang Dibuka',
+            'session_type' => 'participant',
+            'is_competition' => false,
+            'is_active' => true,
+            'opened_at' => now()->subHour(),
+            'closed_at' => now()->addHour(),
+        ]);
+
+        // Sesi 2: Belum Buka (aktif, opened_at masa depan)
+        $upcomingSession = AttendanceSession::create([
+            'title' => 'Sesi Belum Buka Nanti',
+            'session_type' => 'participant',
+            'is_competition' => false,
+            'is_active' => true,
+            'opened_at' => now()->addHours(2),
+            'closed_at' => now()->addHours(4),
+        ]);
+
+        // Sesi 3: Ditutup (closed_at lampau)
+        $closedSession = AttendanceSession::create([
+            'title' => 'Sesi Sudah Ditutup',
+            'session_type' => 'participant',
+            'is_competition' => false,
+            'is_active' => true,
+            'opened_at' => now()->subHours(4),
+            'closed_at' => now()->subHours(2),
+        ]);
+
+        // Filter 'all'
+        Livewire::actingAs($this->admin)
+            ->test(AttendanceDashboard::class)
+            ->set('statusFilter', 'all')
+            ->assertSee('Sesi Sedang Dibuka')
+            ->assertSee('Sesi Belum Buka Nanti')
+            ->assertSee('Sesi Sudah Ditutup');
+
+        // Filter 'open' (Dibuka)
+        Livewire::actingAs($this->admin)
+            ->test(AttendanceDashboard::class)
+            ->set('statusFilter', 'open')
+            ->assertSee('Sesi Sedang Dibuka')
+            ->assertDontSee('Sesi Belum Buka Nanti')
+            ->assertDontSee('Sesi Sudah Ditutup');
+
+        // Filter 'upcoming' (Belum Buka)
+        Livewire::actingAs($this->admin)
+            ->test(AttendanceDashboard::class)
+            ->set('statusFilter', 'upcoming')
+            ->assertDontSee('Sesi Sedang Dibuka')
+            ->assertSee('Sesi Belum Buka Nanti')
+            ->assertDontSee('Sesi Sudah Ditutup');
+
+        // Filter 'closed' (Ditutup)
+        Livewire::actingAs($this->admin)
+            ->test(AttendanceDashboard::class)
+            ->set('statusFilter', 'closed')
+            ->assertDontSee('Sesi Sedang Dibuka')
+            ->assertDontSee('Sesi Belum Buka Nanti')
+            ->assertSee('Sesi Sudah Ditutup');
+    }
+}
