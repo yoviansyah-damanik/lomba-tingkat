@@ -85,6 +85,11 @@
                             </flux:button>
                         </template>
                         <template x-if="mode === 'iframe'">
+                            <flux:button size="sm" variant="primary" icon="printer" x-on:click="$refs.frame?.contentWindow?.print()">
+                                Cetak A4
+                            </flux:button>
+                        </template>
+                        <template x-if="mode === 'iframe'">
                             <flux:button size="sm" icon="arrow-top-right-on-square" x-bind:href="url" target="_blank" rel="noopener">
                                 Buka Tab Baru
                             </flux:button>
@@ -96,7 +101,7 @@
                 </div>
 
                 <template x-if="mode === 'iframe' && url">
-                    <iframe :src="url" title="Pratinjau ID Card" class="min-h-0 w-full flex-1 border-0 bg-[#0f172a]"></iframe>
+                    <iframe x-ref="frame" :src="url" title="Pratinjau ID Card" class="min-h-0 w-full flex-1 border-0 bg-[#0f172a]"></iframe>
                 </template>
 
                 <div x-ref="stage" x-show="mode === 'clone'" class="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-[#0f172a] p-4" x-on:click.self="close()"></div>

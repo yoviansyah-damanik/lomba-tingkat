@@ -18,9 +18,17 @@ class DigitalCardService
     /**
      * Admin, Panitia, atau Dewan Juri boleh membuka kartu seluruh kontingen
      */
-    private static function isOfficial(?User $user): bool
+    public static function isOfficial(?User $user): bool
     {
-        return $user && ($user->isAdmin() || $user->isCommittee() || $user->isJudge());
+        return (bool) ($user && ($user->isAdmin() || $user->isCommittee() || $user->isJudge()));
+    }
+
+    /**
+     * Pastikan pengguna adalah aparatur resmi (Admin, Panitia, atau Dewan Juri)
+     */
+    public function authorizeOfficial(?User $user, string $message = 'Akses ditolak.'): void
+    {
+        abort_unless(self::isOfficial($user), 403, $message);
     }
 
     /**
@@ -51,11 +59,17 @@ class DigitalCardService
     /**
      * Data satu kartu peserta untuk tampilan batch
      */
-    public function participantItem(Participant $participant, Patrol $patrol): array
+    public function participantItem(Participant $participant, Patrol $patrol, ?ScoutGroup $scoutGroup = null): array
     {
         $isBoys = $patrol->isBoys();
+        $sg = $scoutGroup ?? $patrol->scoutGroup;
+        $schoolName = $sg?->school_name ?? '-';
+        $kwarranName = $sg?->kwarran_name ?? 'Padangsidimpuan';
+        $groupNumber = $patrol->group_number ?: ($sg?->group_number ?? '-');
+        $contact = $participant->phone ?: ($participant->parent_phone ?: '-');
 
         return [
+            'type' => 'participant',
             'group' => 'Regu '.$patrol->patrol_name.' ('.($isBoys ? 'Putra' : 'Putri').')',
             'theme' => $isBoys ? 'boys' : 'girls',
             'patrol_name' => $patrol->patrol_name,
@@ -68,8 +82,16 @@ class DigitalCardService
             'qrDataUri' => $this->qr($participant->qr_token, 180),
             'role' => $participant->isLeader() ? 'leader' : ($participant->isAssistantLeader() ? 'assistant_leader' : 'member'),
             'category_label' => $isBoys ? 'PESERTA PENGGALANG PUTRA' : 'PESERTA PENGGALANG PUTRI',
-            'group_number' => $patrol->group_number,
-            'contact' => $participant->phone ?: ($participant->parent_phone ?: '-'),
+            'group_number' => $groupNumber,
+            'school_name' => $schoolName,
+            'kwarran_name' => $kwarranName,
+            'contact' => $contact,
+            'rows' => [
+                'Nomor Gudep' => $groupNumber,
+                'Pangkalan' => $schoolName,
+                'Kwartir Ranting' => $kwarranName,
+                'Kontak/WA' => $contact,
+            ],
         ];
     }
 
@@ -79,11 +101,17 @@ class DigitalCardService
     public function chaperoneItem(Chaperone $chaperone, ScoutGroup $scoutGroup): array
     {
         $isMale = $chaperone->gender === 'male';
+        $groupNumber = $chaperone->group_number ?: ($scoutGroup->group_number ?? '-');
+        $schoolName = $scoutGroup->school_name ?? '-';
+        $kwarranName = $scoutGroup->kwarran_name ?? 'Padangsidimpuan';
+        $contact = $chaperone->phone_number ?: '-';
 
         return [
+            'type' => 'chaperone',
             'group' => 'Pembina Pendamping',
             'theme' => $isMale ? 'chaperone-male' : 'chaperone-female',
             'patrol_name' => null,
+            'npp' => null,
             'name' => $chaperone->full_name,
             'id_number' => $chaperone->id_number ?: 'ID-BINDAMPING',
             'scout_id' => $chaperone->scout_id,
@@ -91,9 +119,61 @@ class DigitalCardService
             'qr_token' => $chaperone->qr_token,
             'qrDataUri' => $this->qr($chaperone->qr_token, 180),
             'role' => null,
-            'category_label' => 'BINDAMPING '.($isMale ? 'PUTRA' : 'PUTRI'),
-            'group_number' => $chaperone->group_number ?: ($scoutGroup->group_number ?? '-'),
-            'contact' => $chaperone->phone_number ?: '-',
+            'category_label' => 'PEMBINA PENDAMPING '.($isMale ? 'PUTRA' : 'PUTRI'),
+            'group_number' => $groupNumber,
+            'school_name' => $schoolName,
+            'kwarran_name' => $kwarranName,
+            'contact' => $contact,
+            'rows' => [
+                'Nomor Gudep' => $groupNumber,
+                'Pangkalan' => $schoolName,
+                'Kwartir Ranting' => $kwarranName,
+                'Kontak/WA' => $contact,
+            ],
+        ];
+    }
+
+    /**
+     * Data satu kartu aparatur (Panitia Pelaksana / Dewan Juri) untuk tampilan batch A4
+     */
+    public function staffItem(User $staff): array
+    {
+        $isJudge = $staff->isJudge();
+        $isCommittee = $staff->isCommittee();
+        $roleName = $isJudge && $isCommittee
+            ? 'PANITIA PELAKSANA & DEWAN JURI'
+            : ($isJudge ? 'DEWAN JURI PERLOMBAAN' : 'PANITIA PELAKSANA');
+        $groupName = $isJudge && $isCommittee
+            ? 'Panitia Pelaksana & Dewan Juri'
+            : ($isJudge ? 'Dewan Juri Perlombaan' : 'Panitia Pelaksana');
+        $institution = $staff->institution ?? 'Kwartir Cabang Kota Padangsidimpuan';
+        $kwarran = $staff->kwarran ?? 'Padangsidimpuan';
+        $contact = $staff->phone_number ?: '-';
+
+        return [
+            'type' => 'staff',
+            'group' => $groupName,
+            'theme' => $isJudge ? 'judge' : 'staff',
+            'patrol_name' => null,
+            'npp' => null,
+            'name' => $staff->name,
+            'id_number' => $staff->id_number ?: '-',
+            'scout_id' => $staff->scout_id,
+            'photo_path' => $staff->avatar_path,
+            'qr_token' => $staff->qr_token,
+            'qrDataUri' => $this->qr($staff->qr_token, 180),
+            'role' => null,
+            'category_label' => $roleName,
+            'group_number' => '-',
+            'school_name' => $institution,
+            'kwarran_name' => $kwarran,
+            'contact' => $contact,
+            'rows' => [
+                'Jabatan/Tugas' => $staff->cardPositionLabel(),
+                'Pangkalan/Instansi' => $institution,
+                'Kwartir Ranting' => $kwarran,
+                'Kontak/WA' => $contact,
+            ],
         ];
     }
 }

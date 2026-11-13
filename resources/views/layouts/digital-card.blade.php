@@ -6,8 +6,14 @@
     <title>{{ $title ?? 'ID Card A6' }}</title>
     <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+    </style>
 </head>
-<body class="min-h-screen flex flex-col items-center p-6 text-slate-900 print:hidden {{ $bodyClass ?? 'bg-[#0f172a] bg-[radial-gradient(ellipse_at_top,#1e293b_0%,#0f172a_65%)]' }}">
+<body class="min-h-screen flex flex-col items-center p-6 text-slate-900 print:p-0 print:m-0 print:bg-white print:bg-none print:block {{ $bodyClass ?? 'bg-[#0f172a] bg-[radial-gradient(ellipse_at_top,#1e293b_0%,#0f172a_65%)]' }}">
     {{ $slot }}
 </body>
 </html>

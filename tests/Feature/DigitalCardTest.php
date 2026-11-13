@@ -331,4 +331,60 @@ class DigitalCardTest extends TestCase
             ->assertDontSee('Akreditasi')
             ->assertDontSee('Terverifikasi Aktif');
     }
+
+    /**
+     * Memastikan cetak kumulatif A4 seluruh panitia/juri, seluruh peserta, dan seluruh bindamping berfungsi
+     */
+    public function test_cumulative_a4_batch_cards_for_officials_participants_and_chaperones(): void
+    {
+        $committee = User::factory()->create(['name' => 'Kak Andi Panitia', 'is_active' => true, 'position' => 'Seksi Kegiatan']);
+        $committee->assignRole(RoleEnum::Committee);
+
+        $judge = User::factory()->create(['name' => 'Kak Rina Juri', 'is_active' => true, 'position' => 'Juri Pionering']);
+        $judge->assignRole(RoleEnum::Judge);
+
+        // 1. Cetak seluruh Panitia & Dewan Juri pada A4
+        $this->actingAs($this->admin)
+            ->get(route('admin.officials.id-cards'))
+            ->assertOk()
+            ->assertSee('ID Card Panitia Pelaksana & Dewan Juri (Susunan A4)')
+            ->assertSee('Kak Andi Panitia')
+            ->assertSee('Kak Rina Juri')
+            ->assertSee('data-a4-sheet', false)
+            ->assertSee('w-[210mm] h-[297mm]', false)
+            ->assertSee('Cetak A4')
+            ->assertSee('Simpan Lembar A4 (.PNG)');
+
+        // Filter khusus panitia
+        $this->actingAs($this->admin)
+            ->get(route('admin.officials.id-cards', ['role' => 'committee']))
+            ->assertOk()
+            ->assertSee('Kak Andi Panitia')
+            ->assertDontSee('Kak Rina Juri');
+
+        // 2. Cetak seluruh Peserta pada A4
+        $this->actingAs($this->admin)
+            ->get(route('admin.participants.id-cards'))
+            ->assertOk()
+            ->assertSee('ID Card Seluruh Peserta (Susunan A4)')
+            ->assertSee('Rizky Ramadhan')
+            ->assertSee('data-a4-sheet', false)
+            ->assertSee('w-[210mm] h-[297mm]', false)
+            ->assertSee('Cetak A4');
+
+        // 3. Cetak seluruh Pembina Pendamping pada A4
+        $this->actingAs($this->admin)
+            ->get(route('admin.chaperones.id-cards'))
+            ->assertOk()
+            ->assertSee('ID Card Seluruh Pembina Pendamping (Susunan A4)')
+            ->assertSee('Kak Budi Santoso')
+            ->assertSee('data-a4-sheet', false)
+            ->assertSee('w-[210mm] h-[297mm]', false)
+            ->assertSee('Cetak A4');
+
+        // Gugusdepan tidak boleh mengakses halaman cetak seluruh kontingen
+        $this->actingAs($this->scoutUser)
+            ->get(route('admin.participants.id-cards'))
+            ->assertForbidden();
+    }
 }

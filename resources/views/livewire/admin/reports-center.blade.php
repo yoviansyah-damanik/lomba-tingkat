@@ -76,6 +76,79 @@
         </div>
     </div>
 
+    {{-- Section: Cetak Kumulatif ID Card Resmi (Susunan A4 — 4 Kartu A6 / Lembar) --}}
+    <div class="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+                <h3 class="text-sm font-bold uppercase tracking-wider text-zinc-800 dark:text-zinc-200">
+                    Cetak Kumulatif ID Card Resmi (Susunan A4)
+                </h3>
+                <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    Setiap lembar kertas A4 (210 &times; 297 mm) memuat 4 kartu ID ukuran A6 (105 &times; 148 mm) lengkap dengan garis bantu potong, opsi cetak langsung, dan unduhan ZIP.
+                </p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="rounded-xl border border-zinc-200/80 bg-zinc-50/60 p-4 dark:border-zinc-800 dark:bg-zinc-800/40 flex flex-col justify-between gap-3">
+                <div>
+                    <span class="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-0.5 text-[10px] font-bold uppercase text-blue-800 dark:bg-blue-950/60 dark:text-blue-300">
+                        Peserta Penggalang
+                    </span>
+                    <h4 class="text-xs font-bold text-zinc-900 dark:text-zinc-100 mt-1.5">
+                        Seluruh ID Card Peserta (A4)
+                    </h4>
+                    <p class="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                        Susunan cetak A4 seluruh anggota regu putra &amp; putri dari kontingen terverifikasi.
+                    </p>
+                </div>
+                <div class="flex justify-end">
+                    <flux:button href="{{ route('admin.participants.id-cards') }}" target="_blank" size="sm" variant="primary" icon="printer">
+                        Cetak Peserta (A4)
+                    </flux:button>
+                </div>
+            </div>
+
+            <div class="rounded-xl border border-zinc-200/80 bg-zinc-50/60 p-4 dark:border-zinc-800 dark:bg-zinc-800/40 flex flex-col justify-between gap-3">
+                <div>
+                    <span class="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                        Pembina Pendamping
+                    </span>
+                    <h4 class="text-xs font-bold text-zinc-900 dark:text-zinc-100 mt-1.5">
+                        Seluruh ID Card Bindamping (A4)
+                    </h4>
+                    <p class="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                        Susunan cetak A4 seluruh pembina pendamping putra &amp; putri dari kontingen terverifikasi.
+                    </p>
+                </div>
+                <div class="flex justify-end">
+                    <flux:button href="{{ route('admin.chaperones.id-cards') }}" target="_blank" size="sm" variant="primary" icon="printer">
+                        Cetak Bindamping (A4)
+                    </flux:button>
+                </div>
+            </div>
+
+            <div class="rounded-xl border border-zinc-200/80 bg-zinc-50/60 p-4 dark:border-zinc-800 dark:bg-zinc-800/40 flex flex-col justify-between gap-3">
+                <div>
+                    <span class="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                        Panitia &amp; Dewan Juri
+                    </span>
+                    <h4 class="text-xs font-bold text-zinc-900 dark:text-zinc-100 mt-1.5">
+                        Seluruh ID Card Panitia &amp; Juri (A4)
+                    </h4>
+                    <p class="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                        Susunan cetak A4 seluruh aparatur panitia pelaksana dan dewan juri perlombaan aktif.
+                    </p>
+                </div>
+                <div class="flex justify-end">
+                    <flux:button href="{{ route('admin.officials.id-cards') }}" target="_blank" size="sm" variant="primary" icon="printer">
+                        Cetak Panitia &amp; Juri (A4)
+                    </flux:button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- Section: Katalog Unduhan Berkas Spreadsheet (CSV / Excel) --}}
     <div>
         <div class="mb-4">

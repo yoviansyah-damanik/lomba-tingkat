@@ -8,7 +8,7 @@
 
 {{-- Header aksi kartu: ikon, judul ukuran kartu, nama pemilik, dan tombol simpan/batch --}}
 <div
-    class="relative w-full max-w-3xl mb-6 flex flex-wrap justify-between items-center gap-4 overflow-hidden rounded-2xl border border-slate-700/70 bg-gradient-to-br from-slate-800 via-slate-800 to-slate-900 p-[14px_18px] text-slate-50 shadow-xl shadow-black/30">
+    class="print:hidden relative w-full max-w-3xl mb-6 flex flex-wrap justify-between items-center gap-4 overflow-hidden rounded-2xl border border-slate-700/70 bg-gradient-to-br from-slate-800 via-slate-800 to-slate-900 p-[14px_18px] text-slate-50 shadow-xl shadow-black/30">
     <div class="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-amber-400 via-rose-500 to-indigo-500"></div>
     <div class="pointer-events-none absolute -right-10 -top-10 size-32 rounded-full bg-amber-400/10 blur-2xl"></div>
 

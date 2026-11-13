@@ -8,6 +8,14 @@
         badge-color="amber"
     >
         <x-slot:actions>
+            <flux:button
+                href="{{ route('admin.officials.id-cards', array_filter(['role' => $roleFilter !== 'all' ? $roleFilter : null])) }}"
+                target="_blank"
+                icon="printer"
+                title="Cetak Seluruh Kartu Panitia & Dewan Juri (Susunan A4)"
+            >
+                Cetak ID Card (A4)
+            </flux:button>
             <flux:button wire:click="openCreateModal" variant="primary" icon="user-plus">
                 Tambah Aparatur Baru
             </flux:button>

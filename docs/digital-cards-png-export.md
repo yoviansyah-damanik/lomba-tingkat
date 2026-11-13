@@ -1,20 +1,15 @@
-# Penyimpanan Kartu Digital ke Format .PNG Kumulatif
+# Penyimpanan & Cetak Kartu Digital (A6 pada Lembar A4)
 
-Fitur ekspor kartu digital (Format B2 & Batch A4) ke berkas citra `.png` berkualitas tinggi (300+ DPI) secara individual maupun kumulatif.
+Fitur cetak langsung kertas A4 (4 kartu A6 per halaman `210mm x 297mm`) dan ekspor kartu digital ke berkas citra `.png` / `.zip`.
 
 ## Fitur Utama
-1. **Penyimpanan Individual (`.png`)**:
-   - Tersedia di halaman kartu peserta, bindamping, dan staf aparatur.
-   - Menggunakan `html2canvas` dengan resolusi `scale: 3` dan warna latar putih murni.
-2. **Penyimpanan Kumulatif Berkas ZIP (`.zip` berisi berkas `.png`)**:
-   - Mengonversi seluruh kartu pada regu atau kontingen secara otomatis.
-   - Dikompresi menggunakan `JSZip` dengan nama terstruktur (`01_KARTU_<NAMA>_<ID>.png`).
-   - Dilengkapi dialog indikator progres pemrosesan (*progress bar*).
-3. **Penyimpanan Lembar Utuh A4 (`.png`)**:
-   - Mengonversi satu halaman cetak A4 (berisi 4 kartu B2) langsung ke citra PNG resolusi tinggi.
-4. **Cetak & Batch Kontingen Utuh**:
-   - Rute baru `/digital-cards/scout-group/{id}/batch` untuk melihat, mencetak, dan mengunduh seluruh kartu regu + bindamping dalam satu kontingen.
-
-## Hak Akses
-- **Gugusdepan**: Mengakses seluruh kartu dari kontingen miliknya melalui portal pangkalan.
-- **Administrator**: Mengakses seluruh kartu dari seluruh kontingen melalui menu detail verifikasi pangkalan.
+1. **Susunan Cetak Lembar A4 (`210mm x 297mm`)**:
+   - Memuat 4 kartu ukuran A6 (`105mm x 148mm`, grid `2x2`) per lembar A4 lengkap dengan garis bantu potong.
+   - Mendukung cetak langsung (`Cetak A4`) maupun unduh per lembar A4 (`Simpan Lembar A4 (.PNG)`).
+2. **Cetak Kumulatif A4 Seluruh Panitia, Peserta & Bindamping**:
+   - Seluruh Panitia & Dewan Juri: `/admin/officials/id-cards` (`OfficialsBatch`).
+   - Seluruh Peserta Terverifikasi: `/admin/participants/id-cards` (`ParticipantsBatch`).
+   - Seluruh Pembina Pendamping: `/admin/chaperones/id-cards` (`ChaperonesBatch`).
+   - Tersedia dari menu direktori masing-masing serta halaman **Pusat Laporan & Ekspor Data Resmi**.
+3. **Penyimpanan Kumulatif Berkas ZIP (`.zip` berisi `.png`)**:
+   - Mengonversi seluruh kartu secara otomatis dengan `JSZip` dan indikator progres.

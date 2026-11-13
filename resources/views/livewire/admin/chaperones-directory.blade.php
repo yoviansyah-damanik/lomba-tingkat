@@ -8,6 +8,14 @@
         badge-color="amber"
     >
         <x-slot:actions>
+            <flux:button
+                href="{{ route('admin.chaperones.id-cards', array_filter(['gudep' => $scoutGroupFilter !== 'all' ? $scoutGroupFilter : null, 'gender' => $genderFilter !== 'all' ? $genderFilter : null])) }}"
+                target="_blank"
+                icon="identification"
+                title="Cetak Seluruh ID Card Pembina Pendamping (Susunan A4)"
+            >
+                Cetak ID Card (A4)
+            </flux:button>
             <flux:button href="{{ route('admin.print.preview', 'chaperones') }}" target="_blank" icon="printer">
                 Cetak Bindamping
             </flux:button>

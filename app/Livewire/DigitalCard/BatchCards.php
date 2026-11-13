@@ -16,9 +16,9 @@ use Livewire\Component;
 #[Layout('layouts.digital-card')]
 abstract class BatchCards extends Component
 {
-    public string $scoutGroupId;
+    public string $scoutGroupId = '';
 
-    protected ScoutGroup $scoutGroup;
+    protected ?ScoutGroup $scoutGroup = null;
 
     /**
      * @return array{title: string, subtitle: string, zipName: string, emptyMessage: string, cards: Collection}

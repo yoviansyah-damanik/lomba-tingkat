@@ -12,7 +12,12 @@
     @endphp
 
         {{-- Toolbar Aksi --}}
-        <x-digital-card.toolbar :subtitle="'Aparatur: ' . $staff->name" :download-filename="'KARTU_APARATUR_' . Str::slug($staff->name)" />
+        <x-digital-card.toolbar
+            :subtitle="'Aparatur: ' . $staff->name"
+            :batch-url="auth()->user()?->isAdmin() ? route('admin.officials.id-cards') : null"
+            :batch-label="'Kartu Seluruh Panitia & Juri (A4)'"
+            :download-filename="'KARTU_APARATUR_' . Str::slug($staff->name)"
+        />
 
         @include('digital-cards.partials.staff-card')
 </div>

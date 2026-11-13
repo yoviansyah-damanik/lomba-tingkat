@@ -1,6 +1,15 @@
-@props(['item', 'scoutGroup'])
+@props(['item', 'scoutGroup' => null])
 
-{{-- Satu kartu A6 peserta/bindamping dari data item yang sudah disiapkan controller --}}
+@php
+    $rows = $item['rows'] ?? [
+        'Nomor Gudep' => $item['group_number'] ?? '-',
+        'Pangkalan' => $item['school_name'] ?? ($scoutGroup?->school_name ?? '-'),
+        'Kwartir Ranting' => $item['kwarran_name'] ?? ($scoutGroup?->kwarran_name ?? 'Padangsidimpuan'),
+        'Kontak/WA' => $item['contact'] ?? '-',
+    ];
+@endphp
+
+{{-- Satu kartu A6 peserta/bindamping/aparatur dari data item yang sudah disiapkan service --}}
 <x-digital-card.card
     data-card-name="{{ $item['name'] }}"
     data-card-id="{{ $item['id_number'] }}"
@@ -8,19 +17,18 @@
 >
     <x-digital-card.header :theme="$item['theme']" />
     <x-digital-card.category-strip :theme="$item['theme']">
-        {{ $item['category_label'] }}
+        {!! $item['category_label'] !!}
     </x-digital-card.category-strip>
     <x-digital-card.body>
-        @if ($item['patrol_name'])
+        @if (! empty($item['patrol_name']))
             <x-digital-card.patrol-badge :name="$item['patrol_name']" :theme="$item['theme']" />
         @endif
-        <x-digital-card.photo :photo-url="$item['photo_path'] ? asset('storage/' . $item['photo_path']) : null" :name="$item['name']" :role="$item['role']" :npp="$item['npp'] ?? null" :theme="$item['theme']" />
+        <x-digital-card.photo :photo-url="! empty($item['photo_path']) ? asset('storage/' . $item['photo_path']) : null" :name="$item['name']" :role="$item['role'] ?? 'member'" :npp="$item['npp'] ?? null" :theme="$item['theme']" />
         <x-digital-card.meta-info :name="$item['name']" :scout-id="$item['scout_id']" :id-number="$item['id_number']" :theme="$item['theme']" />
         <x-digital-card.details-table>
-            <x-digital-card.details-row label="Nomor Gudep" :value="$item['group_number']" />
-            <x-digital-card.details-row label="Pangkalan" :value="$scoutGroup->school_name" />
-            <x-digital-card.details-row label="Kwartir Ranting" :value="$scoutGroup->kwarran_name ?? 'Padangsidimpuan'" />
-            <x-digital-card.details-row label="Kontak/WA" :value="$item['contact']" />
+            @foreach ($rows as $label => $value)
+                <x-digital-card.details-row :label="$label" :value="$value" />
+            @endforeach
         </x-digital-card.details-table>
         <x-digital-card.qr-section :qr-data-uri="$item['qrDataUri']" :token="$item['qr_token']" :theme="$item['theme']" />
     </x-digital-card.body>

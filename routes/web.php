@@ -45,7 +45,10 @@ use App\Livewire\Auth\ScoutGroupRegistrationForm;
 use App\Livewire\Dashboard;
 use App\Livewire\DigitalCard\ChaperoneBatch;
 use App\Livewire\DigitalCard\ChaperoneCard;
+use App\Livewire\DigitalCard\ChaperonesBatch;
+use App\Livewire\DigitalCard\OfficialsBatch;
 use App\Livewire\DigitalCard\ParticipantCard;
+use App\Livewire\DigitalCard\ParticipantsBatch;
 use App\Livewire\DigitalCard\PatrolBatch;
 use App\Livewire\DigitalCard\ScoutGroupBatch;
 use App\Livewire\DigitalCard\StaffCard;
@@ -180,11 +183,13 @@ Route::middleware(['auth', 'role'])->group(function () {
 
         // Direktori & Detail Peserta Terverifikasi
         Route::get('/participants', ParticipantsDirectory::class)->name('participants.index');
+        Route::get('/participants/id-cards', ParticipantsBatch::class)->name('participants.id-cards');
         Route::get('/participants/{id}', ParticipantDetail::class)->name('participants.show');
         Route::get('/scout-groups/{scoutGroupId}/participants/{participantId}', ParticipantDetail::class)->name('scout-groups.participants.show');
 
         // Direktori & Detail Pembina Pendamping Terverifikasi
         Route::get('/chaperones', ChaperonesDirectory::class)->name('chaperones.index');
+        Route::get('/chaperones/id-cards', ChaperonesBatch::class)->name('chaperones.id-cards');
         Route::get('/chaperones/{id}', ChaperoneDetail::class)->name('chaperones.show');
         Route::get('/scout-groups/{scoutGroupId}/chaperones/{chaperoneId}', ChaperoneDetail::class)->name('scout-groups.chaperones.show');
     });
@@ -232,6 +237,7 @@ Route::middleware(['auth', 'role'])->group(function () {
         Route::get('/registration-invitations/print-recap', [RegistrationInvitationPrintController::class, 'printRecap'])->name('registration-invitations.print-recap');
         Route::get('/registration-invitations/{id}/print', [RegistrationInvitationPrintController::class, 'printSingle'])->name('registration-invitations.print-single');
         Route::get('/officials', OfficialsManagement::class)->name('officials.index');
+        Route::get('/officials/id-cards', OfficialsBatch::class)->name('officials.id-cards');
 
         // Konfigurasi & Pratinjau Template E-Sertifikat (Livewire 4 SPA)
         Route::get('/certificates/settings', CertificateSettings::class)->name('certificates.settings');
