@@ -26,6 +26,17 @@
     --color-accent: var(--color-neutral-800);
     --color-accent-content: var(--color-neutral-800);
     --color-accent-foreground: var(--color-white);
+
+    --animate-scan: scan 2s ease-in-out infinite;
+
+    @keyframes scan {
+        0%, 100% {
+            top: 5%;
+        }
+        50% {
+            top: 90%;
+        }
+    }
 }
 
 @layer theme {

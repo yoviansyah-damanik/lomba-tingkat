@@ -25,51 +25,96 @@ class Settings extends Component
     /** Status penerbitan sertifikat */
     public bool $is_certificate_published = false;
 
+    /** Tanda Tangan & Penandatangan Dokumen Resmi */
+    public string $committee_chair_name = '';
+
+    public string $committee_chair_nta = '';
+
+    public $committee_signature_file;
+
+    public ?string $committee_signature_url = null;
+
+    public string $kwarcab_chair_name = '';
+
+    public string $kwarcab_chair_nta = '';
+
+    public $kwarcab_signature_file;
+
+    public ?string $kwarcab_signature_url = null;
+
+    public bool $show_signatures_on_certificate = true;
+
     /** Tab peran aktif: participant, chaperone, committee, judge */
     public string $activeRole = CertificateService::ROLE_PARTICIPANT;
 
     /** Berkas gambar template yang diunggah */
     public $template_file;
+
     public ?string $template_url = null;
 
     /** Koordinat dan gaya: Nama Lengkap */
     public float $name_x = 50.0;
+
     public float $name_y = 45.0;
+
     public float $name_size = 28.0;
+
     public string $name_color = '#111827';
+
     public string $name_align = 'center';
+
     public bool $name_bold = true;
 
     /** Koordinat dan gaya: NTA */
     public float $scout_id_x = 50.0;
+
     public float $scout_id_y = 51.5;
+
     public float $scout_id_size = 13.0;
+
     public string $scout_id_color = '#4b5563';
+
     public string $scout_id_align = 'center';
+
     public bool $scout_id_bold = false;
 
     /** Koordinat dan gaya: Gugusdepan / Pangkalan */
     public float $inst_x = 50.0;
+
     public float $inst_y = 57.5;
+
     public float $inst_size = 15.0;
+
     public string $inst_color = '#1f2937';
+
     public string $inst_align = 'center';
+
     public bool $inst_bold = false;
 
     /** Koordinat dan gaya: Sebagai (Role) */
     public float $role_x = 50.0;
+
     public float $role_y = 64.5;
+
     public float $role_size = 16.0;
+
     public string $role_color = '#b45309';
+
     public string $role_align = 'center';
+
     public bool $role_bold = true;
 
     /** Koordinat dan gaya: Nomor Sertifikat */
     public float $cert_no_x = 50.0;
+
     public float $cert_no_y = 28.0;
+
     public float $cert_no_size = 11.0;
+
     public string $cert_no_color = '#6b7280';
+
     public string $cert_no_align = 'center';
+
     public bool $cert_no_bold = false;
 
     public function mount(CertificateService $certificateService): void
@@ -77,6 +122,15 @@ class Settings extends Component
         $this->event = Event::where('is_active', true)->first() ?? Event::first();
         if ($this->event) {
             $this->is_certificate_published = (bool) $this->event->is_certificate_published;
+            $this->committee_chair_name = (string) ($this->event->committee_chair_name ?? '');
+            $this->committee_chair_nta = (string) ($this->event->committee_chair_nta ?? '');
+            $this->committee_signature_url = $this->event->committeeSignatureUrl();
+
+            $this->kwarcab_chair_name = (string) ($this->event->kwarcab_chair_name ?? '');
+            $this->kwarcab_chair_nta = (string) ($this->event->kwarcab_chair_nta ?? '');
+            $this->kwarcab_signature_url = $this->event->kwarcabSignatureUrl();
+
+            $this->show_signatures_on_certificate = (bool) ($this->event->show_signatures_on_certificate ?? true);
         }
 
         $this->loadRoleConfig($certificateService);
@@ -87,7 +141,7 @@ class Settings extends Component
      */
     public function loadRoleConfig(CertificateService $certificateService): void
     {
-        if (!$this->event) {
+        if (! $this->event) {
             return;
         }
 
@@ -141,7 +195,7 @@ class Settings extends Component
      */
     public function setRole(string $role, CertificateService $certificateService): void
     {
-        if (!array_key_exists($role, CertificateService::ROLES)) {
+        if (! array_key_exists($role, CertificateService::ROLES)) {
             return;
         }
 
@@ -154,11 +208,11 @@ class Settings extends Component
      */
     public function togglePublish(): void
     {
-        if (!$this->event) {
+        if (! $this->event) {
             return;
         }
 
-        $this->is_certificate_published = !$this->is_certificate_published;
+        $this->is_certificate_published = ! $this->is_certificate_published;
         $this->event->update([
             'is_certificate_published' => $this->is_certificate_published,
         ]);
@@ -221,7 +275,7 @@ class Settings extends Component
      */
     public function save(CertificateService $certificateService): void
     {
-        if (!$this->event) {
+        if (! $this->event) {
             return;
         }
 
@@ -292,7 +346,7 @@ class Settings extends Component
      */
     public function applyToAllRoles(CertificateService $certificateService): void
     {
-        if (!$this->event) {
+        if (! $this->event) {
             return;
         }
 
@@ -315,7 +369,7 @@ class Settings extends Component
      */
     public function deleteTemplate(CertificateService $certificateService): void
     {
-        if (!$this->event) {
+        if (! $this->event) {
             return;
         }
 
@@ -337,6 +391,98 @@ class Settings extends Component
         session()->flash('status', 'Gambar template berhasil dihapus. Sertifikat kembali ke bingkai bawaan.');
     }
 
+    /**
+     * Menyimpan data dan berkas tanda tangan Ketua Panitia & Ketua Kwartir
+     */
+    public function saveSignatories(): void
+    {
+        if (! $this->event) {
+            return;
+        }
+
+        $this->validate([
+            'committee_chair_name' => 'nullable|string|max:255',
+            'committee_chair_nta' => 'nullable|string|max:100',
+            'committee_signature_file' => 'nullable|image|max:2048',
+            'kwarcab_chair_name' => 'nullable|string|max:255',
+            'kwarcab_chair_nta' => 'nullable|string|max:100',
+            'kwarcab_signature_file' => 'nullable|image|max:2048',
+            'show_signatures_on_certificate' => 'boolean',
+        ]);
+
+        $updateData = [
+            'committee_chair_name' => $this->committee_chair_name ?: null,
+            'committee_chair_nta' => $this->committee_chair_nta ?: null,
+            'kwarcab_chair_name' => $this->kwarcab_chair_name ?: null,
+            'kwarcab_chair_nta' => $this->kwarcab_chair_nta ?: null,
+            'show_signatures_on_certificate' => (bool) $this->show_signatures_on_certificate,
+        ];
+
+        if ($this->committee_signature_file) {
+            if ($this->event->committee_chair_signature_path && Storage::disk('public')->exists($this->event->committee_chair_signature_path)) {
+                Storage::disk('public')->delete($this->event->committee_chair_signature_path);
+            }
+            $updateData['committee_chair_signature_path'] = $this->committee_signature_file->store('certificates/signatures', 'public');
+            $this->committee_signature_file = null;
+        }
+
+        if ($this->kwarcab_signature_file) {
+            if ($this->event->kwarcab_chair_signature_path && Storage::disk('public')->exists($this->event->kwarcab_chair_signature_path)) {
+                Storage::disk('public')->delete($this->event->kwarcab_chair_signature_path);
+            }
+            $updateData['kwarcab_chair_signature_path'] = $this->kwarcab_signature_file->store('certificates/signatures', 'public');
+            $this->kwarcab_signature_file = null;
+        }
+
+        $this->event->update($updateData);
+        $this->event->refresh();
+
+        $this->committee_signature_url = $this->event->committeeSignatureUrl();
+        $this->kwarcab_signature_url = $this->event->kwarcabSignatureUrl();
+
+        session()->flash('signatory_status', 'Tanda tangan dan data penandatangan sertifikat berhasil diperbarui.');
+    }
+
+    /**
+     * Menghapus berkas tanda tangan Ketua Panitia
+     */
+    public function deleteCommitteeSignature(): void
+    {
+        if (! $this->event) {
+            return;
+        }
+
+        if ($this->event->committee_chair_signature_path && Storage::disk('public')->exists($this->event->committee_chair_signature_path)) {
+            Storage::disk('public')->delete($this->event->committee_chair_signature_path);
+        }
+
+        $this->event->update(['committee_chair_signature_path' => null]);
+        $this->committee_signature_file = null;
+        $this->committee_signature_url = null;
+
+        session()->flash('signatory_status', 'Tanda tangan Ketua Panitia berhasil dihapus.');
+    }
+
+    /**
+     * Menghapus berkas tanda tangan Ketua Kwartir Cabang
+     */
+    public function deleteKwarcabSignature(): void
+    {
+        if (! $this->event) {
+            return;
+        }
+
+        if ($this->event->kwarcab_chair_signature_path && Storage::disk('public')->exists($this->event->kwarcab_chair_signature_path)) {
+            Storage::disk('public')->delete($this->event->kwarcab_chair_signature_path);
+        }
+
+        $this->event->update(['kwarcab_chair_signature_path' => null]);
+        $this->kwarcab_signature_file = null;
+        $this->kwarcab_signature_url = null;
+
+        session()->flash('signatory_status', 'Tanda tangan Ketua Kwartir Cabang berhasil dihapus.');
+    }
+
     public function render(CertificateService $certificateService)
     {
         $sample = $certificateService->getSampleRecipient($this->activeRole, $this->event);
@@ -347,4 +493,3 @@ class Settings extends Component
         ]);
     }
 }
-

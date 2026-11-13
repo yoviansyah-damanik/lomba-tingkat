@@ -25,6 +25,7 @@ async function getPdfViewerClass() {
                     this.pageNum = 1;
                     this.pageRendering = false;
                     this.pageNumPending = null;
+                    this.currentRenderTask = null;
                     this.scale = 1.0;
                     this.loadingTask = null;
                 }
@@ -35,6 +36,7 @@ async function getPdfViewerClass() {
                         this.loadingTask = pdfjsLib.getDocument(url);
                         this.pdfDoc = await this.loadingTask.promise;
                         this.pageNum = 1;
+                        this.scale = 1.0;
                         if (onLoaded) {
                             onLoaded({
                                 numPages: this.pdfDoc.numPages,
@@ -49,45 +51,78 @@ async function getPdfViewerClass() {
                 }
 
                 async renderPage(num) {
-                    this.pageRendering = true;
-                    const page = await this.pdfDoc.getPage(num);
+                    if (!this.pdfDoc) return;
 
-                    const containerWidth = this.container.clientWidth || window.innerWidth;
-                    const unscaledViewport = page.getViewport({ scale: 1 });
-                    const autoFitScale = (containerWidth - 32) / unscaledViewport.width;
-                    const finalScale = Math.max(0.6, autoFitScale * this.scale);
-
-                    const viewport = page.getViewport({ scale: finalScale });
-
-                    let canvas = this.container.querySelector('canvas');
-                    if (!canvas) {
-                        canvas = document.createElement('canvas');
-                        canvas.className = 'mx-auto rounded-lg shadow-lg block max-w-full';
-                        this.container.appendChild(canvas);
+                    // If a render is already in progress, cancel it cleanly
+                    if (this.currentRenderTask) {
+                        try {
+                            this.currentRenderTask.cancel();
+                        } catch (_) {}
+                        this.currentRenderTask = null;
                     }
 
-                    const ctx = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
+                    this.pageRendering = true;
+                    try {
+                        const page = await this.pdfDoc.getPage(num);
 
-                    const renderContext = {
-                        canvasContext: ctx,
-                        viewport: viewport
-                    };
+                        // Find the scrollable viewport (parent with overflow-auto or modal container)
+                        const scrollContainer = this.container.closest('.overflow-auto') || this.container.parentElement || this.container;
+                        const availableWidth = Math.max(280, (scrollContainer.clientWidth || window.innerWidth) - 32);
+                        const unscaledViewport = page.getViewport({ scale: 1 });
+                        const autoFitScale = Math.max(0.1, availableWidth / unscaledViewport.width);
+                        const finalScale = +(autoFitScale * this.scale).toFixed(3);
 
-                    const renderTask = page.render(renderContext);
-                    await renderTask.promise;
-                    this.pageRendering = false;
+                        const viewport = page.getViewport({ scale: finalScale });
 
-                    if (this.pageNumPending !== null) {
-                        this.renderPage(this.pageNumPending);
-                        this.pageNumPending = null;
+                        let canvas = this.container.querySelector('canvas');
+                        if (!canvas) {
+                            canvas = document.createElement('canvas');
+                            canvas.className = 'm-auto rounded-lg shadow-2xl block select-none';
+                            this.container.appendChild(canvas);
+                        }
+
+                        // Remove any CSS max-width constraint that stops zoom expansion
+                        canvas.style.maxWidth = 'none';
+                        canvas.style.width = `${Math.round(viewport.width)}px`;
+                        canvas.style.height = `${Math.round(viewport.height)}px`;
+
+                        const ctx = canvas.getContext('2d');
+                        canvas.height = Math.round(viewport.height);
+                        canvas.width = Math.round(viewport.width);
+
+                        const renderContext = {
+                            canvasContext: ctx,
+                            viewport: viewport
+                        };
+
+                        this.currentRenderTask = page.render(renderContext);
+                        await this.currentRenderTask.promise;
+                        this.currentRenderTask = null;
+                        this.pageRendering = false;
+
+                        if (this.pageNumPending !== null) {
+                            const pending = this.pageNumPending;
+                            this.pageNumPending = null;
+                            await this.renderPage(pending);
+                        }
+                    } catch (error) {
+                        this.pageRendering = false;
+                        if (error?.name === 'RenderingCancelledException') {
+                            // Ignored: cancelled in favor of newer zoom/page render
+                            return;
+                        }
+                        console.error('Error rendering PDF page:', error);
                     }
                 }
 
                 queueRenderPage(num) {
                     if (this.pageRendering) {
                         this.pageNumPending = num;
+                        if (this.currentRenderTask) {
+                            try {
+                                this.currentRenderTask.cancel();
+                            } catch (_) {}
+                        }
                     } else {
                         this.renderPage(num);
                     }
@@ -108,16 +143,24 @@ async function getPdfViewerClass() {
                 }
 
                 zoom(delta) {
-                    this.scale = Math.min(3.0, Math.max(0.5, +(this.scale + delta).toFixed(2)));
+                    this.scale = Math.min(3.5, Math.max(0.3, +(this.scale + delta).toFixed(2)));
                     this.queueRenderPage(this.pageNum);
+                    return this.scale;
                 }
 
                 resetZoom() {
                     this.scale = 1.0;
                     this.queueRenderPage(this.pageNum);
+                    return this.scale;
                 }
 
                 destroy() {
+                    if (this.currentRenderTask) {
+                        try {
+                            this.currentRenderTask.cancel();
+                        } catch (_) {}
+                        this.currentRenderTask = null;
+                    }
                     if (this.loadingTask) {
                         this.loadingTask.destroy();
                         this.loadingTask = null;

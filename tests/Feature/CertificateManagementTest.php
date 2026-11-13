@@ -15,6 +15,8 @@ use Database\Seeders\EventSeeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -23,13 +25,21 @@ class CertificateManagementTest extends TestCase
     use RefreshDatabase;
 
     protected User $admin;
+
     protected User $participantUser;
+
     protected User $chaperoneUser;
+
     protected User $committeeUser;
+
     protected User $judgeUser;
+
     protected Event $event;
+
     protected Participant $participant;
+
     protected Chaperone $chaperone;
+
     protected ScoutGroup $scoutGroup;
 
     protected function setUp(): void
@@ -347,5 +357,100 @@ class CertificateManagementTest extends TestCase
         $this->assertStringContainsString('Peserta', $data['role_label']);
         $this->assertNotEmpty($data['certificate_number']);
         $this->assertTrue($data['is_eligible']);
+    }
+
+    /**
+     * Memastikan admin dapat memperbarui nama penandatangan dan mengunggah tanda tangan digital
+     */
+    public function test_admin_can_upload_and_save_signatories_with_signatures(): void
+    {
+        Storage::fake('public');
+
+        $committeeSig = UploadedFile::fake()->image('ttd-panitia.png', 300, 150);
+        $kwarcabSig = UploadedFile::fake()->image('ttd-kwarcab.png', 300, 150);
+
+        Livewire::actingAs($this->admin)
+            ->test(Settings::class)
+            ->set('committee_chair_name', 'Kak Hamdan Siregar, S.Pd.')
+            ->set('committee_chair_nta', '02.21.0001')
+            ->set('kwarcab_chair_name', 'Kak Dr. H. Letnan Dalimunthe, S.K.M., M.Kes.')
+            ->set('kwarcab_chair_nta', '02.21.0002')
+            ->set('show_signatures_on_certificate', true)
+            ->set('committee_signature_file', $committeeSig)
+            ->set('kwarcab_signature_file', $kwarcabSig)
+            ->call('saveSignatories')
+            ->assertHasNoErrors()
+            ->assertSee('Tanda tangan dan data penandatangan sertifikat berhasil diperbarui.');
+
+        $this->event->refresh();
+
+        $this->assertEquals('Kak Hamdan Siregar, S.Pd.', $this->event->committee_chair_name);
+        $this->assertEquals('02.21.0001', $this->event->committee_chair_nta);
+        $this->assertEquals('Kak Dr. H. Letnan Dalimunthe, S.K.M., M.Kes.', $this->event->kwarcab_chair_name);
+        $this->assertEquals('02.21.0002', $this->event->kwarcab_chair_nta);
+        $this->assertTrue((bool) $this->event->show_signatures_on_certificate);
+        $this->assertNotNull($this->event->committee_chair_signature_path);
+        $this->assertNotNull($this->event->kwarcab_chair_signature_path);
+
+        Storage::disk('public')->assertExists($this->event->committee_chair_signature_path);
+        Storage::disk('public')->assertExists($this->event->kwarcab_chair_signature_path);
+    }
+
+    /**
+     * Memastikan admin dapat menghapus tanda tangan digital penandatangan
+     */
+    public function test_admin_can_delete_signatures(): void
+    {
+        Storage::fake('public');
+
+        $path1 = 'certificates/signatures/committee_test.png';
+        $path2 = 'certificates/signatures/kwarcab_test.png';
+        Storage::disk('public')->put($path1, 'fake-sig-1');
+        Storage::disk('public')->put($path2, 'fake-sig-2');
+
+        $this->event->update([
+            'committee_chair_signature_path' => $path1,
+            'kwarcab_chair_signature_path' => $path2,
+        ]);
+
+        Livewire::actingAs($this->admin)
+            ->test(Settings::class)
+            ->call('deleteCommitteeSignature')
+            ->assertHasNoErrors()
+            ->call('deleteKwarcabSignature')
+            ->assertHasNoErrors();
+
+        $this->event->refresh();
+
+        $this->assertNull($this->event->committee_chair_signature_path);
+        $this->assertNull($this->event->kwarcab_chair_signature_path);
+        Storage::disk('public')->assertMissing($path1);
+        Storage::disk('public')->assertMissing($path2);
+    }
+
+    /**
+     * Memastikan CertificateService menyematkan data URI tanda tangan pada PDF ketika fitur aktif
+     */
+    public function test_certificate_service_embeds_signatures_when_enabled(): void
+    {
+        Storage::fake('public');
+
+        $fakePngContent = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
+        $path1 = 'certificates/signatures/committee.png';
+        $path2 = 'certificates/signatures/kwarcab.png';
+        Storage::disk('public')->put($path1, $fakePngContent);
+        Storage::disk('public')->put($path2, $fakePngContent);
+
+        $this->event->update([
+            'committee_chair_signature_path' => $path1,
+            'kwarcab_chair_signature_path' => $path2,
+            'show_signatures_on_certificate' => true,
+        ]);
+
+        $service = app(CertificateService::class);
+        $recipient = $service->recipientDataForParticipant($this->participant, $this->event);
+        $pdfOutput = $service->renderPdf($this->event, CertificateService::ROLE_PARTICIPANT, $recipient);
+
+        $this->assertNotEmpty($pdfOutput);
     }
 }

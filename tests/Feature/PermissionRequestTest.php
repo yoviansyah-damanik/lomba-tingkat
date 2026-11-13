@@ -12,8 +12,11 @@ use App\Models\Patrol;
 use App\Models\PermissionRequest;
 use App\Models\ScoutGroup;
 use App\Models\User;
+use App\Services\QrCodeService;
+use Database\Seeders\PermissionRequestSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\View;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -130,26 +133,45 @@ class PermissionRequestTest extends TestCase
         $return->call('handleScan', $c['chaperone']->qr_token)->assertSet('feedback.type', 'error');
         $this->assertSame('active', $request->fresh()->status);
 
-        // Peserta pertama kembali: izin masih aktif
-        $return->call('handleScan', $c['participants'][0]->qr_token)->assertSet('feedback.type', 'success');
+        // Peserta pertama kembali: modal verifikasi 2 tahap terbuka lalu dikonfirmasi
+        $return->call('handleScan', $c['participants'][0]->qr_token)
+            ->assertSet('showReturnModal', true)
+            ->assertSee('Konfirmasi Kembali Peserta')
+            ->assertSee($c['participants'][0]->full_name)
+            ->call('processReturnConfirmation')
+            ->assertSet('feedback.type', 'success')
+            ->assertSet('showReturnModal', false);
         $this->assertSame('active', $request->fresh()->status);
 
         // Konfirmasi ulang peserta yang sama ditolak
         $return->call('handleScan', $c['participants'][0]->qr_token)->assertSet('feedback.type', 'error');
 
-        // Peserta terakhir kembali: izin selesai
-        $return->call('handleScan', $c['participants'][1]->qr_token)->assertSet('feedback.type', 'success');
+        // Peserta terakhir kembali via verifikasi 2 tahap: izin selesai
+        $return->call('handleScan', $c['participants'][1]->qr_token)
+            ->assertSet('showReturnModal', true)
+            ->call('processReturnConfirmation')
+            ->assertSet('feedback.type', 'success');
         $this->assertSame('completed', $request->fresh()->status);
         $this->assertNotNull($request->fresh()->completed_at);
     }
 
-    public function test_guest_visit_needs_only_type_and_reason(): void
+    public function test_guest_visit_requires_guest_name_and_reason(): void
     {
+        // Tanpa keterangan dan tanpa nama tamu ditolak
         $this->page()
             ->set('type', 'guest_visit')
             ->call('submit')
-            ->assertHasErrors('reason');
+            ->assertHasErrors(['reason', 'guest_name']);
 
+        // Ada alasan tapi nama tamu kosong tetap ditolak
+        $this->page()
+            ->set('type', 'guest_visit')
+            ->set('reason', 'Kunjungan orang tua peserta')
+            ->set('guest_name', '')
+            ->call('submit')
+            ->assertHasErrors('guest_name');
+
+        // Alasan dan nama tamu diisi diterima
         $this->page()
             ->set('type', 'guest_visit')
             ->set('reason', 'Kunjungan orang tua peserta')
@@ -227,7 +249,7 @@ class PermissionRequestTest extends TestCase
         $this->contingent(3);
         $this->contingent(3);
 
-        $this->seed(\Database\Seeders\PermissionRequestSeeder::class);
+        $this->seed(PermissionRequestSeeder::class);
 
         $this->assertSame(5, PermissionRequest::count());
         $this->assertSame(2, PermissionRequest::where('type', 'guest_visit')->count());
@@ -236,7 +258,7 @@ class PermissionRequestTest extends TestCase
         $this->assertSame(1, PermissionRequest::where('type', 'leave_temporary')->where('status', 'completed')->count());
 
         // Aman dijalankan ulang
-        $this->seed(\Database\Seeders\PermissionRequestSeeder::class);
+        $this->seed(PermissionRequestSeeder::class);
         $this->assertSame(5, PermissionRequest::count());
     }
 
@@ -273,7 +295,7 @@ class PermissionRequestTest extends TestCase
         $request->members()->create(['participant_id' => $c['participants'][0]->id]);
 
         $captured = null;
-        \Illuminate\Support\Facades\View::composer('permissions.letter-pdf', function ($view) use (&$captured) {
+        View::composer('permissions.letter-pdf', function ($view) use (&$captured) {
             $captured = $view->getData();
         });
 
@@ -284,6 +306,90 @@ class PermissionRequestTest extends TestCase
         $this->assertStringStartsWith('data:image/svg+xml;base64,', $captured['chairQr']);
         $this->assertSame($c['chaperone']->id, $captured['responsible']->id);
         // QR sama persis dengan QR tautan verifikasi kartu bindamping
-        $this->assertSame(app(\App\Services\QrCodeService::class)->generateDataUri(route('digital-cards.verify', $c['chaperone']->qr_token), 90), $captured['responsibleQr']);
+        $this->assertSame(app(QrCodeService::class)->generateDataUri(route('digital-cards.verify', $c['chaperone']->qr_token), 90), $captured['responsibleQr']);
+    }
+
+    public function test_unreturned_tab_shows_detailed_participants_and_allows_manual_confirmation(): void
+    {
+        $c = $this->contingent(2);
+
+        // Buat izin sementara
+        $this->page()
+            ->set('type', 'leave_temporary')
+            ->set('reason', 'Keperluan berobat ke puskesmas')
+            ->call('handleScan', $c['chaperone']->qr_token)
+            ->call('handleScan', $c['participants'][0]->qr_token)
+            ->call('handleScan', $c['participants'][1]->qr_token)
+            ->call('submit')
+            ->assertHasNoErrors();
+
+        $request = PermissionRequest::first();
+        $member1 = $request->members()->where('participant_id', $c['participants'][0]->id)->first();
+        $member2 = $request->members()->where('participant_id', $c['participants'][1]->id)->first();
+
+        // Buka tab unreturned: data lengkap tampil
+        $component = $this->page()
+            ->call('setTab', 'unreturned')
+            ->assertSee('Peserta Belum Kembali')
+            ->assertSee($c['participants'][0]->full_name)
+            ->assertSee($c['participants'][1]->full_name)
+            ->assertSee($c['group']->school_name)
+            ->assertSee('Keperluan berobat ke puskesmas')
+            ->assertSee('DI LUAR');
+
+        // Filter pencarian
+        $component->set('unreturnedSearch', $c['participants'][0]->full_name)
+            ->assertSee($c['participants'][0]->full_name)
+            ->assertDontSee($c['participants'][1]->full_name);
+
+        $component->set('unreturnedSearch', '')
+            ->assertSee($c['participants'][0]->full_name)
+            ->assertSee($c['participants'][1]->full_name);
+
+        // Konfirmasi manual peserta pertama: verifikasi 2 tahap
+        $component->call('confirmReturnManual', $member1->id)
+            ->assertSet('showReturnModal', true)
+            ->assertSee('Tahap 2 dari 2')
+            ->assertSee($c['participants'][0]->full_name)
+            ->call('processReturnConfirmation')
+            ->assertSet('feedback.type', 'success')
+            ->assertSet('showReturnModal', false);
+
+        $this->assertNotNull($member1->fresh()->returned_at);
+        $this->assertSame('active', $request->fresh()->status);
+
+        // Konfirmasi manual peserta kedua: izin selesai
+        $component->call('confirmReturnManual', $member2->id)
+            ->assertSet('showReturnModal', true)
+            ->call('processReturnConfirmation')
+            ->assertSet('feedback.type', 'success');
+
+        $this->assertNotNull($member2->fresh()->returned_at);
+        $this->assertSame('completed', $request->fresh()->status);
+    }
+
+    public function test_return_modal_can_be_cancelled_without_confirming(): void
+    {
+        $c = $this->contingent(1);
+
+        $this->page()
+            ->set('type', 'leave_temporary')
+            ->set('reason', 'Izin sebentar')
+            ->call('handleScan', $c['chaperone']->qr_token)
+            ->call('handleScan', $c['participants'][0]->qr_token)
+            ->call('submit');
+
+        $request = PermissionRequest::first();
+        $member = $request->members()->where('participant_id', $c['participants'][0]->id)->first();
+
+        $return = $this->page()->call('setTab', 'return');
+        $return->call('handleScan', $c['participants'][0]->qr_token)
+            ->assertSet('showReturnModal', true)
+            ->call('closeReturnModal')
+            ->assertSet('showReturnModal', false)
+            ->assertSet('returnMemberId', null);
+
+        $this->assertNull($member->fresh()->returned_at);
+        $this->assertSame('active', $request->fresh()->status);
     }
 }

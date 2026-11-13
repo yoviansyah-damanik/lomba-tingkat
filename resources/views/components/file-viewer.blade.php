@@ -6,6 +6,7 @@
         url: '',
         title: '',
         scale: 1,
+        pdfScale: 1,
         pdfLoading: false,
         pdfPages: 0,
         pdfCurrentPage: 1,
@@ -26,6 +27,7 @@
             this.url = detail.url;
             this.title = detail.title || 'Pratinjau Berkas';
             this.scale = 1;
+            this.pdfScale = 1;
             this.open = true;
             this.pdfPages = 0;
             this.pdfCurrentPage = 1;
@@ -42,11 +44,13 @@
             const container = document.getElementById('pdf-canvas-container');
             if (!container || !window.pdfViewerManager) return;
             this.pdfLoading = true;
+            this.pdfScale = 1;
             try {
                 const viewer = await window.pdfViewerManager.getOrCreate(this.viewerId, container);
                 await viewer.load(this.url, (info) => {
                     this.pdfPages = info.numPages;
                     this.pdfCurrentPage = info.currentPage;
+                    this.pdfScale = 1;
                     this.pdfLoading = false;
                 });
             } catch (e) {
@@ -69,13 +73,13 @@
         pdfZoom(step) {
             const viewer = window.pdfViewerManager?.get(this.viewerId);
             if (viewer) {
-                viewer.zoom(step);
+                this.pdfScale = viewer.zoom(step);
             }
         },
         pdfReset() {
             const viewer = window.pdfViewerManager?.get(this.viewerId);
             if (viewer) {
-                viewer.resetZoom();
+                this.pdfScale = viewer.resetZoom();
             }
         },
         close() {
@@ -87,6 +91,7 @@
             this.open = false;
             this.url = '';
             this.scale = 1;
+            this.pdfScale = 1;
             window.pdfViewerManager?.destroy(this.viewerId);
         },
         zoom(step) {
@@ -125,6 +130,7 @@
 
                         <template x-if="kind === 'pdf'">
                             <div class="flex items-center gap-1 sm:gap-1.5">
+                                <span class="rounded-lg border border-zinc-700/50 bg-zinc-800 px-2 py-1 font-mono text-xs font-semibold text-amber-300" x-text="Math.round(pdfScale * 100) + '%'"></span>
                                 <template x-if="pdfPages > 1">
                                     <div class="flex items-center gap-1 mr-1">
                                         <flux:button size="xs" variant="subtle" icon="chevron-left" x-bind:disabled="pdfCurrentPage <= 1" x-on:click="pdfPrev()">Hal</flux:button>
@@ -132,9 +138,9 @@
                                         <flux:button size="xs" variant="subtle" icon="chevron-right" x-bind:disabled="pdfCurrentPage >= pdfPages" x-on:click="pdfNext()">Hal</flux:button>
                                     </div>
                                 </template>
-                                <flux:button size="xs" variant="subtle" icon="magnifying-glass-plus" x-on:click="pdfZoom(0.25)"></flux:button>
-                                <flux:button size="xs" variant="subtle" icon="magnifying-glass-minus" x-on:click="pdfZoom(-0.25)"></flux:button>
-                                <flux:button size="xs" variant="subtle" icon="arrow-path" x-on:click="pdfReset()"></flux:button>
+                                <flux:button size="xs" variant="subtle" icon="magnifying-glass-plus" x-on:click="pdfZoom(0.25)" title="Perbesar (Zoom In)"></flux:button>
+                                <flux:button size="xs" variant="subtle" icon="magnifying-glass-minus" x-on:click="pdfZoom(-0.25)" title="Perkecil (Zoom Out)"></flux:button>
+                                <flux:button size="xs" variant="subtle" icon="arrow-path" x-on:click="pdfReset()" title="Reset Zoom"></flux:button>
                             </div>
                         </template>
 
@@ -159,12 +165,14 @@
                     </template>
 
                     {{-- Penampil PDF Canvas (langsung tampil di mobile maupun desktop) --}}
-                    <div x-show="open && kind === 'pdf'" class="relative h-full w-full overflow-auto bg-zinc-950 p-2 sm:p-4 text-center">
+                    <div x-show="open && kind === 'pdf'"
+                        x-on:wheel.ctrl.prevent="pdfZoom($event.deltaY < 0 ? 0.25 : -0.25)"
+                        class="relative h-full w-full overflow-auto bg-zinc-950 p-2 sm:p-4 text-center">
                         <div x-show="pdfLoading" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-zinc-900/80 backdrop-blur-xs">
                             <flux:icon name="arrow-path" class="size-8 animate-spin text-amber-500 mb-2" />
                             <span class="text-xs text-zinc-300 font-medium">Memuat dokumen PDF...</span>
                         </div>
-                        <div id="pdf-canvas-container" class="flex min-h-full items-center justify-center"></div>
+                        <div id="pdf-canvas-container" class="flex min-h-full min-w-full"></div>
                     </div>
 
                     <template x-if="open && kind === 'other'">

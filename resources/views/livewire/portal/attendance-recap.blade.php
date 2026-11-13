@@ -26,10 +26,10 @@
 
         <x-slot:actions>
             <flux:button href="{{ route('attendance.index') }}" variant="subtle" icon="qr-code" wire:navigate>
-                Buka Scanner Kamera
+                Portal Presensi
             </flux:button>
 
-            <flux:button href="{{ route('attendance.recap.preview', $printParams) }}" target="_blank" variant="primary" icon="document-text">
+            <flux:button wire:click="openPdfModal" variant="primary" icon="document-text">
                 Pratinjau PDF
             </flux:button>
         </x-slot:actions>
@@ -394,6 +394,214 @@
                     </flux:button>
                 </div>
             </form>
+        </div>
+    </flux:modal>
+
+    {{-- Modal Pilihan Konten & Kolom Pratinjau PDF --}}
+    <flux:modal wire:model="showPdfModal" class="max-w-2xl">
+        <div class="space-y-5">
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="rounded bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                        Opsi Pratinjau & Cetak PDF
+                    </span>
+                </div>
+                <flux:heading size="lg" class="mt-1">
+                    Pilih Konten Laporan Presensi
+                </flux:heading>
+                <flux:subheading class="text-xs">
+                    Tentukan sesi, status kehadiran, dan kolom data yang ingin dicantumkan ke dalam dokumen PDF.
+                </flux:subheading>
+            </div>
+
+            <div class="space-y-4 text-xs">
+                {{-- Sesi Presensi: Single, All, atau Multi Select --}}
+                <div class="rounded-2xl border border-zinc-200 bg-zinc-50/50 p-3.5 dark:border-zinc-800 dark:bg-zinc-800/30 space-y-2.5">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div>
+                            <label class="font-bold text-zinc-800 dark:text-zinc-200 block">Sesi Presensi</label>
+                            <span class="text-[11px] text-zinc-500">Pilih mode: satu sesi, seluruh sesi, atau beberapa sesi pilihan</span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <flux:button type="button" size="xs" :variant="$pdfSessionMode === 'all' ? 'primary' : 'subtle'" wire:click="setPdfSessionMode('all')" icon="rectangle-stack">
+                                Seluruh Sesi (All)
+                            </flux:button>
+                            <flux:button type="button" size="xs" :variant="$pdfSessionMode === 'single' ? 'primary' : 'subtle'" wire:click="setPdfSessionMode('single')" icon="document">
+                                Satu Sesi (Single)
+                            </flux:button>
+                            <flux:button type="button" size="xs" :variant="$pdfSessionMode === 'multi' ? 'primary' : 'subtle'" wire:click="setPdfSessionMode('multi')" icon="queue-list">
+                                Multi Select
+                            </flux:button>
+                        </div>
+                    </div>
+
+                    {{-- Mode: Seluruh Sesi (All) --}}
+                    @if ($pdfSessionMode === 'all')
+                        <div class="rounded-xl border border-zinc-200 bg-white p-3 text-xs dark:border-zinc-700 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-300 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <flux:icon name="check-circle" class="size-4 text-emerald-500 shrink-0" />
+                                <span>Mencakup seluruh sesi presensi (<strong>{{ $sessions->count() }} sesi</strong>).</span>
+                            </div>
+                            <span class="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">1 lembar berita acara per sesi</span>
+                        </div>
+                    @endif
+
+                    {{-- Mode: Satu Sesi (Single) --}}
+                    @if ($pdfSessionMode === 'single')
+                        <div class="space-y-1">
+                            <select wire:model.live="pdfSingleSessionId" class="w-full rounded-xl border border-zinc-200 bg-white p-2.5 text-xs font-semibold text-zinc-900 focus:border-amber-600 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
+                                @foreach($sessions as $sess)
+                                    <option value="{{ $sess->id }}">
+                                        {{ $sess->title }} {{ $sess->schedule?->arena_location ? '('.$sess->schedule->arena_location.')' : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
+
+                    {{-- Mode: Multi Select --}}
+                    @if ($pdfSessionMode === 'multi')
+                        <div class="space-y-2 pt-1">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[11px] text-zinc-500">Centang sesi yang ingin dicetak (Dipilih: <strong>{{ count($pdfSelectedSessionIds) }}</strong> dari {{ $sessions->count() }} sesi)</span>
+                                <div class="flex items-center gap-1">
+                                    <flux:button type="button" size="xs" variant="subtle" wire:click="selectAllPdfSessions">Pilih Semua</flux:button>
+                                    <flux:button type="button" size="xs" variant="subtle" wire:click="clearPdfSessions">Hapus Pilihan</flux:button>
+                                </div>
+                            </div>
+
+                            <div class="max-h-48 overflow-y-auto rounded-xl border border-zinc-200 bg-white p-2 dark:border-zinc-700 dark:bg-zinc-800 divide-y divide-zinc-100 dark:divide-zinc-700/50 space-y-1">
+                                @foreach($sessions as $sess)
+                                    <label class="flex items-center justify-between gap-2 p-2 rounded-lg cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-700/40 transition">
+                                        <div class="flex items-center gap-2.5 min-w-0">
+                                            <input type="checkbox" wire:model.live="pdfSelectedSessionIds" value="{{ $sess->id }}" class="rounded border-zinc-300 text-amber-600 focus:ring-amber-500">
+                                            <div class="min-w-0">
+                                                <div class="font-medium text-xs text-zinc-800 dark:text-zinc-200 truncate">{{ $sess->title }}</div>
+                                                @if($sess->schedule?->arena_location)
+                                                    <div class="text-[10px] text-zinc-400 truncate">Pos: {{ $sess->schedule->arena_location }}</div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                        <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 {{ $sess->isCompetition() ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' }}">
+                                            {{ $sess->isCompetition() ? 'Lomba' : 'Umum' }}
+                                        </span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                </div>
+
+                {{-- Kategori Peserta / Entitas --}}
+                <div class="space-y-1">
+                    <label class="font-bold text-zinc-700 dark:text-zinc-300">Kategori Peserta / Entitas</label>
+                    <select wire:model.live="pdfEntityType" class="w-full rounded-xl border border-zinc-200 bg-white p-2.5 text-xs font-semibold text-zinc-900 focus:border-amber-600 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
+                        <option value="all">Semua Kategori (Peserta, Bindamping, Panitia)</option>
+                        <option value="participant">Hanya Peserta Lomba</option>
+                        <option value="chaperone">Hanya Pembina Pendamping</option>
+                        <option value="user">Hanya Panitia & Dewan Juri</option>
+                    </select>
+                </div>
+
+                {{-- Status Kehadiran yang Dicantumkan --}}
+                <div class="rounded-2xl border border-zinc-200 bg-zinc-50/50 p-3.5 dark:border-zinc-800 dark:bg-zinc-800/30 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="font-bold text-zinc-800 dark:text-zinc-200">Status Kehadiran</label>
+                        <flux:button type="button" size="xs" variant="subtle" wire:click="selectAllPdfStatuses">Pilih Semua Status</flux:button>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                        <label class="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white p-2.5 cursor-pointer hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700/60 transition">
+                            <input type="checkbox" wire:model.live="pdfStatuses" value="present" class="rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500">
+                            <span class="font-medium text-zinc-800 dark:text-zinc-200">Hadir Tepat</span>
+                        </label>
+                        <label class="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white p-2.5 cursor-pointer hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700/60 transition">
+                            <input type="checkbox" wire:model.live="pdfStatuses" value="late" class="rounded border-zinc-300 text-amber-600 focus:ring-amber-500">
+                            <span class="font-medium text-zinc-800 dark:text-zinc-200">Terlambat</span>
+                        </label>
+                        <label class="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white p-2.5 cursor-pointer hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700/60 transition">
+                            <input type="checkbox" wire:model.live="pdfStatuses" value="excused" class="rounded border-zinc-300 text-blue-600 focus:ring-blue-500">
+                            <span class="font-medium text-zinc-800 dark:text-zinc-200">Izin / Disp</span>
+                        </label>
+                        <label class="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white p-2.5 cursor-pointer hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700/60 transition">
+                            <input type="checkbox" wire:model.live="pdfStatuses" value="absent" class="rounded border-zinc-300 text-rose-600 focus:ring-rose-500">
+                            <span class="font-medium text-zinc-800 dark:text-zinc-200">Alpa / Absen</span>
+                        </label>
+                    </div>
+                </div>
+
+                {{-- Kolom Data Tabel --}}
+                <div class="rounded-2xl border border-zinc-200 bg-zinc-50/50 p-3.5 dark:border-zinc-800 dark:bg-zinc-800/30 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="font-bold text-zinc-800 dark:text-zinc-200">Kolom Tabel Presensi</label>
+                            <span class="text-[11px] text-zinc-500 block">Pilih kolom mana saja yang akan ditampilkan dalam tabel</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <flux:button type="button" size="xs" variant="subtle" wire:click="selectAllPdfColumns">Semua</flux:button>
+                            <flux:button type="button" size="xs" variant="subtle" wire:click="deselectAllPdfColumns">Minimal</flux:button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                        <label class="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white p-2.5 cursor-pointer hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700/60 transition">
+                            <input type="checkbox" wire:model.live="pdfColumns" value="id" class="rounded border-zinc-300 text-amber-600 focus:ring-amber-500">
+                            <span class="font-medium text-zinc-800 dark:text-zinc-200">Nomor ID (ID-XXXX / NTA)</span>
+                        </label>
+                        <label class="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white p-2.5 cursor-pointer hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700/60 transition">
+                            <input type="checkbox" wire:model.live="pdfColumns" value="name" class="rounded border-zinc-300 text-amber-600 focus:ring-amber-500">
+                            <span class="font-medium text-zinc-800 dark:text-zinc-200">Nama Lengkap</span>
+                        </label>
+                        <label class="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white p-2.5 cursor-pointer hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700/60 transition">
+                            <input type="checkbox" wire:model.live="pdfColumns" value="role" class="rounded border-zinc-300 text-amber-600 focus:ring-amber-500">
+                            <span class="font-medium text-zinc-800 dark:text-zinc-200">Peran / Jabatan</span>
+                        </label>
+                        <label class="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white p-2.5 cursor-pointer hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700/60 transition">
+                            <input type="checkbox" wire:model.live="pdfColumns" value="group" class="rounded border-zinc-300 text-amber-600 focus:ring-amber-500">
+                            <span class="font-medium text-zinc-800 dark:text-zinc-200">Pangkalan & Regu (Sekolah)</span>
+                        </label>
+                        <label class="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white p-2.5 cursor-pointer hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700/60 transition">
+                            <input type="checkbox" wire:model.live="pdfColumns" value="time" class="rounded border-zinc-300 text-amber-600 focus:ring-amber-500">
+                            <span class="font-medium text-zinc-800 dark:text-zinc-200">Waktu Presensi (Jam WIB)</span>
+                        </label>
+                        <label class="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white p-2.5 cursor-pointer hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700/60 transition">
+                            <input type="checkbox" wire:model.live="pdfColumns" value="status" class="rounded border-zinc-300 text-amber-600 focus:ring-amber-500">
+                            <span class="font-medium text-zinc-800 dark:text-zinc-200">Status Kehadiran</span>
+                        </label>
+                        <label class="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white p-2.5 cursor-pointer hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700/60 transition sm:col-span-2">
+                            <input type="checkbox" wire:model.live="pdfColumns" value="notes" class="rounded border-zinc-300 text-amber-600 focus:ring-amber-500">
+                            <span class="font-medium text-zinc-800 dark:text-zinc-200">Catatan Khusus / Kolom Paraf</span>
+                        </label>
+                    </div>
+                </div>
+
+                {{-- Opsi Elemen Tambahan --}}
+                <div class="rounded-2xl border border-zinc-200 bg-zinc-50/50 p-3.5 dark:border-zinc-800 dark:bg-zinc-800/30 space-y-2">
+                    <label class="font-bold text-zinc-800 dark:text-zinc-200 block">Elemen Tambahan Lembar Laporan</label>
+                    <div class="space-y-2 pt-1">
+                        <label class="flex items-center gap-2.5 cursor-pointer">
+                            <input type="checkbox" wire:model.live="pdfShowStats" class="rounded border-zinc-300 text-amber-600 focus:ring-amber-500">
+                            <span class="text-zinc-700 dark:text-zinc-300">Tampilkan Kotak Statistik & KPI (Total, Hadir, Terlambat, Izin, Alpa)</span>
+                        </label>
+                        <label class="flex items-center gap-2.5 cursor-pointer">
+                            <input type="checkbox" wire:model.live="pdfShowSignature" class="rounded border-zinc-300 text-amber-600 focus:ring-amber-500">
+                            <span class="text-zinc-700 dark:text-zinc-300">Tampilkan Lembar Tanda Tangan & Berita Acara Ketua Panitia</span>
+                        </label>
+                        <label class="flex items-center gap-2.5 cursor-pointer">
+                            <input type="checkbox" wire:model.live="pdfHideEmptySessions" class="rounded border-zinc-300 text-amber-600 focus:ring-amber-500">
+                            <span class="text-zinc-700 dark:text-zinc-300">Sembunyikan Sesi Kosong (Hanya sesi yang sudah memiliki rekaman presensi)</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Modal Footer --}}
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+                <flux:button type="button" variant="subtle" size="sm" wire:click="closePdfModal">
+                    Batal
+                </flux:button>
+                <flux:button href="{{ $this->pdfPreviewUrl }}" target="_blank" @click="$wire.showPdfModal = false" variant="primary" size="sm" icon="document-text" class="bg-amber-600 hover:bg-amber-700 text-white font-bold">
+                    Buka Pratinjau PDF
+                </flux:button>
+            </div>
         </div>
     </flux:modal>
 </div>

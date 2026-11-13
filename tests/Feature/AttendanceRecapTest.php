@@ -6,6 +6,7 @@ use App\Enums\PatrolGenderEnum;
 use App\Enums\PatrolRoleEnum;
 use App\Enums\RegistrationStatusEnum;
 use App\Enums\RoleEnum;
+use App\Http\Controllers\AttendanceScannerController;
 use App\Livewire\Portal\AttendanceRecap;
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
@@ -17,8 +18,11 @@ use App\Models\Participant;
 use App\Models\Patrol;
 use App\Models\ScoutGroup;
 use App\Models\User;
+use Database\Seeders\EventSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -27,18 +31,24 @@ class AttendanceRecapTest extends TestCase
     use RefreshDatabase;
 
     protected User $admin;
+
     protected User $committee;
+
     protected User $judge;
+
     protected AttendanceSession $session;
+
     protected Attendance $attendance;
+
     protected Participant $participant;
+
     protected ScoutGroup $scoutGroup;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->seed(RoleSeeder::class);
-        $this->seed(\Database\Seeders\EventSeeder::class);
+        $this->seed(EventSeeder::class);
 
         $event = Event::first();
 
@@ -241,13 +251,13 @@ class AttendanceRecapTest extends TestCase
 
     public function test_attendance_recap_pdf_template_content(): void
     {
-        $attendances = \App\Models\Attendance::with(['participant.patrol.scoutGroup', 'chaperone.scoutGroup', 'user', 'session.schedule.competition'])->get();
+        $attendances = Attendance::with(['participant.patrol.scoutGroup', 'chaperone.scoutGroup', 'user', 'session.schedule.competition'])->get();
 
         $html = view('portal.attendance.recap-pdf', [
             'attendances' => $attendances,
             'selectedSession' => $this->session->load('schedule.competition'),
             'stats' => ['total' => $attendances->count(), 'present' => 1, 'late' => 0, 'excused' => 0, 'absent' => 0],
-            'event' => \App\Models\Event::first(),
+            'event' => Event::first(),
         ])->render();
 
         $this->assertStringContainsString('Berita Acara', $html);
@@ -261,13 +271,13 @@ class AttendanceRecapTest extends TestCase
 
     public function test_all_sessions_recap_prints_each_session_on_its_own_sheet_with_configured_signatory(): void
     {
-        $event = \App\Models\Event::first();
+        $event = Event::first();
         $event->update(['committee_chair_name' => 'Drs. Ahmad Siregar', 'committee_chair_nta' => '02.08.01.001']);
 
-        $attendances = \App\Models\Attendance::with(['participant.patrol.scoutGroup', 'chaperone.scoutGroup', 'user', 'session.schedule.competition'])->get();
+        $attendances = Attendance::with(['participant.patrol.scoutGroup', 'chaperone.scoutGroup', 'user', 'session.schedule.competition'])->get();
         $stats = ['total' => $attendances->count(), 'present' => 1, 'late' => 0, 'excused' => 0, 'absent' => 0];
 
-        $secondSession = \App\Models\AttendanceSession::create([
+        $secondSession = AttendanceSession::create([
             'title' => 'Presensi Sesi Kedua Uji',
             'session_type' => 'participant',
             'is_competition' => false,
@@ -300,7 +310,7 @@ class AttendanceRecapTest extends TestCase
 
     public function test_recap_data_for_all_sessions_returns_every_session_including_empty_ones(): void
     {
-        \App\Models\AttendanceSession::create([
+        AttendanceSession::create([
             'title' => 'Sesi Tanpa Presensi Uji',
             'session_type' => 'participant',
             'is_competition' => false,
@@ -309,15 +319,15 @@ class AttendanceRecapTest extends TestCase
             'is_active' => true,
         ]);
 
-        $request = \Illuminate\Http\Request::create('/portal/attendance/recap/pdf', 'GET', ['session_id' => 'all']);
+        $request = Request::create('/portal/attendance/recap/pdf', 'GET', ['session_id' => 'all']);
         $request->setUserResolver(fn () => $this->admin);
 
-        $method = new \ReflectionMethod(\App\Http\Controllers\AttendanceScannerController::class, 'recapData');
+        $method = new \ReflectionMethod(AttendanceScannerController::class, 'recapData');
         $method->setAccessible(true);
-        $data = $method->invoke(app(\App\Http\Controllers\AttendanceScannerController::class), $request);
+        $data = $method->invoke(app(AttendanceScannerController::class), $request);
 
         $titles = $data['sections']->pluck('session.title');
-        $this->assertSame(\App\Models\AttendanceSession::count(), $data['sections']->count());
+        $this->assertSame(AttendanceSession::count(), $data['sections']->count());
         $this->assertTrue($titles->contains('Sesi Tanpa Presensi Uji'));
         $this->assertSame(0, $data['sections']->firstWhere('session.title', 'Sesi Tanpa Presensi Uji')['stats']['total']);
         $this->assertSame($data['attendances']->count(), $data['sections']->sum(fn ($section) => $section['attendances']->count()));
@@ -327,7 +337,7 @@ class AttendanceRecapTest extends TestCase
 
     public function test_recap_data_for_a_selected_session_contains_only_that_session(): void
     {
-        \App\Models\AttendanceSession::create([
+        AttendanceSession::create([
             'title' => 'Sesi Lain Uji',
             'session_type' => 'participant',
             'is_competition' => false,
@@ -336,12 +346,12 @@ class AttendanceRecapTest extends TestCase
             'is_active' => true,
         ]);
 
-        $request = \Illuminate\Http\Request::create('/portal/attendance/recap/pdf', 'GET', ['session_id' => $this->session->id]);
+        $request = Request::create('/portal/attendance/recap/pdf', 'GET', ['session_id' => $this->session->id]);
         $request->setUserResolver(fn () => $this->admin);
 
-        $method = new \ReflectionMethod(\App\Http\Controllers\AttendanceScannerController::class, 'recapData');
+        $method = new \ReflectionMethod(AttendanceScannerController::class, 'recapData');
         $method->setAccessible(true);
-        $data = $method->invoke(app(\App\Http\Controllers\AttendanceScannerController::class), $request);
+        $data = $method->invoke(app(AttendanceScannerController::class), $request);
 
         $this->assertCount(1, $data['sections']);
         $this->assertSame($this->session->id, $data['sections']->first()['session']->id);
@@ -349,8 +359,8 @@ class AttendanceRecapTest extends TestCase
 
     public function test_preview_link_on_recap_page_carries_selected_session(): void
     {
-        \Livewire\Livewire::actingAs($this->admin)
-            ->test(\App\Livewire\Portal\AttendanceRecap::class)
+        Livewire::actingAs($this->admin)
+            ->test(AttendanceRecap::class)
             ->assertDontSeeHtml('recap/preview?session_id=')
             ->set('sessionId', $this->session->id)
             ->assertSeeHtml('recap/preview?session_id='.$this->session->id);
@@ -358,7 +368,7 @@ class AttendanceRecapTest extends TestCase
 
     public function test_print_window_route_is_removed(): void
     {
-        $this->assertFalse(\Illuminate\Support\Facades\Route::has('attendance.recap.print'));
+        $this->assertFalse(Route::has('attendance.recap.print'));
     }
 
     public function test_attendance_recap_preview_page_embeds_pdf_and_offers_download(): void
@@ -389,5 +399,77 @@ class AttendanceRecapTest extends TestCase
         );
 
         $this->assertStringContainsString('attachment; filename="rekap-presensi-', $download->headers->get('Content-Disposition'));
+    }
+
+    public function test_pdf_modal_options_and_custom_columns(): void
+    {
+        Livewire::actingAs($this->admin)
+            ->test(AttendanceRecap::class)
+            ->assertSet('showPdfModal', false)
+            ->call('openPdfModal')
+            ->assertSet('showPdfModal', true)
+            ->assertSee('Pilih Konten Laporan Presensi')
+            ->call('deselectAllPdfColumns')
+            ->assertSet('pdfColumns', ['name', 'status'])
+            ->call('selectAllPdfColumns')
+            ->call('closePdfModal')
+            ->assertSet('showPdfModal', false);
+    }
+
+    public function test_pdf_rendering_respects_custom_columns_and_element_toggles(): void
+    {
+        $response = $this->actingAs($this->admin)->get(
+            route('attendance.recap.pdf', [
+                'session_id' => $this->session->id,
+                'cols' => 'name,status',
+                'show_stats' => 0,
+                'show_signature' => 0,
+                'raw' => 1,
+            ])
+        );
+
+        $response->assertOk();
+        $this->assertStringStartsWith('%PDF', $response->getContent());
+    }
+
+    public function test_pdf_modal_supports_single_all_and_multi_select_sessions(): void
+    {
+        $secondSession = AttendanceSession::create([
+            'event_id' => Event::first()->id,
+            'title' => 'Sesi Presensi Kedua',
+            'is_active' => true,
+            'is_competition' => false,
+            'opened_at' => now()->subHour(),
+            'closed_at' => now()->addHours(2),
+        ]);
+
+        $test = Livewire::actingAs($this->admin)
+            ->test(AttendanceRecap::class)
+            ->call('openPdfModal')
+            ->assertSet('pdfSessionMode', 'all')
+            ->call('setPdfSessionMode', 'single')
+            ->assertSet('pdfSessionMode', 'single')
+            ->set('pdfSingleSessionId', $this->session->id)
+            ->assertSet('pdfPreviewUrl', fn ($url) => str_contains($url, 'session_id='.$this->session->id))
+            ->call('setPdfSessionMode', 'multi')
+            ->assertSet('pdfSessionMode', 'multi')
+            ->set('pdfSelectedSessionIds', [$this->session->id, $secondSession->id])
+            ->assertSet('pdfPreviewUrl', fn ($url) => str_contains($url, 'session_id='.urlencode($this->session->id.','.$secondSession->id)))
+            ->call('clearPdfSessions')
+            ->assertSet('pdfSelectedSessionIds', [])
+            ->call('selectAllPdfSessions');
+
+        $this->assertCount(2, $test->get('pdfSelectedSessionIds'));
+
+        // Test controller with multi-session comma-separated ID
+        $response = $this->actingAs($this->admin)->get(
+            route('attendance.recap.pdf', [
+                'session_id' => $this->session->id.','.$secondSession->id,
+                'raw' => 1,
+            ])
+        );
+
+        $response->assertOk();
+        $this->assertStringStartsWith('%PDF', $response->getContent());
     }
 }

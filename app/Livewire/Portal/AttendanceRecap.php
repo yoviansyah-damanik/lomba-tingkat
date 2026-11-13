@@ -4,6 +4,7 @@ namespace App\Livewire\Portal;
 
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
+use Carbon\Carbon;
 use Flux\Flux;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -41,13 +42,136 @@ class AttendanceRecap extends Component
 
     // State Modal Edit Data Presensi
     public bool $showEditModal = false;
+
     public ?string $editingAttendanceId = null;
+
     public string $editEntityName = '';
+
     public string $editEntityRole = '';
+
     public string $editSessionTitle = '';
+
     public string $editStatus = 'present';
+
     public string $editNotes = '';
+
     public string $editScannedAt = '';
+
+    // State Modal Opsi Pratinjau & Cetak PDF Rekapitulasi
+    public bool $showPdfModal = false;
+
+    /** Mode pemilihan sesi: 'all' (semua), 'single' (satu sesi), 'multi' (beberapa sesi) */
+    public string $pdfSessionMode = 'all';
+
+    public string $pdfSingleSessionId = '';
+
+    /** @var array<int, string> */
+    public array $pdfSelectedSessionIds = [];
+
+    public string $pdfEntityType = 'all';
+
+    /** @var array<int, string> */
+    public array $pdfStatuses = ['present', 'late', 'excused', 'absent'];
+
+    /** @var array<int, string> */
+    public array $pdfColumns = ['id', 'name', 'role', 'group', 'time', 'status', 'notes'];
+
+    public bool $pdfShowStats = true;
+
+    public bool $pdfShowSignature = true;
+
+    public bool $pdfHideEmptySessions = false;
+
+    public function openPdfModal(): void
+    {
+        if ($this->sessionId !== 'all') {
+            $this->pdfSessionMode = 'single';
+            $this->pdfSingleSessionId = $this->sessionId;
+            $this->pdfSelectedSessionIds = [$this->sessionId];
+        } else {
+            $this->pdfSessionMode = 'all';
+            $this->pdfSingleSessionId = (string) ($this->accessibleSessions->first()?->id ?? '');
+            $this->pdfSelectedSessionIds = $this->accessibleSessions->pluck('id')->map(fn ($id) => (string) $id)->toArray();
+        }
+
+        $this->pdfEntityType = $this->entityType;
+        if ($this->statusFilter !== 'all') {
+            $this->pdfStatuses = [$this->statusFilter];
+        } else {
+            $this->pdfStatuses = ['present', 'late', 'excused', 'absent'];
+        }
+        $this->showPdfModal = true;
+    }
+
+    public function closePdfModal(): void
+    {
+        $this->showPdfModal = false;
+    }
+
+    public function setPdfSessionMode(string $mode): void
+    {
+        $this->pdfSessionMode = in_array($mode, ['all', 'single', 'multi'], true) ? $mode : 'all';
+
+        if ($this->pdfSessionMode === 'single' && empty($this->pdfSingleSessionId)) {
+            $this->pdfSingleSessionId = $this->sessionId !== 'all'
+                ? $this->sessionId
+                : (string) ($this->accessibleSessions->first()?->id ?? '');
+        }
+
+        if ($this->pdfSessionMode === 'multi' && empty($this->pdfSelectedSessionIds)) {
+            $this->pdfSelectedSessionIds = $this->accessibleSessions->pluck('id')->map(fn ($id) => (string) $id)->toArray();
+        }
+    }
+
+    public function selectAllPdfSessions(): void
+    {
+        $this->pdfSelectedSessionIds = $this->accessibleSessions->pluck('id')->map(fn ($id) => (string) $id)->toArray();
+    }
+
+    public function clearPdfSessions(): void
+    {
+        $this->pdfSelectedSessionIds = [];
+    }
+
+    public function selectAllPdfColumns(): void
+    {
+        $this->pdfColumns = ['id', 'name', 'role', 'group', 'time', 'status', 'notes'];
+    }
+
+    public function deselectAllPdfColumns(): void
+    {
+        $this->pdfColumns = ['name', 'status'];
+    }
+
+    public function selectAllPdfStatuses(): void
+    {
+        $this->pdfStatuses = ['present', 'late', 'excused', 'absent'];
+    }
+
+    #[Computed]
+    public function pdfPreviewUrl(): string
+    {
+        $sessionIdParam = null;
+        if ($this->pdfSessionMode === 'single') {
+            $sessionIdParam = ! empty($this->pdfSingleSessionId) ? $this->pdfSingleSessionId : null;
+        } elseif ($this->pdfSessionMode === 'multi') {
+            $sessionIdParam = ! empty($this->pdfSelectedSessionIds) ? implode(',', $this->pdfSelectedSessionIds) : null;
+        }
+
+        $params = [
+            'session_id' => $sessionIdParam,
+            'status' => count($this->pdfStatuses) < 4 ? implode(',', $this->pdfStatuses) : null,
+            'entity_type' => $this->pdfEntityType !== 'all' ? $this->pdfEntityType : null,
+            'date' => ! empty($this->dateFilter) ? $this->dateFilter : null,
+            'search' => ! empty($this->search) ? $this->search : null,
+            'cols' => implode(',', $this->pdfColumns),
+            'show_stats' => $this->pdfShowStats ? '1' : '0',
+            'show_signature' => $this->pdfShowSignature ? '1' : '0',
+            'hide_empty_sessions' => $this->pdfHideEmptySessions ? '1' : '0',
+        ];
+
+        return route('attendance.recap.preview', array_filter($params, fn ($v) => $v !== null));
+    }
 
     public function updatedSearch(): void
     {
@@ -56,6 +180,15 @@ class AttendanceRecap extends Component
 
     public function updatedSessionId(): void
     {
+        if ($this->sessionId !== 'all') {
+            $this->pdfSessionMode = 'single';
+            $this->pdfSingleSessionId = $this->sessionId;
+            $this->pdfSelectedSessionIds = [$this->sessionId];
+        } else {
+            $this->pdfSessionMode = 'all';
+            $this->pdfSelectedSessionIds = $this->accessibleSessions->pluck('id')->map(fn ($id) => (string) $id)->toArray();
+        }
+
         $this->resetPage();
     }
 
@@ -66,11 +199,17 @@ class AttendanceRecap extends Component
 
     public function updatedEntityType(): void
     {
+        $this->pdfEntityType = $this->entityType;
         $this->resetPage();
     }
 
     public function updatedStatusFilter(): void
     {
+        if ($this->statusFilter !== 'all') {
+            $this->pdfStatuses = [$this->statusFilter];
+        } else {
+            $this->pdfStatuses = ['present', 'late', 'excused', 'absent'];
+        }
         $this->resetPage();
     }
 
@@ -99,7 +238,7 @@ class AttendanceRecap extends Component
     public function stats(): array
     {
         $user = auth()->user();
-        $baseQuery = Attendance::whereHas('session', fn($q) => $q->accessibleBy($user));
+        $baseQuery = Attendance::whereHas('session', fn ($q) => $q->accessibleBy($user));
 
         if ($this->sessionId !== 'all') {
             $baseQuery->where('attendance_session_id', $this->sessionId);
@@ -123,7 +262,7 @@ class AttendanceRecap extends Component
     {
         $user = auth()->user();
 
-        $query = Attendance::whereHas('session', fn($q) => $q->accessibleBy($user))
+        $query = Attendance::whereHas('session', fn ($q) => $q->accessibleBy($user))
             ->with([
                 'session.schedule.competition',
                 'participant.patrol.scoutGroup',
@@ -139,9 +278,9 @@ class AttendanceRecap extends Component
 
         // Filter tipe sesi (Lomba vs Kehadiran Umum)
         if ($this->sessionType === 'competition') {
-            $query->whereHas('session', fn($q) => $q->where('is_competition', true));
+            $query->whereHas('session', fn ($q) => $q->where('is_competition', true));
         } elseif ($this->sessionType === 'general') {
-            $query->whereHas('session', fn($q) => $q->where(function ($sub) {
+            $query->whereHas('session', fn ($q) => $q->where(function ($sub) {
                 $sub->whereNull('competition_schedule_id')
                     ->orWhere('is_competition', false);
             }));
@@ -179,7 +318,7 @@ class AttendanceRecap extends Component
                         ->orWhere('id_number', 'like', "%{$term}%");
                 })->orWhereHas('patrol', function ($ptq) use ($term) {
                     $ptq->where('patrol_name', 'like', "%{$term}%")
-                        ->orWhereHas('scoutGroup', fn($sg) => $sg->where('school_name', 'like', "%{$term}%"));
+                        ->orWhereHas('scoutGroup', fn ($sg) => $sg->where('school_name', 'like', "%{$term}%"));
                 })->orWhere('notes', 'like', "%{$term}%");
             });
         }
@@ -196,12 +335,13 @@ class AttendanceRecap extends Component
 
         if (! $attendance->session?->canBeAccessedBy(auth()->user())) {
             Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Anda tidak berwenang mengedit catatan presensi pada sesi ini.');
+
             return;
         }
 
         $this->editingAttendanceId = $attendance->id;
         $this->editEntityName = $attendance->entity_name;
-        $this->editEntityRole = $attendance->entity_role . ' • ' . $attendance->entity_group;
+        $this->editEntityRole = $attendance->entity_role.' • '.$attendance->entity_group;
         $this->editSessionTitle = $attendance->session?->title ?: 'Sesi Presensi';
         $this->editStatus = $attendance->status ?: 'present';
         $this->editNotes = $attendance->notes ?: '';
@@ -222,6 +362,7 @@ class AttendanceRecap extends Component
 
         if (! $attendance->session?->canBeAccessedBy(auth()->user())) {
             Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Anda tidak berwenang mengedit catatan presensi pada sesi ini.');
+
             return;
         }
 
@@ -237,7 +378,7 @@ class AttendanceRecap extends Component
         ];
 
         if (! empty($this->editScannedAt)) {
-            $updateData['scanned_at'] = \Carbon\Carbon::parse($this->editScannedAt);
+            $updateData['scanned_at'] = Carbon::parse($this->editScannedAt);
         }
 
         $attendance->update($updateData);
@@ -261,6 +402,7 @@ class AttendanceRecap extends Component
 
         if (! $attendance->session?->canBeAccessedBy(auth()->user())) {
             Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Anda tidak berwenang memperbarui presensi ini.');
+
             return;
         }
 
@@ -293,6 +435,7 @@ class AttendanceRecap extends Component
 
         if (! $attendance->session?->canBeAccessedBy(auth()->user())) {
             Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Anda tidak berwenang membatalkan presensi pada sesi ini.');
+
             return;
         }
 

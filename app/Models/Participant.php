@@ -303,4 +303,20 @@ class Participant extends Model
     {
         return $this->role_in_patrol === PatrolRoleEnum::AssistantPatrolLeader;
     }
+
+    /**
+     * Apakah peserta putra
+     */
+    public function isMale(): bool
+    {
+        return $this->gender === 'male';
+    }
+
+    /**
+     * Apakah peserta putri
+     */
+    public function isFemale(): bool
+    {
+        return $this->gender === 'female';
+    }
 }

@@ -31,6 +31,9 @@
     @php
         // Cadangan bila dirender tanpa pembagian sesi: satu lembar dari data yang diberikan
         $sections = $sections ?? collect([['session' => $selectedSession ?? null, 'number' => 'BAP-LT3/KWARCAB-PSP/'.now()->year.'/001', 'attendances' => $attendances, 'stats' => $stats]]);
+        $cols = $cols ?? ['id', 'name', 'role', 'group', 'time', 'status', 'notes'];
+        $showStats = $showStats ?? true;
+        $showSignature = $showSignature ?? true;
     @endphp
 
     @foreach($sections as $section)
@@ -51,6 +54,7 @@
                 @endif
             </div>
 
+            @if($showStats)
             <table class="stats">
                 <tr>
                     <td><div class="label">Total Terdata</div><div class="value">{{ $section['stats']['total'] }}</div></td>
@@ -60,43 +64,47 @@
                     <td><div class="label">Alpa / Absen</div><div class="value">{{ $section['stats']['absent'] }}</div></td>
                 </tr>
             </table>
+            @endif
 
             <table class="data">
                 <thead>
                     <tr>
                         <th class="center" style="width: 20px;">No</th>
-                        <th style="width: 60px;">Nomor ID</th>
-                        <th>Nama Lengkap</th>
-                        <th>Peran / Jabatan</th>
-                        <th>Pangkalan / Regu</th>
-                        <th class="center" style="width: 48px;">Waktu</th>
-                        <th class="center" style="width: 52px;">Status</th>
-                        <th>Catatan / Paraf</th>
+                        @if(in_array('id', $cols)) <th style="width: 60px;">Nomor ID</th> @endif
+                        @if(in_array('name', $cols)) <th>Nama Lengkap</th> @endif
+                        @if(in_array('role', $cols)) <th>Peran / Jabatan</th> @endif
+                        @if(in_array('group', $cols)) <th>Pangkalan / Regu</th> @endif
+                        @if(in_array('time', $cols)) <th class="center" style="width: 48px;">Waktu</th> @endif
+                        @if(in_array('status', $cols)) <th class="center" style="width: 52px;">Status</th> @endif
+                        @if(in_array('notes', $cols)) <th>Catatan / Paraf</th> @endif
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($section['attendances'] as $idx => $att)
                         <tr class="{{ $idx % 2 === 1 ? 'zebra' : '' }}">
                             <td class="center">{{ $idx + 1 }}</td>
-                            <td>{{ $att->entity_id_number }}</td>
-                            <td><strong>{{ $att->entity_name }}</strong></td>
-                            <td>{{ $att->entity_role }}</td>
-                            <td>{{ $att->entity_group }}</td>
-                            <td class="center">{{ $att->scanned_at?->format('H:i') }} WIB</td>
-                            <td class="center">
-                                {{ match ($att->status) {
-                                    'present' => 'HADIR',
-                                    'late' => 'TERLAMBAT',
-                                    'excused' => 'IZIN',
-                                    'absent' => 'ALPA',
-                                    default => strtoupper((string) $att->status),
-                                } }}
-                            </td>
-                            <td>{{ $att->notes ?: '-' }}</td>
+                            @if(in_array('id', $cols)) <td>{{ $att->entity_id_number }}</td> @endif
+                            @if(in_array('name', $cols)) <td><strong>{{ $att->entity_name }}</strong></td> @endif
+                            @if(in_array('role', $cols)) <td>{{ $att->entity_role }}</td> @endif
+                            @if(in_array('group', $cols)) <td>{{ $att->entity_group }}</td> @endif
+                            @if(in_array('time', $cols)) <td class="center">{{ $att->scanned_at?->format('H:i') }} WIB</td> @endif
+                            @if(in_array('status', $cols))
+                                <td class="center">
+                                    {{ match ($att->status) {
+                                        'present' => 'HADIR',
+                                        'late' => 'TERLAMBAT',
+                                        'excused' => 'IZIN',
+                                        'absent' => 'ALPA',
+                                        default => strtoupper((string) $att->status),
+                                    } }}
+                                </td>
+                            @endif
+                            @if(in_array('notes', $cols)) <td>{{ $att->notes ?: '-' }}</td> @endif
                         </tr>
                     @empty
+                        @php($colCount = 1 + count($cols))
                         <tr>
-                            <td colspan="8" class="center" style="padding: 18px; color: #71717a; font-style: italic;">
+                            <td colspan="{{ $colCount }}" class="center" style="padding: 18px; color: #71717a; font-style: italic;">
                                 Belum ada data presensi yang tercatat untuk kriteria ini.
                             </td>
                         </tr>
@@ -104,6 +112,7 @@
                 </tbody>
             </table>
 
+            @if($showSignature)
             <table class="footer">
                 <tr>
                     <td></td>
@@ -114,6 +123,7 @@
                     </td>
                 </tr>
             </table>
+            @endif
         </div>
     @endforeach
 </body>

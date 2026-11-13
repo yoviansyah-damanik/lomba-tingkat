@@ -36,8 +36,9 @@ class FileViewerTest extends TestCase
             ->assertDontSee('@js', false)
             ->assertSee('<iframe src="'.asset('storage/documents/surat-tugas.pdf').'#view=FitH"', false)
             ->assertSee('<img src="'.asset('storage/documents/bukti-bayar.jpg').'"', false)
-            ->assertSee('Buka Tab Baru');
+            ->assertSee('Tab Baru');
     }
+
     public function test_admin_detail_previews_pdf_files_in_fullscreen_modal_instead_of_new_tab(): void
     {
         $this->seed(RoleSeeder::class);

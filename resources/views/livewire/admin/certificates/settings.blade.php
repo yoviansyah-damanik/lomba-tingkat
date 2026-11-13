@@ -63,6 +63,131 @@
         </div>
     </div>
 
+    {{-- Card Unggah & Konfigurasi Tanda Tangan Penandatangan Sertifikat --}}
+    <div class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-zinc-100 pb-3 dark:border-zinc-800">
+            <div class="flex items-center gap-3">
+                <div class="size-10 rounded-xl bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <flux:icon name="pencil-square" class="size-5" />
+                </div>
+                <div>
+                    <h2 class="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                        Tanda Tangan & Penandatangan Resmi Sertifikat
+                    </h2>
+                    <p class="text-xs text-zinc-500 dark:text-zinc-400">
+                        Unggah berkas tanda tangan Ketua Kwartir Cabang dan Ketua Panitia Pelaksana untuk disematkan pada e-sertifikat.
+                    </p>
+                </div>
+            </div>
+
+            <label class="flex items-center gap-2 cursor-pointer bg-zinc-50 dark:bg-zinc-800 px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700">
+                <input type="checkbox" wire:model.live="show_signatures_on_certificate" class="rounded border-zinc-300 text-amber-600 focus:ring-amber-500">
+                <span class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">Sematkan Tanda Tangan pada Sertifikat</span>
+            </label>
+        </div>
+
+        @if (session('signatory_status'))
+            <div class="rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-xs font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 flex items-center gap-2">
+                <flux:icon name="check-circle" class="size-4 shrink-0 text-emerald-600" />
+                <span>{{ session('signatory_status') }}</span>
+            </div>
+        @endif
+
+        <form wire:submit="saveSignatories" class="space-y-4">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {{-- 1. Ketua Panitia Pelaksana --}}
+                <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30 space-y-3">
+                    <div class="flex items-center justify-between border-b border-zinc-200/80 pb-2 dark:border-zinc-700/80">
+                        <span class="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+                            <flux:icon name="user" class="size-4 text-amber-600" />
+                            Ketua Panitia Pelaksana (Mengetahui)
+                        </span>
+                        <span class="text-[11px] text-zinc-400">Sisi Kiri</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <flux:input wire:model="committee_chair_name" label="Nama Lengkap & Gelar" placeholder="Kak Fahri Siregar, S.Pd" />
+                        </div>
+                        <div>
+                            <flux:input wire:model="committee_chair_nta" label="Nomor Tanda Anggota (NTA)" placeholder="02.19.001.0001" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-[11px] font-bold text-zinc-700 dark:text-zinc-300 block mb-1.5">Berkas Tanda Tangan (PNG / JPG / WEBP)</label>
+                        @if ($committee_signature_url)
+                            <div class="mb-2 p-2.5 rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="h-10 w-28 bg-zinc-100 dark:bg-zinc-900 rounded-lg flex items-center justify-center p-1 border border-zinc-200 dark:border-zinc-700">
+                                        <img src="{{ $committee_signature_url }}" class="h-full max-w-full object-contain" alt="TTD Ketua Panitia" />
+                                    </div>
+                                    <span class="text-[11px] text-zinc-500 font-medium">Tanda tangan aktif terunggah</span>
+                                </div>
+                                <flux:button type="button" size="xs" variant="danger" icon="trash" wire:click="deleteCommitteeSignature">
+                                    Hapus
+                                </flux:button>
+                            </div>
+                        @endif
+
+                        <input type="file" wire:model="committee_signature_file" accept="image/png,image/jpeg,image/webp"
+                            class="w-full text-xs text-zinc-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-500/10 file:text-amber-800 hover:file:bg-amber-500/20 dark:text-zinc-400 dark:file:bg-amber-500/20 dark:file:text-amber-300">
+                        @error('committee_signature_file') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                        <p class="mt-1 text-[10px] text-zinc-400">Disarankan latar transparan (PNG) rasio 3:1 (maks. 2MB).</p>
+                    </div>
+                </div>
+
+                {{-- 2. Ketua Kwartir Cabang --}}
+                <div class="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30 space-y-3">
+                    <div class="flex items-center justify-between border-b border-zinc-200/80 pb-2 dark:border-zinc-700/80">
+                        <span class="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+                            <flux:icon name="building-office" class="size-4 text-emerald-600" />
+                            Ketua Kwartir Cabang (Mengesahkan)
+                        </span>
+                        <span class="text-[11px] text-zinc-400">Sisi Kanan</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <flux:input wire:model="kwarcab_chair_name" label="Nama Lengkap & Gelar" placeholder="H. Letnan Dalimunthe, S.K.M., M.Kes" />
+                        </div>
+                        <div>
+                            <flux:input wire:model="kwarcab_chair_nta" label="Nomor Tanda Anggota (NTA)" placeholder="02.19.001.0002" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-[11px] font-bold text-zinc-700 dark:text-zinc-300 block mb-1.5">Berkas Tanda Tangan (PNG / JPG / WEBP)</label>
+                        @if ($kwarcab_signature_url)
+                            <div class="mb-2 p-2.5 rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="h-10 w-28 bg-zinc-100 dark:bg-zinc-900 rounded-lg flex items-center justify-center p-1 border border-zinc-200 dark:border-zinc-700">
+                                        <img src="{{ $kwarcab_signature_url }}" class="h-full max-w-full object-contain" alt="TTD Ketua Kwarcab" />
+                                    </div>
+                                    <span class="text-[11px] text-zinc-500 font-medium">Tanda tangan aktif terunggah</span>
+                                </div>
+                                <flux:button type="button" size="xs" variant="danger" icon="trash" wire:click="deleteKwarcabSignature">
+                                    Hapus
+                                </flux:button>
+                            </div>
+                        @endif
+
+                        <input type="file" wire:model="kwarcab_signature_file" accept="image/png,image/jpeg,image/webp"
+                            class="w-full text-xs text-zinc-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-500/10 file:text-amber-800 hover:file:bg-amber-500/20 dark:text-zinc-400 dark:file:bg-amber-500/20 dark:file:text-amber-300">
+                        @error('kwarcab_signature_file') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                        <p class="mt-1 text-[10px] text-zinc-400">Disarankan latar transparan (PNG) rasio 3:1 (maks. 2MB).</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                <flux:button type="submit" variant="primary" icon="check" class="bg-amber-600 hover:bg-amber-700 text-white font-bold">
+                    Simpan Data & Tanda Tangan Penandatangan
+                </flux:button>
+            </div>
+        </form>
+    </div>
+
     {{-- Tabs Pemilihan Peran --}}
     <div class="flex flex-wrap items-center gap-2 border-b border-zinc-200 pb-3 dark:border-zinc-800">
         @foreach ($roles as $key => $label)
@@ -222,11 +347,16 @@
                                     <div class="w-[41%] text-center">
                                         <p class="text-zinc-500 text-[6.5px] sm:text-[7.5px]">Mengetahui,</p>
                                         <p class="font-bold">Ketua Panitia Pelaksana,</p>
-                                        <p class="mt-4 sm:mt-6 font-bold underline text-zinc-900">
-                                            {{ $event?->committee_chair_name ?: 'Kak Fahri Siregar, S.Pd' }}
+                                        <div class="h-5 sm:h-7 flex items-center justify-center my-0.5">
+                                            @if ($show_signatures_on_certificate && $committee_signature_url)
+                                                <img src="{{ $committee_signature_url }}" class="max-h-5 sm:max-h-7 max-w-[80px] sm:max-w-[110px] object-contain" alt="TTD Ketua Panitia" />
+                                            @endif
+                                        </div>
+                                        <p class="font-bold underline text-zinc-900">
+                                            {{ $committee_chair_name ?: ($event?->committee_chair_name ?: 'Kak Fahri Siregar, S.Pd') }}
                                         </p>
                                         <p class="text-[6.5px] sm:text-[7.5px] text-zinc-500">
-                                            NTA: {{ $event?->committee_chair_nta ?: '-' }}
+                                            NTA: {{ $committee_chair_nta ?: ($event?->committee_chair_nta ?: '-') }}
                                         </p>
                                     </div>
                                     <div class="w-[18%]"></div>
@@ -236,11 +366,16 @@
                                             {{ $event?->end_date ? $event->end_date->translatedFormat('d F Y') : '17 November 2026' }}
                                         </p>
                                         <p class="font-bold">Ketua Kwartir Cabang Kota Padangsidimpuan,</p>
-                                        <p class="mt-4 sm:mt-6 font-bold underline text-zinc-900">
-                                            {{ $event?->kwarcab_chair_name ?: 'Ketua Kwarcab Padangsidimpuan' }}
+                                        <div class="h-5 sm:h-7 flex items-center justify-center my-0.5">
+                                            @if ($show_signatures_on_certificate && $kwarcab_signature_url)
+                                                <img src="{{ $kwarcab_signature_url }}" class="max-h-5 sm:max-h-7 max-w-[80px] sm:max-w-[110px] object-contain" alt="TTD Ketua Kwartir" />
+                                            @endif
+                                        </div>
+                                        <p class="font-bold underline text-zinc-900">
+                                            {{ $kwarcab_chair_name ?: ($event?->kwarcab_chair_name ?: 'Ketua Kwarcab Padangsidimpuan') }}
                                         </p>
                                         <p class="text-[6.5px] sm:text-[7.5px] text-zinc-500">
-                                            NTA: {{ $event?->kwarcab_chair_nta ?: '-' }}
+                                            NTA: {{ $kwarcab_chair_nta ?: ($event?->kwarcab_chair_nta ?: '-') }}
                                         </p>
                                     </div>
                                 </div>

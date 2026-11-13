@@ -234,12 +234,21 @@ class AttendanceScannerController extends Controller
         $query = Attendance::whereHas('session', fn ($q) => $q->accessibleBy($user))
             ->with(['session.schedule.competition', 'participant.patrol.scoutGroup', 'chaperone.scoutGroup', 'user', 'scannedBy']);
 
-        if ($request->filled('session_id') && $request->session_id !== 'all') {
-            $query->where('attendance_session_id', $request->session_id);
+        $sessionIds = [];
+        if ($request->filled('session_ids')) {
+            $sessionIds = is_array($request->session_ids) ? $request->session_ids : explode(',', (string) $request->session_ids);
+        } elseif ($request->filled('session_id') && $request->session_id !== 'all') {
+            $sessionIds = is_array($request->session_id) ? $request->session_id : explode(',', (string) $request->session_id);
+        }
+        $sessionIds = array_values(array_filter($sessionIds));
+
+        if (! empty($sessionIds)) {
+            $query->whereIn('attendance_session_id', $sessionIds);
         }
 
         if ($request->filled('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
+            $statuses = is_array($request->status) ? $request->status : explode(',', (string) $request->status);
+            $query->whereIn('status', $statuses);
         }
 
         if ($request->filled('entity_type') && $request->entity_type !== 'all') {
@@ -263,9 +272,22 @@ class AttendanceScannerController extends Controller
 
         $attendances = $query->orderBy('scanned_at')->get();
 
-        $selectedSession = $request->filled('session_id') && $request->session_id !== 'all'
-            ? AttendanceSession::with('schedule.competition')->find($request->session_id)
-            : null;
+        if (! empty($sessionIds)) {
+            $sessions = AttendanceSession::accessibleBy($user)
+                ->whereIn('id', $sessionIds)
+                ->with('schedule.competition')
+                ->orderBy('opened_at')
+                ->orderBy('title')
+                ->get();
+            $selectedSession = $sessions->count() === 1 ? $sessions->first() : null;
+        } else {
+            $sessions = AttendanceSession::accessibleBy($user)
+                ->with('schedule.competition')
+                ->orderBy('opened_at')
+                ->orderBy('title')
+                ->get();
+            $selectedSession = null;
+        }
 
         $stats = [
             'total' => $attendances->count(),
@@ -277,11 +299,8 @@ class AttendanceScannerController extends Controller
 
         $event = Event::where('is_active', true)->first() ?? Event::first();
 
-        // Satu lembar per sesi presensi. Pada pilihan "seluruh sesi", semua sesi yang dapat diakses
+        // Satu lembar per sesi presensi. Pada pilihan "seluruh sesi" atau beberapa sesi, sesi
         // ditampilkan terpisah, termasuk sesi yang belum memiliki catatan presensi.
-        $sessions = $selectedSession
-            ? collect([$selectedSession])
-            : AttendanceSession::accessibleBy($user)->with('schedule.competition')->orderBy('opened_at')->orderBy('title')->get();
 
         $grouped = $attendances->groupBy('attendance_session_id');
 
@@ -306,11 +325,27 @@ class AttendanceScannerController extends Controller
             ];
         })->values();
 
+        $cols = $request->has('cols')
+            ? array_values(array_filter(is_array($request->cols) ? $request->cols : explode(',', (string) $request->cols)))
+            : ['id', 'name', 'role', 'group', 'time', 'status', 'notes'];
+
+        if (empty($cols)) {
+            $cols = ['name', 'status'];
+        }
+
+        $showStats = $request->boolean('show_stats', true);
+        $showSignature = $request->boolean('show_signature', true);
+        $hideEmptySessions = $request->boolean('hide_empty_sessions', false);
+
+        if ($hideEmptySessions) {
+            $sections = $sections->filter(fn ($sec) => $sec['attendances']->isNotEmpty())->values();
+        }
+
         if ($sections->isEmpty()) {
             $sections = collect([['session' => null, 'number' => sprintf('BAP-LT3/KWARCAB-PSP/%d/001', $year), 'attendances' => $attendances, 'stats' => $stats]]);
         }
 
-        return compact('attendances', 'selectedSession', 'stats', 'event', 'sections');
+        return compact('attendances', 'selectedSession', 'stats', 'event', 'sections', 'cols', 'showStats', 'showSignature');
     }
 
     /**

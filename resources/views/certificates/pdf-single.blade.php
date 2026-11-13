@@ -229,7 +229,11 @@
                 <div class="sig-col">
                     <div style="font-size: 8pt; color: #6b7280; margin-bottom: 1px;">Mengetahui,</div>
                     <div class="sig-role">Ketua Panitia Pelaksana,</div>
-                    <div style="height: 38px;"></div>
+                    <div style="height: 40px; text-align: center; margin: 2px auto;">
+                        @if (!empty($committeeSigBase64))
+                            <img src="{{ $committeeSigBase64 }}" style="max-height: 40px; max-width: 140px; display: inline-block;" alt="Tanda Tangan Ketua Panitia">
+                        @endif
+                    </div>
                     <div class="sig-name">
                         {{ $event?->committee_chair_name ?: 'Kak Fahri Siregar, S.Pd' }}
                     </div>
@@ -246,7 +250,11 @@
                         {{ $event?->end_date ? $event->end_date->translatedFormat('d F Y') : '17 November 2026' }}
                     </div>
                     <div class="sig-role">Ketua Kwartir Cabang Kota Padangsidimpuan,</div>
-                    <div style="height: 38px;"></div>
+                    <div style="height: 40px; text-align: center; margin: 2px auto;">
+                        @if (!empty($kwarcabSigBase64))
+                            <img src="{{ $kwarcabSigBase64 }}" style="max-height: 40px; max-width: 140px; display: inline-block;" alt="Tanda Tangan Ketua Kwartir">
+                        @endif
+                    </div>
                     <div class="sig-name">
                         {{ $event?->kwarcab_chair_name ?: 'Ketua Kwarcab Padangsidimpuan' }}
                     </div>

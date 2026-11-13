@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Model kegiatan utama LT III
@@ -38,26 +39,44 @@ class Event extends Model
         'contact_phone',
         'committee_chair_name',
         'committee_chair_nta',
+        'committee_chair_signature_path',
         'judge_chair_name',
         'judge_chair_nta',
         'kwarcab_chair_name',
         'kwarcab_chair_nta',
+        'kwarcab_chair_signature_path',
         'is_active',
         'hide_patrol_identities',
         'is_certificate_published',
+        'show_signatures_on_certificate',
     ];
 
     /**
      * Penandatangan dokumen resmi: committee (Ketua Panitia Pelaksana LT III), judge (Ketua Dewan Juri), kwarcab (Ketua Kwartir Cabang)
      *
-     * @return array{name: ?string, nta: ?string}
+     * @return array{name: ?string, nta: ?string, signature_path: ?string}
      */
     public function signatory(string $role): array
     {
         return [
             'name' => $this->{$role.'_chair_name'} ?: null,
             'nta' => $this->{$role.'_chair_nta'} ?: null,
+            'signature_path' => $this->{$role.'_chair_signature_path'} ?? null,
         ];
+    }
+
+    public function committeeSignatureUrl(): ?string
+    {
+        return $this->committee_chair_signature_path
+            ? Storage::disk('public')->url($this->committee_chair_signature_path)
+            : null;
+    }
+
+    public function kwarcabSignatureUrl(): ?string
+    {
+        return $this->kwarcab_chair_signature_path
+            ? Storage::disk('public')->url($this->kwarcab_chair_signature_path)
+            : null;
     }
 
     protected function casts(): array
@@ -75,6 +94,7 @@ class Event extends Model
             'is_active' => 'boolean',
             'hide_patrol_identities' => 'boolean',
             'is_certificate_published' => 'boolean',
+            'show_signatures_on_certificate' => 'boolean',
         ];
     }
 

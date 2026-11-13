@@ -200,6 +200,7 @@ Route::middleware(['auth', 'role'])->group(function () {
 
         // Permohonan izin (meninggalkan perkemahan / kunjungan tamu): hanya Administrator
         Route::get('/permission-requests', PermissionRequests::class)->name('permission-requests.index');
+        Route::get('/permission-requests/unreturned', fn () => redirect()->route('admin.permission-requests.index', ['tab' => 'unreturned']))->name('permission-requests.unreturned');
         Route::get('/permission-requests/{id}/letter', [PermissionLetterController::class, 'show'])->name('permission-requests.letter');
 
         // Generate Nomor Pendaftaran Peserta (NPP) setelah pendaftaran ditutup

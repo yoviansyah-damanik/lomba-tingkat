@@ -361,12 +361,28 @@ class CertificateService
             ? 'data:image/png;base64,'.base64_encode((string) file_get_contents($logoPath))
             : null;
 
+        $committeeSigBase64 = null;
+        if (($event->show_signatures_on_certificate ?? true) && $event->committee_chair_signature_path && Storage::disk('public')->exists($event->committee_chair_signature_path)) {
+            $path = Storage::disk('public')->path($event->committee_chair_signature_path);
+            $mime = @mime_content_type($path) ?: 'image/png';
+            $committeeSigBase64 = 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($path));
+        }
+
+        $kwarcabSigBase64 = null;
+        if (($event->show_signatures_on_certificate ?? true) && $event->kwarcab_chair_signature_path && Storage::disk('public')->exists($event->kwarcab_chair_signature_path)) {
+            $path = Storage::disk('public')->path($event->kwarcab_chair_signature_path);
+            $mime = @mime_content_type($path) ?: 'image/png';
+            $kwarcabSigBase64 = 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($path));
+        }
+
         $html = view('certificates.pdf-single', [
             'event' => $event,
             'role' => $role,
             'recipient' => $recipient,
             'layout' => $layout,
             'logoBase64' => $logoBase64,
+            'committeeSigBase64' => $committeeSigBase64,
+            'kwarcabSigBase64' => $kwarcabSigBase64,
         ])->render();
 
         $dompdf = new Dompdf((new Options)

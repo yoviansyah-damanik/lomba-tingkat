@@ -314,32 +314,43 @@
                         {{-- KAMERA AKTIF --}}
                         <div class="relative bg-black rounded-3xl overflow-hidden border border-zinc-800 shadow-xl aspect-4/3 sm:aspect-16/11 flex items-center justify-center">
                             {{-- Container video scanner --}}
-                            <div id="qr-reader" class="w-full h-full object-cover [&_video]:w-full [&_video]:h-full [&_video]:object-cover [&_video]:rounded-3xl [&_#qr-shaded-region]:hidden"></div>
+                            <div wire:ignore id="qr-reader" class="w-full h-full object-cover [&_video]:w-full [&_video]:h-full [&_video]:object-cover [&_video]:rounded-3xl [&_#qr-shaded-region]:hidden"></div>
 
                             {{-- Overlay Target Reticle (Kotak Pemindai QR Rapi di Tengah) --}}
                             <div class="pointer-events-none absolute inset-0 flex items-center justify-center z-10" x-show="isCameraRunning">
-                                <div class="relative w-56 h-56 sm:w-64 sm:h-64 md:w-72 md:h-72 border-2 border-amber-400/50 rounded-3xl flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.25)]">
+                                <div class="relative w-56 h-56 sm:w-64 sm:h-64 md:w-72 md:h-72 border-2 rounded-3xl flex items-center justify-center transition-all duration-300"
+                                    :class="isScanningLocked ? 'border-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.35)]' : 'border-amber-400/50 shadow-[0_0_30px_rgba(245,158,11,0.25)]'">
                                     {{-- 4 Sudut Aksen Tebal --}}
-                                    <div class="absolute -top-1 -left-1 w-9 h-9 border-t-4 border-l-4 border-amber-400 rounded-tl-2xl"></div>
-                                    <div class="absolute -top-1 -right-1 w-9 h-9 border-t-4 border-r-4 border-amber-400 rounded-tr-2xl"></div>
-                                    <div class="absolute -bottom-1 -left-1 w-9 h-9 border-b-4 border-l-4 border-amber-400 rounded-bl-2xl"></div>
-                                    <div class="absolute -bottom-1 -right-1 w-9 h-9 border-b-4 border-r-4 border-amber-400 rounded-br-2xl"></div>
+                                    <div class="absolute -top-1 -left-1 w-9 h-9 border-t-4 border-l-4 rounded-tl-2xl transition-colors duration-300"
+                                        :class="isScanningLocked ? 'border-emerald-400' : 'border-amber-400'"></div>
+                                    <div class="absolute -top-1 -right-1 w-9 h-9 border-t-4 border-r-4 rounded-tr-2xl transition-colors duration-300"
+                                        :class="isScanningLocked ? 'border-emerald-400' : 'border-amber-400'"></div>
+                                    <div class="absolute -bottom-1 -left-1 w-9 h-9 border-b-4 border-l-4 rounded-bl-2xl transition-colors duration-300"
+                                        :class="isScanningLocked ? 'border-emerald-400' : 'border-amber-400'"></div>
+                                    <div class="absolute -bottom-1 -right-1 w-9 h-9 border-b-4 border-r-4 rounded-br-2xl transition-colors duration-300"
+                                        :class="isScanningLocked ? 'border-emerald-400' : 'border-amber-400'"></div>
 
                                     {{-- Titik Fokus / Crosshair Minimalis --}}
-                                    <div class="size-4 border border-amber-400/40 rounded-full flex items-center justify-center">
-                                        <div class="size-1.5 bg-amber-400/80 rounded-full"></div>
+                                    <div class="size-4 border rounded-full flex items-center justify-center transition-colors duration-300"
+                                        :class="isScanningLocked ? 'border-emerald-400/50' : 'border-amber-400/40'">
+                                        <div class="size-1.5 rounded-full transition-colors duration-300"
+                                            :class="isScanningLocked ? 'bg-emerald-400' : 'bg-amber-400/80'"></div>
                                     </div>
 
                                     {{-- Laser Garis Pemindai Animasi --}}
-                                    <div class="absolute inset-x-2 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_12px_#f59e0b] animate-[scan_2s_ease-in-out_infinite]"></div>
+                                    <div x-show="!isScanningLocked" class="absolute inset-x-2 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_12px_#f59e0b] animate-scan"></div>
                                 </div>
                             </div>
 
                             {{-- Keterangan / Petunjuk Pemindaian (DILUAR BOX SCAN QR) --}}
                             <div class="pointer-events-none absolute bottom-3 sm:bottom-4 inset-x-0 flex justify-center z-20 px-3" x-show="isCameraRunning">
                                 <div class="inline-flex items-center gap-2 rounded-full bg-black/85 px-4 py-2 border border-zinc-700/80 backdrop-blur-md shadow-2xl text-[11px] sm:text-xs">
-                                    <span class="inline-flex size-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
-                                    <span class="font-bold text-amber-300 tracking-wider uppercase">ARAHKAN QR CODE KE SINI</span>
+                                    <span class="inline-flex size-2 rounded-full shrink-0"
+                                        :class="isScanningLocked ? 'bg-emerald-400 animate-ping' : 'bg-amber-400 animate-pulse'"></span>
+                                    <span class="font-bold tracking-wider uppercase transition-colors"
+                                        :class="isScanningLocked ? 'text-emerald-300' : 'text-amber-300'"
+                                        x-text="isScanningLocked ? 'MEMPROSES PRESENSI...' : 'ARAHKAN QR CODE KE SINI'">
+                                    </span>
                                     @if($session->schedule?->isPatrol())
                                         <span class="text-[10px] sm:text-[11px] text-amber-200/90 font-medium pl-2 border-l border-zinc-700">Khusus PINRU / WAPINRU</span>
                                     @elseif($session->schedule?->isGroup())

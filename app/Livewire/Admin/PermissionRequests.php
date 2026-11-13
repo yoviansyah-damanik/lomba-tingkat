@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 /**
@@ -23,7 +24,8 @@ use Livewire\Component;
 #[Title('Permohonan Izin — LT III')]
 class PermissionRequests extends Component
 {
-    /** create = permohonan baru, return = konfirmasi kembali, history = riwayat */
+    /** create = permohonan baru, return = konfirmasi kembali, unreturned = daftar belum kembali, history = riwayat */
+    #[Url]
     public string $tab = 'create';
 
     public string $type = 'leave_permanent';
@@ -34,6 +36,10 @@ class PermissionRequests extends Component
 
     public string $manualInput = '';
 
+    public string $unreturnedSearch = '';
+
+    public string $unreturnedGender = 'all';
+
     /** @var array<int, array{kind: string, id: string, name: string, role: string, scout_id: string, group_id: string, group_name: string}> */
     public array $members = [];
 
@@ -43,11 +49,20 @@ class PermissionRequests extends Component
     /** URL surat izin yang baru dibuat (untuk tombol cetak) */
     public ?string $lastLetterUrl = null;
 
+    /** Status modal verifikasi 2 tahap konfirmasi kembali */
+    public bool $showReturnModal = false;
+
+    public ?string $returnMemberId = null;
+
+    /** @var array<string, mixed>|null */
+    public ?array $returnParticipantData = null;
+
     public function setTab(string $tab): void
     {
-        $this->tab = in_array($tab, ['create', 'return', 'history'], true) ? $tab : 'create';
+        $this->tab = in_array($tab, ['create', 'return', 'unreturned', 'history'], true) ? $tab : 'create';
         $this->feedback = null;
         $this->lastLetterUrl = null;
+        $this->closeReturnModal();
     }
 
     public function updatedType(): void
@@ -98,10 +113,17 @@ class PermissionRequests extends Component
         $this->validate([
             'type' => ['required', Rule::enum(PermissionTypeEnum::class)],
             'reason' => ['required', 'string', 'min:5', 'max:1000'],
-            'guest_name' => ['nullable', 'string', 'max:255'],
+            'guest_name' => [
+                $type === PermissionTypeEnum::GuestVisit ? 'required' : 'nullable',
+                'string',
+                'min:2',
+                'max:255',
+            ],
         ], [
             'reason.required' => 'Keterangan (alasan) wajib diisi.',
             'reason.min' => 'Keterangan minimal 5 karakter.',
+            'guest_name.required' => 'Kunjungan tamu wajib menginputkan minimal 1 nama tamu.',
+            'guest_name.min' => 'Nama tamu minimal 2 karakter.',
         ]);
 
         if ($type->requiresScan()) {
@@ -227,7 +249,7 @@ class PermissionRequests extends Component
     }
 
     /**
-     * Konfirmasi kembali izin sementara: hanya peserta
+     * Konfirmasi kembali izin sementara: hanya peserta (tahap 1 verifikasi QR)
      *
      * @param  array<string, mixed>  $resolved
      */
@@ -242,7 +264,11 @@ class PermissionRequests extends Component
         $member = PermissionRequestMember::where('participant_id', $resolved['entity']->id)
             ->whereNull('returned_at')
             ->whereHas('permissionRequest', fn ($q) => $q->where('type', PermissionTypeEnum::LeaveTemporary->value)->where('status', 'active'))
-            ->with('permissionRequest')
+            ->with([
+                'participant.patrol.scoutGroup',
+                'permissionRequest.scoutGroup',
+                'permissionRequest.members.chaperone',
+            ])
             ->first();
 
         if (! $member) {
@@ -251,10 +277,111 @@ class PermissionRequests extends Component
             return;
         }
 
+        $this->prepareReturnConfirmation($member);
+    }
+
+    /**
+     * Konfirmasi kembali secara manual dari daftar peserta belum kembali (tahap 1 verifikasi manual)
+     */
+    public function confirmReturnManual(string $memberId): void
+    {
+        $member = PermissionRequestMember::where('id', $memberId)
+            ->whereNotNull('participant_id')
+            ->whereNull('returned_at')
+            ->whereHas('permissionRequest', fn ($q) => $q->where('type', PermissionTypeEnum::LeaveTemporary->value)->where('status', 'active'))
+            ->with([
+                'participant.patrol.scoutGroup',
+                'permissionRequest.scoutGroup',
+                'permissionRequest.members.chaperone',
+            ])
+            ->first();
+
+        if (! $member) {
+            $this->fail('Data peserta tidak ditemukan atau sudah dikonfirmasi kembali.');
+
+            return;
+        }
+
+        $this->prepareReturnConfirmation($member);
+    }
+
+    /**
+     * Buka modal verifikasi 2 tahap dengan ringkasan identitas peserta dan izinnya
+     */
+    public function prepareReturnConfirmation(PermissionRequestMember $member): void
+    {
+        $participant = $member->participant;
+        $request = $member->permissionRequest;
+        $chaperone = $request?->members->firstWhere('chaperone_id', '!=', null)?->chaperone;
+
+        $this->returnMemberId = (string) $member->id;
+        $this->returnParticipantData = [
+            'id' => $member->id,
+            'name' => $participant?->full_name ?? '-',
+            'id_number' => $participant?->id_number ?? '-',
+            'scout_id' => $participant?->scout_id ?? '-',
+            'gender' => $participant?->gender?->value ?? ($participant?->gender ?? '-'),
+            'is_male' => $participant?->isMale() ?? false,
+            'is_female' => $participant?->isFemale() ?? false,
+            'photo_path' => $participant?->photo_path,
+            'patrol_name' => $participant?->patrol?->patrol_name ?? '-',
+            'school_name' => $participant?->patrol?->scoutGroup?->school_name ?? $request?->scoutGroup?->school_name ?? '-',
+            'kwarran_name' => $participant?->patrol?->scoutGroup?->kwarran_name ?? $request?->scoutGroup?->kwarran_name ?? '-',
+            'letter_number' => $request?->letterNumber() ?? '-',
+            'reason' => $request?->reason ?? '-',
+            'destination' => $request?->destination ?? '-',
+            'departure_time' => $request?->created_at?->timezone('Asia/Jakarta')->format('d M Y, H:i').' WIB',
+            'departure_diff' => $request?->created_at?->diffForHumans(),
+            'chaperone_name' => $chaperone?->full_name ?? '-',
+            'chaperone_phone' => $chaperone?->phone_number ?? '-',
+        ];
+        $this->showReturnModal = true;
+    }
+
+    /**
+     * Tutup modal verifikasi 2 tahap
+     */
+    public function closeReturnModal(): void
+    {
+        $this->showReturnModal = false;
+        $this->returnMemberId = null;
+        $this->returnParticipantData = null;
+    }
+
+    /**
+     * Tahap 2: Eksekusi konfirmasi kembali setelah diverifikasi fisik oleh panitia
+     */
+    public function processReturnConfirmation(): void
+    {
+        if (! $this->returnMemberId) {
+            $this->closeReturnModal();
+
+            return;
+        }
+
+        $member = PermissionRequestMember::where('id', $this->returnMemberId)
+            ->whereNotNull('participant_id')
+            ->whereNull('returned_at')
+            ->whereHas('permissionRequest', fn ($q) => $q->where('type', PermissionTypeEnum::LeaveTemporary->value)->where('status', 'active'))
+            ->with(['participant', 'permissionRequest'])
+            ->first();
+
+        if (! $member) {
+            $this->fail('Data peserta tidak valid atau sudah dikonfirmasi kembali.');
+            $this->closeReturnModal();
+
+            return;
+        }
+
+        $name = $member->participant?->full_name ?? 'Peserta';
         $member->update(['returned_at' => now()]);
         $member->permissionRequest->completeIfAllReturned();
 
-        $this->feedback = ['type' => 'success', 'message' => $resolved['name'].' dikonfirmasi telah kembali ke perkemahan.'];
+        $this->feedback = [
+            'type' => 'success',
+            'message' => "Verifikasi 2 tahap berhasil. Peserta {$name} telah resmi dikonfirmasi kembali ke perkemahan.",
+        ];
+        $this->closeReturnModal();
         $this->dispatch('permission-updated');
     }
 
@@ -265,9 +392,60 @@ class PermissionRequests extends Component
 
     public function render()
     {
+        $baseUnreturnedQuery = PermissionRequestMember::whereNotNull('participant_id')
+            ->whereNull('returned_at')
+            ->whereHas('permissionRequest', fn ($q) => $q->where('type', PermissionTypeEnum::LeaveTemporary->value)->where('status', 'active'));
+
+        $unreturnedCount = (clone $baseUnreturnedQuery)->count();
+
+        $unreturnedMembers = (clone $baseUnreturnedQuery)
+            ->with([
+                'participant.patrol.scoutGroup',
+                'permissionRequest.scoutGroup',
+                'permissionRequest.members.chaperone',
+            ])
+            ->when($this->unreturnedSearch !== '', function ($q) {
+                $term = '%'.trim($this->unreturnedSearch).'%';
+                $q->where(function ($sub) use ($term) {
+                    $sub->whereHas('participant', function ($pq) use ($term) {
+                        $pq->where('full_name', 'like', $term)
+                            ->orWhere('id_number', 'like', $term)
+                            ->orWhere('scout_id', 'like', $term)
+                            ->orWhereHas('patrol', function ($ptq) use ($term) {
+                                $ptq->where('patrol_name', 'like', $term)
+                                    ->orWhereHas('scoutGroup', function ($sgq) use ($term) {
+                                        $sgq->where('school_name', 'like', $term);
+                                    });
+                            });
+                    })->orWhereHas('permissionRequest', function ($prq) use ($term) {
+                        $prq->where('letter_number', 'like', $term)
+                            ->orWhere('reason', 'like', $term);
+                    });
+                });
+            })
+            ->when($this->unreturnedGender !== 'all', function ($q) {
+                $q->whereHas('participant', fn ($pq) => $pq->where('gender', $this->unreturnedGender));
+            })
+            ->latest()
+            ->get();
+
+        $unreturnedRequestsCount = PermissionRequest::where('type', PermissionTypeEnum::LeaveTemporary)
+            ->where('status', 'active')
+            ->count();
+
+        $unreturnedGroupsCount = (clone $baseUnreturnedQuery)
+            ->join('participants', 'permission_request_members.participant_id', '=', 'participants.id')
+            ->join('patrols', 'participants.patrol_id', '=', 'patrols.id')
+            ->distinct('patrols.scout_group_id')
+            ->count('patrols.scout_group_id');
+
         return view('livewire.admin.permission-requests', [
             'types' => PermissionTypeEnum::cases(),
             'selectedType' => $this->permissionType(),
+            'unreturnedCount' => $unreturnedCount,
+            'unreturnedMembers' => $unreturnedMembers,
+            'unreturnedRequestsCount' => $unreturnedRequestsCount,
+            'unreturnedGroupsCount' => $unreturnedGroupsCount,
         ]);
     }
 }
