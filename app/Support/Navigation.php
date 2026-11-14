@@ -137,7 +137,7 @@ class Navigation
             [
                 'heading' => 'Presensi & Verifikasi',
                 'items' => [
-                    ['label' => 'Portal Presensi', 'icon' => 'qr-code', 'route' => 'attendance.index', 'active' => ['attendance.index', 'attendance.scanner'], 'roles' => ['admin', 'committee', 'judge'], 'description' => 'Pindai kehadiran di pos dan kegiatan'],
+                    ['label' => 'Portal Presensi', 'icon' => 'qr-code', 'route' => 'attendance.index', 'active' => ['attendance.index', 'attendance.scanner'], 'roles' => ['admin'], 'description' => 'Pindai kehadiran di pos dan kegiatan'],
                     ['label' => 'Verifikasi Identitas (Scan QR)', 'icon' => 'viewfinder-circle', 'route' => 'admin.identity-verification.index', 'active' => ['admin.identity-verification.*'], 'roles' => ['admin', 'committee'], 'description' => 'Pindai QR kartu peserta, bindamping, panitia, dan juri'],
                     ['label' => 'Permohonan Izin', 'icon' => 'clipboard-document-check', 'route' => 'admin.permission-requests.index', 'active' => ['admin.permission-requests.*'], 'roles' => ['admin'], 'description' => 'Izin meninggalkan perkemahan dan kunjungan tamu'],
                     ['label' => 'Rekapitulasi Presensi', 'icon' => 'clipboard-document-list', 'route' => 'attendance.recap', 'active' => ['attendance.recap*'], 'roles' => ['admin', 'committee', 'judge'], 'description' => 'Rekap kehadiran per sesi'],

@@ -90,6 +90,11 @@ class ScoutGroup extends Model
             if (in_array($status, [RegistrationStatusEnum::Verified, RegistrationStatusEnum::NeedsRevision, RegistrationStatusEnum::Rejected], true)) {
                 SendVerificationResultPush::dispatch($group->id, $status->value)->afterCommit();
             }
+
+            // Jika status verifikasi dicabut atau tidak lagi terverifikasi, pastikan NPP regu dicabut
+            if ($status !== RegistrationStatusEnum::Verified) {
+                $group->patrols()->whereNotNull('npp')->update(['npp' => null]);
+            }
         });
     }
 

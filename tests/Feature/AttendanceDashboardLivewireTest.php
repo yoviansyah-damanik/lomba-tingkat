@@ -89,13 +89,10 @@ class AttendanceDashboardLivewireTest extends TestCase
             'is_active' => true,
         ]);
 
-        // Panitia hanya melihat sesi kehadiran umum, bukan sesi lomba
+        // Panitia dilarang mengakses Portal Presensi (khusus admin)
         Livewire::actingAs($this->committee)
             ->test(AttendanceDashboard::class)
-            ->assertStatus(200)
-            ->assertSee('Portal Presensi Pos Arena')
-            ->assertSee('Presensi Kehadiran Apel Pagi')
-            ->assertDontSee('Presensi Menaksir Lembah');
+            ->assertForbidden();
 
         // Admin dapat melihat semua sesi presensi
         Livewire::actingAs($this->admin)
@@ -179,10 +176,7 @@ class AttendanceDashboardLivewireTest extends TestCase
     {
         Livewire::actingAs($this->committee)
             ->test(AttendanceDashboard::class)
-            ->set('newTitle', 'Sesi Ilegal Panitia')
-            ->set('newSessionType', 'participant')
-            ->call('createAttendanceSession')
-            ->assertStatus(403);
+            ->assertForbidden();
 
         $this->assertDatabaseMissing('attendance_sessions', [
             'title' => 'Sesi Ilegal Panitia',
@@ -282,8 +276,7 @@ class AttendanceDashboardLivewireTest extends TestCase
 
         Livewire::actingAs($this->committee)
             ->test(AttendanceDashboard::class)
-            ->call('openEditModal', $session->id)
-            ->assertStatus(403);
+            ->assertForbidden();
     }
 
     /**

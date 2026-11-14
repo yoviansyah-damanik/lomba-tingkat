@@ -195,64 +195,116 @@ class AttendanceScannerTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_committee_only_sees_general_attendance_in_dashboard(): void
+    public function test_committee_is_forbidden_from_attendance_portal(): void
     {
         $response = $this->actingAs($this->committee)->get(route('attendance.index'));
-
-        $response->assertOk()
-            ->assertSee('Portal Presensi')
-            ->assertSee('Presensi Registrasi Kedatangan')
-            ->assertDontSee('Pos Registrasi Pionering');
+        $response->assertForbidden();
     }
 
-    public function test_judge_only_sees_assigned_competition_sessions_in_dashboard(): void
+    public function test_judge_is_forbidden_from_attendance_portal(): void
     {
-        // Juri yang ditugaskan melihat sesi lomba yang ditunjuk, tidak melihat kehadiran umum
         $this->actingAs($this->assignedJudge)
             ->get(route('attendance.index'))
-            ->assertOk()
-            ->assertSee('Pos Registrasi Pionering')
-            ->assertDontSee('Presensi Registrasi Kedatangan');
+            ->assertForbidden();
 
-        // Juri yang tidak ditugaskan tidak melihat sesi lomba pionering
         $this->actingAs($this->unassignedJudge)
             ->get(route('attendance.index'))
-            ->assertOk()
-            ->assertDontSee('Pos Registrasi Pionering')
-            ->assertDontSee('Presensi Registrasi Kedatangan');
+            ->assertForbidden();
     }
 
-    public function test_admin_and_dual_role_can_see_both_session_types_in_dashboard(): void
+    public function test_only_admin_can_access_attendance_dashboard(): void
     {
-        // Admin melihat kedua jenis sesi
         $this->actingAs($this->admin)
             ->get(route('attendance.index'))
             ->assertOk()
             ->assertSee('Presensi Registrasi Kedatangan')
             ->assertSee('Pos Registrasi Pionering');
 
-        // Pengguna rangkap Panitia & Juri melihat sesi kehadiran + sesi lomba yang ditunjuk
         $this->actingAs($this->dualRoleUser)
             ->get(route('attendance.index'))
-            ->assertOk()
-            ->assertSee('Presensi Registrasi Kedatangan')
-            ->assertSee('Pos Registrasi Pionering');
+            ->assertForbidden();
     }
 
-    public function test_committee_can_access_and_scan_general_attendance_session(): void
+    public function test_committee_is_forbidden_from_all_scanning(): void
     {
-        // Panitia bisa membuka kamera scanner sesi kehadiran
+        // Panitia dilarang membuka scanner umum dan lomba
         $this->actingAs($this->committee)
+            ->get(route('attendance.scanner', $this->generalSession))
+            ->assertForbidden();
+
+        $this->actingAs($this->committee)
+            ->get(route('attendance.scanner', $this->activeSession))
+            ->assertForbidden();
+
+        // Panitia dilarang scan presensi
+        $this->actingAs($this->committee)
+            ->postJson(route('attendance.scan', $this->generalSession), [
+                'token' => $this->participant->qr_token,
+            ])
+            ->assertForbidden();
+
+        $this->actingAs($this->committee)
+            ->postJson(route('attendance.scan', $this->activeSession), [
+                'token' => $this->participant->qr_token,
+            ])
+            ->assertForbidden();
+
+        // Panitia dilarang manual check-in
+        $this->actingAs($this->committee)
+            ->postJson(route('attendance.manual', $this->generalSession), [
+                'entity_type' => 'participant',
+                'entity_id' => $this->participant->id,
+            ])
+            ->assertForbidden();
+
+        // Panitia dilarang mencari kandidat
+        $this->actingAs($this->committee)
+            ->getJson(route('attendance.search', ['session' => $this->generalSession, 'q' => 'Budi']))
+            ->assertForbidden();
+
+        // Panitia dilarang melihat riwayat scan
+        $this->actingAs($this->committee)
+            ->getJson(route('attendance.logs', $this->generalSession))
+            ->assertForbidden();
+    }
+
+    public function test_judge_is_forbidden_from_all_scanning(): void
+    {
+        // Juri dilarang membuka scanner umum dan lomba
+        $this->actingAs($this->assignedJudge)
+            ->get(route('attendance.scanner', $this->activeSession))
+            ->assertForbidden();
+
+        $this->actingAs($this->assignedJudge)
+            ->get(route('attendance.scanner', $this->generalSession))
+            ->assertForbidden();
+
+        // Juri dilarang scan presensi
+        $this->actingAs($this->assignedJudge)
+            ->postJson(route('attendance.scan', $this->activeSession), [
+                'token' => $this->participant->qr_token,
+            ])
+            ->assertForbidden();
+
+        $this->actingAs($this->unassignedJudge)
+            ->get(route('attendance.scanner', $this->activeSession))
+            ->assertForbidden();
+    }
+
+    public function test_admin_can_access_and_scan_both_general_and_competition_sessions(): void
+    {
+        // Admin bisa membuka scanner sesi umum
+        $this->actingAs($this->admin)
             ->get(route('attendance.scanner', $this->generalSession))
             ->assertOk()
             ->assertSee('Presensi Registrasi Kedatangan')
             ->assertSee('ARAHKAN QR CODE KE SINI');
 
-        // Panitia bisa melakukan scan kehadiran
-        $response = $this->actingAs($this->committee)
+        // Admin bisa scan sesi umum
+        $response = $this->actingAs($this->admin)
             ->postJson(route('attendance.scan', $this->generalSession), [
                 'token' => $this->participant->qr_token,
-                'device_info' => 'Panitia Device Test',
+                'device_info' => 'Admin Device Test',
             ]);
 
         $response->assertOk()
@@ -269,117 +321,19 @@ class AttendanceScannerTest extends TestCase
             'attendance_session_id' => $this->generalSession->id,
             'participant_id' => $this->participant->id,
             'status' => 'present',
-            'scanned_by_user_id' => $this->committee->id,
+            'scanned_by_user_id' => $this->admin->id,
         ]);
-    }
 
-    public function test_committee_is_forbidden_from_competition_session(): void
-    {
-        // Panitia dilarang membuka scanner lomba
-        $this->actingAs($this->committee)
-            ->get(route('attendance.scanner', $this->activeSession))
-            ->assertForbidden();
-
-        // Panitia dilarang scan presensi lomba
-        $this->actingAs($this->committee)
-            ->postJson(route('attendance.scan', $this->activeSession), [
-                'token' => $this->participant->qr_token,
-            ])
-            ->assertForbidden();
-
-        // Panitia dilarang manual check-in lomba
-        $this->actingAs($this->committee)
-            ->postJson(route('attendance.manual', $this->activeSession), [
-                'entity_type' => 'participant',
-                'entity_id' => $this->participant->id,
-            ])
-            ->assertForbidden();
-
-        // Panitia dilarang mencari kandidat di sesi lomba
-        $this->actingAs($this->committee)
-            ->getJson(route('attendance.search', ['session' => $this->activeSession, 'q' => 'Budi']))
-            ->assertForbidden();
-
-        // Panitia dilarang melihat riwayat scan sesi lomba
-        $this->actingAs($this->committee)
-            ->getJson(route('attendance.logs', $this->activeSession))
-            ->assertForbidden();
-    }
-
-    public function test_assigned_judge_can_access_and_scan_assigned_competition_session(): void
-    {
-        // Juri yang ditugaskan bisa membuka scanner pos lombanya
-        $this->actingAs($this->assignedJudge)
+        // Admin bisa buka scanner sesi lomba
+        $this->actingAs($this->admin)
             ->get(route('attendance.scanner', $this->activeSession))
             ->assertOk()
-            ->assertSee('Pos Registrasi Pionering')
-            ->assertSee('ARAHKAN QR CODE KE SINI');
-
-        // Juri yang ditugaskan bisa scan kehadiran pos lomba
-        $response = $this->actingAs($this->assignedJudge)
-            ->postJson(route('attendance.scan', $this->activeSession), [
-                'token' => $this->participant->qr_token,
-                'device_info' => 'Judge Device Test',
-            ]);
-
-        $response->assertOk()
-            ->assertJson([
-                'success' => true,
-                'code' => 'RECORDED',
-            ]);
-
-        $this->assertDatabaseHas('attendances', [
-            'attendance_session_id' => $this->activeSession->id,
-            'participant_id' => $this->participant->id,
-            'scanned_by_user_id' => $this->assignedJudge->id,
-        ]);
-    }
-
-    public function test_assigned_judge_is_forbidden_from_general_attendance_session(): void
-    {
-        // Juri dilarang mengakses scanner kehadiran umum
-        $this->actingAs($this->assignedJudge)
-            ->get(route('attendance.scanner', $this->generalSession))
-            ->assertForbidden();
-
-        // Juri dilarang scan presensi kehadiran umum
-        $this->actingAs($this->assignedJudge)
-            ->postJson(route('attendance.scan', $this->generalSession), [
-                'token' => $this->participant->qr_token,
-            ])
-            ->assertForbidden();
-    }
-
-    public function test_unassigned_judge_is_forbidden_from_unassigned_competition_session(): void
-    {
-        // Juri yang tidak ditugaskan ke lomba ini dilarang mengakses
-        $this->actingAs($this->unassignedJudge)
-            ->get(route('attendance.scanner', $this->activeSession))
-            ->assertForbidden();
-
-        $this->actingAs($this->unassignedJudge)
-            ->postJson(route('attendance.scan', $this->activeSession), [
-                'token' => $this->participant->qr_token,
-            ])
-            ->assertForbidden();
-    }
-
-    public function test_admin_can_access_and_scan_both_general_and_competition_sessions(): void
-    {
-        // Admin bisa scan sesi umum
-        $this->actingAs($this->admin)
-            ->get(route('attendance.scanner', $this->generalSession))
-            ->assertOk();
-
-        // Admin bisa scan sesi lomba
-        $this->actingAs($this->admin)
-            ->get(route('attendance.scanner', $this->activeSession))
-            ->assertOk();
+            ->assertSee('Pos Registrasi Pionering');
     }
 
     public function test_scanner_page_blocks_camera_when_session_is_deactivated_by_admin(): void
     {
-        $response = $this->actingAs($this->committee)
+        $response = $this->actingAs($this->admin)
             ->get(route('attendance.scanner', $this->inactiveGeneralSession));
 
         $response->assertOk()
@@ -392,14 +346,14 @@ class AttendanceScannerTest extends TestCase
     public function test_duplicate_scan_in_same_session_returns_already_scanned_error(): void
     {
         // Pindai pertama kali
-        $this->actingAs($this->committee)
+        $this->actingAs($this->admin)
             ->postJson(route('attendance.scan', $this->generalSession), [
                 'token' => $this->participant->qr_token,
             ])
             ->assertOk();
 
         // Pindai kedua kali (duplikasi)
-        $response = $this->actingAs($this->committee)
+        $response = $this->actingAs($this->admin)
             ->postJson(route('attendance.scan', $this->generalSession), [
                 'token' => $this->participant->qr_token,
             ]);
@@ -413,7 +367,7 @@ class AttendanceScannerTest extends TestCase
 
     public function test_scanning_on_inactive_session_is_rejected(): void
     {
-        $response = $this->actingAs($this->committee)
+        $response = $this->actingAs($this->admin)
             ->postJson(route('attendance.scan', $this->inactiveGeneralSession), [
                 'token' => $this->participant->qr_token,
             ]);
@@ -427,7 +381,7 @@ class AttendanceScannerTest extends TestCase
 
     public function test_scanning_invalid_token_is_rejected(): void
     {
-        $response = $this->actingAs($this->committee)
+        $response = $this->actingAs($this->admin)
             ->postJson(route('attendance.scan', $this->generalSession), [
                 'token' => 'invalid-fake-token-12345',
             ]);
@@ -463,7 +417,7 @@ class AttendanceScannerTest extends TestCase
 
     public function test_search_candidates_finds_eligible_attendees(): void
     {
-        $response = $this->actingAs($this->committee)
+        $response = $this->actingAs($this->admin)
             ->getJson(route('attendance.search', [
                 'session' => $this->generalSession,
                 'q' => 'Budi',
@@ -486,12 +440,12 @@ class AttendanceScannerTest extends TestCase
             'attendance_session_id' => $this->generalSession->id,
             'entity_type' => 'participant',
             'participant_id' => $this->participant->id,
-            'scanned_by_user_id' => $this->committee->id,
+            'scanned_by_user_id' => $this->admin->id,
             'scanned_at' => now(),
             'status' => 'present',
         ]);
 
-        $response = $this->actingAs($this->committee)
+        $response = $this->actingAs($this->admin)
             ->getJson(route('attendance.logs', $this->generalSession));
 
         $response->assertOk()
@@ -546,7 +500,7 @@ class AttendanceScannerTest extends TestCase
             'id_number' => 'ID-ANDI5678',
         ]);
 
-        $response = $this->actingAs($this->assignedJudge)
+        $response = $this->actingAs($this->admin)
             ->postJson(route('attendance.scan', $this->activeSession), [
                 'token' => $member->qr_token,
             ]);
@@ -561,7 +515,7 @@ class AttendanceScannerTest extends TestCase
     public function test_patrol_competition_rejects_second_leader_scan_when_patrol_already_attended(): void
     {
         // 1. PINRU scan presensi pertama kali -> Berhasil
-        $this->actingAs($this->assignedJudge)
+        $this->actingAs($this->admin)
             ->postJson(route('attendance.scan', $this->activeSession), [
                 'token' => $this->participant->qr_token,
             ])
@@ -580,7 +534,7 @@ class AttendanceScannerTest extends TestCase
         ]);
 
         // 3. WAPINRU mencoba scan untuk regu yang sama -> Ditolak (Regu sudah hadir)
-        $response = $this->actingAs($this->assignedJudge)
+        $response = $this->actingAs($this->admin)
             ->postJson(route('attendance.scan', $this->activeSession), [
                 'token' => $assistantLeader->qr_token,
             ]);
@@ -641,8 +595,8 @@ class AttendanceScannerTest extends TestCase
             'id_number' => 'ID-FAJAR001',
         ]);
 
-        // 1. Anggota biasa memindai presensi sebagai perwakilan regu melalui juri yang ditugaskan -> Berhasil!
-        $response = $this->actingAs($this->assignedJudge)
+        // 1. Anggota biasa memindai presensi sebagai perwakilan regu melalui scanner -> Berhasil!
+        $response = $this->actingAs($this->admin)
             ->postJson(route('attendance.scan', $indivSession), [
                 'token' => $memberRep->qr_token,
             ]);
@@ -654,7 +608,7 @@ class AttendanceScannerTest extends TestCase
             ]);
 
         // 2. Anggota lain (atau PINRU) dari regu yang sama mencoba scan untuk sesi individu yang sama -> Ditolak
-        $response2 = $this->actingAs($this->assignedJudge)
+        $response2 = $this->actingAs($this->admin)
             ->postJson(route('attendance.scan', $indivSession), [
                 'token' => $this->participant->qr_token,
             ]);
@@ -728,8 +682,8 @@ class AttendanceScannerTest extends TestCase
             'id_number' => 'ID-GRP-003',
         ]);
 
-        // 1. Peserta 1 scan via Juri -> Berhasil (1/2 hadir)
-        $res1 = $this->actingAs($this->assignedJudge)
+        // 1. Peserta 1 scan -> Berhasil (1/2 hadir)
+        $res1 = $this->actingAs($this->admin)
             ->postJson(route('attendance.scan', $groupSession), [
                 'token' => $member1->qr_token,
             ]);
@@ -740,7 +694,7 @@ class AttendanceScannerTest extends TestCase
             ]);
 
         // 2. Peserta 1 scan ulang -> Ditolak (ALREADY_SCANNED perorangan)
-        $resRepeat = $this->actingAs($this->assignedJudge)
+        $resRepeat = $this->actingAs($this->admin)
             ->postJson(route('attendance.scan', $groupSession), [
                 'token' => $member1->qr_token,
             ]);
@@ -751,7 +705,7 @@ class AttendanceScannerTest extends TestCase
             ]);
 
         // 3. Peserta 2 scan -> Berhasil (2/2 hadir - Kelompok Lengkap!)
-        $res2 = $this->actingAs($this->assignedJudge)
+        $res2 = $this->actingAs($this->admin)
             ->postJson(route('attendance.scan', $groupSession), [
                 'token' => $member2->qr_token,
             ]);
@@ -762,7 +716,7 @@ class AttendanceScannerTest extends TestCase
             ]);
 
         // 4. Peserta 3 (anggota ke-3 dari regu yang sama) mencoba scan -> Ditolak karena kuota kelompok (2 orang) sudah penuh
-        $res3 = $this->actingAs($this->assignedJudge)
+        $res3 = $this->actingAs($this->admin)
             ->postJson(route('attendance.scan', $groupSession), [
                 'token' => $member3->qr_token,
             ]);
@@ -797,7 +751,7 @@ class AttendanceScannerTest extends TestCase
 
         $session = $futureSchedule->attendanceSessions()->first();
 
-        $response = $this->actingAs($this->assignedJudge)
+        $response = $this->actingAs($this->admin)
             ->postJson(route('attendance.scan', $session), [
                 'token' => $this->participant->qr_token,
             ]);
@@ -833,7 +787,7 @@ class AttendanceScannerTest extends TestCase
 
         $session = $pastSchedule->attendanceSessions()->first();
 
-        $response = $this->actingAs($this->assignedJudge)
+        $response = $this->actingAs($this->admin)
             ->postJson(route('attendance.scan', $session), [
                 'token' => $this->participant->qr_token,
             ]);
@@ -869,7 +823,7 @@ class AttendanceScannerTest extends TestCase
 
         $session = $futureSchedule->attendanceSessions()->first();
 
-        $response = $this->actingAs($this->assignedJudge)
+        $response = $this->actingAs($this->admin)
             ->get(route('attendance.scanner', $session));
 
         $response->assertOk()
@@ -908,7 +862,7 @@ class AttendanceScannerTest extends TestCase
         $session = $girlsSchedule->attendanceSessions()->first();
 
         // $this->participant terdaftar di regu Putra (Rajawali)
-        $response = $this->actingAs($this->assignedJudge)
+        $response = $this->actingAs($this->admin)
             ->postJson(route('attendance.scan', $session), [
                 'token' => $this->participant->qr_token,
             ]);
@@ -970,7 +924,7 @@ class AttendanceScannerTest extends TestCase
             'status' => 'verified',
         ]);
 
-        $response = $this->actingAs($this->assignedJudge)
+        $response = $this->actingAs($this->admin)
             ->postJson(route('attendance.scan', $session), [
                 'token' => $girlParticipant->qr_token,
             ]);
@@ -1011,7 +965,7 @@ class AttendanceScannerTest extends TestCase
 
         $session = $boysSchedule->attendanceSessions()->first();
 
-        $response = $this->actingAs($this->assignedJudge)
+        $response = $this->actingAs($this->admin)
             ->postJson(route('attendance.scan', $session), [
                 'token' => $this->participant->qr_token,
             ]);

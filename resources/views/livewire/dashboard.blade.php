@@ -122,8 +122,8 @@
         {{-- Statistik Panitia (monitor operasional lapangan) --}}
         <section class="space-y-3" aria-label="Statistik operasional">
             <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                <x-stat-card label="Sesi Presensi Aktif" :value="$committeeStats['active_sessions']" unit="Sesi" :description="'Dari '.$committeeStats['total_sessions'].' sesi yang dapat diakses'" action-text="Buka Pemindai" href="{{ route('attendance.index') }}" color="emerald" icon="qr-code" />
-                <x-stat-card label="Presensi Hari Ini" :value="$committeeStats['attendances_today']" unit="Pemindaian" description="Seluruh sesi yang Anda akses" color="amber" icon="clipboard-document-list" />
+                <x-stat-card label="Sesi Presensi Aktif" :value="$committeeStats['active_sessions']" unit="Sesi" :description="'Dari '.$committeeStats['total_sessions'].' sesi'" action-text="Rekap Presensi" href="{{ route('attendance.recap') }}" color="emerald" icon="qr-code" />
+                <x-stat-card label="Presensi Hari Ini" :value="$committeeStats['attendances_today']" unit="Pemindaian" description="Seluruh sesi yang Anda pantau" color="amber" icon="clipboard-document-list" />
                 <x-stat-card label="Sesi Lomba Hari Ini" :value="$committeeStats['schedules_today']" unit="Sesi" :description="$committeeStats['live_schedules'].' sedang berlangsung'" action-text="Lihat Jadwal" href="{{ route('agenda.index') }}" color="indigo" icon="calendar-days" />
                 <x-stat-card label="Regu Sah" :value="$committeeStats['total_patrols_verified']" unit="Regu terverifikasi" description="Kontingen resmi tersahkan" color="emerald" icon="user-group" />
                 <x-stat-card label="Peserta Terverifikasi" :value="$committeeStats['verified_participants']" unit="Orang" action-text="Direktori Peserta" href="{{ route('admin.participants.index') }}" color="blue" icon="academic-cap" />
@@ -145,7 +145,7 @@
                 <x-stat-card label="Sesi Hari Ini" :value="$judgeStats['sessions_today']" unit="Sesi" description="Jadwal penjurian Anda hari ini" color="emerald" icon="calendar" />
                 <x-stat-card label="Nilai Final Saya" :value="$judgeStats['finalized_scores']" unit="Penilaian" :description="$judgeStats['draft_scores'].' masih draf'" color="emerald" icon="clipboard-document-check" />
                 <x-stat-card label="Rubrik Juknis Lomba" :value="$judgeStats['total_competitions']" unit="Mata Lomba" action-text="Pelajari Standar Nilai" href="{{ route('competitions') }}" color="amber" icon="document-text" />
-                <x-stat-card label="Presensi Pos Aktif" :value="$judgeStats['active_attendance_sessions']" unit="Sesi" action-text="Portal Presensi" href="{{ route('attendance.index') }}" color="blue" icon="qr-code" />
+                <x-stat-card label="Presensi Pos Aktif" :value="$judgeStats['active_attendance_sessions']" unit="Sesi" action-text="Rekap Presensi" href="{{ route('attendance.recap') }}" color="blue" icon="qr-code" />
                 <x-stat-card label="Sistem Penilaian" value="Blind Scoring" description="Juri menilai berdasarkan NPP tanpa identitas regu" color="indigo" icon="shield-check" />
                 <x-stat-card label="Kartu Digital" value="ID Card Juri" description="Tunjukkan QR Code saat bertugas" action-text="Buka Kartu" href="{{ route('digital-card.index') }}" color="purple" icon="qr-code" />
                 @if($activeEvent?->isCertificatePublished())

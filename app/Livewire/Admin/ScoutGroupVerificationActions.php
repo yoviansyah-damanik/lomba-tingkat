@@ -87,7 +87,10 @@ class ScoutGroupVerificationActions extends Component
         $this->decide(function (ScoutGroup $group) use ($service) {
             $revoked = $service->cancelVerification($group, auth()->user(), $this->cancelReason);
 
-            Flux::toast(variant: 'warning', heading: 'Verifikasi Dibatalkan', text: "Akun peserta ({$revoked['participants']}) dan bindamping ({$revoked['chaperones']}) dicabut; status kontingen dikembalikan.");
+            $nppCount = $revoked['npp'] ?? 0;
+            $nppInfo = $nppCount > 0 ? ", serta {$nppCount} NPP regu dicabut" : '';
+
+            Flux::toast(variant: 'warning', heading: 'Verifikasi Dibatalkan', text: "Akun peserta ({$revoked['participants']}) dan bindamping ({$revoked['chaperones']}) dicabut{$nppInfo}; status kontingen dikembalikan.");
         }, 'cancel-modal');
 
         $this->reset('cancelReason');

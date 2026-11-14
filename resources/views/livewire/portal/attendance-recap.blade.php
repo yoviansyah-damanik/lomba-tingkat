@@ -25,9 +25,11 @@
         </x-slot:badge-extra>
 
         <x-slot:actions>
-            <flux:button href="{{ route('attendance.index') }}" variant="subtle" icon="qr-code" wire:navigate>
-                Portal Presensi
-            </flux:button>
+            @if (auth()->user()?->isAdmin())
+                <flux:button href="{{ route('attendance.index') }}" variant="subtle" icon="qr-code" wire:navigate>
+                    Portal Presensi
+                </flux:button>
+            @endif
 
             <flux:button wire:click="openPdfModal" variant="primary" icon="document-text">
                 Pratinjau PDF

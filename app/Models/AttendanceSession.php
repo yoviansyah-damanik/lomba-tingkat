@@ -146,6 +146,7 @@ class AttendanceSession extends Model
 
     /**
      * Scope sesi presensi yang berhak diakses oleh user tertentu sesuai peran
+     * Digunakan untuk rekapitulasi data dan pantauan status per sesi
      */
     public function scopeAccessibleBy(Builder $query, ?User $user): Builder
     {
@@ -210,6 +211,7 @@ class AttendanceSession extends Model
 
     /**
      * Memeriksa otorisasi apakah user yang login berhak mengakses/scan sesi presensi ini
+     * Hanya role admin yang dapat melakukan scan presensi
      */
     public function canBeAccessedBy(?User $user): bool
     {
@@ -217,37 +219,7 @@ class AttendanceSession extends Model
             return false;
         }
 
-        if ($user->isAdmin()) {
-            return true;
-        }
-
-        $isLomba = $this->isCompetition();
-
-        // Akun yang merangkap Panitia & Juri
-        if ($user->isCommittee() && $user->isJudge()) {
-            if (! $isLomba) {
-                return true; // Sebagai Panitia untuk presensi kehadiran
-            }
-
-            // Sebagai Juri untuk lomba yang ditunjuk
-            return $this->schedule && $this->schedule->judgeAssignments()->where('user_id', $user->id)->exists();
-        }
-
-        // Juri: hanya presensi sesuai dengan mata lomba yang ditunjuk
-        if ($user->isJudge()) {
-            if (! $isLomba) {
-                return false;
-            }
-
-            return $this->schedule && $this->schedule->judgeAssignments()->where('user_id', $user->id)->exists();
-        }
-
-        // Panitia: hanya presensi kehadiran dan bukan lomba
-        if ($user->isCommittee()) {
-            return ! $isLomba;
-        }
-
-        return false;
+        return $user->isAdmin();
     }
 
     /**

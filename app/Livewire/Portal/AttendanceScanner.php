@@ -19,10 +19,8 @@ class AttendanceScanner extends Component
     {
         $user = auth()->user();
 
-        if (! $session->canBeAccessedBy($user)) {
-            abort(403, $user?->isJudge()
-                ? 'Akses ditolak. Dewan Juri hanya dapat mengakses scanner presensi pos untuk mata lomba yang ditugaskan kepada Anda.'
-                : 'Akses ditolak. Panitia hanya memiliki hak akses untuk presensi kehadiran umum (bukan pos mata lomba).');
+        if (! $user || ! $user->isAdmin() || ! $session->canBeAccessedBy($user)) {
+            abort(403, 'Akses ditolak. Pemindaian presensi hanya dapat dilakukan oleh Administrator.');
         }
 
         $this->session = $session;

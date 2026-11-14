@@ -72,6 +72,13 @@ class AttendanceDashboard extends Component
     // State Modal Log Presensi Interaktif
     public bool $showLogsModal = false;
 
+    public function mount(): void
+    {
+        if (! auth()->user()?->isAdmin()) {
+            abort(403, 'Akses ditolak. Portal presensi hanya dapat diakses oleh Administrator.');
+        }
+    }
+
     public ?string $selectedLogsSessionId = null;
 
     public string $logsSearch = '';

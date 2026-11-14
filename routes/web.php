@@ -270,12 +270,9 @@ Route::middleware(['auth', 'role'])->group(function () {
         Route::get('/dashboard', fn () => redirect()->route('dashboard'))->name('dashboard');
     });
 
-    // Phase 6: Portal Presensi & Scanner QR Code (Admin, Panitia, & Dewan Juri - Livewire 4 SPA)
-    Route::middleware(['auth', 'role:admin|committee|judge'])->prefix('portal/attendance')->name('attendance.')->group(function () {
+    // Phase 6: Portal Presensi & Scanner QR Code (Khusus Administrator)
+    Route::middleware(['auth', 'role:admin'])->prefix('portal/attendance')->name('attendance.')->group(function () {
         Route::get('/', AttendanceDashboard::class)->name('index');
-        Route::get('/recap', AttendanceRecap::class)->name('recap');
-        Route::get('/recap/preview', [AttendanceScannerController::class, 'previewRecap'])->name('recap.preview');
-        Route::get('/recap/pdf', [AttendanceScannerController::class, 'pdfRecap'])->name('recap.pdf');
         Route::get('/scanner/{session}', AttendanceScanner::class)->name('scanner');
         Route::post('/scan/{session}', [AttendanceScannerController::class, 'scan'])->name('scan');
         Route::post('/manual/{session}', [AttendanceScannerController::class, 'manual'])->name('manual');
@@ -283,6 +280,13 @@ Route::middleware(['auth', 'role'])->group(function () {
         Route::get('/logs/{session}', [AttendanceScannerController::class, 'logs'])->name('logs');
         Route::put('/records/{attendance}', [AttendanceScannerController::class, 'update'])->name('update');
         Route::delete('/records/{attendance}', [AttendanceScannerController::class, 'destroy'])->name('destroy');
+    });
+
+    // Rekapitulasi Presensi (Admin, Panitia, Dewan Juri)
+    Route::middleware(['auth', 'role:admin|committee|judge'])->prefix('portal/attendance')->name('attendance.')->group(function () {
+        Route::get('/recap', AttendanceRecap::class)->name('recap');
+        Route::get('/recap/preview', [AttendanceScannerController::class, 'previewRecap'])->name('recap.preview');
+        Route::get('/recap/pdf', [AttendanceScannerController::class, 'pdfRecap'])->name('recap.pdf');
     });
 
     // Judge legacy convenience route

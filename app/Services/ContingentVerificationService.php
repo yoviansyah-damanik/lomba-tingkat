@@ -80,9 +80,9 @@ class ContingentVerificationService
     }
 
     /**
-     * Batalkan verifikasi dan cabut seluruh akun digital (khusus Superadmin)
+     * Batalkan verifikasi dan cabut seluruh akun digital serta NPP regu (khusus Superadmin)
      *
-     * @return array{participants: int, chaperones: int}
+     * @return array{participants: int, chaperones: int, npp: int}
      */
     public function cancelVerification(ScoutGroup $scoutGroup, User $actor, ?string $reason): array
     {
@@ -97,6 +97,11 @@ class ContingentVerificationService
         $scoutGroup->loadMissing(['patrols.participants', 'chaperones']);
 
         $revoked = app(ContingentAccountService::class)->revokeAccounts($scoutGroup);
+
+        // Cabut seluruh NPP regu di bawah kontingen ini
+        $nppRevokedCount = $scoutGroup->patrols()->whereNotNull('npp')->count();
+        $scoutGroup->patrols()->whereNotNull('npp')->update(['npp' => null]);
+        $revoked['npp'] = $nppRevokedCount;
 
         $note = filled($reason)
             ? 'Verifikasi dibatalkan oleh Superadmin: '.$reason
@@ -115,7 +120,10 @@ class ContingentVerificationService
             modelType: ScoutGroup::class,
             modelId: $scoutGroup->id,
             oldValues: ['verification_status' => RegistrationStatusEnum::Verified->value],
-            newValues: ['verification_status' => RegistrationStatusEnum::NeedsRevision->value],
+            newValues: [
+                'verification_status' => RegistrationStatusEnum::NeedsRevision->value,
+                'npp_revoked' => $nppRevokedCount,
+            ],
             reason: $note
         );
 
@@ -138,7 +146,12 @@ class ContingentVerificationService
 
     private function cascadeStatus(ScoutGroup $scoutGroup, RegistrationStatusEnum $status): void
     {
-        $scoutGroup->patrols()->update(['status' => $status]);
+        $patrolUpdates = ['status' => $status];
+        if ($status !== RegistrationStatusEnum::Verified) {
+            $patrolUpdates['npp'] = null;
+        }
+
+        $scoutGroup->patrols()->update($patrolUpdates);
         Participant::whereIn('patrol_id', $scoutGroup->patrols()->pluck('id'))->update(['status' => $status]);
         $scoutGroup->chaperones()->update(['status' => $status]);
     }

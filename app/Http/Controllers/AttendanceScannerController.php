@@ -25,9 +25,7 @@ class AttendanceScannerController extends Controller
             return response()->json([
                 'success' => false,
                 'code' => 'UNAUTHORIZED_SESSION',
-                'message' => $request->user()?->isJudge()
-                    ? 'Anda tidak berwenang memindai presensi untuk mata lomba ini karena tidak ditugaskan sebagai juri.'
-                    : 'Panitia hanya memiliki wewenang untuk presensi kehadiran dan bukan mata lomba.',
+                'message' => 'Akses ditolak. Pemindaian presensi hanya dapat dilakukan oleh Administrator.',
             ], 403);
         }
 

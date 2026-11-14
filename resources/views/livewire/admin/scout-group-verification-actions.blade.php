@@ -151,7 +151,7 @@
             <flux:textarea wire:model="cancelReason" rows="2" label="Alasan Pembatalan (opsional)" placeholder="Masukkan alasan pembatalan verifikasi..." class="mt-4" />
 
             <flux:modal.trigger name="cancel-modal">
-                <flux:button variant="danger" icon="x-circle" class="mt-3 w-full">Batalkan Verifikasi &amp; Cabut Seluruh Akun</flux:button>
+                <flux:button variant="danger" icon="x-circle" class="mt-3 w-full">Batalkan Verifikasi &amp; Cabut Akun/NPP</flux:button>
             </flux:modal.trigger>
         </div>
 
@@ -164,13 +164,13 @@
                     <div>
                         <flux:heading size="lg">Batalkan Verifikasi?</flux:heading>
                         <flux:text class="mt-1">
-                            Tindakan ini akan menghapus <strong>seluruh akun peserta dan bindamping</strong> kontingen <strong>{{ $group->school_name }}</strong>. Gugus Depan harus mengajukan ulang. Tindakan tidak dapat dibatalkan.
+                            Tindakan ini akan menghapus <strong>seluruh akun peserta dan bindamping</strong> serta <strong>mencabut NPP regu</strong> pada kontingen <strong>{{ $group->school_name }}</strong>. Gugus Depan harus mengajukan ulang. Tindakan tidak dapat dibatalkan.
                         </flux:text>
                     </div>
                 </div>
                 <div class="flex justify-end gap-2">
                     <flux:modal.close><flux:button variant="subtle">Batal</flux:button></flux:modal.close>
-                    <flux:button wire:click="cancelVerification" variant="danger" icon="x-circle">Ya, Batalkan &amp; Cabut Akun</flux:button>
+                    <flux:button wire:click="cancelVerification" variant="danger" icon="x-circle">Ya, Batalkan &amp; Cabut Akun/NPP</flux:button>
                 </div>
             </div>
         </flux:modal>
