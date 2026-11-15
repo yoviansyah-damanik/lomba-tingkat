@@ -152,7 +152,7 @@ class SchedulesManagement extends Component
     #[Computed]
     public function schedules()
     {
-        $query = CompetitionSchedule::with(['competition', 'judges', 'attendanceSessions'])
+        $query = CompetitionSchedule::with(['competition', 'judges', 'judgeAssignments.judge', 'attendanceSessions', 'assessments'])
             ->orderBy('start_time');
 
         if (! empty($this->search)) {

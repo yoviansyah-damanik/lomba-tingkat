@@ -2,10 +2,17 @@
 
 namespace App\Livewire\Admin;
 
+use App\Enums\PatrolGenderEnum;
+use App\Enums\RegistrationStatusEnum;
+use App\Enums\RoleEnum;
+use App\Models\Assessment;
 use App\Models\AssessmentCriterion;
 use App\Models\Competition;
 use App\Models\CompetitionScore;
+use App\Models\Event;
 use App\Models\Patrol;
+use App\Models\User;
+use App\Services\AssessmentScoringService;
 use App\Services\StandingsService;
 use Flux\Flux;
 use Illuminate\Support\Collection;
@@ -35,14 +42,30 @@ class StandingsLeaderboard extends Component
 
     // Modal Input / Edit Nilai (Admin & Juri)
     public bool $showScoreModal = false;
+
     public ?string $editingScoreId = null;
+
     public ?string $modalPatrolId = null;
+
     public array $modalCriteriaScores = [];
+
     public ?float $modalFinalScore = null;
+
     public string $modalNotes = '';
 
     // Modal rincian poin regu
     public ?string $detailPatrolId = null;
+
+    // Modal Finalisasi / Draf Per Juri (Khusus Administrator)
+    public bool $isJudgeActionModalOpen = false;
+
+    public string $judgeActionType = 'finalize'; // 'finalize' atau 'draft'
+
+    public string $targetJudgeId = '';
+
+    public string $targetCompetitionId = 'all';
+
+    public string $judgeActionReason = '';
 
     public function mount(StandingsService $standingsService): void
     {
@@ -105,7 +128,14 @@ class StandingsLeaderboard extends Component
     #[Computed]
     public function competitions(): Collection
     {
-        return Competition::published()->withCount('criteria', 'scores')->get();
+        return Competition::published()
+            ->withCount([
+                'criteria',
+                'scores',
+                'assessments as total_assessments',
+                'assessments as draft_assessments' => fn ($q) => $q->where('status', 'draft'),
+            ])
+            ->get();
     }
 
     #[Computed]
@@ -142,7 +172,7 @@ class StandingsLeaderboard extends Component
     #[Computed]
     public function isEventMasked(): bool
     {
-        return (bool) (\App\Models\Event::first()?->hide_patrol_identities ?? false);
+        return (bool) (Event::first()?->hide_patrol_identities ?? false);
     }
 
     #[Computed]
@@ -257,7 +287,7 @@ class StandingsLeaderboard extends Component
 
     protected function genderOf(mixed $gender): string
     {
-        return $gender instanceof \App\Enums\PatrolGenderEnum ? $gender->value : (string) $gender;
+        return $gender instanceof PatrolGenderEnum ? $gender->value : (string) $gender;
     }
 
     #[Computed]
@@ -268,7 +298,7 @@ class StandingsLeaderboard extends Component
             return collect();
         }
 
-        $query = Patrol::with('scoutGroup')->where('status', \App\Enums\RegistrationStatusEnum::Verified);
+        $query = Patrol::with('scoutGroup')->where('status', RegistrationStatusEnum::Verified);
 
         if ($comp->category === 'boys') {
             $query->where('gender_category', 'boys');
@@ -289,11 +319,13 @@ class StandingsLeaderboard extends Component
     {
         if (auth()->user()?->isAdminOnly()) {
             Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Administrator tidak diperkenankan melakukan penilaian lomba. Penilaian hanya dapat dilakukan oleh Juri yang telah ditunjuk.');
+
             return;
         }
 
         if (! $this->canInputScores) {
             Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Panitia tidak memiliki hak akses untuk melakukan penilaian lomba.');
+
             return;
         }
 
@@ -352,11 +384,13 @@ class StandingsLeaderboard extends Component
     {
         if (auth()->user()?->isAdminOnly()) {
             Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Administrator tidak diperkenankan melakukan penilaian lomba. Penilaian hanya dapat dilakukan oleh Juri yang telah ditunjuk.');
+
             return;
         }
 
         if (! $this->canInputScores) {
             Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Anda tidak memiliki hak akses untuk mengubah nilai.');
+
             return;
         }
 
@@ -406,6 +440,7 @@ class StandingsLeaderboard extends Component
     {
         if (! $this->canManageScores) {
             Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Panitia tidak memiliki hak akses untuk mengkalkulasi ulang peringkat.');
+
             return;
         }
 
@@ -413,6 +448,131 @@ class StandingsLeaderboard extends Component
             app(StandingsService::class)->recalculateRanks($this->selectedCompetitionId);
             Flux::toast(variant: 'success', heading: 'Kalkulasi Selesai', text: 'Peringkat mata lomba berhasil dikalkulasi ulang.');
         }
+    }
+
+    #[Computed]
+    public function allJudges(): Collection
+    {
+        return User::whereHas('roles', fn ($q) => $q->where('name', RoleEnum::Judge->value))
+            ->orWhereIn('id', Assessment::select('judge_id')->distinct())
+            ->orderBy('name')
+            ->get();
+    }
+
+    #[Computed]
+    public function competitionJudgesSummary(): Collection
+    {
+        $compId = $this->selectedCompetitionId;
+
+        $judgeIds = Assessment::when($compId, fn ($q) => $q->where('competition_id', $compId))
+            ->select('judge_id')
+            ->distinct()
+            ->pluck('judge_id');
+
+        if ($judgeIds->isEmpty()) {
+            return collect();
+        }
+
+        return User::whereIn('id', $judgeIds)
+            ->withCount([
+                'assessments as total_assessments' => fn ($q) => $compId ? $q->where('competition_id', $compId) : $q,
+                'assessments as finalized_count' => fn ($q) => $compId ? $q->where('competition_id', $compId)->where('status', 'finalized') : $q->where('status', 'finalized'),
+                'assessments as draft_count' => fn ($q) => $compId ? $q->where('competition_id', $compId)->where('status', 'draft') : $q->where('status', 'draft'),
+            ])
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function getTargetActionCount(): int
+    {
+        if (! $this->targetJudgeId) {
+            return 0;
+        }
+
+        $status = $this->judgeActionType === 'finalize' ? 'draft' : 'finalized';
+
+        $query = Assessment::where('judge_id', $this->targetJudgeId)
+            ->where('status', $status);
+
+        if ($this->targetCompetitionId && $this->targetCompetitionId !== 'all') {
+            $query->where('competition_id', $this->targetCompetitionId);
+        }
+
+        return $query->count();
+    }
+
+    public function openJudgeActionModal(string $actionType = 'finalize', ?string $judgeId = null, ?string $competitionId = null): void
+    {
+        if (! auth()->user()?->isAdmin()) {
+            Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Hanya Administrator yang memiliki wewenang mengelola status finalisasi nilai.');
+
+            return;
+        }
+
+        $this->judgeActionType = in_array($actionType, ['finalize', 'draft'], true) ? $actionType : 'finalize';
+        $this->targetJudgeId = $judgeId ?? '';
+        $this->targetCompetitionId = $competitionId ?? ($this->selectedCompetitionId ?? 'all');
+        $this->judgeActionReason = '';
+        $this->isJudgeActionModalOpen = true;
+    }
+
+    public function executeJudgeAction(AssessmentScoringService $scoringService): void
+    {
+        if (! auth()->user()?->isAdmin()) {
+            abort(403);
+        }
+
+        $rules = [
+            'targetJudgeId' => 'required|exists:users,id',
+        ];
+
+        if ($this->judgeActionType === 'draft') {
+            $rules['judgeActionReason'] = 'required|string|min:5';
+        } else {
+            $rules['judgeActionReason'] = 'nullable|string';
+        }
+
+        $this->validate($rules, [
+            'targetJudgeId.required' => 'Pilih dewan juri terlebih dahulu.',
+            'targetJudgeId.exists' => 'Juri yang dipilih tidak valid.',
+            'judgeActionReason.required' => 'Alasan pembukaan kunci nilai ke draf wajib diisi.',
+            'judgeActionReason.min' => 'Alasan minimal 5 karakter.',
+        ]);
+
+        $judgeUser = User::find($this->targetJudgeId);
+        $judgeName = $judgeUser?->name ?? 'Dewan Juri';
+        $compId = $this->targetCompetitionId !== 'all' ? $this->targetCompetitionId : null;
+
+        if ($this->judgeActionType === 'finalize') {
+            $affected = $scoringService->finalizeScoresByJudge(
+                judgeId: $this->targetJudgeId,
+                admin: auth()->user(),
+                competitionId: $compId
+            );
+
+            if ($affected->count() > 0) {
+                Flux::toast(variant: 'success', heading: 'Finalisasi Berhasil', text: "Sebanyak {$affected->count()} penilaian dari {$judgeName} berhasil difinalisasi.");
+            } else {
+                Flux::toast(variant: 'warning', heading: 'Tidak Ada Draf', text: "Tidak ditemukan penilaian berstatus draf dari {$judgeName} untuk difinalisasi.");
+            }
+        } else {
+            $affected = $scoringService->unlockScoresByJudge(
+                judgeId: $this->targetJudgeId,
+                reason: $this->judgeActionReason,
+                admin: auth()->user(),
+                competitionId: $compId
+            );
+
+            if ($affected->count() > 0) {
+                Flux::toast(variant: 'success', heading: 'Penilaian Dibuka', text: "Sebanyak {$affected->count()} penilaian dari {$judgeName} berhasil diubah kembali ke status Draf.");
+            } else {
+                Flux::toast(variant: 'warning', heading: 'Tidak Ada Data', text: "Tidak ditemukan penilaian terfinalisasi dari {$judgeName} untuk dibuka.");
+            }
+        }
+
+        $this->isJudgeActionModalOpen = false;
+        $this->targetJudgeId = '';
+        $this->judgeActionReason = '';
     }
 
     public function render()
@@ -429,6 +589,9 @@ class StandingsLeaderboard extends Component
             'isEventMasked' => $this->isEventMasked,
             'canUnmask' => $this->canUnmask,
             'isAdmin' => (bool) (auth()->user()?->isAdmin()),
+            'allJudges' => $this->allJudges,
+            'competitionJudgesSummary' => $this->competitionJudgesSummary,
+            'targetActionCount' => $this->getTargetActionCount(),
         ]);
     }
 }

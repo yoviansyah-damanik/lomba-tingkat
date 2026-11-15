@@ -87,6 +87,7 @@ class JudgeCockpit extends Component
             $finalizedPatrols = $progress['finalized'];
 
             $myAssignment = $schedule->judgeAssignments->firstWhere('user_id', $user->id);
+            $judgeStatus = $schedule->judgeScoringStatus();
 
             return [
                 'id' => $schedule->id,
@@ -106,6 +107,10 @@ class JudgeCockpit extends Component
                 'scoring_state' => $schedule->scoringState(),
                 'scoring_message' => $schedule->scoringClosedMessage(),
                 'criteria_count' => $schedule->competition?->criteria?->count() ?? 0,
+                'has_unfinalized_judges' => $judgeStatus['has_unfinalized'],
+                'draft_assessments_count' => $judgeStatus['draft_count'],
+                'finalized_assessments_count' => $judgeStatus['finalized_count'],
+                'has_scores' => $judgeStatus['has_scores'],
             ];
         });
 

@@ -101,6 +101,42 @@ class Competition extends Model
     }
 
     /**
+     * Relasi ke seluruh data penilaian individu juri untuk cabang lomba ini
+     */
+    public function assessments(): HasMany
+    {
+        return $this->hasMany(Assessment::class);
+    }
+
+    /**
+     * Memeriksa apakah lomba sudah diisi nilainya namun masih ada juri yang belum final
+     */
+    public function hasUnfinalizedJudges(): bool
+    {
+        return $this->assessments()->where('status', 'draft')->exists()
+            && $this->assessments()->exists();
+    }
+
+    /**
+     * Ringkasan status penilaian dewan juri untuk cabang lomba ini
+     *
+     * @return array{has_scores: bool, has_unfinalized: bool, finalized_count: int, draft_count: int}
+     */
+    public function judgeScoringStatus(): array
+    {
+        $draftCount = $this->assessments()->where('status', 'draft')->count();
+        $finalizedCount = $this->assessments()->where('status', 'finalized')->count();
+        $hasScores = ($draftCount + $finalizedCount) > 0;
+
+        return [
+            'has_scores' => $hasScores,
+            'has_unfinalized' => $hasScores && $draftCount > 0,
+            'finalized_count' => $finalizedCount,
+            'draft_count' => $draftCount,
+        ];
+    }
+
+    /**
      * Helper cek apakah lomba bertipe individu
      */
     public function isIndividual(): bool
@@ -135,6 +171,7 @@ class Competition extends Model
         if ($this->isIndividual()) {
             return 'Individu';
         }
+
         return 'Regu Utuh';
     }
 
@@ -151,6 +188,7 @@ class Competition extends Model
             if ($this->min_participants === $this->max_participants) {
                 return "Kelompok (Tepat {$this->min_participants} Peserta)";
             }
+
             return "Kelompok ({$this->min_participants} - {$this->max_participants} Peserta)";
         }
 

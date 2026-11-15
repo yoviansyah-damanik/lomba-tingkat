@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Model jadwal pelaksanaan sesi lomba
@@ -75,7 +77,7 @@ class CompetitionSchedule extends Model
                 ['competition_schedule_id' => $schedule->id],
                 [
                     'session_type' => 'participant',
-                    'title' => 'Presensi: ' . $competitionTitle . ' (' . $schedule->session_name . ')',
+                    'title' => 'Presensi: '.$competitionTitle.' ('.$schedule->session_name.')',
                     'is_competition' => true,
                     'opened_at' => $openTime,
                     'closed_at' => $closeTime,
@@ -150,6 +152,34 @@ class CompetitionSchedule extends Model
     }
 
     /**
+     * Memeriksa apakah sesi lomba sudah mulai dinilai namun masih ada juri yang belum final
+     */
+    public function hasUnfinalizedJudges(): bool
+    {
+        return $this->assessments()->where('status', 'draft')->exists()
+            && $this->assessments()->exists();
+    }
+
+    /**
+     * Ringkasan status penilaian dewan juri pada sesi ini
+     *
+     * @return array{has_scores: bool, has_unfinalized: bool, finalized_count: int, draft_count: int}
+     */
+    public function judgeScoringStatus(): array
+    {
+        $draftCount = $this->assessments()->where('status', 'draft')->count();
+        $finalizedCount = $this->assessments()->where('status', 'finalized')->count();
+        $hasScores = ($draftCount + $finalizedCount) > 0;
+
+        return [
+            'has_scores' => $hasScores,
+            'has_unfinalized' => $hasScores && $draftCount > 0,
+            'finalized_count' => $finalizedCount,
+            'draft_count' => $draftCount,
+        ];
+    }
+
+    /**
      * Helper sesi presensi yang sedang aktif
      */
     public function activeAttendanceSession(): ?AttendanceSession
@@ -202,6 +232,7 @@ class CompetitionSchedule extends Model
             if ($this->competition) {
                 return $this->competition->participantRangeLabel();
             }
+
             return 'Kelompok Peserta';
         }
 
@@ -236,7 +267,7 @@ class CompetitionSchedule extends Model
     /**
      * Waktu penilaian juri dibuka (saat jadwal dimulai)
      */
-    public function scoringOpensAt(): ?\Carbon\CarbonInterface
+    public function scoringOpensAt(): ?CarbonInterface
     {
         return $this->start_time ? $this->start_time->copy() : null;
     }
@@ -244,7 +275,7 @@ class CompetitionSchedule extends Model
     /**
      * Waktu penilaian juri ditutup (jadwal berakhir + 30 menit)
      */
-    public function scoringClosesAt(): ?\Carbon\CarbonInterface
+    public function scoringClosesAt(): ?CarbonInterface
     {
         return $this->end_time ? $this->end_time->copy()->addMinutes(self::SCORING_GRACE_MINUTES) : null;
     }
@@ -252,7 +283,7 @@ class CompetitionSchedule extends Model
     /**
      * Status jendela penilaian: upcoming (belum mulai), open (berlangsung), closed (sudah ditutup)
      */
-    public function scoringState(?\Carbon\CarbonInterface $at = null): string
+    public function scoringState(?CarbonInterface $at = null): string
     {
         $at ??= now();
         $opens = $this->scoringOpensAt();
@@ -272,7 +303,7 @@ class CompetitionSchedule extends Model
     /**
      * Apakah penilaian juri sedang dapat dilakukan
      */
-    public function isScoringOpen(?\Carbon\CarbonInterface $at = null): bool
+    public function isScoringOpen(?CarbonInterface $at = null): bool
     {
         return $this->scoringState($at) === 'open';
     }
@@ -280,7 +311,7 @@ class CompetitionSchedule extends Model
     /**
      * Pesan penjelasan bila penilaian belum atau tidak lagi dapat dilakukan
      */
-    public function scoringClosedMessage(?\Carbon\CarbonInterface $at = null): ?string
+    public function scoringClosedMessage(?CarbonInterface $at = null): ?string
     {
         $format = fn ($time) => $time->copy()->setTimezone('Asia/Jakarta')->translatedFormat('d M Y, H:i').' WIB';
 
@@ -294,17 +325,17 @@ class CompetitionSchedule extends Model
     /**
      * Waktu buka presensi resmi (paling cepat 30 menit sebelum jadwal lomba dimulai)
      */
-    public function getAttendanceOpenTimeAttribute(): ?\Carbon\CarbonInterface
+    public function getAttendanceOpenTimeAttribute(): ?CarbonInterface
     {
-        return $this->start_time ? \Carbon\Carbon::parse($this->start_time)->subMinutes(30) : null;
+        return $this->start_time ? Carbon::parse($this->start_time)->subMinutes(30) : null;
     }
 
     /**
      * Waktu tutup presensi resmi (saat sesi lomba berakhir)
      */
-    public function getAttendanceCloseTimeAttribute(): ?\Carbon\CarbonInterface
+    public function getAttendanceCloseTimeAttribute(): ?CarbonInterface
     {
-        return $this->end_time ? \Carbon\Carbon::parse($this->end_time) : null;
+        return $this->end_time ? Carbon::parse($this->end_time) : null;
     }
 
     /**
@@ -317,6 +348,7 @@ class CompetitionSchedule extends Model
         }
 
         $now = now()->setTimezone('Asia/Jakarta');
+
         return $now->between($this->attendance_open_time, $this->attendance_close_time);
     }
 
@@ -330,6 +362,7 @@ class CompetitionSchedule extends Model
         }
 
         $now = now()->setTimezone('Asia/Jakarta');
+
         return $now->lessThan($this->attendance_open_time);
     }
 
@@ -343,6 +376,7 @@ class CompetitionSchedule extends Model
         }
 
         $now = now()->setTimezone('Asia/Jakarta');
+
         return $now->greaterThan($this->attendance_close_time);
     }
 
@@ -385,8 +419,9 @@ class CompetitionSchedule extends Model
 
         if ($this->isAttendanceNotOpenYet()) {
             $open = $this->attendance_open_time?->setTimezone('Asia/Jakarta');
-            $timeStr = $open ? ($open->isToday() ? 'Pk. ' . $open->format('H:i') : $open->isoFormat('D MMM, HH:mm')) . ' WIB' : '-';
-            return 'Belum Dibuka (Otomatis Buka ' . $timeStr . ')';
+            $timeStr = $open ? ($open->isToday() ? 'Pk. '.$open->format('H:i') : $open->isoFormat('D MMM, HH:mm')).' WIB' : '-';
+
+            return 'Belum Dibuka (Otomatis Buka '.$timeStr.')';
         }
 
         if ($this->isAttendanceClosed()) {

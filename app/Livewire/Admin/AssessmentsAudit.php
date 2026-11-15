@@ -182,7 +182,12 @@ class AssessmentsAudit extends Component
 
     public function render()
     {
-        $competitions = Competition::published()->get();
+        $competitions = Competition::published()
+            ->withCount([
+                'assessments as total_assessments',
+                'assessments as draft_assessments' => fn ($q) => $q->where('status', 'draft'),
+            ])
+            ->get();
 
         // Daftar seluruh Dewan Juri
         $judges = User::whereHas('roles', fn ($q) => $q->where('name', RoleEnum::Judge->value))
@@ -265,6 +270,7 @@ class AssessmentsAudit extends Component
             'auditLogs' => $auditLogs,
             'stats' => $stats,
             'targetFinalizedCount' => $this->getTargetFinalizedCount(),
+            'hasUnfinalizedCompetitions' => $competitions->contains(fn ($c) => $c->total_assessments_count > 0 && $c->draft_assessments_count > 0),
         ]);
     }
 }

@@ -141,6 +141,18 @@
                                     Dijadwalkan
                                 </span>
                             @endif
+
+                            @if($sched['has_unfinalized_judges'])
+                                <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-300 text-amber-800 px-2 py-0.5 text-[11px] font-bold dark:bg-amber-950/60 dark:border-amber-800 dark:text-amber-300" title="Penilaian sudah diisi namun masih ada {{ $sched['draft_assessments_count'] }} penilaian yang belum difinalisasi">
+                                    <flux:icon name="exclamation-triangle" class="size-3" />
+                                    Sebagian Juri Belum Final
+                                </span>
+                            @elseif($sched['has_scores'] && ! $sched['has_unfinalized_judges'])
+                                <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 px-2 py-0.5 text-[11px] font-bold dark:bg-emerald-950/60 dark:border-emerald-800 dark:text-emerald-300">
+                                    <flux:icon name="check-circle" class="size-3" />
+                                    Final Sempurna
+                                </span>
+                            @endif
                         </div>
 
                         <h3 class="text-base sm:text-lg font-bold text-zinc-900 dark:text-zinc-100">

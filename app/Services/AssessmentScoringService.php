@@ -307,6 +307,85 @@ class AssessmentScoringService
     }
 
     /**
+     * Memfinalisasi seluruh penilaian berstatus draf per juri oleh Administrator
+     *
+     * @return Collection<int, Assessment> Koleksi penilaian yang berhasil difinalisasi
+     */
+    public function finalizeScoresByJudge(
+        string|int $judgeId,
+        User $admin,
+        ?string $competitionId = null,
+        ?string $scheduleId = null
+    ): Collection {
+        if (! $admin->isAdmin()) {
+            throw new InvalidArgumentException('Hanya Administrator yang memiliki wewenang memfinalisasi penilaian.');
+        }
+
+        return DB::transaction(function () use ($judgeId, $admin, $competitionId, $scheduleId) {
+            $query = Assessment::with(['competition.criteria'])
+                ->where('judge_id', $judgeId)
+                ->where('status', 'draft');
+
+            if ($competitionId && $competitionId !== 'all') {
+                $query->where('competition_id', $competitionId);
+            }
+
+            if ($scheduleId && $scheduleId !== 'all') {
+                $query->where('competition_schedule_id', $scheduleId);
+            }
+
+            $assessments = $query->get();
+
+            if ($assessments->isEmpty()) {
+                return collect();
+            }
+
+            $affectedPairs = [];
+
+            foreach ($assessments as $assessment) {
+                $oldValues = $assessment->toArray();
+
+                $calc = $this->calculateWeightedScore(
+                    $assessment->criteria_scores ?? [],
+                    $assessment->competition
+                );
+
+                $assessment->update([
+                    'raw_total_score' => $calc['raw_total'],
+                    'final_score' => $calc['final_score'],
+                    'status' => 'finalized',
+                    'is_locked' => true,
+                    'finalized_at' => now(),
+                ]);
+
+                AuditLog::log(
+                    action: 'score_finalized',
+                    modelType: Assessment::class,
+                    modelId: $assessment->id,
+                    oldValues: $oldValues,
+                    newValues: $assessment->toArray(),
+                    reason: 'Finalisasi nilai per juri oleh Administrator',
+                    userId: $admin->id,
+                    actingRole: 'admin'
+                );
+
+                $key = "{$assessment->competition_id}_{$assessment->patrol_id}";
+                $affectedPairs[$key] = [
+                    'competition_id' => $assessment->competition_id,
+                    'patrol_id' => $assessment->patrol_id,
+                ];
+            }
+
+            // Akumulasikan seluruh nilai ke klasemen
+            foreach ($affectedPairs as $pair) {
+                $this->aggregatePatrolScore($pair['competition_id'], $pair['patrol_id']);
+            }
+
+            return $assessments->fresh();
+        });
+    }
+
+    /**
      * Mengakumulasikan seluruh penilaian juri untuk satu regu dan memperbarui klasemen
      */
     public function aggregatePatrolScore(string $competitionId, string $patrolId): void

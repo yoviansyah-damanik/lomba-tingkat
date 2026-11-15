@@ -64,6 +64,30 @@
         />
     </div>
 
+    @if($hasUnfinalizedCompetitions)
+        <div class="rounded-2xl border border-amber-300 bg-amber-50/80 p-4 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-xs">
+            <div class="flex items-center gap-2.5">
+                <span class="inline-flex size-7 items-center justify-center rounded-xl bg-amber-600 text-white text-xs font-bold shrink-0">
+                    <flux:icon name="exclamation-triangle" class="size-4" />
+                </span>
+                <div>
+                    <strong class="font-bold">Perhatian Audit:</strong> Terdapat cabang mata lomba yang sudah dinilai namun masih memiliki dewan juri berstatus draf (belum difinalisasi).
+                    <span class="block mt-0.5 text-[11px] text-amber-700 dark:text-amber-300">
+                        Gunakan tombol "Buka Finalisasi Per Juri" atau filter juri di bawah untuk meninjau dan menyelesaikan status penilaian.
+                    </span>
+                </div>
+            </div>
+            <flux:button
+                icon="lock-open"
+                variant="danger"
+                size="sm"
+                wire:click="openUnlockJudgeModal"
+            >
+                Kelola Finalisasi Juri
+            </flux:button>
+        </div>
+    @endif
+
     {{-- Tab Pilihan: Penilaian Juri vs Log Audit --}}
     <div class="flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-2">
         <flux:button
@@ -150,7 +174,9 @@
                     <flux:select wire:model.live="competitionFilter">
                         <flux:select.option value="all">Semua Mata Lomba</flux:select.option>
                         @foreach($competitions as $comp)
-                            <flux:select.option value="{{ $comp->id }}">{{ $comp->code }} - {{ $comp->title }}</flux:select.option>
+                            <flux:select.option value="{{ $comp->id }}">
+                                {{ $comp->code }} - {{ $comp->title }}{{ ($comp->total_assessments_count > 0 && $comp->draft_assessments_count > 0) ? ' • ⚠️ Belum Final' : '' }}
+                            </flux:select.option>
                         @endforeach
                     </flux:select>
                 </div>

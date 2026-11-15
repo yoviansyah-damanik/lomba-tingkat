@@ -5,9 +5,13 @@ namespace Tests\Feature;
 use App\Enums\PatrolGenderEnum;
 use App\Enums\RegistrationStatusEnum;
 use App\Livewire\Admin\StandingsLeaderboard;
+use App\Models\Assessment;
+use App\Models\AssessmentCriterion;
 use App\Models\Competition;
+use App\Models\CompetitionSchedule;
 use App\Models\CompetitionScore;
 use App\Models\Event;
+use App\Models\JudgeAssignment;
 use App\Models\Patrol;
 use App\Models\Role;
 use App\Models\ScoutGroup;
@@ -619,5 +623,89 @@ class StandingsLeaderboardTest extends TestCase
             ->assertSee('Prestasi Baik')
             ->call('closePatrolDetail')
             ->assertDontSee('Rincian Poin Regu');
+    }
+
+    /**
+     * Memastikan administrator dapat melakukan finalisasi dan draf per juri pada halaman standings
+     */
+    public function test_admin_can_finalize_and_draft_per_judge_in_standings(): void
+    {
+        $criterion = AssessmentCriterion::create([
+            'competition_id' => $this->competition->id,
+            'name' => 'Kerapian',
+            'code' => 'KRP',
+            'min_score' => 50,
+            'max_score' => 100,
+            'weight_percentage' => 100,
+            'order' => 1,
+        ]);
+
+        $schedule = CompetitionSchedule::create([
+            'competition_id' => $this->competition->id,
+            'session_name' => 'Sesi 1',
+            'scheduled_date' => now()->toDateString(),
+            'start_time' => '08:00',
+            'end_time' => '12:00',
+            'arena_location' => 'Lapangan Utama',
+            'gender_category' => PatrolGenderEnum::Boys,
+            'status' => 'scheduled',
+        ]);
+
+        JudgeAssignment::create([
+            'competition_schedule_id' => $schedule->id,
+            'user_id' => $this->judge->id,
+            'role_in_jury' => 'Juri 1',
+        ]);
+
+        // 1. Buat penilaian berstatus draf oleh juri
+        $ass1 = Assessment::create([
+            'competition_id' => $this->competition->id,
+            'competition_schedule_id' => $schedule->id,
+            'patrol_id' => $this->patrol->id,
+            'judge_id' => $this->judge->id,
+            'criteria_scores' => [$criterion->id => 90.00],
+            'raw_total_score' => 90.00,
+            'final_score' => 90.00,
+            'status' => 'draft',
+            'is_locked' => false,
+        ]);
+
+        // Halaman standings mendeteksi indikator belum final
+        Livewire::actingAs($this->admin)->test(StandingsLeaderboard::class, [
+            'activeTab' => 'competitions',
+            'selectedCompetitionId' => $this->competition->id,
+        ])
+            ->assertSee('Penilaian Belum Final Sempurna')
+            ->call('openJudgeActionModal', 'finalize', $this->judge->id, $this->competition->id)
+            ->assertSet('isJudgeActionModalOpen', true)
+            ->assertSet('judgeActionType', 'finalize')
+            ->assertSet('targetJudgeId', $this->judge->id)
+            ->call('executeJudgeAction');
+
+        // Pastikan nilai berubah menjadi finalized
+        $ass1->refresh();
+        $this->assertEquals('finalized', $ass1->status);
+        $this->assertTrue($ass1->is_locked);
+
+        // Setelah difinalisasi, indikator belum final hilang
+        Livewire::actingAs($this->admin)->test(StandingsLeaderboard::class, [
+            'activeTab' => 'competitions',
+            'selectedCompetitionId' => $this->competition->id,
+        ])
+            ->assertDontSee('Penilaian Belum Final Sempurna');
+
+        // 2. Sekarang administrator membuka kembali ke status draf
+        Livewire::actingAs($this->admin)->test(StandingsLeaderboard::class, [
+            'activeTab' => 'competitions',
+            'selectedCompetitionId' => $this->competition->id,
+        ])
+            ->call('openJudgeActionModal', 'draft', $this->judge->id, $this->competition->id)
+            ->assertSet('judgeActionType', 'draft')
+            ->set('judgeActionReason', 'Perbaikan nilai pos sesuai instruksi')
+            ->call('executeJudgeAction');
+
+        $ass1->refresh();
+        $this->assertEquals('draft', $ass1->status);
+        $this->assertFalse($ass1->is_locked);
     }
 }

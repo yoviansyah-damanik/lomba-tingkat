@@ -157,6 +157,15 @@
                                             Dijadwalkan
                                         </span>
                                     @endif
+
+                                    @if($schedule->hasUnfinalizedJudges())
+                                        <div class="mt-1">
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-300 text-amber-800 px-2 py-0.5 text-[10px] font-bold dark:bg-amber-950/60 dark:border-amber-800 dark:text-amber-300" title="Penilaian sudah diisi namun belum difinalisasi seluruh juri">
+                                                <flux:icon name="exclamation-triangle" class="size-2.5" />
+                                                Juri Belum Final
+                                            </span>
+                                        </div>
+                                    @endif
                                 </div>
                             </td>
 

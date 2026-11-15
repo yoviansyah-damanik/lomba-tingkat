@@ -23,6 +23,15 @@
                     {{ $canUnmask ? 'Tutup Sensor (Admin)' : 'Intip Identitas (Admin)' }}
                 </flux:button>
             @endif
+            @if($isAdmin)
+                <flux:button
+                    icon="check-badge"
+                    variant="subtle"
+                    wire:click="openJudgeActionModal('finalize')"
+                >
+                    Finalisasi / Draf Juri
+                </flux:button>
+            @endif
             <flux:button href="{{ route('standings.print') }}" target="_blank" variant="subtle" icon="document-text">
                 Pratinjau PDF Rekap
             </flux:button>
@@ -218,13 +227,23 @@
                         class="w-full md:w-96 rounded-xl border border-zinc-200 bg-zinc-50 p-2 text-xs font-semibold text-zinc-900 focus:border-amber-500 focus:bg-white focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
                         @foreach($competitions as $c)
                             <option value="{{ $c->id }}">
-                                [{{ $c->code }}] {{ $c->title }} ({{ $c->scores_count }} dinilai)
+                                [{{ $c->code }}] {{ $c->title }} ({{ $c->scores_count }} dinilai){{ ($c->total_assessments_count > 0 && $c->draft_assessments_count > 0) ? ' • ⚠️ Belum Final' : '' }}
                             </option>
                         @endforeach
                     </select>
                 </div>
 
                 <div class="flex items-center gap-2">
+                    @if($isAdmin)
+                        <flux:button
+                            icon="check-badge"
+                            variant="subtle"
+                            wire:click="openJudgeActionModal('finalize', null, '{{ $selectedCompetitionId }}')"
+                            title="Kelola finalisasi atau kembalikan ke draf per juri pada cabang lomba ini"
+                        >
+                            Finalisasi / Draf Juri
+                        </flux:button>
+                    @endif
                     @if($canManageScores)
                         <flux:button
                             icon="arrow-path"
@@ -249,6 +268,35 @@
 
             {{-- Detail Mata Lomba Terpilih --}}
             @if($selectedComp)
+                @php
+                    $judgeStatus = $selectedComp->judgeScoringStatus();
+                @endphp
+
+                @if($judgeStatus['has_unfinalized'])
+                    <div class="rounded-2xl border border-amber-300 bg-amber-50/80 p-4 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-xs">
+                        <div class="flex items-center gap-2.5">
+                            <span class="inline-flex size-7 items-center justify-center rounded-xl bg-amber-600 text-white text-xs font-bold shrink-0">
+                                <flux:icon name="exclamation-triangle" class="size-4" />
+                            </span>
+                            <div>
+                                <strong class="font-bold">Penilaian Belum Final Sempurna:</strong> Terdapat <strong>{{ $judgeStatus['draft_count'] }} penilaian</strong> yang sudah diisi tetapi belum difinalisasi oleh dewan juri.
+                                <span class="block mt-0.5 text-[11px] text-amber-700 dark:text-amber-300">
+                                    Hasil klasemen sementara cabang ini belum mencerminkan nilai resmi dari seluruh dewan juri.
+                                </span>
+                            </div>
+                        </div>
+                        @if($isAdmin)
+                            <flux:button
+                                icon="check-badge"
+                                variant="primary"
+                                size="sm"
+                                wire:click="openJudgeActionModal('finalize', null, '{{ $selectedComp->id }}')"
+                            >
+                                Finalisasi Semua Juri
+                            </flux:button>
+                        @endif
+                    </div>
+                @endif
                 <div class="rounded-2xl border border-zinc-200/80 bg-gradient-to-r from-amber-50/40 via-white to-white p-4 dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
                     <div>
                         <div class="flex items-center gap-2 mb-1">
@@ -278,6 +326,70 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- Status Penilaian Dewan Juri Cabang Ini --}}
+                @if($isAdmin && $competitionJudgesSummary->isNotEmpty())
+                    <div class="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
+                        <div class="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                            <div class="flex items-center gap-2">
+                                <flux:icon name="user-group" class="size-4 text-amber-600 dark:text-amber-400" />
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
+                                    Status Penilaian Dewan Juri Cabang Ini
+                                </h3>
+                            </div>
+                            <span class="text-[11px] text-zinc-500">
+                                {{ $competitionJudgesSummary->count() }} Dewan Juri Terlibat
+                            </span>
+                        </div>
+
+                        <div class="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                            @foreach($competitionJudgesSummary as $js)
+                                <div class="flex items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50/70 p-3 dark:border-zinc-800 dark:bg-zinc-800/40">
+                                    <div class="min-w-0 pr-2">
+                                        <div class="font-bold text-xs text-zinc-900 dark:text-zinc-100 truncate">
+                                            {{ $js->name }}
+                                        </div>
+                                        <div class="mt-1 flex items-center gap-1.5 text-[10px]">
+                                            <span class="inline-flex items-center gap-0.5 font-semibold text-emerald-700 dark:text-emerald-400">
+                                                <flux:icon name="lock-closed" class="size-3" />
+                                                {{ $js->finalized_count }} Terkunci
+                                            </span>
+                                            <span class="text-zinc-300 dark:text-zinc-700">•</span>
+                                            <span class="inline-flex items-center gap-0.5 font-medium text-amber-700 dark:text-amber-400">
+                                                <flux:icon name="pencil" class="size-3" />
+                                                {{ $js->draft_count }} Draf
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        @if($js->draft_count > 0)
+                                            <flux:button
+                                                icon="check"
+                                                size="xs"
+                                                variant="primary"
+                                                wire:click="openJudgeActionModal('finalize', '{{ $js->id }}', '{{ $selectedCompetitionId }}')"
+                                                title="Finalisasi seluruh nilai draf juri ini"
+                                            >
+                                                Finalisasi
+                                            </flux:button>
+                                        @endif
+                                        @if($js->finalized_count > 0)
+                                            <flux:button
+                                                icon="lock-open"
+                                                size="xs"
+                                                variant="danger"
+                                                wire:click="openJudgeActionModal('draft', '{{ $js->id }}', '{{ $selectedCompetitionId }}')"
+                                                title="Buka kunci seluruh nilai juri ini menjadi draf"
+                                            >
+                                                Draf
+                                            </flux:button>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
 
                 {{-- Tabel Rekapitulasi Nilai Lomba --}}
                 <div class="rounded-2xl border border-zinc-200/80 bg-white dark:border-zinc-800 dark:bg-zinc-900 overflow-hidden shadow-xs">
@@ -603,6 +715,138 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    @endif
+
+    {{-- Modal Finalisasi / Draf Per Juri (Khusus Administrator) --}}
+    @if($isJudgeActionModalOpen)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+            <div class="w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 space-y-4">
+                <div class="flex items-start gap-3">
+                    <span class="flex size-10 shrink-0 items-center justify-center rounded-xl {{ $judgeActionType === 'finalize' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400' }}">
+                        <flux:icon :name="$judgeActionType === 'finalize' ? 'check-badge' : 'lock-open'" class="size-5" />
+                    </span>
+                    <div>
+                        <h3 class="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                            Kelola Status Penilaian Dewan Juri
+                        </h3>
+                        <p class="mt-1 text-xs text-zinc-500 leading-relaxed">
+                            Finalisasi nilai draf menjadi sah dan terkunci, atau buka kunci nilai terfinalisasi kembali menjadi draf terbuka per dewan juri.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    {{-- Pilihan Tindakan: Finalisasi vs Draf --}}
+                    <div>
+                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                            Tindakan Status:
+                        </label>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800 {{ $judgeActionType === 'finalize' ? 'bg-emerald-50/70 border-emerald-300 dark:bg-emerald-950/30' : '' }}">
+                                <input type="radio" wire:model.live="judgeActionType" value="finalize" class="text-emerald-600 focus:ring-emerald-500">
+                                <div>
+                                    <div class="font-bold text-zinc-900 dark:text-zinc-100">Finalisasi Nilai (Kunci)</div>
+                                    <div class="text-[11px] text-zinc-500">Ubah draf jadi sah & kunci</div>
+                                </div>
+                            </label>
+                            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800 {{ $judgeActionType === 'draft' ? 'bg-rose-50/70 border-rose-300 dark:bg-rose-950/30' : '' }}">
+                                <input type="radio" wire:model.live="judgeActionType" value="draft" class="text-rose-600 focus:ring-rose-500">
+                                <div>
+                                    <div class="font-bold text-zinc-900 dark:text-zinc-100">Ubah ke Draf (Buka Kunci)</div>
+                                    <div class="text-[11px] text-zinc-500">Buka nilai agar juri bisa revisi</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    {{-- Pilihan Dewan Juri --}}
+                    <div>
+                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                            Pilih Dewan Juri:
+                        </label>
+                        <flux:select wire:model.live="targetJudgeId">
+                            <flux:select.option value="">-- Pilih Dewan Juri --</flux:select.option>
+                            @foreach($allJudges as $j)
+                                <flux:select.option value="{{ $j->id }}">{{ $j->name }} ({{ $j->username }})</flux:select.option>
+                            @endforeach
+                        </flux:select>
+                        @error('targetJudgeId')
+                            <span class="text-[11px] text-rose-600">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    {{-- Pilihan Cakupan Cabang Lomba --}}
+                    <div>
+                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                            Cakupan Cabang Lomba:
+                        </label>
+                        <flux:select wire:model.live="targetCompetitionId">
+                            <flux:select.option value="all">Semua Cabang Mata Lomba</flux:select.option>
+                            @foreach($competitions as $c)
+                                <flux:select.option value="{{ $c->id }}">{{ $c->code }} - {{ $c->title }}</flux:select.option>
+                            @endforeach
+                        </flux:select>
+                    </div>
+
+                    {{-- Indikator Jumlah Data Terkena Dampak --}}
+                    @if($targetJudgeId)
+                        <div class="rounded-xl p-3 text-xs {{ $targetActionCount > 0 ? ($judgeActionType === 'finalize' ? 'bg-emerald-50 border border-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300' : 'bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300') : 'bg-zinc-50 border border-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-300' }}">
+                            @if($targetActionCount > 0)
+                                <div class="flex items-center gap-2 font-semibold">
+                                    <flux:icon name="information-circle" class="size-4 shrink-0" />
+                                    @if($judgeActionType === 'finalize')
+                                        <span>Sebanyak <strong>{{ $targetActionCount }} penilaian draf</strong> akan difinalisasi dan dikunci ke klasemen.</span>
+                                    @else
+                                        <span>Sebanyak <strong>{{ $targetActionCount }} penilaian terfinalisasi</strong> akan dibuka kembali ke status Draf Terbuka.</span>
+                                    @endif
+                                </div>
+                            @else
+                                <div class="flex items-center gap-2">
+                                    <flux:icon name="exclamation-triangle" class="size-4 shrink-0" />
+                                    @if($judgeActionType === 'finalize')
+                                        <span>Tidak ditemukan penilaian draf untuk juri & cabang lomba yang dipilih.</span>
+                                    @else
+                                        <span>Tidak ditemukan penilaian terfinalisasi untuk juri & cabang lomba yang dipilih.</span>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+
+                    {{-- Alasan / Catatan --}}
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                            {{ $judgeActionType === 'draft' ? 'Alasan Pembukaan Kunci ke Draf (Wajib Masuk Audit Log):' : 'Catatan Finalisasi (Opsional):' }}
+                        </label>
+                        <textarea
+                            wire:model="judgeActionReason"
+                            rows="3"
+                            placeholder="{{ $judgeActionType === 'draft' ? 'Contoh: Revisi penilaian kriteria sesuai permohonan juri pos...' : 'Catatan opsional saat finalisasi...' }}"
+                            class="w-full rounded-xl border border-zinc-300 bg-white p-3 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                        ></textarea>
+                        @error('judgeActionReason')
+                            <span class="text-[11px] text-rose-600">{{ $message }}</span>
+                        @enderror
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                    <flux:button
+                        variant="subtle"
+                        wire:click="$set('isJudgeActionModalOpen', false)"
+                    >
+                        Batal
+                    </flux:button>
+                    <flux:button
+                        :variant="$judgeActionType === 'finalize' ? 'primary' : 'danger'"
+                        :icon="$judgeActionType === 'finalize' ? 'check-badge' : 'lock-open'"
+                        wire:click="executeJudgeAction"
+                    >
+                        {{ $judgeActionType === 'finalize' ? 'Finalisasi Nilai Juri' : 'Buka Kunci Nilai Juri' }}
+                    </flux:button>
+                </div>
             </div>
         </div>
     @endif

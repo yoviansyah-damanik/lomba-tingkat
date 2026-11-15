@@ -622,6 +622,7 @@ class JudgeScoring extends Component
             'activeAssessment' => $this->activeAssessment(),
             'patrolAssessments' => $this->patrolAssessments(),
             'scheduleJudgesSummary' => $this->scheduleJudgesSummary(),
+            'scheduleJudgeStatus' => $this->schedule()->judgeScoringStatus(),
             'targetJudgeFinalizedCount' => $this->getTargetJudgeFinalizedCount(),
             'calculatedScore' => $this->currentCalculatedScore(),
             'isAdmin' => Auth::user()->isAdmin(),

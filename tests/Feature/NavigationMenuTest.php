@@ -58,6 +58,7 @@ class NavigationMenuTest extends TestCase
             'Penilaian & Klasemen' => ['Cockpit Penjurian', 'Rekap Nilai & Klasemen'],
             'Informasi & Laporan' => ['Pengumuman Kegiatan', 'Pusat Laporan & Ekspor', 'Pengaturan Sertifikat'],
             'Pengguna & Akses' => ['Aparatur Panitia & Juri'],
+            'Sistem & Audit' => ['Audit Penilaian & Log'],
         ], $this->menu($this->userWith([RoleEnum::Admin])));
     }
 

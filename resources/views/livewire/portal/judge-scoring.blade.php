@@ -73,6 +73,33 @@
         </div>
     </div>
 
+    {{-- Indikator Penilaian Masih Ada Juri Belum Final --}}
+    @if($scheduleJudgeStatus['has_unfinalized'])
+        <div class="rounded-2xl border border-amber-300 bg-amber-50/80 p-4 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-xs">
+            <div class="flex items-center gap-2.5">
+                <span class="inline-flex size-7 items-center justify-center rounded-xl bg-amber-600 text-white text-xs font-bold shrink-0">
+                    <flux:icon name="exclamation-triangle" class="size-4" />
+                </span>
+                <div>
+                    <strong class="font-bold">Penilaian Belum Final Sempurna:</strong> Pada sesi lomba ini, terdapat <strong>{{ $scheduleJudgeStatus['draft_count'] }} penilaian</strong> yang sudah diisi tetapi belum difinalisasi oleh dewan juri.
+                    <span class="block mt-0.5 text-[11px] text-amber-700 dark:text-amber-300">
+                        Dewan juri terkait diharapkan memeriksa kembali dan memfinalisasi nilai agar terkunci secara resmi ke klasemen.
+                    </span>
+                </div>
+            </div>
+            @if($isAdmin)
+                <flux:button
+                    icon="lock-open"
+                    variant="danger"
+                    size="sm"
+                    wire:click="openUnlockJudgeModal"
+                >
+                    Kelola Finalisasi Juri
+                </flux:button>
+            @endif
+        </div>
+    @endif
+
     @if($isAdmin)
         <div class="rounded-2xl border border-amber-300 bg-amber-50/70 dark:border-amber-900/40 dark:bg-amber-950/20 p-4 shadow-xs flex items-center gap-3">
             <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-600 text-white">
