@@ -793,8 +793,8 @@ class StandingsLeaderboardTest extends TestCase
                 'selectedCompetitionId' => $this->competition->id,
             ])
             ->assertSee(route('standings.competition.print', ['competition' => $this->competition->id]))
-            ->assertSee('Cetak Rekap Cabang')
-            ->assertSee('Cetak Rekap Lomba');
+            ->assertSee('Cetak Rekap Lomba')
+            ->assertDontSee('Cetak Rekap Cabang');
     }
 
     /**
@@ -807,8 +807,8 @@ class StandingsLeaderboardTest extends TestCase
                 'activeTab' => 'competitions',
                 'selectedCompetitionId' => $this->competition->id,
             ])
-            ->assertSee('Cetak Rekap Cabang (Bulk)')
-            ->assertSee('Cetak Masal (Bulk)')
+            ->assertSee('Cetak Mata Lomba')
+            ->assertDontSee('Cetak Masal (Bulk)')
             ->call('openBulkPrintModal')
             ->assertSet('showBulkPrintModal', true)
             ->assertSee('Cetak Rekap Prestasi Cabang Lomba (Bulk)')

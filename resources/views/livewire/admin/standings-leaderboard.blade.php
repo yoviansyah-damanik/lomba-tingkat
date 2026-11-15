@@ -38,14 +38,9 @@
                     variant="subtle"
                     icon="printer"
                     wire:click="openBulkPrintModal"
-                    title="Cetak seluruh atau pilihan cabang mata lomba sekaligus (Bulk)"
+                    title="Cetak seluruh atau pilihan cabang mata lomba"
                 >
-                    Cetak Rekap Cabang (Bulk)
-                </flux:button>
-            @endif
-            @if($activeTab === 'competitions' && $selectedCompetitionId)
-                <flux:button href="{{ route('standings.competition.print', ['competition' => $selectedCompetitionId]) }}" target="_blank" variant="subtle" icon="printer">
-                    Cetak Rekap Cabang
+                    Cetak Mata Lomba
                 </flux:button>
             @endif
             <flux:button href="{{ route('standings.print') }}" target="_blank" variant="subtle" icon="document-text">
@@ -252,14 +247,6 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <flux:button
-                        icon="printer"
-                        variant="subtle"
-                        wire:click="openBulkPrintModal"
-                        title="Pilih dan cetak rekapitulasi nilai untuk beberapa atau seluruh cabang lomba sekaligus"
-                    >
-                        Cetak Masal (Bulk)
-                    </flux:button>
                     @if($selectedCompetitionId)
                         <flux:button
                             icon="printer"

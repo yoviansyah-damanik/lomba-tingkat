@@ -28,9 +28,9 @@ Fitur cetak dan pratinjau PDF rekapitulasi nilai dan penetapan peringkat prestas
 
 ## 4. Integrasi UI & Modal Bulk
 - Tombol `<flux:button>` dengan atribut `icon="printer"`:
-  1. Header utama `/admin/standings`: `Cetak Rekap Cabang (Bulk)` (membuka modal seleksi multi-lomba) & `Cetak Rekap Cabang` (lomba terpilih).
-  2. Toolbar tab lomba: `Cetak Masal (Bulk)` & `Cetak Rekap Lomba`.
-  3. Header tabel: `Cetak PDF`.
+  1. Header utama `/admin/standings`: `Cetak Mata Lomba` (membuka modal seleksi multi-lomba/bulk).
+  2. Toolbar tab lomba (saat lomba dipilih): `Cetak Rekap Lomba`.
+  3. Header tabel rekap: `Cetak PDF`.
 - **Modal Seleksi Bulk**:
   - Filter kategori cepat: Semua, Putra, Putri.
   - Tombol aksi `Pilih Semua` dan `Batal Pilih`.

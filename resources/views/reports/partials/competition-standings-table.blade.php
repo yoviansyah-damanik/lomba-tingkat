@@ -23,18 +23,8 @@
                 $points = \App\Models\CompetitionScore::rankWeight($score->rank, $score->predicate);
                 $predicateText = $score->predicateLabel() !== '-' ? $score->predicateLabel() : match($score->rank) { 1 => 'Prestasi Tinggi', 2 => 'Prestasi Baik', 3 => 'Prestasi Cukup', default => '-' };
             @endphp
-            <tr class="{{ $score->rank && $score->rank <= 3 ? 'highlight' : '' }}">
-                <td class="center strong">
-                    @if($score->rank === 1)
-                        🥇 1
-                    @elseif($score->rank === 2)
-                        🥈 2
-                    @elseif($score->rank === 3)
-                        🥉 3
-                    @else
-                        {{ $score->rank ?: '-' }}
-                    @endif
-                </td>
+            <tr>
+                <td class="center strong">{{ $score->rank ?: '-' }}</td>
                 <td class="center strong" style="white-space: nowrap;">{{ $score->patrol?->npp ?? '-' }}</td>
                 <td>
                     <span class="strong">{{ $patrolName }}</span><br>
@@ -44,7 +34,7 @@
                 <td>{{ $kwarran }}</td>
                 <td class="center strong" style="font-family: monospace;">{{ number_format((float) $score->final_score, 2) }}</td>
                 <td class="center strong">{{ $predicateText }}</td>
-                <td class="center strong" style="color: #065f46;">{{ $points }}</td>
+                <td class="center strong">{{ $points }}</td>
             </tr>
         @empty
             <tr>
