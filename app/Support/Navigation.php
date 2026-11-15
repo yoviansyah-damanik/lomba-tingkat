@@ -179,7 +179,7 @@ class Navigation
                 'items' => [
                     ['label' => 'Konfigurasi Sistem', 'icon' => 'cog-6-tooth', 'route' => 'admin.settings.system', 'active' => ['admin.settings.system'], 'roles' => ['superadmin'], 'description' => 'Master kegiatan, biaya, dan pendaftaran'],
                     ['label' => 'Siaran Notifikasi (PWA)', 'icon' => 'bell', 'route' => 'admin.push-broadcast.index', 'active' => ['admin.push-broadcast.*'], 'roles' => ['superadmin'], 'description' => 'Kirim notifikasi ke pengguna'],
-                    ['label' => 'Audit Penilaian & Log', 'icon' => 'clipboard-document-check', 'route' => 'admin.assessments.index', 'active' => ['admin.assessments.*'], 'roles' => ['superadmin'], 'description' => 'Jejak rekam penilaian juri'],
+                    ['label' => 'Audit Penilaian & Log', 'icon' => 'clipboard-document-check', 'route' => 'admin.assessments.index', 'active' => ['admin.assessments.*'], 'roles' => ['admin', 'superadmin'], 'description' => 'Jejak rekam penilaian juri'],
                 ],
             ],
         ];

@@ -245,11 +245,14 @@ Route::middleware(['auth', 'role'])->group(function () {
         Route::get('/certificates/preview/{role}', [CertificateController::class, 'previewSample'])->name('certificates.preview');
     });
 
-    // Superadmin: audit penilaian, tata kelola pengguna & peran, konfigurasi sistem
-    Route::middleware('role:superadmin')->prefix('admin')->name('admin.')->group(function () {
+    // Administrator & Superadmin: audit penilaian juri, pembukaan kunci nilai, jejak rekam sistem
+    Route::middleware('role:admin|superadmin')->prefix('admin')->name('admin.')->group(function () {
         // Audit Penilaian Juri & Jejak Rekam Sistem (Livewire 4 SPA)
         Route::get('/assessments', AssessmentsAudit::class)->name('assessments.index');
+    });
 
+    // Superadmin: tata kelola pengguna & peran, konfigurasi sistem
+    Route::middleware('role:superadmin')->prefix('admin')->name('admin.')->group(function () {
         // Tata Kelola Pengguna & Peran (Livewire 4 SPA)
         Route::get('/users', UsersManagement::class)->name('users.index');
 

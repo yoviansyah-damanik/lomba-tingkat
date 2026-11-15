@@ -2,17 +2,26 @@
     {{-- Heading Section Konsisten --}}
     <x-heading-section
         title="Audit Penilaian & Log Sistem"
-        subtitle="Pengawasan integritas skor dewan juri, transparansi rekapitulasi, dan jejak audit pembukaan kunci nilai."
+        subtitle="Pengawasan integritas skor dewan juri, pembukaan finalisasi penilaian per juri, transparansi rekapitulasi, dan jejak audit pembukaan kunci nilai."
     >
         <x-slot:actions>
-            <flux:button
-                icon="trophy"
-                variant="subtle"
-                href="{{ route('admin.standings.index') }}"
-                wire:navigate
-            >
-                Klasemen & Rekap
-            </flux:button>
+            <div class="flex flex-wrap items-center gap-2">
+                <flux:button
+                    icon="lock-open"
+                    variant="danger"
+                    wire:click="openUnlockJudgeModal"
+                >
+                    Buka Finalisasi Per Juri
+                </flux:button>
+                <flux:button
+                    icon="trophy"
+                    variant="subtle"
+                    href="{{ route('admin.standings.index') }}"
+                    wire:navigate
+                >
+                    Klasemen & Rekap
+                </flux:button>
+            </div>
         </x-slot:actions>
     </x-heading-section>
 
@@ -57,30 +66,82 @@
 
     {{-- Tab Pilihan: Penilaian Juri vs Log Audit --}}
     <div class="flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-2">
-        <button
-            type="button"
+        <flux:button
+            size="sm"
+            :variant="$activeTab === 'assessments' ? 'primary' : 'ghost'"
             wire:click="$set('activeTab', 'assessments')"
-            class="px-4 py-2 text-xs font-bold rounded-xl transition {{ $activeTab === 'assessments' ? 'bg-amber-500 text-white shadow-xs' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}"
         >
             Daftar Penilaian Juri
-        </button>
-        <button
-            type="button"
+        </flux:button>
+        <flux:button
+            size="sm"
+            :variant="$activeTab === 'audit_logs' ? 'primary' : 'ghost'"
             wire:click="$set('activeTab', 'audit_logs')"
-            class="px-4 py-2 text-xs font-bold rounded-xl transition {{ $activeTab === 'audit_logs' ? 'bg-amber-500 text-white shadow-xs' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}"
         >
             Riwayat Audit Trail Log
-        </button>
+        </flux:button>
     </div>
 
     @if($activeTab === 'assessments')
+        {{-- Ringkasan Status Finalisasi Dewan Juri --}}
+        @if($judgesSummary->isNotEmpty())
+            <div class="rounded-2xl border border-zinc-200/80 bg-white p-4 sm:p-5 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
+                <div class="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                    <div class="flex items-center gap-2">
+                        <flux:icon name="user-group" class="size-4 text-amber-600 dark:text-amber-400" />
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
+                            Status Finalisasi Dewan Juri
+                        </h3>
+                    </div>
+                    <span class="text-[11px] text-zinc-500">
+                        {{ $judgesSummary->count() }} Juri Aktif Menilai
+                    </span>
+                </div>
+
+                <div class="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                    @foreach($judgesSummary as $js)
+                        <div class="flex items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50/70 p-3 dark:border-zinc-800 dark:bg-zinc-800/40">
+                            <div class="min-w-0 pr-2">
+                                <div class="font-bold text-xs text-zinc-900 dark:text-zinc-100 truncate">
+                                    {{ $js->name }}
+                                </div>
+                                <div class="mt-1 flex items-center gap-1.5 text-[10px]">
+                                    <span class="inline-flex items-center gap-0.5 font-semibold text-emerald-700 dark:text-emerald-400">
+                                        <flux:icon name="lock-closed" class="size-3" />
+                                        {{ $js->finalized_count }} Terkunci
+                                    </span>
+                                    <span class="text-zinc-300 dark:text-zinc-700">•</span>
+                                    <span class="inline-flex items-center gap-0.5 font-medium text-amber-700 dark:text-amber-400">
+                                        <flux:icon name="pencil" class="size-3" />
+                                        {{ $js->draft_count }} Draf
+                                    </span>
+                                </div>
+                            </div>
+                            @if($js->finalized_count > 0)
+                                <flux:button
+                                    icon="lock-open"
+                                    size="xs"
+                                    variant="subtle"
+                                    wire:click="openUnlockJudgeModal('{{ $js->id }}')"
+                                >
+                                    Buka Final
+                                </flux:button>
+                            @else
+                                <span class="text-[10px] text-zinc-400 italic">Draf Penuh</span>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         {{-- Filter & Search Penilaian --}}
         <div class="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-12">
-                <div class="sm:col-span-6">
+                <div class="sm:col-span-4">
                     <flux:input
                         wire:model.live.debounce.300ms="search"
-                        placeholder="Cari nama regu, pangkalan sekolah, atau nama juri..."
+                        placeholder="Cari regu, pangkalan, atau juri..."
                         icon="magnifying-glass"
                         clearable
                     />
@@ -94,9 +155,17 @@
                     </flux:select>
                 </div>
                 <div class="sm:col-span-3">
+                    <flux:select wire:model.live="judgeFilter">
+                        <flux:select.option value="all">Semua Dewan Juri</flux:select.option>
+                        @foreach($judges as $judge)
+                            <flux:select.option value="{{ $judge->id }}">{{ $judge->name }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                </div>
+                <div class="sm:col-span-2">
                     <flux:select wire:model.live="statusFilter">
                         <flux:select.option value="all">Semua Status</flux:select.option>
-                        <flux:select.option value="finalized">Difinalisasi (Terkunci)</flux:select.option>
+                        <flux:select.option value="finalized">Difinalisasi</flux:select.option>
                         <flux:select.option value="draft">Draf Terbuka</flux:select.option>
                     </flux:select>
                 </div>
@@ -161,14 +230,24 @@
                                 </td>
                                 <td class="p-3.5 text-right">
                                     @if($ass->isLocked())
-                                        <flux:button
-                                            icon="lock-open"
-                                            size="sm"
-                                            variant="subtle"
-                                            wire:click="openUnlockModal('{{ $ass->id }}')"
-                                        >
-                                            Buka Kunci
-                                        </flux:button>
+                                        <div class="flex items-center justify-end gap-1">
+                                            <flux:button
+                                                icon="lock-open"
+                                                size="xs"
+                                                variant="subtle"
+                                                wire:click="openUnlockModal('{{ $ass->id }}')"
+                                            >
+                                                Buka Nilai
+                                            </flux:button>
+                                            <flux:button
+                                                icon="arrow-path"
+                                                size="xs"
+                                                variant="ghost"
+                                                wire:click="openUnlockJudgeModal('{{ $ass->judge_id }}', '{{ $ass->competition_id }}')"
+                                            >
+                                                Buka Juri
+                                            </flux:button>
+                                        </div>
                                     @else
                                         <span class="text-[11px] text-zinc-400 italic">Draf Juri</span>
                                     @endif
@@ -176,7 +255,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="p-8 text-center text-xs text-zinc-500">
+                                <td colspan="9" class="p-8 text-center text-xs text-zinc-500">
                                     Tidak ada data penilaian yang ditemukan.
                                 </td>
                             </tr>
@@ -272,7 +351,7 @@
         </div>
     @endif
 
-    {{-- Modal Pembukaan Kunci Nilai --}}
+    {{-- Modal Pembukaan Kunci Nilai Tunggal (Single Assessment) --}}
     @if($isUnlockModalOpen)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
             <div class="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 space-y-4">
@@ -282,10 +361,10 @@
                     </span>
                     <div>
                         <h3 class="text-base font-bold text-zinc-900 dark:text-zinc-100">
-                            Buka Kunci Penilaian Juri
+                            Buka Kunci Penilaian Regu
                         </h3>
                         <p class="mt-1 text-xs text-zinc-500 leading-relaxed">
-                            Aksi ini akan mengembalikan status penilaian ke <strong>Draf Terbuka</strong> sehingga dewan juri terkait dapat memperbaiki input nilai.
+                            Aksi ini akan mengembalikan status penilaian untuk regu ini ke <strong>Draf Terbuka</strong> agar juri penilai dapat memperbaiki input nilai.
                         </p>
                     </div>
                 </div>
@@ -318,6 +397,104 @@
                         wire:click="unlockAssessment"
                     >
                         Buka Kunci & Log Audit
+                    </flux:button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Modal Pembukaan Kunci Penilaian Per Juri (Bulk per Judge) --}}
+    @if($isUnlockJudgeModalOpen)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+            <div class="w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 space-y-4">
+                <div class="flex items-start gap-3">
+                    <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400">
+                        <flux:icon name="lock-open" class="size-5" />
+                    </span>
+                    <div>
+                        <h3 class="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                            Buka Finalisasi Penilaian Dewan Juri
+                        </h3>
+                        <p class="mt-1 text-xs text-zinc-500 leading-relaxed">
+                            Kembalikan seluruh penilaian terfinalisasi dari juri terpilih ke status <strong>Draf Terbuka</strong> sehingga dewan juri terkait dapat memperbaiki input nilai di kokpit penjurian.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                            Pilih Dewan Juri:
+                        </label>
+                        <flux:select wire:model.live="unlockJudgeId">
+                            <flux:select.option value="">-- Pilih Dewan Juri --</flux:select.option>
+                            @foreach($judges as $j)
+                                <flux:select.option value="{{ $j->id }}">{{ $j->name }} ({{ $j->username }})</flux:select.option>
+                            @endforeach
+                        </flux:select>
+                        @error('unlockJudgeId')
+                            <span class="text-[11px] text-rose-600">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                            Cakupan Mata Lomba:
+                        </label>
+                        <flux:select wire:model.live="unlockJudgeCompetitionId">
+                            <flux:select.option value="all">Semua Cabang Mata Lomba</flux:select.option>
+                            @foreach($competitions as $c)
+                                <flux:select.option value="{{ $c->id }}">{{ $c->code }} - {{ $c->title }}</flux:select.option>
+                            @endforeach
+                        </flux:select>
+                    </div>
+
+                    {{-- Indikator Jumlah Data Terkena Dampak --}}
+                    @if($unlockJudgeId)
+                        <div class="rounded-xl p-3 text-xs {{ $targetFinalizedCount > 0 ? 'bg-emerald-50 border border-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300' : 'bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300' }}">
+                            @if($targetFinalizedCount > 0)
+                                <div class="flex items-center gap-2 font-semibold">
+                                    <flux:icon name="information-circle" class="size-4 shrink-0" />
+                                    <span>Sebanyak <strong>{{ $targetFinalizedCount }} penilaian terfinalisasi</strong> akan dibuka kembali ke status Draf Terbuka.</span>
+                                </div>
+                            @else
+                                <div class="flex items-center gap-2">
+                                    <flux:icon name="exclamation-triangle" class="size-4 shrink-0" />
+                                    <span>Tidak ditemukan penilaian terfinalisasi untuk juri dan filter cabang lomba ini.</span>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                            Alasan Pembukaan Kunci Juri (Wajib Masuk Audit Log):
+                        </label>
+                        <textarea
+                            wire:model="unlockJudgeReason"
+                            rows="3"
+                            placeholder="Contoh: Kesepakatan dewan juri pembetulan skala penilaian rubrik pos..."
+                            class="w-full rounded-xl border border-zinc-300 bg-white p-3 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                        ></textarea>
+                        @error('unlockJudgeReason')
+                            <span class="text-[11px] text-rose-600">{{ $message }}</span>
+                        @enderror
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                    <flux:button
+                        variant="subtle"
+                        wire:click="$set('isUnlockJudgeModalOpen', false)"
+                    >
+                        Batal
+                    </flux:button>
+                    <flux:button
+                        variant="danger"
+                        icon="lock-open"
+                        wire:click="unlockJudgeAssessments"
+                    >
+                        Buka Finalisasi Juri & Simpan Log
                     </flux:button>
                 </div>
             </div>

@@ -5,6 +5,7 @@ namespace App\Livewire\Portal;
 use App\Models\Assessment;
 use App\Models\CompetitionSchedule;
 use App\Models\Patrol;
+use App\Models\User;
 use App\Services\AssessmentScoringService;
 use Flux\Flux;
 use Illuminate\Support\Collection;
@@ -40,6 +41,17 @@ class JudgeScoring extends Component
     public bool $isUnlockModalOpen = false;
 
     public string $unlockReason = '';
+
+    public string $unlockScope = 'single'; // 'single' atau 'judge_all'
+
+    public ?string $selectedJudgeId = null;
+
+    // Modal Pembukaan Nilai Per Juri di Sesi Ini (Khusus Administrator)
+    public bool $isUnlockJudgeModalOpen = false;
+
+    public string $unlockJudgeId = '';
+
+    public string $unlockJudgeReason = '';
 
     public bool $unmaskNames = false;
 
@@ -147,16 +159,59 @@ class JudgeScoring extends Component
     }
 
     #[Computed]
+    public function scheduleJudgesSummary(): Collection
+    {
+        $assignments = $this->schedule()->judgeAssignments()->with('judge')->get();
+
+        return $assignments->map(function ($assignment) {
+            $judge = $assignment->judge;
+            if (! $judge) {
+                return null;
+            }
+
+            $assessments = Assessment::where('competition_schedule_id', $this->scheduleId)
+                ->where('judge_id', $judge->id)
+                ->get();
+
+            return [
+                'id' => $judge->id,
+                'name' => $judge->name,
+                'username' => $judge->username,
+                'role_in_jury' => $assignment->roleLabel(),
+                'total_assessments' => $assessments->count(),
+                'finalized_count' => $assessments->where('status', 'finalized')->count(),
+                'draft_count' => $assessments->where('status', 'draft')->count(),
+            ];
+        })->filter()->values();
+    }
+
+    #[Computed]
+    public function patrolAssessments(): Collection
+    {
+        if (! $this->selectedPatrolId) {
+            return collect();
+        }
+
+        return Assessment::with('judge')
+            ->where('competition_schedule_id', $this->scheduleId)
+            ->where('patrol_id', $this->selectedPatrolId)
+            ->get();
+    }
+
+    #[Computed]
     public function activeAssessment(): ?Assessment
     {
         if (! $this->selectedPatrolId) {
             return null;
         }
 
-        $query = Assessment::where('competition_schedule_id', $this->scheduleId)
+        $query = Assessment::with('judge')
+            ->where('competition_schedule_id', $this->scheduleId)
             ->where('patrol_id', $this->selectedPatrolId);
 
-        if (! Auth::user()->isAdminOnly()) {
+        if (Auth::user()->isAdmin() && $this->selectedJudgeId) {
+            $query->where('judge_id', $this->selectedJudgeId);
+        } elseif (! Auth::user()->isAdminOnly()) {
             $query->where('judge_id', Auth::id());
         }
 
@@ -241,6 +296,30 @@ class JudgeScoring extends Component
         $this->nppError = null;
         $this->nppInput = Patrol::find($patrolId)?->npp ?? '';
 
+        if (Auth::user()->isAdmin()) {
+            $firstAss = Assessment::where('competition_schedule_id', $this->scheduleId)
+                ->where('patrol_id', $patrolId)
+                ->first();
+            $this->selectedJudgeId = $firstAss?->judge_id;
+        }
+
+        $this->loadAssessmentForActiveJudge();
+    }
+
+    /**
+     * Memilih dewan juri penilai untuk regu aktif (Khusus Administrator)
+     */
+    public function selectJudgeForPatrol(string $judgeId): void
+    {
+        $this->selectedJudgeId = $judgeId;
+        $this->loadAssessmentForActiveJudge();
+    }
+
+    /**
+     * Memuat nilai rubrik dan catatan untuk juri aktif
+     */
+    public function loadAssessmentForActiveJudge(): void
+    {
         $assessment = $this->activeAssessment();
         $this->criteriaScores = [];
 
@@ -257,7 +336,7 @@ class JudgeScoring extends Component
      */
     public function resetNpp(): void
     {
-        $this->reset(['selectedPatrolId', 'nppInput', 'nppError', 'notes', 'criteriaScores']);
+        $this->reset(['selectedPatrolId', 'selectedJudgeId', 'nppInput', 'nppError', 'notes', 'criteriaScores']);
     }
 
     /**
@@ -392,11 +471,12 @@ class JudgeScoring extends Component
             abort(403);
         }
         $this->unlockReason = '';
+        $this->unlockScope = 'single';
         $this->isUnlockModalOpen = true;
     }
 
     /**
-     * Membuka kunci penilaian oleh Administrator dengan catatan alasan
+     * Membuka kunci penilaian oleh Administrator dengan catatan alasan (tunggal atau per juri di sesi ini)
      */
     public function unlock(AssessmentScoringService $scoringService): void
     {
@@ -412,19 +492,112 @@ class JudgeScoring extends Component
         ]);
 
         $assessment = $this->activeAssessment();
-        if ($assessment) {
+        if ($this->unlockScope === 'judge_all' && $assessment) {
+            $unlocked = $scoringService->unlockScoresByJudge(
+                judgeId: $assessment->judge_id,
+                reason: $this->unlockReason,
+                admin: Auth::user(),
+                scheduleId: $this->scheduleId
+            );
+            $msg = "Sebanyak {$unlocked->count()} penilaian dari juri pada sesi ini berhasil dibuka kembali ke draf.";
+        } elseif ($assessment) {
             $scoringService->unlockScore($assessment->id, $this->unlockReason, Auth::user());
+            $msg = 'Kunci penilaian untuk NPP '.($this->selectedPatrol()['npp'] ?? '-').' berhasil dibuka dan dicatat dalam audit trail.';
+        } else {
+            $msg = 'Tidak ada penilaian yang ditemukan untuk dibuka.';
         }
 
         $this->isUnlockModalOpen = false;
         $this->unlockReason = '';
+        $this->unlockScope = 'single';
 
-        $msg = 'Kunci penilaian berhasil dibuka dan dicatat dalam audit trail.';
         Flux::toast(variant: 'success', heading: 'Kunci Dibuka', text: $msg);
         $this->dispatch('alert', [
             'type' => 'success',
             'message' => $msg,
         ]);
+    }
+
+    /**
+     * Membuka modal pembukaan seluruh nilai finalisasi per juri di sesi ini (Khusus Administrator)
+     */
+    public function openUnlockJudgeModal(?string $judgeId = null): void
+    {
+        if (! Auth::user()->isAdmin()) {
+            abort(403);
+        }
+
+        $this->unlockJudgeId = $judgeId ?? '';
+        $this->unlockJudgeReason = '';
+        $this->isUnlockJudgeModalOpen = true;
+    }
+
+    /**
+     * Membuka kunci seluruh penilaian terfinalisasi dari dewan juri terpilih pada sesi ini
+     */
+    public function unlockJudgeInSchedule(AssessmentScoringService $scoringService): void
+    {
+        if (! Auth::user()->isAdmin()) {
+            abort(403);
+        }
+
+        $this->validate([
+            'unlockJudgeId' => 'required|exists:users,id',
+            'unlockJudgeReason' => 'required|string|min:5',
+        ], [
+            'unlockJudgeId.required' => 'Pilih dewan juri yang akan dibuka penilaiannya.',
+            'unlockJudgeId.exists' => 'Juri yang dipilih tidak valid.',
+            'unlockJudgeReason.required' => 'Alasan pembukaan kunci penilaian wajib diisi.',
+            'unlockJudgeReason.min' => 'Alasan minimal 5 karakter.',
+        ]);
+
+        $unlocked = $scoringService->unlockScoresByJudge(
+            judgeId: $this->unlockJudgeId,
+            reason: $this->unlockJudgeReason,
+            admin: Auth::user(),
+            scheduleId: $this->scheduleId
+        );
+
+        $judgeUser = User::find($this->unlockJudgeId);
+        $judgeName = $judgeUser?->name ?? 'Dewan Juri';
+
+        $this->isUnlockJudgeModalOpen = false;
+        $this->unlockJudgeReason = '';
+
+        if ($unlocked->count() > 0) {
+            $msg = "Sebanyak {$unlocked->count()} penilaian dari {$judgeName} pada sesi ini berhasil dibuka kembali ke status Draf Terbuka.";
+            Flux::toast(variant: 'success', heading: 'Penilaian Dibuka', text: $msg);
+            $this->dispatch('alert', [
+                'type' => 'success',
+                'message' => $msg,
+            ]);
+        } else {
+            $msg = "Tidak ditemukan penilaian terfinalisasi dari {$judgeName} pada sesi ini.";
+            Flux::toast(variant: 'warning', heading: 'Tidak Ada Data Terkunci', text: $msg);
+            $this->dispatch('alert', [
+                'type' => 'warning',
+                'message' => $msg,
+            ]);
+        }
+
+        if ($this->selectedPatrolId) {
+            $this->loadAssessmentForActiveJudge();
+        }
+    }
+
+    /**
+     * Hitung jumlah penilaian terfinalisasi untuk juri terpilih pada sesi ini
+     */
+    public function getTargetJudgeFinalizedCount(): int
+    {
+        if (! $this->unlockJudgeId) {
+            return 0;
+        }
+
+        return Assessment::where('competition_schedule_id', $this->scheduleId)
+            ->where('judge_id', $this->unlockJudgeId)
+            ->where('status', 'finalized')
+            ->count();
     }
 
     /**
@@ -447,6 +620,9 @@ class JudgeScoring extends Component
             'nppReady' => $this->nppReady(),
             'selectedPatrol' => $this->selectedPatrol(),
             'activeAssessment' => $this->activeAssessment(),
+            'patrolAssessments' => $this->patrolAssessments(),
+            'scheduleJudgesSummary' => $this->scheduleJudgesSummary(),
+            'targetJudgeFinalizedCount' => $this->getTargetJudgeFinalizedCount(),
             'calculatedScore' => $this->currentCalculatedScore(),
             'isAdmin' => Auth::user()->isAdmin(),
             'isAssignedJudge' => $this->isAssignedJudge,

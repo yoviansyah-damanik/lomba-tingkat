@@ -76,7 +76,7 @@ class NavigationMenuTest extends TestCase
             'Utama' => ['Dashboard', 'Jadwal Kegiatan'],
             'Kegiatan Saya' => ['Presensi Saya', 'Kartu Digital'],
             'Data Kontingen' => ['Pangkalan Gugusdepan', 'Direktori Peserta', 'Pembina Pendamping'],
-            'Presensi & Verifikasi' => ['Portal Presensi', 'Verifikasi Identitas (Scan QR)', 'Rekapitulasi Presensi'],
+            'Presensi & Verifikasi' => ['Verifikasi Identitas (Scan QR)', 'Rekapitulasi Presensi'],
             'Penilaian & Klasemen' => ['Rekap Nilai & Klasemen'],
         ], $this->menu($this->userWith([RoleEnum::Committee])));
     }
@@ -89,7 +89,7 @@ class NavigationMenuTest extends TestCase
             'Utama' => ['Dashboard', 'Jadwal Kegiatan'],
             'Kegiatan Saya' => ['Presensi Saya', 'Kartu Digital'],
             'Data Kontingen' => ['Direktori Peserta'],
-            'Presensi & Verifikasi' => ['Portal Presensi', 'Rekapitulasi Presensi'],
+            'Presensi & Verifikasi' => ['Rekapitulasi Presensi'],
             'Penilaian & Klasemen' => ['Cockpit Penjurian', 'Rekap Nilai & Klasemen'],
         ], $this->menu($judge));
 

@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Livewire\Admin\SystemSettingsManagement;
-use App\Models\AuditLog;
 use App\Models\Event;
 use App\Models\User;
 use Database\Seeders\EventSeeder;
@@ -18,7 +17,9 @@ class AdminSystemSettingsTest extends TestCase
     use RefreshDatabase;
 
     protected User $admin;
+
     protected User $regularUser;
+
     protected Event $event;
 
     protected function setUp(): void
@@ -132,9 +133,9 @@ class AdminSystemSettingsTest extends TestCase
             ->assertHasNoErrors();
 
         $event = Event::first();
-        $this->assertSame(['name' => 'Drs. Ahmad Siregar', 'nta' => '02.08.01.001'], $event->signatory('committee'));
-        $this->assertSame(['name' => 'Hj. Rosmawati Harahap', 'nta' => null], $event->signatory('judge'));
-        $this->assertSame(['name' => 'H. Syahrul Daulay', 'nta' => null], $event->signatory('kwarcab'));
+        $this->assertSame(['name' => 'Drs. Ahmad Siregar', 'nta' => '02.08.01.001', 'signature_path' => null], $event->signatory('committee'));
+        $this->assertSame(['name' => 'Hj. Rosmawati Harahap', 'nta' => null, 'signature_path' => null], $event->signatory('judge'));
+        $this->assertSame(['name' => 'H. Syahrul Daulay', 'nta' => null, 'signature_path' => null], $event->signatory('kwarcab'));
     }
 
     /**
@@ -161,4 +162,3 @@ class AdminSystemSettingsTest extends TestCase
         $this->assertSame('Transfer dengan berita nama pangkalan', $this->event->payment_instructions);
     }
 }
-

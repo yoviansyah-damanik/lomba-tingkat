@@ -10,6 +10,7 @@ use App\Models\CompetitionSchedule;
 use App\Models\CompetitionScore;
 use App\Models\Patrol;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -231,6 +232,81 @@ class AssessmentScoringService
     }
 
     /**
+     * Membuka kunci penilaian seluruh atau sebagian yang telah difinalisasi per juri oleh Administrator
+     *
+     * @return Collection<int, Assessment> Koleksi penilaian yang berhasil dibuka kuncinya
+     */
+    public function unlockScoresByJudge(
+        string|int $judgeId,
+        string $reason,
+        User $admin,
+        ?string $competitionId = null,
+        ?string $scheduleId = null
+    ): Collection {
+        if (! $admin->isAdmin()) {
+            throw new InvalidArgumentException('Hanya Administrator yang memiliki wewenang membuka kunci penilaian.');
+        }
+
+        if (empty(trim($reason))) {
+            throw new InvalidArgumentException('Alasan pembukaan kunci penilaian wajib diisi.');
+        }
+
+        return DB::transaction(function () use ($judgeId, $reason, $admin, $competitionId, $scheduleId) {
+            $query = Assessment::where('judge_id', $judgeId)
+                ->where('status', 'finalized');
+
+            if ($competitionId && $competitionId !== 'all') {
+                $query->where('competition_id', $competitionId);
+            }
+
+            if ($scheduleId && $scheduleId !== 'all') {
+                $query->where('competition_schedule_id', $scheduleId);
+            }
+
+            $assessments = $query->get();
+
+            if ($assessments->isEmpty()) {
+                return collect();
+            }
+
+            $affectedPairs = [];
+
+            foreach ($assessments as $assessment) {
+                $oldValues = $assessment->toArray();
+
+                $assessment->update([
+                    'status' => 'draft',
+                    'is_locked' => false,
+                ]);
+
+                AuditLog::log(
+                    action: 'score_unlocked',
+                    modelType: Assessment::class,
+                    modelId: $assessment->id,
+                    oldValues: $oldValues,
+                    newValues: $assessment->toArray(),
+                    reason: $reason,
+                    userId: $admin->id,
+                    actingRole: 'admin'
+                );
+
+                $key = "{$assessment->competition_id}_{$assessment->patrol_id}";
+                $affectedPairs[$key] = [
+                    'competition_id' => $assessment->competition_id,
+                    'patrol_id' => $assessment->patrol_id,
+                ];
+            }
+
+            // Hitung ulang akumulasi skor untuk setiap regu yang terdampak
+            foreach ($affectedPairs as $pair) {
+                $this->aggregatePatrolScore($pair['competition_id'], $pair['patrol_id']);
+            }
+
+            return $assessments->fresh();
+        });
+    }
+
+    /**
      * Mengakumulasikan seluruh penilaian juri untuk satu regu dan memperbarui klasemen
      */
     public function aggregatePatrolScore(string $competitionId, string $patrolId): void
@@ -314,15 +390,15 @@ class AssessmentScoringService
 
         // Cari berdasarkan bentuk normalisasi (LT-PA-01), input langsung, atau format legacy 2 digit
         $matches = Patrol::where(function ($q) use ($normalized, $npp) {
-                $clean = trim($npp);
-                $q->where('npp', $normalized);
-                if ($clean !== '') {
-                    $q->orWhere('npp', $clean);
-                    if (ctype_digit($clean)) {
-                        $q->orWhere('npp', str_pad($clean, 2, '0', STR_PAD_LEFT));
-                    }
+            $clean = trim($npp);
+            $q->where('npp', $normalized);
+            if ($clean !== '') {
+                $q->orWhere('npp', $clean);
+                if (ctype_digit($clean)) {
+                    $q->orWhere('npp', str_pad($clean, 2, '0', STR_PAD_LEFT));
                 }
-            })
+            }
+        })
             ->when($gender, fn ($q) => $q->where('gender_category', $gender))
             ->get();
 
