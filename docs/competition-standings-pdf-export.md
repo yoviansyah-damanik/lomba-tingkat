@@ -3,21 +3,21 @@
 Fitur cetak dan pratinjau PDF rekapitulasi nilai dan penetapan peringkat prestasi per cabang lomba sesuai format rekap juara umum resmi LT III Kwarcab Padangsidimpuan.
 
 ## 1. Rute & Endpoint
-- **Pratinjau PDF**: `GET /standings/competition/{competition}/print` (`route('standings.competition.print')`)
-  - Menggunakan view `reports.pdf-preview` dengan viewer iframe, tombol unduh langsung, dan tombol kembali ke tab lomba.
-- **Berkas PDF**: `GET /standings/competition/{competition}/pdf` (`route('standings.competition.pdf')`)
-  - Parameter opsional: `?raw=1` (stream inline untuk iframe) dan `?download=1` (download berkas `rekap-lomba-{code}-{timestamp}.pdf`).
+- **Pratinjau PDF Satuan**: `GET /standings/competition/{competition}/print` (`route('standings.competition.print')`)
+- **Berkas PDF Satuan**: `GET /standings/competition/{competition}/pdf` (`route('standings.competition.pdf')`)
+- **Pratinjau PDF Massal (Bulk)**: `GET /standings/competitions/bulk/print?competitions={id1,id2}` (`route('standings.competitions.bulk.print')`)
+- **Berkas PDF Massal (Bulk)**: `GET /standings/competitions/bulk/pdf?competitions={id1,id2}` (`route('standings.competitions.bulk.pdf')`)
+  - Parameter opsional: `?raw=1` (stream inline iframe) dan `?download=1` (unduh file langsung). Jika parameter `competitions` kosong, sistem mencetak seluruh cabang lomba aktif.
 
-## 2. Struktur Dokumen PDF
-- **Kop Surat**: Memakai komponen resmi `<x-report.kop />` seragam dengan dokumen resmi LT III.
-- **Metadata Card**: Kode & nama mata lomba, kategori peserta (Putra / Putri / Seluruhnya), formula penilaian, jumlah rubrik kriteria, dan total regu dinilai.
-- **Tabel Rekapitulasi**:
-  - Kolom: `Rank` (badge medali emas 🥇, perak 🥈, perunggu 🥉), `NPP`, `Regu & Pangkalan`, `Gudep`, `Kwarran`, `Nilai Akhir` (2 desimal), `Predikat Prestasi`, dan `Poin`.
-  - Pembagian terpisah untuk kategori Putra dan Putri.
-- **Blok Pengesahan (3 Tanda Tangan)**:
-  - Ketua Panitia Pelaksana LT-III.
-  - Ketua Dewan Juri LT-III.
-  - Ketua Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan.
+## 2. Struktur Dokumen PDF & Penyaringan Prestasi
+- **Penyaringan Khusus 3 Besar**: Hanya menampilkan 3 predikat prestasi resmi per kategori (Putra & Putri):
+  - 🥇 Rank 1: **Prestasi Tinggi** (100 Poin)
+  - 🥈 Rank 2: **Prestasi Baik** (80 Poin)
+  - 🥉 Rank 3: **Prestasi Cukup** (70 Poin)
+  - Peringkat 4 ke bawah tidak dicantumkan dalam lembar rekap prestasi.
+- **Kop Surat & Metadata**: Memakai kop resmi `<x-report.kop />` dan kotak info cabang lomba (kode, judul, formula, kriteria).
+- **Blok Pengesahan (3 Tanda Tangan)**: Ketua Panitia Pelaksana, Ketua Dewan Juri, dan Ketua Kwarcab Padangsidimpuan.
+- **Cetak Massal (Bulk)**: Setiap cabang lomba yang dipilih dipisahkan otomatis dengan pembagian halaman (`page-break-after: always`).
 
 ## 3. Keamanan & Kebijakan Blind Mode
 - Dilindungi method `authorizeCompetitionRecapAccess()` di `ReportExportController`.
@@ -26,8 +26,13 @@ Fitur cetak dan pratinjau PDF rekapitulasi nilai dan penetapan peringkat prestas
   - Dewan Juri dan Panitia melihat dokumen dengan identitas pangkalan disensor (`Pangkalan Dirahasiakan`).
   - Administrator dapat melihat identitas asli peserta.
 
-## 4. Integrasi UI
-- Tombol `<flux:button>` dengan atribut `icon="printer"` terpasang di:
-  1. Header halaman `/admin/standings` saat tab "Rekap Nilai Mata Lomba" aktif (`Cetak Rekap Cabang`).
-  2. Toolbar samping pemilih mata lomba (`Cetak Rekap Lomba`).
-  3. Header tabel "Lembar Rekapitulasi Nilai Regu" (`Cetak PDF`).
+## 4. Integrasi UI & Modal Bulk
+- Tombol `<flux:button>` dengan atribut `icon="printer"`:
+  1. Header utama `/admin/standings`: `Cetak Rekap Cabang (Bulk)` (membuka modal seleksi multi-lomba) & `Cetak Rekap Cabang` (lomba terpilih).
+  2. Toolbar tab lomba: `Cetak Masal (Bulk)` & `Cetak Rekap Lomba`.
+  3. Header tabel: `Cetak PDF`.
+- **Modal Seleksi Bulk**:
+  - Filter kategori cepat: Semua, Putra, Putri.
+  - Tombol aksi `Pilih Semua` dan `Batal Pilih`.
+  - Checkbox per cabang lomba dengan jumlah regu yang dinilai.
+  - Tombol `Unduh PDF Langsung` dan `Pratinjau PDF`.

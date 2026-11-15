@@ -95,7 +95,7 @@ class ReportExportController extends Controller
         $this->authorizeCompetitionRecapAccess();
 
         return view('reports.pdf-preview', [
-            'title' => 'Rekap Nilai: '.$competition->title,
+            'title' => 'Rekap Prestasi: '.$competition->title,
             'pdfUrl' => route('standings.competition.pdf', ['competition' => $competition->id, 'raw' => 1]),
             'downloadUrl' => route('standings.competition.pdf', ['competition' => $competition->id, 'download' => 1]),
             'backUrl' => route('standings', ['tab' => 'competitions', 'comp' => $competition->id]),
@@ -103,26 +103,114 @@ class ReportExportController extends Controller
     }
 
     /**
-     * Berkas PDF rekap nilai & prestasi per mata lomba
+     * Berkas PDF rekap nilai & prestasi per mata lomba (Khusus Prestasi Tinggi, Baik, dan Cukup)
      */
     public function competitionRecapPdf(Request $request, Competition $competition, PdfService $pdf): Response
     {
         $this->authorizeCompetitionRecapAccess();
 
         $canUnmask = auth()->check() && auth()->user()->isAdmin();
+        $data = $this->prepareCompetitionRecapData($competition, $canUnmask);
+
+        return $pdf->response('reports.competition-recap-pdf', array_merge($data, [
+            'event' => Event::first(),
+            'generatedAt' => now()->timezone('Asia/Jakarta'),
+        ]), 'rekap-lomba-'.$competition->code.'-'.now()->timezone('Asia/Jakarta')->format('Ymd-His').'.pdf', $request->boolean('download'));
+    }
+
+    /**
+     * Pratinjau PDF rekap nilai & prestasi seluruh atau pilihan cabang mata lomba (Bulk)
+     */
+    public function bulkCompetitionRecapPreview(Request $request): View
+    {
+        $this->authorizeCompetitionRecapAccess();
+
+        $competitionIds = $this->resolveBulkCompetitionIds($request);
+        $competitionsParam = implode(',', $competitionIds);
+
+        return view('reports.pdf-preview', [
+            'title' => 'Rekap Prestasi Seluruh Cabang Mata Lomba ('.count($competitionIds).' Lomba)',
+            'pdfUrl' => route('standings.competitions.bulk.pdf', ['competitions' => $competitionsParam, 'raw' => 1]),
+            'downloadUrl' => route('standings.competitions.bulk.pdf', ['competitions' => $competitionsParam, 'download' => 1]),
+            'backUrl' => route('standings', ['tab' => 'competitions']),
+        ]);
+    }
+
+    /**
+     * Berkas PDF rekap nilai & prestasi seluruh atau pilihan cabang mata lomba (Bulk)
+     */
+    public function bulkCompetitionRecapPdf(Request $request, PdfService $pdf): Response
+    {
+        $this->authorizeCompetitionRecapAccess();
+
+        $competitionIds = $this->resolveBulkCompetitionIds($request);
+        $competitions = Competition::with('criteria')
+            ->whereIn('id', $competitionIds)
+            ->orderBy('code')
+            ->get();
+
+        abort_if($competitions->isEmpty(), 404, 'Tidak ada cabang mata lomba yang dipilih.');
+
+        $canUnmask = auth()->check() && auth()->user()->isAdmin();
+        $competitionsData = $competitions->map(fn ($comp) => $this->prepareCompetitionRecapData($comp, $canUnmask));
+
+        $filename = 'rekap-seluruh-mata-lomba-'.now()->timezone('Asia/Jakarta')->format('Ymd-His').'.pdf';
+
+        return $pdf->response('reports.competitions-bulk-recap-pdf', [
+            'event' => Event::first(),
+            'competitionsData' => $competitionsData,
+            'title' => 'Rekapitulasi Regu Berprestasi Cabang Mata Lomba',
+            'generatedAt' => now()->timezone('Asia/Jakarta'),
+        ], $filename, $request->boolean('download'));
+    }
+
+    /**
+     * Siapkan data rekap regu berprestasi Tinggi, Baik, dan Cukup untuk satu cabang lomba
+     */
+    protected function prepareCompetitionRecapData(Competition $competition, bool $canUnmask): array
+    {
         $scores = $this->standingsService->getCompetitionRecap($competition->id, $canUnmask);
 
-        $boysScores = $scores->filter(fn ($score) => $score->patrol?->isBoys())->values();
-        $girlsScores = $scores->filter(fn ($score) => ! $score->patrol?->isBoys())->values();
+        // Hanya tampilkan 3 prestasi: Tinggi (rank 1), Baik (rank 2), dan Cukup (rank 3)
+        $boysScores = $scores
+            ->filter(fn ($score) => $score->patrol?->isBoys() && $score->rank && $score->rank <= 3)
+            ->sortBy('rank')
+            ->values();
 
-        return $pdf->response('reports.competition-recap-pdf', [
-            'event' => Event::first(),
+        $girlsScores = $scores
+            ->filter(fn ($score) => ! $score->patrol?->isBoys() && $score->rank && $score->rank <= 3)
+            ->sortBy('rank')
+            ->values();
+
+        return [
             'competition' => $competition,
             'boysScores' => $boysScores,
             'girlsScores' => $girlsScores,
             'totalScores' => $scores->count(),
-            'generatedAt' => now()->timezone('Asia/Jakarta'),
-        ], 'rekap-lomba-'.$competition->code.'-'.now()->timezone('Asia/Jakarta')->format('Ymd-His').'.pdf', $request->boolean('download'));
+        ];
+    }
+
+    /**
+     * Parsing dan resolusi ID cabang lomba yang dipilih untuk cetak massal
+     */
+    protected function resolveBulkCompetitionIds(Request $request): array
+    {
+        $raw = $request->query('competitions') ?? $request->query('ids');
+
+        if (is_array($raw)) {
+            $ids = array_filter($raw);
+        } elseif (is_string($raw) && trim($raw) !== '') {
+            $ids = array_filter(explode(',', $raw));
+        } else {
+            // Default: seluruh mata lomba aktif/terbit
+            $ids = Competition::query()
+                ->where('is_published', true)
+                ->orderBy('code')
+                ->pluck('id')
+                ->all();
+        }
+
+        return array_values(array_unique($ids));
     }
 
     /**

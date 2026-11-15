@@ -22,8 +22,8 @@
 <body>
     <x-report.kop />
 
-    <div class="doc-title">Rekapitulasi Nilai &amp; Peringkat Prestasi Mata Lomba</div>
-    <div class="doc-subtitle">Cabang: [{{ $competition->code }}] {{ $competition->title }} &bull; Per {{ $generatedAt->translatedFormat('d F Y') }}</div>
+    <div class="doc-title">Rekapitulasi Regu Berprestasi Mata Lomba</div>
+    <div class="doc-subtitle">Cabang: [{{ $competition->code }}] {{ $competition->title }} &bull; Regu Berprestasi Tinggi, Baik, dan Cukup &bull; Per {{ $generatedAt->translatedFormat('d F Y') }}</div>
 
     <table class="meta-box" style="width: 100%;">
         <tr>
@@ -41,18 +41,18 @@
     </table>
 
     @if($competition->category !== 'girls')
-        <div class="section-title">Daftar Rekapitulasi Nilai &amp; Prestasi &mdash; Regu Putra</div>
+        <div class="section-title">Daftar Regu Berprestasi &mdash; Regu Putra (Tinggi, Baik, Cukup)</div>
         @include('reports.partials.competition-standings-table', [
             'rows' => $boysScores,
-            'emptyText' => 'Belum ada penilaian terfinalisasi untuk regu putra pada cabang ini.',
+            'emptyText' => 'Belum ada regu putra yang meraih predikat prestasi pada cabang ini.',
         ])
     @endif
 
     @if($competition->category !== 'boys')
-        <div class="section-title" style="{{ $competition->category === 'all' && $boysScores->count() > 6 ? 'page-break-before: always;' : '' }}">Daftar Rekapitulasi Nilai &amp; Prestasi &mdash; Regu Putri</div>
+        <div class="section-title">Daftar Regu Berprestasi &mdash; Regu Putri (Tinggi, Baik, Cukup)</div>
         @include('reports.partials.competition-standings-table', [
             'rows' => $girlsScores,
-            'emptyText' => 'Belum ada penilaian terfinalisasi untuk regu putri pada cabang ini.',
+            'emptyText' => 'Belum ada regu putri yang meraih predikat prestasi pada cabang ini.',
         ])
     @endif
 

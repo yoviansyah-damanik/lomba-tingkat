@@ -32,6 +32,17 @@
                     Finalisasi / Draf Juri
                 </flux:button>
             @endif
+            @if($canAccessCompetitionTab)
+                <flux:button
+                    type="button"
+                    variant="subtle"
+                    icon="printer"
+                    wire:click="openBulkPrintModal"
+                    title="Cetak seluruh atau pilihan cabang mata lomba sekaligus (Bulk)"
+                >
+                    Cetak Rekap Cabang (Bulk)
+                </flux:button>
+            @endif
             @if($activeTab === 'competitions' && $selectedCompetitionId)
                 <flux:button href="{{ route('standings.competition.print', ['competition' => $selectedCompetitionId]) }}" target="_blank" variant="subtle" icon="printer">
                     Cetak Rekap Cabang
@@ -241,6 +252,14 @@
                 </div>
 
                 <div class="flex items-center gap-2">
+                    <flux:button
+                        icon="printer"
+                        variant="subtle"
+                        wire:click="openBulkPrintModal"
+                        title="Pilih dan cetak rekapitulasi nilai untuk beberapa atau seluruh cabang lomba sekaligus"
+                    >
+                        Cetak Masal (Bulk)
+                    </flux:button>
                     @if($selectedCompetitionId)
                         <flux:button
                             icon="printer"
@@ -883,6 +902,159 @@
                     >
                         {{ $judgeActionType === 'finalize' ? 'Finalisasi Nilai Juri' : 'Buka Kunci Nilai Juri' }}
                     </flux:button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Modal Cetak Rekap Prestasi Cabang Lomba (Bulk / Massal) --}}
+    @if($showBulkPrintModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+            <div class="w-full max-w-xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 space-y-4">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-start gap-3">
+                        <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400">
+                            <flux:icon name="printer" class="size-5" />
+                        </span>
+                        <div>
+                            <h3 class="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                                Cetak Rekap Prestasi Cabang Lomba (Bulk)
+                            </h3>
+                            <p class="mt-0.5 text-xs text-zinc-500 leading-relaxed">
+                                Pilih cabang lomba yang ingin dicetak dalam berkas PDF resmi (menampilkan 3 Predikat Prestasi: Tinggi, Baik, dan Cukup).
+                            </p>
+                        </div>
+                    </div>
+                    <flux:button
+                        size="xs"
+                        variant="subtle"
+                        icon="x-mark"
+                        wire:click="closeBulkPrintModal"
+                        title="Tutup Modal"
+                    />
+                </div>
+
+                {{-- Filter Kategori & Tombol Aksi Cepat --}}
+                <div class="flex flex-wrap items-center justify-between gap-2 border-y border-zinc-100 dark:border-zinc-800 py-2.5">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-xs font-semibold text-zinc-500 mr-1">Kategori:</span>
+                        <flux:button
+                            size="xs"
+                            :variant="$bulkFilterCategory === 'all' ? 'primary' : 'subtle'"
+                            wire:click="$set('bulkFilterCategory', 'all')"
+                        >
+                            Semua
+                        </flux:button>
+                        <flux:button
+                            size="xs"
+                            :variant="$bulkFilterCategory === 'boys' ? 'primary' : 'subtle'"
+                            wire:click="$set('bulkFilterCategory', 'boys')"
+                        >
+                            Putra
+                        </flux:button>
+                        <flux:button
+                            size="xs"
+                            :variant="$bulkFilterCategory === 'girls' ? 'primary' : 'subtle'"
+                            wire:click="$set('bulkFilterCategory', 'girls')"
+                        >
+                            Putri
+                        </flux:button>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <flux:button size="xs" variant="subtle" wire:click="selectAllBulkCompetitions">
+                            Pilih Semua
+                        </flux:button>
+                        <flux:button size="xs" variant="subtle" wire:click="deselectAllBulkCompetitions">
+                            Batal Pilih
+                        </flux:button>
+                    </div>
+                </div>
+
+                {{-- Indikator Jumlah Terpilih --}}
+                <div class="flex items-center justify-between text-xs px-1 text-zinc-600 dark:text-zinc-400">
+                    <span>
+                        <strong>{{ count($selectedBulkCompetitionIds) }}</strong> dari <strong>{{ $filteredBulkCompetitions->count() }}</strong> cabang lomba dipilih
+                    </span>
+                    @if(count($selectedBulkCompetitionIds) === 0)
+                        <span class="text-rose-500 font-semibold text-[11px]">* Pilih minimal 1 cabang lomba</span>
+                    @endif
+                </div>
+
+                {{-- Daftar Pilihan Cabang Lomba --}}
+                <div class="max-h-64 sm:max-h-72 overflow-y-auto space-y-1.5 pr-1 divide-y divide-zinc-100 dark:divide-zinc-800/60 rounded-xl border border-zinc-200/80 bg-zinc-50/50 p-2 dark:border-zinc-800 dark:bg-zinc-950/40">
+                    @forelse($filteredBulkCompetitions as $c)
+                        @php
+                            $isSelected = in_array((string) $c->id, $selectedBulkCompetitionIds, true);
+                        @endphp
+                        <label wire:key="bulk-comp-{{ $c->id }}" class="flex items-center justify-between gap-3 p-2 rounded-lg cursor-pointer transition hover:bg-white dark:hover:bg-zinc-900 {{ $isSelected ? 'bg-amber-50/70 border border-amber-200 dark:bg-amber-950/20 dark:border-amber-900/40' : '' }}">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <input
+                                    type="checkbox"
+                                    value="{{ $c->id }}"
+                                    wire:model.live="selectedBulkCompetitionIds"
+                                    class="rounded border-zinc-300 text-amber-600 focus:ring-amber-500 dark:border-zinc-700 dark:bg-zinc-800"
+                                >
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+                                            {{ $c->code }}
+                                        </span>
+                                        <span class="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                                            {{ $c->title }}
+                                        </span>
+                                    </div>
+                                    <div class="text-[10px] text-zinc-500 mt-0.5">
+                                        {{ $c->categoryLabel() }} &bull; Formula {{ $c->scoring_formula }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="shrink-0 text-right">
+                                <span class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $c->scores_count > 0 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400' }}">
+                                    {{ $c->scores_count }} dinilai
+                                </span>
+                            </div>
+                        </label>
+                    @empty
+                        <div class="py-8 text-center text-xs text-zinc-500">
+                            Tidak ditemukan cabang lomba pada kategori ini.
+                        </div>
+                    @endforelse
+                </div>
+
+                {{-- Tombol Aksi Bawah --}}
+                <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                    <flux:button variant="subtle" wire:click="closeBulkPrintModal">
+                        Tutup
+                    </flux:button>
+                    @if(count($selectedBulkCompetitionIds) > 0)
+                        <flux:button
+                            icon="arrow-down-tray"
+                            variant="subtle"
+                            href="{{ $bulkDownloadUrl }}"
+                            target="_blank"
+                            title="Unduh langsung berkas PDF gabungan"
+                        >
+                            Unduh PDF
+                        </flux:button>
+                        <flux:button
+                            icon="printer"
+                            variant="primary"
+                            href="{{ $bulkPrintUrl }}"
+                            target="_blank"
+                            title="Buka pratinjau PDF cetak massal"
+                        >
+                            Pratinjau PDF ({{ count($selectedBulkCompetitionIds) }} Lomba)
+                        </flux:button>
+                    @else
+                        <flux:button
+                            icon="printer"
+                            variant="primary"
+                            disabled
+                        >
+                            Pilih Lomba
+                        </flux:button>
+                    @endif
                 </div>
             </div>
         </div>

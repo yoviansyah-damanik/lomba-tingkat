@@ -796,4 +796,28 @@ class StandingsLeaderboardTest extends TestCase
             ->assertSee('Cetak Rekap Cabang')
             ->assertSee('Cetak Rekap Lomba');
     }
+
+    /**
+     * Memastikan modal cetak massal (bulk print) dapat dibuka dan mengelola pilihan lomba
+     */
+    public function test_bulk_competition_print_modal_can_be_opened_and_managed(): void
+    {
+        Livewire::actingAs($this->admin)
+            ->test(StandingsLeaderboard::class, [
+                'activeTab' => 'competitions',
+                'selectedCompetitionId' => $this->competition->id,
+            ])
+            ->assertSee('Cetak Rekap Cabang (Bulk)')
+            ->assertSee('Cetak Masal (Bulk)')
+            ->call('openBulkPrintModal')
+            ->assertSet('showBulkPrintModal', true)
+            ->assertSee('Cetak Rekap Prestasi Cabang Lomba (Bulk)')
+            ->assertSee($this->competition->title)
+            ->call('deselectAllBulkCompetitions')
+            ->assertSet('selectedBulkCompetitionIds', [])
+            ->call('selectAllBulkCompetitions')
+            ->assertCount('selectedBulkCompetitionIds', 1)
+            ->call('closeBulkPrintModal')
+            ->assertSet('showBulkPrintModal', false);
+    }
 }

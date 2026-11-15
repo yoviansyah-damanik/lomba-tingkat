@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\PatrolGenderEnum;
 use App\Enums\RegistrationStatusEnum;
+use App\Http\Controllers\ReportExportController;
 use App\Livewire\Admin\ReportsCenter;
 use App\Models\Competition;
 use App\Models\CompetitionScore;
@@ -330,5 +331,83 @@ class ReportsExportTest extends TestCase
         // Administrator tetap dapat mengakses
         $adminPreview = $this->actingAs($this->admin)->get(route('standings.competition.print', $this->competition->id));
         $adminPreview->assertStatus(200);
+    }
+
+    /**
+     * Memastikan rekap cabang lomba hanya menyertakan 3 regu berprestasi (Tinggi, Baik, Cukup) dan tidak menyertakan peringkat 4 ke bawah
+     */
+    public function test_competition_recap_only_includes_top_three_prestasi(): void
+    {
+        $patrol2 = Patrol::create([
+            'scout_group_id' => $this->scoutGroup->id,
+            'patrol_name' => 'Garuda',
+            'gender_category' => PatrolGenderEnum::Boys,
+            'status' => RegistrationStatusEnum::Verified,
+        ]);
+        $patrol3 = Patrol::create([
+            'scout_group_id' => $this->scoutGroup->id,
+            'patrol_name' => 'Elang',
+            'gender_category' => PatrolGenderEnum::Boys,
+            'status' => RegistrationStatusEnum::Verified,
+        ]);
+        $patrol4 = Patrol::create([
+            'scout_group_id' => $this->scoutGroup->id,
+            'patrol_name' => 'Kancil',
+            'gender_category' => PatrolGenderEnum::Boys,
+            'status' => RegistrationStatusEnum::Verified,
+        ]);
+
+        CompetitionScore::create(['competition_id' => $this->competition->id, 'patrol_id' => $this->patrol->id, 'final_score' => 95, 'rank' => 1, 'predicate' => 'prestasi_tinggi', 'is_final' => true]);
+        CompetitionScore::create(['competition_id' => $this->competition->id, 'patrol_id' => $patrol2->id, 'final_score' => 90, 'rank' => 2, 'predicate' => 'prestasi_baik', 'is_final' => true]);
+        CompetitionScore::create(['competition_id' => $this->competition->id, 'patrol_id' => $patrol3->id, 'final_score' => 85, 'rank' => 3, 'predicate' => 'prestasi_cukup', 'is_final' => true]);
+        CompetitionScore::create(['competition_id' => $this->competition->id, 'patrol_id' => $patrol4->id, 'final_score' => 80, 'rank' => 4, 'predicate' => null, 'is_final' => true]);
+
+        // Cek render view rekap lomba
+        $controller = app(ReportExportController::class);
+        $reflection = new \ReflectionClass($controller);
+        $method = $reflection->getMethod('prepareCompetitionRecapData');
+        $method->setAccessible(true);
+        $data = $method->invoke($controller, $this->competition, true);
+
+        $this->assertCount(3, $data['boysScores']);
+        $this->assertEquals(1, $data['boysScores'][0]->rank);
+        $this->assertEquals(2, $data['boysScores'][1]->rank);
+        $this->assertEquals(3, $data['boysScores'][2]->rank);
+        $this->assertFalse($data['boysScores']->contains('patrol_id', $patrol4->id));
+    }
+
+    /**
+     * Memastikan pratinjau dan cetak massal (Bulk) cabang mata lomba berjalan dengan benar
+     */
+    public function test_admin_can_preview_and_generate_bulk_competition_recap_pdf(): void
+    {
+        $comp2 = Competition::create([
+            'event_id' => Event::first()->id,
+            'code' => 'PION-01',
+            'title' => 'Lomba Pionering Bangunan Darurat',
+            'category' => 'all',
+            'participant_type' => 'patrol',
+            'min_participants' => 8,
+            'max_participants' => 8,
+            'is_published' => true,
+        ]);
+
+        $preview = $this->actingAs($this->admin)->get(route('standings.competitions.bulk.print', [
+            'competitions' => "{$this->competition->id},{$comp2->id}",
+        ]));
+
+        $preview->assertStatus(200)
+            ->assertSee('PRATINJAU PDF')
+            ->assertSee('2 Lomba')
+            ->assertSee(route('standings.competitions.bulk.pdf'), false);
+
+        $pdf = $this->actingAs($this->admin)->get(route('standings.competitions.bulk.pdf', [
+            'competitions' => "{$this->competition->id},{$comp2->id}",
+            'raw' => 1,
+        ]));
+
+        $pdf->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF', $pdf->getContent());
+        $this->assertStringContainsString('inline; filename="rekap-seluruh-mata-lomba-', $pdf->headers->get('Content-Disposition'));
     }
 }

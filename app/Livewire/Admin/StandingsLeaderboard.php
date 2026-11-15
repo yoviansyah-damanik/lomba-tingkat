@@ -67,6 +67,13 @@ class StandingsLeaderboard extends Component
 
     public string $judgeActionReason = '';
 
+    // Modal Cetak Rekap Cabang Lomba (Bulk / Massal)
+    public bool $showBulkPrintModal = false;
+
+    public array $selectedBulkCompetitionIds = [];
+
+    public string $bulkFilterCategory = 'all'; // 'all', 'boys', 'girls'
+
     public function mount(StandingsService $standingsService): void
     {
         if (! $this->selectedCompetitionId) {
@@ -590,6 +597,72 @@ class StandingsLeaderboard extends Component
         $this->judgeActionReason = '';
     }
 
+    public function openBulkPrintModal(): void
+    {
+        $this->showBulkPrintModal = true;
+        if (empty($this->selectedBulkCompetitionIds)) {
+            $this->selectedBulkCompetitionIds = $this->competitions->pluck('id')->map(fn ($id) => (string) $id)->all();
+        }
+    }
+
+    public function closeBulkPrintModal(): void
+    {
+        $this->showBulkPrintModal = false;
+    }
+
+    public function selectAllBulkCompetitions(): void
+    {
+        $this->selectedBulkCompetitionIds = $this->filteredBulkCompetitions->pluck('id')->map(fn ($id) => (string) $id)->all();
+    }
+
+    public function deselectAllBulkCompetitions(): void
+    {
+        $this->selectedBulkCompetitionIds = [];
+    }
+
+    public function toggleBulkCompetition(string $competitionId): void
+    {
+        if (in_array($competitionId, $this->selectedBulkCompetitionIds, true)) {
+            $this->selectedBulkCompetitionIds = array_values(array_diff($this->selectedBulkCompetitionIds, [$competitionId]));
+        } else {
+            $this->selectedBulkCompetitionIds[] = $competitionId;
+        }
+    }
+
+    #[Computed]
+    public function filteredBulkCompetitions(): Collection
+    {
+        return $this->competitions->when(
+            $this->bulkFilterCategory !== 'all',
+            fn ($col) => $col->filter(fn ($c) => $c->category === $this->bulkFilterCategory || $c->category === 'all')
+        )->values();
+    }
+
+    #[Computed]
+    public function bulkPrintUrl(): string
+    {
+        if (empty($this->selectedBulkCompetitionIds)) {
+            return route('standings.competitions.bulk.print');
+        }
+
+        return route('standings.competitions.bulk.print', [
+            'competitions' => implode(',', $this->selectedBulkCompetitionIds),
+        ]);
+    }
+
+    #[Computed]
+    public function bulkDownloadUrl(): string
+    {
+        if (empty($this->selectedBulkCompetitionIds)) {
+            return route('standings.competitions.bulk.pdf', ['download' => 1]);
+        }
+
+        return route('standings.competitions.bulk.pdf', [
+            'competitions' => implode(',', $this->selectedBulkCompetitionIds),
+            'download' => 1,
+        ]);
+    }
+
     public function render()
     {
         return view('livewire.admin.standings-leaderboard', [
@@ -608,6 +681,9 @@ class StandingsLeaderboard extends Component
             'allJudges' => $this->allJudges,
             'competitionJudgesSummary' => $this->competitionJudgesSummary,
             'targetActionCount' => $this->getTargetActionCount(),
+            'filteredBulkCompetitions' => $this->filteredBulkCompetitions,
+            'bulkPrintUrl' => $this->bulkPrintUrl,
+            'bulkDownloadUrl' => $this->bulkDownloadUrl,
         ]);
     }
 }

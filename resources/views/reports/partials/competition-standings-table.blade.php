@@ -21,6 +21,7 @@
                 $groupNumber = $isMasked ? '***' : ($score->patrol?->group_number ?? '-');
                 $kwarran = $isMasked ? 'Dirahasiakan' : ($score->patrol?->scoutGroup?->kwarran_name ?? 'Padangsidimpuan');
                 $points = \App\Models\CompetitionScore::rankWeight($score->rank, $score->predicate);
+                $predicateText = $score->predicateLabel() !== '-' ? $score->predicateLabel() : match($score->rank) { 1 => 'Prestasi Tinggi', 2 => 'Prestasi Baik', 3 => 'Prestasi Cukup', default => '-' };
             @endphp
             <tr class="{{ $score->rank && $score->rank <= 3 ? 'highlight' : '' }}">
                 <td class="center strong">
@@ -42,7 +43,7 @@
                 <td class="center" style="white-space: nowrap;">{{ $groupNumber }}</td>
                 <td>{{ $kwarran }}</td>
                 <td class="center strong" style="font-family: monospace;">{{ number_format((float) $score->final_score, 2) }}</td>
-                <td class="center strong">{{ $score->predicateLabel() ?: '-' }}</td>
+                <td class="center strong">{{ $predicateText }}</td>
                 <td class="center strong" style="color: #065f46;">{{ $points }}</td>
             </tr>
         @empty
