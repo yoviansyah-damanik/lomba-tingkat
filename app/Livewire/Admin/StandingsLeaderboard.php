@@ -116,45 +116,16 @@ class StandingsLeaderboard extends Component
             return false;
         }
 
-        // Administrator memiliki hak untuk memantau, mengunci, dan mengkalkulasi ulang peringkat
-        if ($user->isAdmin()) {
-            return true;
-        }
-
-        // Panitia sama sekali TIDAK memiliki hak kelola penilaian di lomba manapun
-        if ($user->isCommittee() && ! $user->isJudge()) {
-            return false;
-        }
-
-        // Dewan juri memiliki hak kelola penilaian
-        if ($user->isJudge()) {
-            return true;
-        }
-
-        return false;
+        // Hanya Administrator yang memiliki hak untuk mengunci/membuka dan mengkalkulasi ulang peringkat pada klasemen
+        return $user->isAdmin();
     }
 
     #[Computed]
     public function canInputScores(): bool
     {
-        $user = auth()->user();
-
-        if (! $user) {
-            return false;
-        }
-
-        // Administrator yang tidak merangkap Juri dilarang melakukan penilaian lomba
-        if ($user->isAdminOnly()) {
-            return false;
-        }
-
-        // Panitia dilarang melakukan penilaian
-        if ($user->isCommittee() && ! $user->isJudge()) {
-            return false;
-        }
-
-        // Hanya dewan juri yang dapat melakukan input penilaian
-        return $user->isJudge();
+        // Penjurian (input dan edit nilai) mutlak dilakukan secara resmi melalui Cockpit Penjurian (/portal/judge).
+        // Juri maupun peran lain tidak diperbolehkan melakukan input/edit penjurian di halaman klasemen (/admin/standings).
+        return false;
     }
 
     #[Computed]
@@ -349,6 +320,12 @@ class StandingsLeaderboard extends Component
      */
     public function openScoreModal(?string $patrolId = null, ?string $scoreId = null): void
     {
+        if (auth()->user()?->isJudge()) {
+            Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Juri tidak diperbolehkan melakukan input atau edit penjurian di halaman klasemen. Penjurian wajib dilakukan melalui Cockpit Penjurian.');
+
+            return;
+        }
+
         if (auth()->user()?->isAdminOnly()) {
             Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Administrator tidak diperkenankan melakukan penilaian lomba. Penilaian hanya dapat dilakukan oleh Juri yang telah ditunjuk.');
 
@@ -356,7 +333,7 @@ class StandingsLeaderboard extends Component
         }
 
         if (! $this->canInputScores) {
-            Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Panitia tidak memiliki hak akses untuk melakukan penilaian lomba.');
+            Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Input dan edit penilaian tidak diperkenankan di halaman ini. Penjurian wajib dilakukan melalui Cockpit Penjurian.');
 
             return;
         }
@@ -414,6 +391,12 @@ class StandingsLeaderboard extends Component
      */
     public function saveScoreModal(): void
     {
+        if (auth()->user()?->isJudge()) {
+            Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Juri tidak diperbolehkan melakukan input atau edit penjurian di halaman klasemen. Penjurian wajib dilakukan melalui Cockpit Penjurian.');
+
+            return;
+        }
+
         if (auth()->user()?->isAdminOnly()) {
             Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Administrator tidak diperkenankan melakukan penilaian lomba. Penilaian hanya dapat dilakukan oleh Juri yang telah ditunjuk.');
 
@@ -421,7 +404,7 @@ class StandingsLeaderboard extends Component
         }
 
         if (! $this->canInputScores) {
-            Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Anda tidak memiliki hak akses untuk mengubah nilai.');
+            Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Input dan edit penilaian tidak diperkenankan di halaman ini. Penjurian wajib dilakukan melalui Cockpit Penjurian.');
 
             return;
         }
@@ -471,7 +454,7 @@ class StandingsLeaderboard extends Component
     public function recalculateRanks(): void
     {
         if (! $this->canManageScores) {
-            Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Panitia tidak memiliki hak akses untuk mengkalkulasi ulang peringkat.');
+            Flux::toast(variant: 'danger', heading: 'Akses Ditolak', text: 'Hanya Administrator yang memiliki hak akses untuk mengkalkulasi ulang peringkat.');
 
             return;
         }

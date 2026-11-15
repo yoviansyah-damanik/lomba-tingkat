@@ -274,17 +274,31 @@ class StandingsLeaderboardTest extends TestCase
     }
 
     /**
-     * Memastikan dewan juri memiliki hak akses input penilaian lomba
+     * Memastikan dewan juri tidak diperbolehkan melakukan input/edit penjurian di halaman klasemen
      */
-    public function test_judge_has_rights_to_manage_scores(): void
+    public function test_judge_cannot_input_or_edit_scores_in_standings_leaderboard(): void
     {
         $component = Livewire::actingAs($this->judge, 'web')
             ->test(StandingsLeaderboard::class, ['selectedCompetitionId' => $this->competition->id])
             ->set('activeTab', 'competitions');
 
-        $this->assertTrue($component->get('canManageScores'));
-        $this->assertTrue($component->get('canInputScores'));
-        $component->assertSee('Input Nilai Regu');
+        $this->assertFalse($component->get('canManageScores'));
+        $this->assertFalse($component->get('canInputScores'));
+        $component->assertDontSee('Input Nilai Regu');
+
+        // Membuka modal penilaian ditolak
+        $component->call('openScoreModal', $this->patrol->id)
+            ->assertSet('showScoreModal', false);
+
+        // Menyimpan nilai ditolak
+        $component->set('modalPatrolId', $this->patrol->id)
+            ->set('modalFinalScore', 95.0)
+            ->call('saveScoreModal');
+
+        $this->assertDatabaseMissing('competition_scores', [
+            'patrol_id' => $this->patrol->id,
+            'final_score' => 95.0,
+        ]);
     }
 
     /**
