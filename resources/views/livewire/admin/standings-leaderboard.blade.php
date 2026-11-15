@@ -949,6 +949,9 @@
                     </div>
 
                     <div class="flex items-center gap-2">
+                        <flux:button size="xs" variant="subtle" wire:click="selectScoredBulkCompetitions" title="Ceklis hanya cabang lomba yang sudah memiliki penilaian">
+                            Sudah Dinilai
+                        </flux:button>
                         <flux:button size="xs" variant="subtle" wire:click="selectAllBulkCompetitions">
                             Pilih Semua
                         </flux:button>

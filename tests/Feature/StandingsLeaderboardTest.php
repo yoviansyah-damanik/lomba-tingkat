@@ -798,10 +798,32 @@ class StandingsLeaderboardTest extends TestCase
     }
 
     /**
-     * Memastikan modal cetak massal (bulk print) dapat dibuka dan mengelola pilihan lomba
+     * Memastikan modal cetak massal (bulk print) dapat dibuka dan otomatis menceklis lomba yang memiliki penilaian
      */
     public function test_bulk_competition_print_modal_can_be_opened_and_managed(): void
     {
+        // 1. Buat lomba kedua tanpa penilaian
+        $comp2 = Competition::create([
+            'code' => 'SEMA-01',
+            'title' => 'Semaphore & Morse',
+            'category' => 'all',
+            'participant_type' => 'patrol',
+            'min_participants' => 8,
+            'max_participants' => 8,
+            'scoring_formula' => 'average',
+            'is_published' => true,
+        ]);
+
+        // 2. Beri penilaian hanya pada lomba pertama
+        CompetitionScore::create([
+            'competition_id' => $this->competition->id,
+            'patrol_id' => $this->patrol->id,
+            'final_score' => 90.0,
+            'rank' => 1,
+            'predicate' => 'prestasi_tinggi',
+            'is_final' => true,
+        ]);
+
         Livewire::actingAs($this->admin)
             ->test(StandingsLeaderboard::class, [
                 'activeTab' => 'competitions',
@@ -811,12 +833,14 @@ class StandingsLeaderboardTest extends TestCase
             ->assertDontSee('Cetak Masal (Bulk)')
             ->call('openBulkPrintModal')
             ->assertSet('showBulkPrintModal', true)
-            ->assertSee('Cetak Rekap Prestasi Cabang Lomba (Bulk)')
-            ->assertSee($this->competition->title)
+            // Hanya lomba yang memiliki penilaian yang otomatis terceklis
+            ->assertSet('selectedBulkCompetitionIds', [(string) $this->competition->id])
             ->call('deselectAllBulkCompetitions')
             ->assertSet('selectedBulkCompetitionIds', [])
             ->call('selectAllBulkCompetitions')
-            ->assertCount('selectedBulkCompetitionIds', 1)
+            ->assertCount('selectedBulkCompetitionIds', 2)
+            ->call('selectScoredBulkCompetitions')
+            ->assertSet('selectedBulkCompetitionIds', [(string) $this->competition->id])
             ->call('closeBulkPrintModal')
             ->assertSet('showBulkPrintModal', false);
     }

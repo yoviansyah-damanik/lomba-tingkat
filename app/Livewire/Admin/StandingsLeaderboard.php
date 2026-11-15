@@ -600,9 +600,18 @@ class StandingsLeaderboard extends Component
     public function openBulkPrintModal(): void
     {
         $this->showBulkPrintModal = true;
-        if (empty($this->selectedBulkCompetitionIds)) {
-            $this->selectedBulkCompetitionIds = $this->competitions->pluck('id')->map(fn ($id) => (string) $id)->all();
-        }
+        $this->selectScoredBulkCompetitions();
+    }
+
+    public function selectScoredBulkCompetitions(): void
+    {
+        // Otomatis ceklis lomba yang sudah memiliki penilaian (scores_count > 0)
+        $this->selectedBulkCompetitionIds = $this->filteredBulkCompetitions
+            ->filter(fn ($c) => ($c->scores_count ?? 0) > 0)
+            ->pluck('id')
+            ->map(fn ($id) => (string) $id)
+            ->values()
+            ->all();
     }
 
     public function closeBulkPrintModal(): void

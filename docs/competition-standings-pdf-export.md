@@ -32,7 +32,8 @@ Fitur cetak dan pratinjau PDF rekapitulasi nilai dan penetapan peringkat prestas
   2. Toolbar tab lomba (saat lomba dipilih): `Cetak Rekap Lomba`.
   3. Header tabel rekap: `Cetak PDF`.
 - **Modal Seleksi Bulk**:
+  - Secara otomatis menceklis cabang mata lomba yang sudah memiliki penilaian (`scores_count > 0`).
   - Filter kategori cepat: Semua, Putra, Putri.
-  - Tombol aksi `Pilih Semua` dan `Batal Pilih`.
+  - Tombol aksi cepat: `Sudah Dinilai`, `Pilih Semua`, dan `Batal Pilih`.
   - Checkbox per cabang lomba dengan jumlah regu yang dinilai.
   - Tombol `Unduh PDF Langsung` dan `Pratinjau PDF`.

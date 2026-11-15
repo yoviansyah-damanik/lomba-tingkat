@@ -202,12 +202,21 @@ class ReportExportController extends Controller
         } elseif (is_string($raw) && trim($raw) !== '') {
             $ids = array_filter(explode(',', $raw));
         } else {
-            // Default: seluruh mata lomba aktif/terbit
+            // Default: seluruh mata lomba aktif/terbit yang sudah memiliki penilaian
             $ids = Competition::query()
                 ->where('is_published', true)
+                ->whereHas('scores')
                 ->orderBy('code')
                 ->pluck('id')
                 ->all();
+
+            if (empty($ids)) {
+                $ids = Competition::query()
+                    ->where('is_published', true)
+                    ->orderBy('code')
+                    ->pluck('id')
+                    ->all();
+            }
         }
 
         return array_values(array_unique($ids));
