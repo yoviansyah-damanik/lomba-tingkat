@@ -101,7 +101,7 @@
                 <article wire:key="score-{{ $score->id }}" class="flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
                     <div class="flex size-12 shrink-0 flex-col items-center justify-center rounded-xl bg-amber-500/10 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
                         <span class="text-[9px] font-semibold uppercase leading-none">Rank</span>
-                        <span class="text-lg font-extrabold leading-tight">{{ $score->rank ?? '-' }}</span>
+                        <span class="text-lg font-extrabold leading-tight">{{ $blindMode ? '#•••' : ($score->rank ?? '-') }}</span>
                     </div>
 
                     <div class="min-w-0 flex-1">

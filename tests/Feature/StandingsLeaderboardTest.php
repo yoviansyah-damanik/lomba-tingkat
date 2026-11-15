@@ -708,4 +708,63 @@ class StandingsLeaderboardTest extends TestCase
         $this->assertEquals('draft', $ass1->status);
         $this->assertFalse($ass1->is_locked);
     }
+
+    /**
+     * Memastikan akun gugusdepan tidak dapat melihat daftar ranking lomba dan identitas disamarkan saat blind mode
+     */
+    public function test_scout_group_cannot_see_competition_rankings_and_identities_are_masked_in_blind_mode(): void
+    {
+        Event::create([
+            'title' => 'LT III Kwarcab Padangsidimpuan 2026',
+            'location' => 'Bumi Perkemahan Tor Simarsayang',
+            'start_date' => now()->toDateString(),
+            'end_date' => now()->addDays(3)->toDateString(),
+            'is_active' => true,
+            'hide_patrol_identities' => true,
+        ]);
+
+        CompetitionScore::create([
+            'competition_id' => $this->competition->id,
+            'patrol_id' => $this->patrol->id,
+            'judge_id' => $this->judge->id,
+            'final_score' => 95.0,
+            'rank' => 1,
+            'predicate' => 'prestasi_tinggi',
+            'is_locked' => true,
+        ]);
+
+        // 1. Akun gugusdepan tidak melihat tab 'Rekap Nilai Mata Lomba' dan tidak bisa beralih ke tab competitions
+        Livewire::actingAs($this->scoutUser)
+            ->test(StandingsLeaderboard::class)
+            ->assertDontSee('Rekap Nilai Mata Lomba')
+            ->assertSee('Pangkalan Dirahasiakan')
+            ->assertDontSee('SMP Negeri 1 Padangsidimpuan')
+            ->assertDontSee('Rajawali')
+            ->set('activeTab', 'competitions')
+            ->assertSet('activeTab', 'patrols');
+
+        // 2. Akun juri dapat melihat tab competitions, namun identitas regu dan pangkalan tetap disensor
+        Livewire::actingAs($this->judge)
+            ->test(StandingsLeaderboard::class, [
+                'activeTab' => 'competitions',
+                'selectedCompetitionId' => $this->competition->id,
+            ])
+            ->assertSet('activeTab', 'competitions')
+            ->assertSee('Pangkalan Dirahasiakan')
+            ->assertSee('Regu 01 Putra')
+            ->assertDontSee('SMP Negeri 1 Padangsidimpuan')
+            ->assertDontSee('Rajawali');
+
+        // 3. Administrator dapat melihat tab competitions, dan dapat membuka sensor identitas
+        Livewire::actingAs($this->admin)
+            ->test(StandingsLeaderboard::class, [
+                'activeTab' => 'competitions',
+                'selectedCompetitionId' => $this->competition->id,
+            ])
+            ->assertSet('activeTab', 'competitions')
+            ->assertSee('Pangkalan Dirahasiakan') // Masih tersensor sebelum intip
+            ->call('toggleUnmask')
+            ->assertSee('SMP Negeri 1 Padangsidimpuan')
+            ->assertSee('Rajawali');
+    }
 }

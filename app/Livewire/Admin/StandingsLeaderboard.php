@@ -73,6 +73,38 @@ class StandingsLeaderboard extends Component
             $firstComp = Competition::published()->first();
             $this->selectedCompetitionId = $firstComp?->id;
         }
+
+        if (! $this->canAccessCompetitionTab && $this->activeTab === 'competitions') {
+            $this->activeTab = 'patrols';
+        }
+    }
+
+    public function updatedActiveTab(string $value): void
+    {
+        if ($value === 'competitions' && ! $this->canAccessCompetitionTab) {
+            $this->activeTab = 'patrols';
+        }
+    }
+
+    #[Computed]
+    public function canAccessCompetitionTab(): bool
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+
+        // Administrator dan Dewan Juri berwenang mengakses tab rekapitulasi nilai lomba
+        if ($user->isAdmin() || $user->isJudge()) {
+            return true;
+        }
+
+        // Pada blind mode aktif, akun gugusdepan, peserta, dan bindamping tidak diizinkan membuka daftar peringkat cabang
+        if ($this->isEventMasked && ! $this->canUnmask) {
+            return false;
+        }
+
+        return true;
     }
 
     #[Computed]
@@ -247,7 +279,7 @@ class StandingsLeaderboard extends Component
     #[Computed]
     public function competitionRecapAll(): Collection
     {
-        if (! $this->selectedCompetitionId) {
+        if (! $this->selectedCompetitionId || ! $this->canAccessCompetitionTab) {
             return collect();
         }
 
@@ -588,6 +620,7 @@ class StandingsLeaderboard extends Component
             'canInputScores' => $this->canInputScores,
             'isEventMasked' => $this->isEventMasked,
             'canUnmask' => $this->canUnmask,
+            'canAccessCompetitionTab' => $this->canAccessCompetitionTab,
             'isAdmin' => (bool) (auth()->user()?->isAdmin()),
             'allJudges' => $this->allJudges,
             'competitionJudgesSummary' => $this->competitionJudgesSummary,

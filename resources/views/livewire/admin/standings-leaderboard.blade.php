@@ -83,13 +83,15 @@
                 <flux:icon name="user-group" class="size-4" />
                 <span>Klasemen Regu</span>
             </button>
-            <button
-                type="button"
-                wire:click="$set('activeTab', 'competitions')"
-                class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer {{ $activeTab === 'competitions' ? 'bg-amber-600 text-white shadow-xs' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}">
-                <flux:icon name="clipboard-document-list" class="size-4" />
-                <span>Rekap Nilai Mata Lomba</span>
-            </button>
+            @if($canAccessCompetitionTab)
+                <button
+                    type="button"
+                    wire:click="$set('activeTab', 'competitions')"
+                    class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer {{ $activeTab === 'competitions' ? 'bg-amber-600 text-white shadow-xs' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}">
+                    <flux:icon name="clipboard-document-list" class="size-4" />
+                    <span>Rekap Nilai Mata Lomba</span>
+                </button>
+            @endif
         </div>
     </div>
 
@@ -202,7 +204,7 @@
     @endif
 
     {{-- ================= TAB 2: REKAP NILAI MATA LOMBA ================= --}}
-    @if($activeTab === 'competitions')
+    @if($activeTab === 'competitions' && $canAccessCompetitionTab)
         <div class="space-y-4">
             {{-- Tab Kategori: Putra / Putri --}}
             <div class="flex flex-wrap items-center gap-2">
@@ -433,10 +435,15 @@
                                         </td>
                                         <td class="py-3 px-4">
                                             <div class="font-bold text-zinc-900 dark:text-zinc-100 text-sm">
-                                                {{ $score->patrol?->patrol_name }}
+                                                {{ $score->patrol?->displayName($canUnmask) }}
                                             </div>
                                             <div class="text-[11px] text-zinc-500 mt-0.5">
-                                                {{ $score->patrol?->scoutGroup?->school_name ?? '-' }} (Gudep {{ $score->patrol?->group_number }})
+                                                {{ $score->patrol?->displaySchool($canUnmask) }}
+                                                @if(! $isEventMasked || $canUnmask)
+                                                    (Gudep {{ $score->patrol?->group_number }})
+                                                @else
+                                                    (Gudep ***)
+                                                @endif
                                             </div>
                                         </td>
                                         <td class="py-3 px-3 text-center">
@@ -460,9 +467,9 @@
                                         </td>
                                         <td class="py-3 px-4 text-xs text-zinc-600 dark:text-zinc-400">
                                             <div class="font-semibold text-zinc-800 dark:text-zinc-200">
-                                                {{ $score->judge?->name ?? 'Juri Pos' }}
+                                                {{ ($isEventMasked && ! $canUnmask && ! $isAdmin) ? 'Dewan Juri' : ($score->judge?->name ?? 'Juri Pos') }}
                                             </div>
-                                            @if($score->notes)
+                                            @if($score->notes && (! $isEventMasked || $canUnmask || $isAdmin))
                                                 <div class="text-[11px] text-zinc-500 italic mt-0.5 line-clamp-1">
                                                     "{{ $score->notes }}"
                                                 </div>
@@ -541,7 +548,7 @@
                             <x-npp-badge :npp="$standing['npp'] ?? null" :hide="$standing['is_masked'] ?? false" />
                         </h3>
                         <p class="mt-0.5 text-xs text-zinc-500">
-                            {{ $standing['school_name'] }} &bull; Gudep {{ $standing['group_number'] }} &bull; Peringkat #{{ $standing['rank'] }} {{ $standing['gender_category'] === 'boys' ? 'Putra' : 'Putri' }}
+                            {{ $standing['school_name'] }} &bull; Gudep {{ $standing['group_number'] }} &bull; Peringkat {{ ($isEventMasked && ! $canUnmask) ? '#•••' : '#'.$standing['rank'] }} {{ $standing['gender_category'] === 'boys' ? 'Putra' : 'Putri' }}
                         </p>
                     </div>
                     <flux:button type="button" wire:click="closePatrolDetail" variant="subtle" size="sm" icon="x-mark" />
@@ -582,7 +589,7 @@
                                 <tr wire:key="detail-{{ $loop->index }}">
                                     <td class="px-3 py-2.5 font-semibold text-zinc-900 dark:text-zinc-100">{{ $row['competition'] }}</td>
                                     <td class="px-3 py-2.5 text-center font-mono">{{ $row['final_score'] !== null ? number_format((float) $row['final_score'], 2) : '-' }}</td>
-                                    <td class="px-3 py-2.5 text-center font-bold">{{ $row['rank'] ? '#'.$row['rank'] : '-' }}</td>
+                                    <td class="px-3 py-2.5 text-center font-bold">{{ ($isEventMasked && ! $canUnmask) ? '#•••' : ($row['rank'] ? '#'.$row['rank'] : '-') }}</td>
                                     <td class="px-3 py-2.5 text-center">
                                         <span class="rounded-md border px-2 py-0.5 text-[10px] font-bold {{ $row['predicate_classes'] }}">{{ $row['predicate_label'] }}</span>
                                     </td>
