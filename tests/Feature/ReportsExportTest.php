@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Enums\PatrolGenderEnum;
 use App\Enums\RegistrationStatusEnum;
-use App\Enums\RoleEnum;
 use App\Livewire\Admin\ReportsCenter;
 use App\Models\Competition;
 use App\Models\CompetitionScore;
@@ -24,9 +23,13 @@ class ReportsExportTest extends TestCase
     use RefreshDatabase;
 
     protected User $admin;
+
     protected User $scoutGroupUser;
+
     protected ScoutGroup $scoutGroup;
+
     protected Patrol $patrol;
+
     protected Competition $competition;
 
     protected function setUp(): void
@@ -233,7 +236,7 @@ class ReportsExportTest extends TestCase
     public function test_pdf_templates_share_the_standard_letterhead(): void
     {
         $data = [
-            'event' => \App\Models\Event::first(),
+            'event' => Event::first(),
             'boysStandings' => collect(),
             'girlsStandings' => collect(),
             'generatedAt' => now(),
@@ -263,5 +266,69 @@ class ReportsExportTest extends TestCase
 
         $responseExport = $this->actingAs($this->scoutGroupUser)->get(route('admin.reports.export.contingents'));
         $responseExport->assertStatus(403);
+    }
+
+    /**
+     * Memastikan pratinjau rekap nilai cabang lomba dapat dibuka oleh admin
+     */
+    public function test_admin_can_preview_competition_recap(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('standings.competition.print', $this->competition->id));
+
+        $response->assertStatus(200)
+            ->assertSee('PRATINJAU PDF')
+            ->assertSee($this->competition->title)
+            ->assertSee(route('standings.competition.pdf', $this->competition->id), false);
+    }
+
+    /**
+     * Memastikan berkas PDF rekap nilai cabang lomba dapat diunduh dan ditampilkan inline
+     */
+    public function test_admin_can_generate_competition_recap_pdf(): void
+    {
+        CompetitionScore::create([
+            'competition_id' => $this->competition->id,
+            'patrol_id' => $this->patrol->id,
+            'final_score' => 88.50,
+            'rank' => 1,
+            'predicate' => 'gold',
+            'is_final' => true,
+        ]);
+
+        $inline = $this->actingAs($this->admin)->get(route('standings.competition.pdf', [
+            'competition' => $this->competition->id,
+            'raw' => 1,
+        ]));
+
+        $inline->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF', $inline->getContent());
+        $this->assertStringContainsString('inline; filename="rekap-lomba-'.$this->competition->code, $inline->headers->get('Content-Disposition'));
+
+        $download = $this->actingAs($this->admin)->get(route('standings.competition.pdf', [
+            'competition' => $this->competition->id,
+            'download' => 1,
+        ]));
+
+        $this->assertStringContainsString('attachment; filename="rekap-lomba-'.$this->competition->code, $download->headers->get('Content-Disposition'));
+    }
+
+    /**
+     * Memastikan rekap cabang lomba dilarang diakses oleh gugus depan ketika blind mode aktif
+     */
+    public function test_blind_mode_restricts_scout_group_from_competition_recap(): void
+    {
+        $event = Event::first();
+        $event->update(['hide_patrol_identities' => true]);
+
+        // Gugus depan dilarang mengakses preview dan pdf saat blind mode
+        $preview = $this->actingAs($this->scoutGroupUser)->get(route('standings.competition.print', $this->competition->id));
+        $preview->assertStatus(403);
+
+        $pdf = $this->actingAs($this->scoutGroupUser)->get(route('standings.competition.pdf', $this->competition->id));
+        $pdf->assertStatus(403);
+
+        // Administrator tetap dapat mengakses
+        $adminPreview = $this->actingAs($this->admin)->get(route('standings.competition.print', $this->competition->id));
+        $adminPreview->assertStatus(200);
     }
 }

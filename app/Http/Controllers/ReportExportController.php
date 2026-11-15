@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Competition;
 use App\Models\Event;
 use App\Services\PdfService;
 use App\Services\ReportExportService;
 use App\Services\StandingsService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -86,6 +88,64 @@ class ReportExportController extends Controller
     }
 
     /**
+     * Pratinjau PDF rekap nilai & prestasi per mata lomba
+     */
+    public function competitionRecapPreview(Competition $competition): View
+    {
+        $this->authorizeCompetitionRecapAccess();
+
+        return view('reports.pdf-preview', [
+            'title' => 'Rekap Nilai: '.$competition->title,
+            'pdfUrl' => route('standings.competition.pdf', ['competition' => $competition->id, 'raw' => 1]),
+            'downloadUrl' => route('standings.competition.pdf', ['competition' => $competition->id, 'download' => 1]),
+            'backUrl' => route('standings', ['tab' => 'competitions', 'comp' => $competition->id]),
+        ]);
+    }
+
+    /**
+     * Berkas PDF rekap nilai & prestasi per mata lomba
+     */
+    public function competitionRecapPdf(Request $request, Competition $competition, PdfService $pdf): Response
+    {
+        $this->authorizeCompetitionRecapAccess();
+
+        $canUnmask = auth()->check() && auth()->user()->isAdmin();
+        $scores = $this->standingsService->getCompetitionRecap($competition->id, $canUnmask);
+
+        $boysScores = $scores->filter(fn ($score) => $score->patrol?->isBoys())->values();
+        $girlsScores = $scores->filter(fn ($score) => ! $score->patrol?->isBoys())->values();
+
+        return $pdf->response('reports.competition-recap-pdf', [
+            'event' => Event::first(),
+            'competition' => $competition,
+            'boysScores' => $boysScores,
+            'girlsScores' => $girlsScores,
+            'totalScores' => $scores->count(),
+            'generatedAt' => now()->timezone('Asia/Jakarta'),
+        ], 'rekap-lomba-'.$competition->code.'-'.now()->timezone('Asia/Jakarta')->format('Ymd-His').'.pdf', $request->boolean('download'));
+    }
+
+    /**
+     * Pastikan hak akses pengguna terhadap rekap cabang lomba (mematuhi blind scoring)
+     */
+    protected function authorizeCompetitionRecapAccess(): void
+    {
+        $user = auth()->user();
+        if (! $user) {
+            abort(403);
+        }
+
+        if ($user->isAdmin() || $user->isJudge()) {
+            return;
+        }
+
+        $event = Event::first();
+        if ($event?->hide_patrol_identities) {
+            abort(403, 'Akses rekapitulasi nilai cabang lomba ditutup selama protokol blind scoring aktif.');
+        }
+    }
+
+    /**
      * Pratinjau PDF berita acara penetapan hasil akhir
      */
     public function beritaAcaraPreview(): View
@@ -114,7 +174,7 @@ class ReportExportController extends Controller
     /**
      * Regu berprestasi Tinggi, Baik, dan Cukup (peringkat 1-3) pada satu kategori
      */
-    private function topPatrols(string $gender): \Illuminate\Support\Collection
+    private function topPatrols(string $gender): Collection
     {
         return $this->standingsService->getPatrolStandings($gender)
             ->filter(fn ($st) => $st['rank'] <= 3 && $st['general_rank_title'])

@@ -267,6 +267,8 @@ Route::middleware(['auth', 'role'])->group(function () {
     Route::get('/standings', StandingsLeaderboard::class)->name('standings');
     Route::get('/standings/print', [ReportExportController::class, 'standingsRecapPreview'])->name('standings.print');
     Route::get('/standings/pdf', [ReportExportController::class, 'standingsRecapPdf'])->name('standings.pdf');
+    Route::get('/standings/competition/{competition}/print', [ReportExportController::class, 'competitionRecapPreview'])->name('standings.competition.print');
+    Route::get('/standings/competition/{competition}/pdf', [ReportExportController::class, 'competitionRecapPdf'])->name('standings.competition.pdf');
 
     // Committee routes group (field operational monitoring)
     Route::middleware('role:committee')->prefix('committee')->name('committee.')->group(function () {

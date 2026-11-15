@@ -32,6 +32,11 @@
                     Finalisasi / Draf Juri
                 </flux:button>
             @endif
+            @if($activeTab === 'competitions' && $selectedCompetitionId)
+                <flux:button href="{{ route('standings.competition.print', ['competition' => $selectedCompetitionId]) }}" target="_blank" variant="subtle" icon="printer">
+                    Cetak Rekap Cabang
+                </flux:button>
+            @endif
             <flux:button href="{{ route('standings.print') }}" target="_blank" variant="subtle" icon="document-text">
                 Pratinjau PDF Rekap
             </flux:button>
@@ -236,6 +241,17 @@
                 </div>
 
                 <div class="flex items-center gap-2">
+                    @if($selectedCompetitionId)
+                        <flux:button
+                            icon="printer"
+                            variant="subtle"
+                            href="{{ route('standings.competition.print', ['competition' => $selectedCompetitionId]) }}"
+                            target="_blank"
+                            title="Cetak Rekap Nilai & Prestasi untuk cabang lomba ini"
+                        >
+                            Cetak Rekap Lomba
+                        </flux:button>
+                    @endif
                     @if($isAdmin)
                         <flux:button
                             icon="check-badge"
@@ -399,7 +415,21 @@
                         <span class="font-bold text-xs uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
                             Lembar Rekapitulasi Nilai Regu {{ $genderTab === 'boys' ? 'Putra' : 'Putri' }}
                         </span>
-                        <span class="text-xs text-zinc-500">{{ $recap->count() }} Regu Dinilai</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-zinc-500">{{ $recap->count() }} Regu Dinilai</span>
+                            @if($selectedComp)
+                                <flux:button
+                                    size="xs"
+                                    icon="printer"
+                                    variant="subtle"
+                                    href="{{ route('standings.competition.print', ['competition' => $selectedComp->id]) }}"
+                                    target="_blank"
+                                    title="Cetak PDF Rekapitulasi Nilai {{ $selectedComp->title }}"
+                                >
+                                    Cetak PDF
+                                </flux:button>
+                            @endif
+                        </div>
                     </div>
 
                     <div class="overflow-x-auto">

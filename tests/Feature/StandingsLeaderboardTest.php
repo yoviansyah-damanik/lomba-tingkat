@@ -781,4 +781,19 @@ class StandingsLeaderboardTest extends TestCase
             ->assertSee('SMP Negeri 1 Padangsidimpuan')
             ->assertSee('Rajawali');
     }
+
+    /**
+     * Memastikan tombol cetak rekap nilai per cabang lomba tersedia pada tab rekap lomba
+     */
+    public function test_competition_recap_print_button_is_rendered(): void
+    {
+        Livewire::actingAs($this->admin)
+            ->test(StandingsLeaderboard::class, [
+                'activeTab' => 'competitions',
+                'selectedCompetitionId' => $this->competition->id,
+            ])
+            ->assertSee(route('standings.competition.print', ['competition' => $this->competition->id]))
+            ->assertSee('Cetak Rekap Cabang')
+            ->assertSee('Cetak Rekap Lomba');
+    }
 }
