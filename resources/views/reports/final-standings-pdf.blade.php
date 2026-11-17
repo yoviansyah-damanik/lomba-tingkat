@@ -18,6 +18,8 @@
         'labels' => ['Tinggi', 'Baik', 'Cukup'],
     ])
 
+    <x-report.signatories-block :event="$event" :space="60" />
+
     <div class="page-break"></div>
 
     <x-report.kop />

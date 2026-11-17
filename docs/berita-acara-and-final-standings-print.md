@@ -8,7 +8,7 @@ Official printable reports for LT III final standing decrees and cumulative gene
 2. **Cetak Peringkat Umum (Akhir) Seluruh Regu**:
    - New printable document (`reports.final-standings-pdf`) listing all verified patrols ranked 1 to N for both Putra and Putri categories.
    - Displays: Rank, NPP, Patrol Name & School, Gudep, Kwarran, Prestasi Tinggi, Prestasi Baik, Prestasi Cukup, Total Poin, and Predicate.
-   - Includes standard official Kop, legal decree statement, and three-party signatory block (Panitia, Dewan Juri, Kwarcab).
+   - Includes standard official Kop, legal decree statement, and independent three-party signatory block (Panitia, Dewan Juri, Kwarcab) rendered on each respective category section (Putra and Putri).
 3. **Aligned Signatories Block**:
    - Component `x-report.signatories-block` splits the 3-column signature block into two table rows (`<tr>` for headers, `<tr>` for name and NTA baseline), ensuring all three signatories' names align horizontally regardless of line wrap differences in their designations.
 

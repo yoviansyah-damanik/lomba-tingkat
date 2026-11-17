@@ -473,5 +473,6 @@ class ReportsExportTest extends TestCase
         $this->assertStringContainsString('70', $html);
         $this->assertStringContainsString('Peringkat 4', $html);
         $this->assertStringContainsString('Ketua Dewan Juri', $html);
+        $this->assertSame(2, substr_count($html, 'Ketua Dewan Juri LT-III'));
     }
 }
