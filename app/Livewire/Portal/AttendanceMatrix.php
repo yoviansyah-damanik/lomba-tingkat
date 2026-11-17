@@ -45,6 +45,9 @@ class AttendanceMatrix extends Component
     #[Url(as: 'date')]
     public string $sessionDateFilter = 'all'; // 'all' atau 'Y-m-d'
 
+    #[Url(as: 'target')]
+    public string $sessionTargetFilter = 'auto'; // 'auto', 'participant', 'chaperone', 'committee', 'judge', 'all'
+
     public int $perPage = 25;
 
     /** @var array<int, string> */
@@ -64,6 +67,8 @@ class AttendanceMatrix extends Component
     public string $cellSessionId = '';
 
     public string $cellSessionTitle = '';
+
+    public string $cellSessionTarget = '';
 
     public string $cellStatus = 'present';
 
@@ -126,29 +131,53 @@ class AttendanceMatrix extends Component
         $this->resetPage();
     }
 
+    public function updatedSessionTargetFilter(): void
+    {
+        $this->resetPage();
+    }
+
     /**
-     * Daftar sesi presensi yang relevan sesuai filter
+     * Label teks sasaran entitas aktif sesuai cakupan yang dipilih
+     */
+    #[Computed]
+    public function activeTargetLabel(): string
+    {
+        return match ($this->scope) {
+            'patrol', 'participant' => 'Peserta Penggalang',
+            'chaperone' => 'Pembina Pendamping',
+            'committee' => 'Panitia Pelaksana',
+            'judge' => 'Dewan Juri',
+            default => 'Peserta Penggalang',
+        };
+    }
+
+    /**
+     * Daftar sesi presensi yang relevan sesuai filter dan sasaran entitas presensi
      */
     #[Computed]
     public function sessions(): Collection
     {
+        $effectiveTarget = $this->sessionTargetFilter;
+        if ($effectiveTarget === 'auto') {
+            $effectiveTarget = match ($this->scope) {
+                'patrol', 'participant' => 'participant',
+                'chaperone' => 'chaperone',
+                'committee' => 'committee',
+                'judge' => 'judge',
+                default => 'all',
+            };
+        }
+
         return AttendanceSession::query()
             ->with(['schedule.competition'])
-            ->when($this->scope === 'committee', function ($q) {
-                if ($this->sessionTypeFilter === 'all') {
-                    $q->where(function ($sub) {
-                        $sub->where('session_type', 'committee')
-                            ->orWhere('is_competition', false);
-                    });
-                }
-            })
-            ->when($this->scope === 'judge', function ($q) {
-                if ($this->sessionTypeFilter === 'all') {
-                    $q->where(function ($sub) {
-                        $sub->where('session_type', 'judge')
-                            ->orWhere('is_competition', true);
-                    });
-                }
+            ->when($effectiveTarget === 'participant', fn ($q) => $q->where('session_type', 'participant'))
+            ->when($effectiveTarget === 'chaperone', fn ($q) => $q->where('session_type', 'chaperone'))
+            ->when($effectiveTarget === 'committee', fn ($q) => $q->where('session_type', 'committee'))
+            ->when($effectiveTarget === 'judge', function ($q) {
+                $q->where(function ($sub) {
+                    $sub->where('session_type', 'judge')
+                        ->orWhere('is_competition', true);
+                });
             })
             ->when($this->sessionTypeFilter === 'competition', fn ($q) => $q->where('is_competition', true))
             ->when($this->sessionTypeFilter === 'general', fn ($q) => $q->where('is_competition', false))
@@ -306,6 +335,7 @@ class AttendanceMatrix extends Component
         $this->cellEntityId = $entityId;
         $this->cellSessionId = $sessionId;
         $this->cellSessionTitle = $session->title;
+        $this->cellSessionTarget = $session->sessionTypeLabel();
         $this->cellEntityType = in_array($this->scope, ['committee', 'judge'], true) ? 'user' : $this->scope;
 
         if ($this->scope === 'patrol') {

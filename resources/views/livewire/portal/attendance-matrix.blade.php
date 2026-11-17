@@ -71,6 +71,21 @@
                 >
                     Dewan Juri
                 </flux:button>
+
+                {{-- Indikator Sasaran Entitas Presensi --}}
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ml-1 {{
+                    in_array($scope, ['patrol', 'participant'], true) ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800' : (
+                    $scope === 'chaperone' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800' : (
+                    $scope === 'committee' ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800' :
+                    'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800'))
+                }}">
+                    <span class="size-1.5 rounded-full {{
+                        in_array($scope, ['patrol', 'participant'], true) ? 'bg-sky-500' : (
+                        $scope === 'chaperone' ? 'bg-emerald-500' : (
+                        $scope === 'committee' ? 'bg-purple-500' : 'bg-amber-500'))
+                    }}"></span>
+                    <span>Sasaran: <strong>{{ $this->activeTargetLabel }}</strong></span>
+                </div>
             </div>
 
             @if(!in_array($scope, ['committee', 'judge'], true))
@@ -102,7 +117,7 @@
         </div>
 
         {{-- Baris 2: Filter Sesi & Pencarian --}}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             {{-- Pencarian --}}
             <div>
                 <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-1">Cari Entitas:</label>
@@ -112,6 +127,22 @@
                     placeholder="{{ $scope === 'committee' ? 'Nama panitia, jabatan, ID...' : ($scope === 'judge' ? 'Nama juri, instansi, ID...' : ($scope === 'patrol' ? 'Nama regu, NPP, pangkalan...' : 'Nama peserta/pembina, ID, pangkalan...')) }}"
                     class="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-900 focus:border-emerald-500 focus:bg-white focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                 >
+            </div>
+
+            {{-- Sasaran Entitas Presensi --}}
+            <div>
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-1">Sasaran Entitas:</label>
+                <select
+                    wire:model.live="sessionTargetFilter"
+                    class="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-900 focus:border-emerald-500 focus:bg-white focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                >
+                    <option value="auto">Sesuai Cakupan ({{ $this->activeTargetLabel }})</option>
+                    <option value="participant">Peserta Penggalang</option>
+                    <option value="chaperone">Pembina Pendamping</option>
+                    <option value="committee">Panitia Pelaksana</option>
+                    <option value="judge">Dewan Juri</option>
+                    <option value="all">Semua Sasaran Entitas</option>
+                </select>
             </div>
 
             {{-- Tipe Sesi --}}
@@ -237,9 +268,17 @@
                                     <div class="font-extrabold text-zinc-800 dark:text-zinc-200 line-clamp-1 leading-tight" title="{{ $session->title }}">
                                         {{ $session->title }}
                                     </div>
-                                    <div class="flex items-center gap-1">
+                                    <div class="flex items-center gap-1 flex-wrap justify-center">
                                         <span class="inline-flex rounded px-1.5 py-0.2 text-[9px] font-bold {{ $session->is_competition ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' }}">
                                             {{ $session->is_competition ? 'Lomba' : 'Umum' }}
+                                        </span>
+                                        <span class="inline-flex rounded px-1.5 py-0.2 text-[9px] font-semibold {{
+                                            $session->session_type === 'participant' ? 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300' : (
+                                            $session->session_type === 'chaperone' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : (
+                                            $session->session_type === 'committee' ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300' :
+                                            'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'))
+                                        }}">
+                                            {{ $session->sessionTypeLabel() }}
                                         </span>
                                         <flux:button
                                             size="xs"
@@ -253,7 +292,7 @@
                             </th>
                         @empty
                             <th class="py-3 px-4 text-center text-zinc-400">
-                                Tidak ada sesi presensi yang sesuai filter.
+                                Tidak ada sesi presensi yang sesuai dengan sasaran entitas dan filter yang dipilih.
                             </th>
                         @endforelse
 
@@ -479,7 +518,10 @@
                 </div>
 
                 <div class="rounded-xl border border-zinc-100 bg-zinc-50/70 p-3 text-xs dark:border-zinc-800 dark:bg-zinc-800/40 space-y-1">
-                    <div class="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Sesi Presensi:</div>
+                    <div class="flex items-center justify-between text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
+                        <span>Sesi Presensi:</span>
+                        <span class="text-zinc-600 dark:text-zinc-400 font-semibold">{{ $cellSessionTarget }}</span>
+                    </div>
                     <div class="font-bold text-zinc-900 dark:text-zinc-100">{{ $cellSessionTitle }}</div>
                     <div class="text-[11px] text-zinc-500">{{ $cellEntityInfo }}</div>
                 </div>
@@ -617,7 +659,7 @@
                         class="w-full rounded-xl border border-zinc-300 bg-white p-2.5 text-xs text-zinc-900 focus:border-emerald-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                     >
                         @foreach($sessions as $s)
-                            <option value="{{ $s->id }}">[{{ $s->is_competition ? 'Lomba' : 'Umum' }}] {{ $s->title }}</option>
+                            <option value="{{ $s->id }}">[{{ $s->is_competition ? 'Lomba' : 'Umum' }} • {{ $s->sessionTypeLabel() }}] {{ $s->title }}</option>
                         @endforeach
                     </select>
                 </div>

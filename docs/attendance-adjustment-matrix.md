@@ -16,7 +16,12 @@ Modul penyesuaian data kehadiran tertinggal dalam format matriks (cross-tabulati
   - `Panitia` (Committee / Aparatur Pelaksana).
   - `Dewan Juri` (Judges / Penilai Lomba).
 - **Kolom (Sesi Presensi)**:
-  - Menampilkan seluruh sesi presensi lomba & umum dengan header dinamis (tipe sesi, tanggal, dan menu tindakan kolom). Otomatis menyesuaikan sesi relevan saat beralih ke cakupan Panitia / Juri.
+  - Menampilkan sesi presensi yang otomatis **diselaraskan dengan Sasaran Entitas Presensi** (`session_type`) dari cakupan aktif:
+    - *Peserta*: Sesi presensi ber-sasaran Peserta (`session_type = participant`).
+    - *Pembina*: Sesi presensi ber-sasaran Pembina Pendamping (`session_type = chaperone`).
+    - *Panitia*: Sesi presensi ber-sasaran Panitia (`session_type = committee`).
+    - *Dewan Juri*: Sesi pos lomba (`is_competition = true`) dan sesi juri (`session_type = judge`).
+  - Dilengkapi filter manual *Sasaran Entitas* pada toolbar dan badge sasaran di setiap *header* kolom sesi.
 - **Sel (Perpotongan Baris & Kolom)**:
   - `H` (Hadir - Hijau)
   - `T` (Terlambat - Kuning/Amber)

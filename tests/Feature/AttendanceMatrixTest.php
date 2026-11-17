@@ -43,6 +43,8 @@ class AttendanceMatrixTest extends TestCase
 
     protected AttendanceSession $session2;
 
+    protected AttendanceSession $chaperoneSession;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -110,6 +112,15 @@ class AttendanceMatrixTest extends TestCase
         $this->session2 = AttendanceSession::create([
             'title' => 'Sesi Penjelajahan Rimba',
             'session_type' => 'participant',
+            'is_competition' => false,
+            'opened_at' => now()->subHour(),
+            'closed_at' => now()->addHours(2),
+            'is_active' => true,
+        ]);
+
+        $this->chaperoneSession = AttendanceSession::create([
+            'title' => 'Briefing Pembina Pendamping',
+            'session_type' => 'chaperone',
             'is_competition' => false,
             'opened_at' => now()->subHour(),
             'closed_at' => now()->addHours(2),
@@ -408,5 +419,27 @@ class AttendanceMatrixTest extends TestCase
             'user_id' => $judgeUser->id,
             'status' => 'present',
         ]);
+    }
+
+    /**
+     * Memastikan sesi yang ditampilkan pada matriks otomatis menyesuaikan Sasaran Entitas Presensi
+     */
+    public function test_sessions_match_target_entity_based_on_scope(): void
+    {
+        Livewire::actingAs($this->admin)
+            ->test(AttendanceMatrix::class)
+            // Cakupan Per Regu: sasaran Peserta Penggalang
+            ->set('scope', 'patrol')
+            ->assertSee('Sesi Apel Pagi Hari 1')
+            ->assertSee('Sesi Penjelajahan Rimba')
+            ->assertDontSee('Briefing Pembina Pendamping')
+            // Cakupan Pembina: sasaran Pembina Pendamping
+            ->set('scope', 'chaperone')
+            ->assertSee('Briefing Pembina Pendamping')
+            ->assertDontSee('Sesi Apel Pagi Hari 1')
+            // Ubah Sasaran ke 'all': seluruh sesi ditampilkan
+            ->set('sessionTargetFilter', 'all')
+            ->assertSee('Briefing Pembina Pendamping')
+            ->assertSee('Sesi Apel Pagi Hari 1');
     }
 }
