@@ -227,6 +227,8 @@ Route::middleware(['auth', 'role'])->group(function () {
         Route::get('/reports/export/standings', [ReportExportController::class, 'standingsCsv'])->name('reports.export.standings');
         Route::get('/reports/print/berita-acara', [ReportExportController::class, 'beritaAcaraPreview'])->name('reports.print.berita-acara');
         Route::get('/reports/pdf/berita-acara', [ReportExportController::class, 'beritaAcaraPdf'])->name('reports.pdf.berita-acara');
+        Route::get('/reports/print/final-standings', [ReportExportController::class, 'finalStandingsPreview'])->name('reports.print.final-standings');
+        Route::get('/reports/pdf/final-standings', [ReportExportController::class, 'finalStandingsPdf'])->name('reports.pdf.final-standings');
 
         // Phase 11: Manajemen Publikasi Pengumuman (Livewire 4 SPA)
         Route::get('/announcements', AnnouncementsManagement::class)->name('announcements.index');
@@ -268,6 +270,8 @@ Route::middleware(['auth', 'role'])->group(function () {
     Route::get('/standings', StandingsLeaderboard::class)->name('standings');
     Route::get('/standings/print', [ReportExportController::class, 'standingsRecapPreview'])->name('standings.print');
     Route::get('/standings/pdf', [ReportExportController::class, 'standingsRecapPdf'])->name('standings.pdf');
+    Route::get('/standings/all/print', [ReportExportController::class, 'finalStandingsPreview'])->name('standings.final.print');
+    Route::get('/standings/all/pdf', [ReportExportController::class, 'finalStandingsPdf'])->name('standings.final.pdf');
     Route::get('/standings/competition/{competition}/print', [ReportExportController::class, 'competitionRecapPreview'])->name('standings.competition.print');
     Route::get('/standings/competition/{competition}/pdf', [ReportExportController::class, 'competitionRecapPdf'])->name('standings.competition.pdf');
     Route::get('/standings/competitions/bulk/print', [ReportExportController::class, 'bulkCompetitionRecapPreview'])->name('standings.competitions.bulk.print');

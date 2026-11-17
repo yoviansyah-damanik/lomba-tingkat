@@ -66,12 +66,13 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-2 shrink-0">
-                <a href="{{ route('admin.reports.print.berita-acara') }}" target="_blank">
-                    <flux:button icon="document-text" variant="primary">
-                        Cetak Berita Acara
-                    </flux:button>
-                </a>
+            <div class="flex items-center gap-2 shrink-0 flex-wrap">
+                <flux:button href="{{ route('admin.reports.print.final-standings') }}" target="_blank" icon="printer" variant="primary">
+                    Cetak Peringkat Seluruh Regu
+                </flux:button>
+                <flux:button href="{{ route('admin.reports.print.berita-acara') }}" target="_blank" icon="document-text" variant="subtle">
+                    Berita Acara (3 Besar)
+                </flux:button>
             </div>
         </div>
     </div>

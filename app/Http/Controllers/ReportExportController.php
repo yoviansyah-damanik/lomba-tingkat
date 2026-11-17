@@ -88,6 +88,34 @@ class ReportExportController extends Controller
     }
 
     /**
+     * Pratinjau PDF rekapitulasi peringkat umum (akhir) seluruh regu
+     */
+    public function finalStandingsPreview(): View
+    {
+        return view('reports.pdf-preview', [
+            'title' => 'Peringkat Umum (Akhir) Seluruh Regu LT-III',
+            'pdfUrl' => route('standings.final.pdf', ['raw' => 1]),
+            'downloadUrl' => route('standings.final.pdf', ['download' => 1]),
+            'backUrl' => route('standings'),
+        ]);
+    }
+
+    /**
+     * Berkas PDF rekapitulasi peringkat umum (akhir) seluruh regu
+     */
+    public function finalStandingsPdf(Request $request, PdfService $pdf): Response
+    {
+        $canUnmask = auth()->check() && auth()->user()->isAdmin();
+
+        return $pdf->response('reports.final-standings-pdf', [
+            'event' => Event::first(),
+            'boysStandings' => $this->standingsService->getPatrolStandings('boys', null, $canUnmask),
+            'girlsStandings' => $this->standingsService->getPatrolStandings('girls', null, $canUnmask),
+            'generatedAt' => now()->timezone('Asia/Jakarta'),
+        ], 'peringkat-umum-seluruh-regu-'.now()->timezone('Asia/Jakarta')->format('Ymd-His').'.pdf', $request->boolean('download'));
+    }
+
+    /**
      * Pratinjau PDF rekap nilai & prestasi per mata lomba
      */
     public function competitionRecapPreview(Competition $competition): View

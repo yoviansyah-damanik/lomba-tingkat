@@ -255,6 +255,7 @@ class ReportsExportTest extends TestCase
         $berita = view('reports.berita-acara-pdf', $data)->render();
         $this->assertStringContainsString('Berita Acara Penetapan Hasil Akhir', $berita);
         $this->assertStringContainsString('Ketua Dewan Juri', $berita);
+        $this->assertStringContainsString('Poin', $berita);
     }
 
     /**
@@ -409,5 +410,68 @@ class ReportsExportTest extends TestCase
         $pdf->assertOk()->assertHeader('Content-Type', 'application/pdf');
         $this->assertStringStartsWith('%PDF', $pdf->getContent());
         $this->assertStringContainsString('inline; filename="rekap-seluruh-mata-lomba-', $pdf->headers->get('Content-Disposition'));
+    }
+
+    /**
+     * Memastikan pratinjau dan unduh PDF rekapitulasi peringkat umum (akhir) seluruh regu berjalan sukses
+     */
+    public function test_admin_can_preview_and_generate_final_standings_all_patrols_pdf(): void
+    {
+        $preview = $this->actingAs($this->admin)->get(route('standings.final.print'));
+        $preview->assertStatus(200)
+            ->assertSee('PRATINJAU PDF')
+            ->assertSee('Peringkat Umum (Akhir) Seluruh Regu LT-III')
+            ->assertSee(route('standings.final.pdf'), false);
+
+        $pdf = $this->actingAs($this->admin)->get(route('standings.final.pdf', ['raw' => 1]));
+        $pdf->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF', $pdf->getContent());
+        $this->assertStringContainsString('inline; filename="peringkat-umum-seluruh-regu-', $pdf->headers->get('Content-Disposition'));
+
+        // Cek juga rute via admin.reports
+        $adminPreview = $this->actingAs($this->admin)->get(route('admin.reports.print.final-standings'));
+        $adminPreview->assertStatus(200);
+
+        // Verifikasi struktur tampilan HTML view-nya
+        $html = view('reports.final-standings-pdf', [
+            'event' => Event::first(),
+            'boysStandings' => collect([
+                [
+                    'rank' => 1,
+                    'npp' => 'PA-01',
+                    'patrol_name' => 'Rajawali',
+                    'school_name' => 'SMPN 1',
+                    'group_number' => '01-001',
+                    'kwarran_name' => 'Utara',
+                    'gold' => 3,
+                    'silver' => 1,
+                    'bronze' => 0,
+                    'total_points' => 380,
+                    'general_rank_title' => 'Regu Berprestasi Tinggi Putra',
+                ],
+                [
+                    'rank' => 4,
+                    'npp' => 'PA-04',
+                    'patrol_name' => 'Garuda',
+                    'school_name' => 'SMPN 4',
+                    'group_number' => '01-007',
+                    'kwarran_name' => 'Selatan',
+                    'gold' => 0,
+                    'silver' => 0,
+                    'bronze' => 1,
+                    'total_points' => 70,
+                    'general_rank_title' => null,
+                ],
+            ]),
+            'girlsStandings' => collect(),
+            'generatedAt' => now(),
+        ])->render();
+
+        $this->assertStringContainsString('Rekapitulasi Peringkat Umum (Akhir) Seluruh Regu', $html);
+        $this->assertStringContainsString('Poin', $html);
+        $this->assertStringContainsString('380', $html);
+        $this->assertStringContainsString('70', $html);
+        $this->assertStringContainsString('Peringkat 4', $html);
+        $this->assertStringContainsString('Ketua Dewan Juri', $html);
     }
 }

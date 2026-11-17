@@ -3,14 +3,15 @@
     <thead>
         <tr>
             <th class="center" style="width: 28px;">Rank</th>
-            <th class="center" style="width: 52px;">NPP</th>
+            <th class="center" style="width: 50px;">NPP</th>
             <th class="center">Regu &amp; Pangkalan</th>
             <th class="center" style="width: 46px;">Gudep</th>
             <th class="center">Kwarran</th>
-            <th class="center">{{ $labels[0] }}</th>
-            <th class="center">{{ $labels[1] }}</th>
-            <th class="center">{{ $labels[2] }}</th>
-            <th class="center">Predikat</th>
+            <th class="center" style="width: 36px;">{{ $labels[0] }}</th>
+            <th class="center" style="width: 36px;">{{ $labels[1] }}</th>
+            <th class="center" style="width: 36px;">{{ $labels[2] }}</th>
+            <th class="center" style="width: 40px;">Poin</th>
+            <th class="center" style="width: 95px;">Predikat</th>
         </tr>
     </thead>
     <tbody>
@@ -27,11 +28,12 @@
                 <td class="center strong">{{ $st['gold'] }}</td>
                 <td class="center strong">{{ $st['silver'] }}</td>
                 <td class="center strong">{{ $st['bronze'] }}</td>
-                <td class="center strong">{{ preg_replace('/\s+(Putra|Putri)$/u', '', $st['general_rank_title'] ?? 'Peringkat '.$st['rank']) }}</td>
+                <td class="center strong">{{ $st['total_points'] ?? 0 }}</td>
+                <td class="center strong">{{ preg_replace('/\s+(Putra|Putri)$/u', '', $st['general_rank_title'] ?? ('Peringkat '.$st['rank'])) }}</td>
             </tr>
         @empty
             <tr>
-                <td colspan="9" class="center muted" style="padding: 14px; font-style: italic;">{{ $emptyText }}</td>
+                <td colspan="10" class="center muted" style="padding: 14px; font-style: italic;">{{ $emptyText }}</td>
             </tr>
         @endforelse
     </tbody>

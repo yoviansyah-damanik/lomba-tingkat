@@ -25,13 +25,7 @@
         Demikian Berita Acara ini dibuat dan disahkan dengan sebenarnya untuk dapat dipergunakan sebagaimana mestinya sebagai dasar penerbitan Surat Keputusan Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan mengenai Kontingen Berprestasi Tinggi yang berhak mewakili Kota Padangsidimpuan ke Lomba Tingkat IV (LT-IV) Kwartir Daerah Sumatera Utara.
     </p>
 
-    <table class="signatures" style="margin-top: 18px; page-break-inside: avoid;">
-        <tr>
-            <td>Mengetahui,<br><strong>Ketua Panitia Pelaksana LT-III</strong><x-report.signatory :space="84" :name="$event?->signatory('committee')['name']" :nta="$event?->signatory('committee')['nta']" /></td>
-            <td>Ditetapkan Oleh,<br><strong>Ketua Dewan Juri LT-III</strong><x-report.signatory :space="84" :name="$event?->signatory('judge')['name']" :nta="$event?->signatory('judge')['nta']" /></td>
-            <td>Mengesahkan,<br><strong>Kwartir Cabang Gerakan Pramuka Kota Padangsidimpuan</strong><br>Ketua<x-report.signatory :space="58" :name="$event?->signatory('kwarcab')['name']" :nta="$event?->signatory('kwarcab')['nta']" /></td>
-        </tr>
-    </table>
+    <x-report.signatories-block :event="$event" :space="60" />
 
 </body>
 </html>

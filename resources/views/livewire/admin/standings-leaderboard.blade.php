@@ -43,8 +43,11 @@
                     Cetak Mata Lomba
                 </flux:button>
             @endif
-            <flux:button href="{{ route('standings.print') }}" target="_blank" variant="subtle" icon="document-text">
-                Pratinjau PDF Rekap
+            <flux:button href="{{ route('standings.final.print') }}" target="_blank" variant="subtle" icon="printer" title="Cetak rekapitulasi peringkat umum akhir seluruh regu beserta poin">
+                Cetak Peringkat Seluruh Regu
+            </flux:button>
+            <flux:button href="{{ route('standings.print') }}" target="_blank" variant="subtle" icon="document-text" title="Cetak Berita Acara penetapan juara umum dan perolehan 3 predikat prestasi">
+                Berita Acara (3 Besar)
             </flux:button>
             <flux:button href="{{ route('leaderboard') }}" target="_blank" variant="primary" icon="arrow-top-right-on-square">
                 Lihat Versi Publik
