@@ -26,6 +26,9 @@
 
         <x-slot:actions>
             @if (auth()->user()?->isAdmin())
+                <flux:button href="{{ route('attendance.matrix') }}" variant="subtle" icon="table-cells" wire:navigate>
+                    Matriks Penyesuaian
+                </flux:button>
                 <flux:button href="{{ route('attendance.index') }}" variant="subtle" icon="qr-code" wire:navigate>
                     Portal Presensi
                 </flux:button>

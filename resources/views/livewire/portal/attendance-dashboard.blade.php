@@ -8,6 +8,9 @@
         badge-color="emerald"
     >
         <x-slot:actions>
+            <flux:button href="{{ route('attendance.matrix') }}" variant="subtle" icon="table-cells" wire:navigate>
+                Matriks Penyesuaian
+            </flux:button>
             <flux:button href="{{ route('attendance.recap') }}" variant="subtle" icon="clipboard-document-list" wire:navigate>
                 Rekapitulasi Presensi
             </flux:button>

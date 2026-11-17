@@ -54,6 +54,7 @@ use App\Livewire\DigitalCard\ScoutGroupBatch;
 use App\Livewire\DigitalCard\StaffCard;
 use App\Livewire\Notifications\Index;
 use App\Livewire\Portal\AttendanceDashboard;
+use App\Livewire\Portal\AttendanceMatrix;
 use App\Livewire\Portal\AttendanceRecap;
 use App\Livewire\Portal\AttendanceScanner;
 use App\Livewire\Portal\ChaperoneForm;
@@ -280,6 +281,7 @@ Route::middleware(['auth', 'role'])->group(function () {
     // Phase 6: Portal Presensi & Scanner QR Code (Khusus Administrator)
     Route::middleware(['auth', 'role:admin'])->prefix('portal/attendance')->name('attendance.')->group(function () {
         Route::get('/', AttendanceDashboard::class)->name('index');
+        Route::get('/matrix', AttendanceMatrix::class)->name('matrix');
         Route::get('/scanner/{session}', AttendanceScanner::class)->name('scanner');
         Route::post('/scan/{session}', [AttendanceScannerController::class, 'scan'])->name('scan');
         Route::post('/manual/{session}', [AttendanceScannerController::class, 'manual'])->name('manual');
