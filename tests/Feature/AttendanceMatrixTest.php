@@ -298,4 +298,115 @@ class AttendanceMatrixTest extends TestCase
             'status' => 'present',
         ]);
     }
+
+    /**
+     * Memastikan admin dapat melihat dan menyesuaikan presensi Panitia Pelaksana
+     */
+    public function test_admin_can_adjust_committee_attendance(): void
+    {
+        $committeeUser = User::factory()->create([
+            'name' => 'Kak Panitia Lapangan',
+            'is_active' => true,
+            'committee_position' => 'Koordinator Lapangan',
+            'id_number' => 'A-990001',
+        ]);
+        $committeeUser->assignRole(RoleEnum::Committee);
+
+        $committeeSession = AttendanceSession::create([
+            'title' => 'Briefing Panitia Harian',
+            'session_type' => 'committee',
+            'is_competition' => false,
+            'is_active' => true,
+            'opened_at' => now()->subHour(),
+            'closed_at' => now()->addHours(2),
+        ]);
+
+        Livewire::actingAs($this->admin)
+            ->test(AttendanceMatrix::class)
+            ->set('scope', 'committee')
+            ->assertSee('Kak Panitia Lapangan')
+            ->assertSee('Briefing Panitia Harian')
+            ->call('quickSetStatus', (string) $committeeUser->id, (string) $committeeSession->id, 'present');
+
+        $this->assertDatabaseHas('attendances', [
+            'attendance_session_id' => $committeeSession->id,
+            'user_id' => $committeeUser->id,
+            'status' => 'present',
+            'entity_type' => 'user',
+        ]);
+
+        // Uji perubahan status lewat Cell Modal
+        Livewire::actingAs($this->admin)
+            ->test(AttendanceMatrix::class)
+            ->set('scope', 'committee')
+            ->call('openCellModal', (string) $committeeUser->id, (string) $committeeSession->id)
+            ->assertSet('showCellModal', true)
+            ->assertSet('cellEntityName', 'Kak Panitia Lapangan')
+            ->set('cellStatus', 'late')
+            ->set('cellNotes', 'Menyiapkan tenda panitia')
+            ->call('saveCellAdjustment')
+            ->assertSet('showCellModal', false);
+
+        $this->assertDatabaseHas('attendances', [
+            'attendance_session_id' => $committeeSession->id,
+            'user_id' => $committeeUser->id,
+            'status' => 'late',
+            'notes' => 'Menyiapkan tenda panitia',
+        ]);
+    }
+
+    /**
+     * Memastikan admin dapat melihat dan menyesuaikan presensi Dewan Juri
+     */
+    public function test_admin_can_adjust_judge_attendance(): void
+    {
+        $judgeUser = User::factory()->create([
+            'name' => 'Kak Dewan Juri Utama',
+            'is_active' => true,
+            'position' => 'Juri PBB & Semaphore',
+            'institution' => 'Kwarcab Padangsidimpuan',
+            'id_number' => 'A-880001',
+        ]);
+        $judgeUser->assignRole(RoleEnum::Judge);
+
+        $judgeSession = AttendanceSession::create([
+            'title' => 'Briefing & Kalibrasi Penilaian Juri',
+            'session_type' => 'judge',
+            'is_competition' => false,
+            'is_active' => true,
+            'opened_at' => now()->subHour(),
+            'closed_at' => now()->addHours(2),
+        ]);
+
+        Livewire::actingAs($this->admin)
+            ->test(AttendanceMatrix::class)
+            ->set('scope', 'judge')
+            ->assertSee('Kak Dewan Juri Utama')
+            ->assertSee('Briefing & Kalibrasi Penilaian Juri')
+            ->call('quickSetStatus', (string) $judgeUser->id, (string) $judgeSession->id, 'present');
+
+        $this->assertDatabaseHas('attendances', [
+            'attendance_session_id' => $judgeSession->id,
+            'user_id' => $judgeUser->id,
+            'status' => 'present',
+            'entity_type' => 'user',
+        ]);
+
+        // Uji penyesuaian massal sesi untuk juri
+        Livewire::actingAs($this->admin)
+            ->test(AttendanceMatrix::class)
+            ->set('scope', 'judge')
+            ->call('openSessionBulkModal', (string) $judgeSession->id)
+            ->assertSet('showSessionBulkModal', true)
+            ->set('sessionBulkStatus', 'present')
+            ->set('sessionBulkOnlyUnrecorded', false)
+            ->call('executeSessionBulkAction')
+            ->assertSet('showSessionBulkModal', false);
+
+        $this->assertDatabaseHas('attendances', [
+            'attendance_session_id' => $judgeSession->id,
+            'user_id' => $judgeUser->id,
+            'status' => 'present',
+        ]);
+    }
 }

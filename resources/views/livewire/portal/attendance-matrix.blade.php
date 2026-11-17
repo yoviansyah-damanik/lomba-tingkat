@@ -27,9 +27,9 @@
 
     {{-- Tabs Scope & Kontrol Filter --}}
     <div class="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900 space-y-4">
-        {{-- Baris 1: Pilihan Scope (Regu / Peserta / Bindamping) & Kategori --}}
+        {{-- Baris 1: Pilihan Scope (Regu / Peserta / Pembina / Panitia / Dewan Juri) & Kategori --}}
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800 pb-3">
-            <div class="flex items-center gap-1.5">
+            <div class="flex items-center gap-1.5 flex-wrap">
                 <span class="text-xs font-bold uppercase tracking-wider text-zinc-500 mr-1">Cakupan Data:</span>
                 <flux:button
                     size="sm"
@@ -53,34 +53,52 @@
                     :variant="$scope === 'chaperone' ? 'primary' : 'subtle'"
                     wire:click="$set('scope', 'chaperone')"
                 >
-                    Pembina Pendamping
+                    Pembina
+                </flux:button>
+                <flux:button
+                    size="sm"
+                    icon="identification"
+                    :variant="$scope === 'committee' ? 'primary' : 'subtle'"
+                    wire:click="$set('scope', 'committee')"
+                >
+                    Panitia
+                </flux:button>
+                <flux:button
+                    size="sm"
+                    icon="scale"
+                    :variant="$scope === 'judge' ? 'primary' : 'subtle'"
+                    wire:click="$set('scope', 'judge')"
+                >
+                    Dewan Juri
                 </flux:button>
             </div>
 
-            <div class="flex items-center gap-1.5">
-                <span class="text-xs font-bold uppercase tracking-wider text-zinc-500 mr-1">Golongan:</span>
-                <flux:button
-                    size="xs"
-                    :variant="$genderFilter === 'all' ? 'primary' : 'subtle'"
-                    wire:click="$set('genderFilter', 'all')"
-                >
-                    Semua
-                </flux:button>
-                <flux:button
-                    size="xs"
-                    :variant="$genderFilter === 'boys' ? 'primary' : 'subtle'"
-                    wire:click="$set('genderFilter', 'boys')"
-                >
-                    Putra
-                </flux:button>
-                <flux:button
-                    size="xs"
-                    :variant="$genderFilter === 'girls' ? 'primary' : 'subtle'"
-                    wire:click="$set('genderFilter', 'girls')"
-                >
-                    Putri
-                </flux:button>
-            </div>
+            @if(!in_array($scope, ['committee', 'judge'], true))
+                <div class="flex items-center gap-1.5">
+                    <span class="text-xs font-bold uppercase tracking-wider text-zinc-500 mr-1">Golongan:</span>
+                    <flux:button
+                        size="xs"
+                        :variant="$genderFilter === 'all' ? 'primary' : 'subtle'"
+                        wire:click="$set('genderFilter', 'all')"
+                    >
+                        Semua
+                    </flux:button>
+                    <flux:button
+                        size="xs"
+                        :variant="$genderFilter === 'boys' ? 'primary' : 'subtle'"
+                        wire:click="$set('genderFilter', 'boys')"
+                    >
+                        Putra
+                    </flux:button>
+                    <flux:button
+                        size="xs"
+                        :variant="$genderFilter === 'girls' ? 'primary' : 'subtle'"
+                        wire:click="$set('genderFilter', 'girls')"
+                    >
+                        Putri
+                    </flux:button>
+                </div>
+            @endif
         </div>
 
         {{-- Baris 2: Filter Sesi & Pencarian --}}
@@ -91,7 +109,7 @@
                 <input
                     type="text"
                     wire:model.live.debounce.300ms="search"
-                    placeholder="Nama regu, NPP, sekolah..."
+                    placeholder="{{ $scope === 'committee' ? 'Nama panitia, jabatan, ID...' : ($scope === 'judge' ? 'Nama juri, instansi, ID...' : ($scope === 'patrol' ? 'Nama regu, NPP, pangkalan...' : 'Nama peserta/pembina, ID, pangkalan...')) }}"
                     class="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-900 focus:border-emerald-500 focus:bg-white focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                 >
             </div>
@@ -204,12 +222,12 @@
 
                         {{-- Kolom Sticky: NPP / ID --}}
                         <th class="py-3 px-3 text-center w-20 sticky left-10 z-20 bg-zinc-50 dark:bg-zinc-800">
-                            {{ $scope === 'patrol' ? 'NPP' : 'ID / No' }}
+                            {{ $scope === 'patrol' ? 'NPP' : ($scope === 'participant' ? 'ID Peserta' : ($scope === 'chaperone' ? 'ID Pembina' : ($scope === 'committee' ? 'ID Panitia' : 'ID Juri'))) }}
                         </th>
 
                         {{-- Kolom Sticky: Nama Entitas & Pangkalan --}}
                         <th class="py-3 px-4 min-w-[200px] sticky left-30 z-20 bg-zinc-50 dark:bg-zinc-800 border-r border-zinc-200 dark:border-zinc-800 shadow-xs">
-                            {{ $scope === 'patrol' ? 'Regu & Pangkalan' : ($scope === 'participant' ? 'Peserta & Regu' : 'Pembina & Sekolah') }}
+                            {{ $scope === 'patrol' ? 'Regu & Pangkalan' : ($scope === 'participant' ? 'Peserta & Regu' : ($scope === 'chaperone' ? 'Pembina & Sekolah' : ($scope === 'committee' ? 'Panitia & Jabatan' : 'Dewan Juri & Instansi'))) }}
                         </th>
 
                         {{-- Kolom Sesi Presensi --}}
@@ -271,9 +289,17 @@
                                     <span class="font-mono text-[10px] font-bold text-zinc-600 dark:text-zinc-400">
                                         {{ $entity->id_number ?: $entity->scout_id ?: '-' }}
                                     </span>
-                                @else
+                                @elseif($scope === 'chaperone')
                                     <span class="font-mono text-[10px] font-bold text-zinc-600 dark:text-zinc-400">
                                         {{ $entity->id_number ?: '-' }}
+                                    </span>
+                                @elseif($scope === 'committee')
+                                    <span class="font-mono text-[10px] font-bold text-purple-700 dark:text-purple-400">
+                                        {{ $entity->id_number ?: $entity->username }}
+                                    </span>
+                                @else
+                                    <span class="font-mono text-[10px] font-bold text-amber-700 dark:text-amber-400">
+                                        {{ $entity->id_number ?: $entity->username }}
                                     </span>
                                 @endif
                             </td>
@@ -297,12 +323,38 @@
                                     <div class="text-[11px] text-zinc-500 mt-0.5 truncate max-w-[200px]" title="{{ $entity->patrol?->patrol_name }}">
                                         {{ $entity->patrol?->patrol_name }} • {{ $entity->patrol?->scoutGroup?->school_name }}
                                     </div>
-                                @else
+                                @elseif($scope === 'chaperone')
                                     <div class="font-bold text-zinc-900 dark:text-zinc-100">
                                         {{ $entity->full_name }}
                                     </div>
                                     <div class="text-[11px] text-zinc-500 mt-0.5 truncate max-w-[200px]" title="{{ $entity->scoutGroup?->school_name }}">
                                         {{ $entity->scoutGroup?->school_name }}
+                                    </div>
+                                @elseif($scope === 'committee')
+                                    <div class="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                                        <span>{{ $entity->name }}</span>
+                                        <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300">
+                                            Panitia
+                                        </span>
+                                    </div>
+                                    <div class="text-[11px] text-zinc-500 mt-0.5 truncate max-w-[220px]" title="{{ $entity->committee_position ?: $entity->position ?: 'Panitia Pelaksana' }}">
+                                        {{ $entity->committee_position ?: $entity->position ?: 'Panitia Pelaksana' }}
+                                        @if($entity->institution)
+                                            • {{ $entity->institution }}
+                                        @endif
+                                    </div>
+                                @else
+                                    <div class="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                                        <span>{{ $entity->name }}</span>
+                                        <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                                            Juri
+                                        </span>
+                                    </div>
+                                    <div class="text-[11px] text-zinc-500 mt-0.5 truncate max-w-[220px]" title="{{ $entity->position ?: 'Dewan Juri LT III' }}">
+                                        {{ $entity->position ?: 'Dewan Juri' }}
+                                        @if($entity->institution)
+                                            • {{ $entity->institution }}
+                                        @endif
                                     </div>
                                 @endif
                             </td>

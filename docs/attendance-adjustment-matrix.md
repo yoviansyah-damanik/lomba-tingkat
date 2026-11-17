@@ -13,8 +13,10 @@ Modul penyesuaian data kehadiran tertinggal dalam format matriks (cross-tabulati
   - `Per Regu` (Patrol) — default.
   - `Per Peserta` (Individual Participant).
   - `Pembina Pendamping` (Chaperone).
+  - `Panitia` (Committee / Aparatur Pelaksana).
+  - `Dewan Juri` (Judges / Penilai Lomba).
 - **Kolom (Sesi Presensi)**:
-  - Menampilkan seluruh sesi presensi lomba & umum dengan header dinamis (tipe sesi, tanggal, dan menu tindakan kolom).
+  - Menampilkan seluruh sesi presensi lomba & umum dengan header dinamis (tipe sesi, tanggal, dan menu tindakan kolom). Otomatis menyesuaikan sesi relevan saat beralih ke cakupan Panitia / Juri.
 - **Sel (Perpotongan Baris & Kolom)**:
   - `H` (Hadir - Hijau)
   - `T` (Terlambat - Kuning/Amber)

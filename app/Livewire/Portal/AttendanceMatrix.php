@@ -2,11 +2,13 @@
 
 namespace App\Livewire\Portal;
 
+use App\Enums\RoleEnum;
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
 use App\Models\Chaperone;
 use App\Models\Participant;
 use App\Models\Patrol;
+use App\Models\User;
 use App\Services\AttendanceAdjustmentService;
 use Carbon\Carbon;
 use Flux\Flux;
@@ -29,7 +31,7 @@ class AttendanceMatrix extends Component
     use WithPagination;
 
     #[Url(as: 'scope')]
-    public string $scope = 'patrol'; // 'patrol', 'participant', 'chaperone'
+    public string $scope = 'patrol'; // 'patrol', 'participant', 'chaperone', 'committee', 'judge'
 
     #[Url(as: 'q')]
     public string $search = '';
@@ -132,6 +134,22 @@ class AttendanceMatrix extends Component
     {
         return AttendanceSession::query()
             ->with(['schedule.competition'])
+            ->when($this->scope === 'committee', function ($q) {
+                if ($this->sessionTypeFilter === 'all') {
+                    $q->where(function ($sub) {
+                        $sub->where('session_type', 'committee')
+                            ->orWhere('is_competition', false);
+                    });
+                }
+            })
+            ->when($this->scope === 'judge', function ($q) {
+                if ($this->sessionTypeFilter === 'all') {
+                    $q->where(function ($sub) {
+                        $sub->where('session_type', 'judge')
+                            ->orWhere('is_competition', true);
+                    });
+                }
+            })
             ->when($this->sessionTypeFilter === 'competition', fn ($q) => $q->where('is_competition', true))
             ->when($this->sessionTypeFilter === 'general', fn ($q) => $q->where('is_competition', false))
             ->when($this->sessionDateFilter !== 'all', function ($q) {
@@ -211,20 +229,55 @@ class AttendanceMatrix extends Component
                 ->paginate($this->perPage);
         }
 
-        // Default: chaperone
-        return Chaperone::query()
-            ->with('scoutGroup')
-            ->when($this->genderFilter === 'boys', fn ($q) => $q->where('gender', 'male'))
-            ->when($this->genderFilter === 'girls', fn ($q) => $q->where('gender', 'female'))
+        if ($this->scope === 'chaperone') {
+            return Chaperone::query()
+                ->with('scoutGroup')
+                ->when($this->genderFilter === 'boys', fn ($q) => $q->where('gender', 'male'))
+                ->when($this->genderFilter === 'girls', fn ($q) => $q->where('gender', 'female'))
+                ->when($term !== '', function ($q) use ($term) {
+                    $q->where(function ($sub) use ($term) {
+                        $sub->where('full_name', 'like', "%{$term}%")
+                            ->orWhere('id_number', 'like', "%{$term}%")
+                            ->orWhere('scout_id', 'like', "%{$term}%")
+                            ->orWhereHas('scoutGroup', fn ($sg) => $sg->where('school_name', 'like', "%{$term}%"));
+                    });
+                })
+                ->orderBy('full_name')
+                ->paginate($this->perPage);
+        }
+
+        if ($this->scope === 'committee') {
+            return User::query()
+                ->whereHas('roles', fn ($q) => $q->where('name', RoleEnum::Committee->value))
+                ->where('is_active', true)
+                ->when($term !== '', function ($q) use ($term) {
+                    $q->where(function ($sub) use ($term) {
+                        $sub->where('name', 'like', "%{$term}%")
+                            ->orWhere('username', 'like', "%{$term}%")
+                            ->orWhere('id_number', 'like', "%{$term}%")
+                            ->orWhere('institution', 'like', "%{$term}%")
+                            ->orWhere('position', 'like', "%{$term}%")
+                            ->orWhere('committee_position', 'like', "%{$term}%");
+                    });
+                })
+                ->orderBy('name')
+                ->paginate($this->perPage);
+        }
+
+        // Default: judge
+        return User::query()
+            ->whereHas('roles', fn ($q) => $q->where('name', RoleEnum::Judge->value))
+            ->where('is_active', true)
             ->when($term !== '', function ($q) use ($term) {
                 $q->where(function ($sub) use ($term) {
-                    $sub->where('full_name', 'like', "%{$term}%")
+                    $sub->where('name', 'like', "%{$term}%")
+                        ->orWhere('username', 'like', "%{$term}%")
                         ->orWhere('id_number', 'like', "%{$term}%")
-                        ->orWhere('scout_id', 'like', "%{$term}%")
-                        ->orWhereHas('scoutGroup', fn ($sg) => $sg->where('school_name', 'like', "%{$term}%"));
+                        ->orWhere('institution', 'like', "%{$term}%")
+                        ->orWhere('position', 'like', "%{$term}%");
                 });
             })
-            ->orderBy('full_name')
+            ->orderBy('name')
             ->paginate($this->perPage);
     }
 
@@ -238,8 +291,9 @@ class AttendanceMatrix extends Component
     {
         $sessionIds = $this->sessions->pluck('id')->all();
         $entityIds = $this->entities->pluck('id')->all();
+        $queryScope = in_array($this->scope, ['committee', 'judge'], true) ? 'user' : $this->scope;
 
-        return app(AttendanceAdjustmentService::class)->getMatrixMap($sessionIds, $this->scope, $entityIds);
+        return app(AttendanceAdjustmentService::class)->getMatrixMap($sessionIds, $queryScope, $entityIds);
     }
 
     /**
@@ -252,7 +306,7 @@ class AttendanceMatrix extends Component
         $this->cellEntityId = $entityId;
         $this->cellSessionId = $sessionId;
         $this->cellSessionTitle = $session->title;
-        $this->cellEntityType = $this->scope;
+        $this->cellEntityType = in_array($this->scope, ['committee', 'judge'], true) ? 'user' : $this->scope;
 
         if ($this->scope === 'patrol') {
             $patrol = Patrol::with('scoutGroup')->findOrFail($entityId);
@@ -262,10 +316,22 @@ class AttendanceMatrix extends Component
             $participant = Participant::with('patrol.scoutGroup')->findOrFail($entityId);
             $this->cellEntityName = $participant->full_name;
             $this->cellEntityInfo = "{$participant->patrol?->patrol_name} • {$participant->patrol?->scoutGroup?->school_name}";
-        } else {
+        } elseif ($this->scope === 'chaperone') {
             $chaperone = Chaperone::with('scoutGroup')->findOrFail($entityId);
             $this->cellEntityName = $chaperone->full_name;
             $this->cellEntityInfo = "Pembina Pendamping • {$chaperone->scoutGroup?->school_name}";
+        } elseif ($this->scope === 'committee') {
+            $user = User::findOrFail($entityId);
+            $this->cellEntityName = $user->name;
+            $pos = $user->committee_position ?: $user->position ?: 'Panitia Pelaksana';
+            $inst = $user->institution ? " • {$user->institution}" : '';
+            $this->cellEntityInfo = "Panitia ({$pos}){$inst} • ID: {$user->id_number}";
+        } else {
+            $user = User::findOrFail($entityId);
+            $this->cellEntityName = $user->name;
+            $pos = $user->position ?: 'Dewan Juri';
+            $inst = $user->institution ? " • {$user->institution}" : '';
+            $this->cellEntityInfo = "Dewan Juri ({$pos}){$inst} • ID: {$user->id_number}";
         }
 
         $key = "{$entityId}_{$sessionId}";
@@ -344,10 +410,11 @@ class AttendanceMatrix extends Component
     public function quickSetStatus(string $entityId, string $sessionId, string $status, AttendanceAdjustmentService $adjustmentService): void
     {
         $session = AttendanceSession::findOrFail($sessionId);
+        $entityType = in_array($this->scope, ['committee', 'judge'], true) ? 'user' : $this->scope;
 
         $adjustmentService->adjust(
             session: $session,
-            entityType: $this->scope,
+            entityType: $entityType,
             entityId: $entityId,
             status: $status,
             admin: auth()->user(),
@@ -390,10 +457,11 @@ class AttendanceMatrix extends Component
         ]);
 
         $session = AttendanceSession::findOrFail($this->batchTargetSessionId);
+        $entityType = in_array($this->scope, ['committee', 'judge'], true) ? 'user' : $this->scope;
 
         $affected = $adjustmentService->batchAdjust(
             session: $session,
-            entityType: $this->scope,
+            entityType: $entityType,
             entityIds: $this->selectedEntityIds,
             status: $this->batchStatus,
             admin: auth()->user(),
@@ -428,11 +496,14 @@ class AttendanceMatrix extends Component
     public function executeSessionBulkAction(AttendanceAdjustmentService $adjustmentService): void
     {
         $session = AttendanceSession::findOrFail($this->sessionBulkTargetSessionId);
+        $entityType = in_array($this->scope, ['committee', 'judge'], true) ? 'user' : $this->scope;
 
         $query = match ($this->scope) {
             'patrol' => Patrol::query()->when($this->genderFilter !== 'all', fn ($q) => $q->where('gender_category', $this->genderFilter)),
             'participant' => Participant::query()->when($this->genderFilter === 'boys', fn ($q) => $q->whereHas('patrol', fn ($pq) => $pq->where('gender_category', 'boys')))->when($this->genderFilter === 'girls', fn ($q) => $q->whereHas('patrol', fn ($pq) => $pq->where('gender_category', 'girls'))),
-            default => Chaperone::query()->when($this->genderFilter === 'boys', fn ($q) => $q->where('gender', 'male'))->when($this->genderFilter === 'girls', fn ($q) => $q->where('gender', 'female')),
+            'chaperone' => Chaperone::query()->when($this->genderFilter === 'boys', fn ($q) => $q->where('gender', 'male'))->when($this->genderFilter === 'girls', fn ($q) => $q->where('gender', 'female')),
+            'committee' => User::query()->whereHas('roles', fn ($q) => $q->where('name', RoleEnum::Committee->value))->where('is_active', true),
+            'judge' => User::query()->whereHas('roles', fn ($q) => $q->where('name', RoleEnum::Judge->value))->where('is_active', true),
         };
 
         $allEntityIds = $query->pluck('id')->all();
@@ -443,7 +514,8 @@ class AttendanceMatrix extends Component
                 ->pluck(match ($this->scope) {
                     'patrol' => 'patrol_id',
                     'participant' => 'participant_id',
-                    default => 'chaperone_id',
+                    'chaperone' => 'chaperone_id',
+                    'committee', 'judge' => 'user_id',
                 })
                 ->filter()
                 ->unique()
@@ -456,7 +528,7 @@ class AttendanceMatrix extends Component
 
         $affected = $adjustmentService->batchAdjust(
             session: $session,
-            entityType: $this->scope,
+            entityType: $entityType,
             entityIds: $targetEntityIds,
             status: $this->sessionBulkStatus,
             admin: auth()->user(),
