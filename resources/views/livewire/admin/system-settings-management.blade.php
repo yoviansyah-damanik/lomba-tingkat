@@ -162,6 +162,63 @@
             </div>
         </div>
 
+        {{-- Card: Waktu Buka & Tutup Kuisioner Panitia/Juri --}}
+        <div class="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900 space-y-4">
+            <div class="border-b border-zinc-100 dark:border-zinc-800 pb-3 flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                        <flux:icon name="clock" class="size-4 text-purple-600 dark:text-purple-400" />
+                        Jadwal Waktu Buka &amp; Tutup Kuisioner Aplikasi
+                    </h3>
+                    <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                        Konfigurasi jendela waktu bagi Panitia Pelaksana dan Dewan Juri untuk mengisi evaluasi sistem.
+                    </p>
+                </div>
+                <flux:button href="{{ route('admin.questionnaires.recap') }}" size="xs" variant="outline" icon="chart-bar-square">
+                    Buka Rekapitulasi
+                </flux:button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                        Waktu Mulai Buka Kuisioner (Opsional):
+                    </label>
+                    <input
+                        type="datetime-local"
+                        wire:model="questionnaire_start_at"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                    />
+                    <span class="text-[10px] text-zinc-400 block mt-1">Kosongkan jika kuisioner dapat langsung diisi tanpa menunggu waktu mulai.</span>
+                    @error('questionnaire_start_at') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                        Batas Waktu Penutupan (Deadline) Kuisioner:
+                    </label>
+                    <input
+                        type="datetime-local"
+                        wire:model="questionnaire_end_at"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                    />
+                    <span class="text-[10px] text-zinc-400 block mt-1">Setelah batas waktu ini, form otomatis terkunci dalam mode baca saja.</span>
+                    @error('questionnaire_end_at') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
+                </div>
+            </div>
+
+            <div class="pt-2 flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800">
+                <div>
+                    <strong class="text-xs text-zinc-900 dark:text-zinc-100 block">Status Pengisian Kuisioner</strong>
+                    <span class="text-[11px] text-zinc-400">Jika dimatikan, halaman kuisioner ditutup untuk seluruh Panitia &amp; Dewan Juri.</span>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" wire:model="is_questionnaire_open" class="sr-only peer" />
+                    <div class="w-11 h-6 bg-zinc-200 peer-focus:outline-hidden rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-zinc-600 peer-checked:bg-purple-600"></div>
+                </label>
+            </div>
+        </div>
+
         {{-- Card: Biaya Pendaftaran & Rekening Pembayaran --}}
         <div class="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900 space-y-4">
             <div class="border-b border-zinc-100 dark:border-zinc-800 pb-3 flex items-center justify-between">

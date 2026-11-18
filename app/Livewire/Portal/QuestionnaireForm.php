@@ -126,6 +126,11 @@ class QuestionnaireForm extends Component
      */
     public function setRating(string $field, int $value): void
     {
+        $user = auth()->user();
+        if (! $user?->isAdmin() && ! $user?->isSuperadmin() && ! ($this->event?->isQuestionnaireOpen() ?? true)) {
+            return;
+        }
+
         if (! in_array($field, ['rating_overall', 'rating_ui_ux', 'rating_features', 'rating_speed', 'rating_transparency'], true)) {
             return;
         }
@@ -142,6 +147,14 @@ class QuestionnaireForm extends Component
     {
         $user = auth()->user();
         if (! $user || ! $this->event) {
+            return;
+        }
+
+        if (! $user->isAdmin() && ! $user->isSuperadmin() && ! $this->event->isQuestionnaireOpen()) {
+            $msg = $this->event->questionnaireStatus()['message'] ?? 'Pengisian kuisioner saat ini sedang ditutup.';
+            Flux::toast(variant: 'danger', heading: 'Kuisioner Ditutup', text: $msg);
+            $this->addError('general', $msg);
+
             return;
         }
 
@@ -198,6 +211,8 @@ class QuestionnaireForm extends Component
     public function render()
     {
         return view('livewire.portal.questionnaire-form', [
+            'isOpen' => (bool) ($this->event?->isQuestionnaireOpen() ?? true),
+            'status' => $this->event?->questionnaireStatus() ?? ['status' => 'open', 'message' => ''],
             'devices' => QuestionnaireResponse::DEVICES,
             'efficiencyLevels' => QuestionnaireResponse::EFFICIENCY_LEVELS,
             'obstacles' => QuestionnaireResponse::OBSTACLES,

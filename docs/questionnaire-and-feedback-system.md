@@ -22,3 +22,18 @@ Official evaluation and user feedback module for Committee and Judges on applica
 - Table: `questionnaire_responses`
 - Key Columns: `user_id`, `event_id`, `role`, `duty_assignment`, `rating_overall`, `rating_ui_ux`, `rating_features`, `rating_speed`, `rating_transparency`, `device_used`, `efficiency_level`, `main_obstacle`, `most_useful_feature`, `rubric_clarity`, `future_readiness`, `recommended_features`, `experience_feedback`, `general_suggestions`.
 - Unique constraint: `['user_id', 'event_id']`.
+
+## 3. Konfigurasi Jadwal Buka & Tutup Kuisioner
+1. **Kolom Database (`events`)**:
+   - `is_questionnaire_open` (boolean, default true): Saklar manual aktif/nonaktif kuisioner.
+   - `questionnaire_start_at` (timestamp, nullable): Waktu mulai pengisian dibuka.
+   - `questionnaire_end_at` (timestamp, nullable): Batas waktu penutupan (deadline) kuisioner.
+2. **Pengaturan di Admin**:
+   - Dapat diatur langsung pada halaman rekapitulasi kuisioner (`/admin/questionnaires`) melalui tombol **"Atur Jadwal Buka & Tutup"** (modal interaktif).
+   - Dapat diatur secara terpusat pada halaman Pengaturan Sistem (`/admin/system-settings`).
+3. **Perilaku Form Pengguna (`/kuisioner`)**:
+   - **Belum Dibuka**: Menampilkan notifikasi waktu buka dan tombol kembali ke dasbor.
+   - **Telah Ditutup**:
+     - Responden yang sudah pernah mengisi tetap dapat melihat jawaban sebelumnya dalam mode baca saja (read-only) dengan penanda formulir terkunci.
+     - Responden yang belum pernah mengisi mendapat pemberitahuan bahwa periode telah berakhir.
+     - Pengiriman baru ditolak di sisi server (`Event::isQuestionnaireOpen()`).

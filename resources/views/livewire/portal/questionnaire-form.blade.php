@@ -20,6 +20,30 @@
         </div>
     </div>
 
+    {{-- Banner Notifikasi Jika Periode Kuisioner Belum Dibuka / Ditutup --}}
+    @if (! $isOpen && ! auth()->user()?->isAdmin() && ! auth()->user()?->isSuperadmin())
+        <div class="rounded-2xl border border-amber-300 bg-amber-50/90 p-4 text-xs text-amber-950 shadow-xs dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200">
+            <div class="flex items-start gap-3">
+                <div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-600 text-white">
+                    <flux:icon name="lock-closed" class="size-5" />
+                </div>
+                <div class="flex-1 space-y-1">
+                    <h3 class="font-bold text-sm text-amber-900 dark:text-amber-100">
+                        {{ ($status['status'] ?? '') === 'not_started' ? 'Pengisian Kuisioner Belum Dibuka' : 'Periode Kuisioner Telah Berakhir' }}
+                    </h3>
+                    <p class="text-amber-900/90 dark:text-amber-200/90 leading-relaxed">
+                        {{ $status['message'] ?? 'Pengisian kuisioner saat ini tidak dibuka.' }}
+                    </p>
+                    @if ($hasSubmitted)
+                        <p class="text-[11px] font-semibold text-amber-800 dark:text-amber-300">
+                            Anda tetap dapat melihat tanggapan yang telah Anda kirimkan sebelumnya di bawah ini (mode baca saja).
+                        </p>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
     {{-- Banner Notifikasi Status Pengisian --}}
     @if ($hasSubmitted)
         <div class="rounded-2xl border border-emerald-300 bg-emerald-50/70 p-4 text-xs text-emerald-950 shadow-xs dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
@@ -46,7 +70,28 @@
         </div>
     @endif
 
-    <form wire:submit="submit" class="space-y-6">
+    @if (! $isOpen && ! auth()->user()?->isAdmin() && ! auth()->user()?->isSuperadmin() && ! $hasSubmitted)
+        {{-- Tampilan Terkunci Jika Belum Pernah Mengisi & Periode Ditutup --}}
+        <div class="rounded-2xl border border-zinc-200 bg-white p-8 text-center dark:border-zinc-800 dark:bg-zinc-900 shadow-sm space-y-4">
+            <div class="mx-auto flex size-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:bg-amber-400/10 dark:text-amber-400">
+                <flux:icon name="clock" class="size-8" />
+            </div>
+            <div class="space-y-1">
+                <h3 class="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                    {{ ($status['status'] ?? '') === 'not_started' ? 'Pengisian Kuisioner Belum Dibuka' : 'Periode Kuisioner Telah Berakhir' }}
+                </h3>
+                <p class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 max-w-md mx-auto leading-relaxed">
+                    {{ $status['message'] ?? 'Pengisian kuisioner saat ini tidak dapat diakses.' }}
+                </p>
+            </div>
+            <div class="pt-2">
+                <flux:button href="{{ route('dashboard') }}" variant="outline" icon="arrow-left">
+                    Kembali ke Dasbor
+                </flux:button>
+            </div>
+        </div>
+    @else
+        <form wire:submit="submit" class="space-y-6">
 
         {{-- Card 1: Profil Responden --}}
         <section class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 dark:border-zinc-800 dark:bg-zinc-900 space-y-4">
@@ -322,9 +367,17 @@
             <span class="text-xs text-zinc-500 dark:text-zinc-400">
                 Seluruh tanggapan Anda bersifat rahasia dan dipakai untuk perbaikan sistem.
             </span>
-            <flux:button type="submit" variant="primary" icon="paper-airplane" class="bg-amber-600 hover:bg-amber-700 text-white font-bold">
-                {{ $hasSubmitted ? 'Simpan Pembaruan Kuisioner' : 'Kirim Tanggapan Kuisioner' }}
-            </flux:button>
+            @if ($isOpen || auth()->user()?->isAdmin() || auth()->user()?->isSuperadmin())
+                <flux:button type="submit" variant="primary" icon="paper-airplane" class="bg-amber-600 hover:bg-amber-700 text-white font-bold">
+                    {{ $hasSubmitted ? 'Simpan Pembaruan Kuisioner' : 'Kirim Tanggapan Kuisioner' }}
+                </flux:button>
+            @else
+                <div class="flex items-center gap-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                    <flux:icon name="lock-closed" class="size-4 text-amber-500" />
+                    <span>Form Terkunci (Periode Kuisioner Ditutup)</span>
+                </div>
+            @endif
         </div>
     </form>
+@endif
 </div>

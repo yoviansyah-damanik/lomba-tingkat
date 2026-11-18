@@ -19,11 +19,46 @@
             </p>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+            <flux:button wire:click="openPeriodModal" icon="clock" variant="primary">
+                Atur Jadwal Buka &amp; Tutup
+            </flux:button>
             <flux:button href="{{ route('questionnaire.index') }}" target="_blank" icon="eye" variant="outline">
-                Buka Form Kuisioner
+                Pratinjau Form
             </flux:button>
         </div>
+    </div>
+
+    {{-- Banner Status Periode Kuisioner --}}
+    @php
+        $periodStatus = $event?->questionnaireStatus() ?? ['status' => 'open', 'message' => ''];
+        $isOpen = $event?->isQuestionnaireOpen() ?? true;
+    @endphp
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border p-4 sm:p-5 {{ $isOpen ? 'border-emerald-300 bg-emerald-50/70 text-emerald-950 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-100' : 'border-zinc-300 bg-zinc-50 text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100' }}">
+        <div class="flex items-center gap-3">
+            <div class="flex size-10 shrink-0 items-center justify-center rounded-xl {{ $isOpen ? 'bg-emerald-500 text-white' : 'bg-zinc-400 text-white dark:bg-zinc-700' }} shadow-xs">
+                <flux:icon name="{{ $isOpen ? 'check-circle' : 'lock-closed' }}" class="size-6" />
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider {{ $isOpen ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200' : 'bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300' }}">
+                        {{ $isOpen ? 'Status: Sedang Dibuka' : 'Status: Ditutup / Nonaktif' }}
+                    </span>
+                    <span class="text-xs font-semibold">
+                        {{ $periodStatus['message'] }}
+                    </span>
+                </div>
+                <div class="mt-1 flex flex-wrap items-center gap-3 text-xs text-zinc-600 dark:text-zinc-400">
+                    <span>Mulai: <strong>{{ $event?->questionnaire_start_at ? $event->questionnaire_start_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i') . ' WIB' : 'Langsung (Tanpa Batas Mulai)' }}</strong></span>
+                    <span>&bull;</span>
+                    <span>Selesai: <strong>{{ $event?->questionnaire_end_at ? $event->questionnaire_end_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i') . ' WIB' : 'Tanpa Batas Akhir' }}</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <flux:button wire:click="openPeriodModal" size="sm" variant="outline" icon="adjustments-horizontal" class="shrink-0 self-start sm:self-auto">
+            Ubah Jadwal
+        </flux:button>
     </div>
 
     {{-- Ringkasan Metrik KPI --}}
@@ -354,6 +389,87 @@
                 <div class="flex justify-end pt-2 border-t border-zinc-100 dark:border-zinc-800">
                     <flux:button wire:click="closeDetail" variant="subtle" icon="x-mark">
                         Tutup Rincian
+                    </flux:button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Modal Pengaturan Waktu Buka & Tutup Kuisioner --}}
+    @if ($showPeriodModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-xs">
+            <div class="w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 space-y-5">
+                <div class="flex items-center justify-between border-b border-zinc-100 pb-3 dark:border-zinc-800">
+                    <div class="flex items-center gap-2.5">
+                        <div class="flex size-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
+                            <flux:icon name="clock" class="size-5" />
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                                Jadwal Buka &amp; Tutup Kuisioner
+                            </h3>
+                            <p class="text-xs text-zinc-500 dark:text-zinc-400">
+                                Atur rentang waktu akses bagi Panitia Pelaksana &amp; Dewan Juri
+                            </p>
+                        </div>
+                    </div>
+                    <button wire:click="closePeriodModal" type="button" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                        <flux:icon name="x-mark" class="size-5" />
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    {{-- Saklar Buka / Tutup Manual --}}
+                    <div class="flex items-center justify-between rounded-xl border border-zinc-200 p-3.5 dark:border-zinc-800">
+                        <div>
+                            <label class="text-xs font-bold text-zinc-900 dark:text-zinc-100 block">
+                                Status Buka Kuisioner
+                            </label>
+                            <span class="text-[11px] text-zinc-500 dark:text-zinc-400 block mt-0.5">
+                                Aktifkan agar form dapat diakses aparatur.
+                            </span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" wire:model="is_questionnaire_open" class="sr-only peer">
+                            <div class="w-11 h-6 bg-zinc-200 peer-focus:outline-hidden rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-zinc-600 peer-checked:bg-amber-600"></div>
+                        </label>
+                    </div>
+
+                    {{-- Waktu Mulai Buka --}}
+                    <div>
+                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                            Waktu Mulai Buka Kuisioner (Opsional):
+                        </label>
+                        <input
+                            type="datetime-local"
+                            wire:model="questionnaire_start_at"
+                            class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                        />
+                        <p class="mt-1 text-[11px] text-zinc-500">Kosongkan jika kuisioner dapat langsung dibuka tanpa menunggu waktu mulai.</p>
+                        @error('questionnaire_start_at') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
+                    </div>
+
+                    {{-- Batas Waktu Penutupan --}}
+                    <div>
+                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                            Batas Waktu Penutupan (Deadline) Kuisioner:
+                        </label>
+                        <input
+                            type="datetime-local"
+                            wire:model="questionnaire_end_at"
+                            class="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-900 focus:border-amber-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                        />
+                        <p class="mt-1 text-[11px] text-zinc-500">Setelah batas waktu ini, form otomatis terkunci dalam mode baca saja.</p>
+                        @error('questionnaire_end_at') <span class="text-xs text-rose-500">{{ $message }}</span> @enderror
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                    <flux:button wire:click="closePeriodModal" variant="subtle" icon="x-mark">
+                        Batal
+                    </flux:button>
+                    <flux:button wire:click="savePeriodSettings" variant="primary" icon="check">
+                        Simpan Pengaturan
                     </flux:button>
                 </div>
             </div>

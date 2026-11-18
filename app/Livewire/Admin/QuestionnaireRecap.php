@@ -4,6 +4,8 @@ namespace App\Livewire\Admin;
 
 use App\Models\Event;
 use App\Models\QuestionnaireResponse;
+use Flux\Flux;
+use Illuminate\Support\Carbon;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -20,6 +22,15 @@ class QuestionnaireRecap extends Component
     use WithPagination;
 
     public ?Event $event = null;
+
+    /** Konfigurasi Periode Kuisioner */
+    public bool $is_questionnaire_open = true;
+
+    public ?string $questionnaire_start_at = null;
+
+    public ?string $questionnaire_end_at = null;
+
+    public bool $showPeriodModal = false;
 
     /** Filter peran responden: all, committee, judge */
     public string $roleFilter = 'all';
@@ -40,6 +51,61 @@ class QuestionnaireRecap extends Component
         }
 
         $this->event = Event::where('is_active', true)->first() ?? Event::first();
+        if ($this->event) {
+            $this->is_questionnaire_open = (bool) ($this->event->is_questionnaire_open ?? true);
+            $this->questionnaire_start_at = $this->event->questionnaire_start_at?->timezone('Asia/Jakarta')->format('Y-m-d\TH:i');
+            $this->questionnaire_end_at = $this->event->questionnaire_end_at?->timezone('Asia/Jakarta')->format('Y-m-d\TH:i');
+        }
+    }
+
+    /**
+     * Buka modal pengaturan waktu buka dan tutup kuisioner
+     */
+    public function openPeriodModal(): void
+    {
+        if ($this->event) {
+            $this->is_questionnaire_open = (bool) ($this->event->is_questionnaire_open ?? true);
+            $this->questionnaire_start_at = $this->event->questionnaire_start_at?->timezone('Asia/Jakarta')->format('Y-m-d\TH:i');
+            $this->questionnaire_end_at = $this->event->questionnaire_end_at?->timezone('Asia/Jakarta')->format('Y-m-d\TH:i');
+        }
+        $this->showPeriodModal = true;
+    }
+
+    /**
+     * Tutup modal pengaturan periode kuisioner
+     */
+    public function closePeriodModal(): void
+    {
+        $this->showPeriodModal = false;
+    }
+
+    /**
+     * Simpan pengaturan waktu buka dan tutup kuisioner
+     */
+    public function savePeriodSettings(): void
+    {
+        if (! $this->event) {
+            return;
+        }
+
+        $this->validate([
+            'is_questionnaire_open' => ['boolean'],
+            'questionnaire_start_at' => ['nullable', 'date'],
+            'questionnaire_end_at' => ['nullable', 'date', 'after_or_equal:questionnaire_start_at'],
+        ], [
+            'questionnaire_end_at.after_or_equal' => 'Batas waktu penutupan harus setelah atau sama dengan waktu mulai buka.',
+        ]);
+
+        $this->event->update([
+            'is_questionnaire_open' => (bool) $this->is_questionnaire_open,
+            'questionnaire_start_at' => $this->questionnaire_start_at ? Carbon::parse($this->questionnaire_start_at, 'Asia/Jakarta') : null,
+            'questionnaire_end_at' => $this->questionnaire_end_at ? Carbon::parse($this->questionnaire_end_at, 'Asia/Jakarta') : null,
+        ]);
+
+        $this->event->refresh();
+        $this->showPeriodModal = false;
+
+        Flux::toast(variant: 'success', heading: 'Jadwal Kuisioner Disimpan', text: 'Konfigurasi waktu buka dan tutup kuisioner berhasil diperbarui.');
     }
 
     public function updatingSearch(): void

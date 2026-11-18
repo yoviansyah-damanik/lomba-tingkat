@@ -232,4 +232,99 @@ class QuestionnaireTest extends TestCase
             ->get(route('admin.questionnaires.recap'))
             ->assertForbidden();
     }
+
+    /**
+     * Memastikan administrator dapat mengatur jadwal waktu buka dan tutup kuisioner
+     */
+    public function test_admin_can_configure_questionnaire_open_and_close_window(): void
+    {
+        $start = now()->addHour()->format('Y-m-d\TH:i');
+        $end = now()->addDays(2)->format('Y-m-d\TH:i');
+
+        Livewire::actingAs($this->admin)
+            ->test(QuestionnaireRecap::class)
+            ->call('openPeriodModal')
+            ->assertSet('showPeriodModal', true)
+            ->set('is_questionnaire_open', true)
+            ->set('questionnaire_start_at', $start)
+            ->set('questionnaire_end_at', $end)
+            ->call('savePeriodSettings')
+            ->assertHasNoErrors()
+            ->assertSet('showPeriodModal', false);
+
+        $this->event->refresh();
+        $this->assertTrue((bool) $this->event->is_questionnaire_open);
+        $this->assertNotNull($this->event->questionnaire_start_at);
+        $this->assertNotNull($this->event->questionnaire_end_at);
+    }
+
+    /**
+     * Memastikan kuisioner terkunci dan menolak pengiriman jika waktu telah ditutup
+     */
+    public function test_questionnaire_form_is_locked_when_outside_open_window(): void
+    {
+        // Set waktu penutupan di masa lalu
+        $this->event->update([
+            'is_questionnaire_open' => true,
+            'questionnaire_start_at' => now()->subDays(2),
+            'questionnaire_end_at' => now()->subHour(),
+        ]);
+
+        $this->assertFalse($this->event->isQuestionnaireOpen());
+
+        // Halaman form menampilkan informasi periode telah berakhir
+        $this->actingAs($this->committeeUser)
+            ->get(route('questionnaire.index'))
+            ->assertOk()
+            ->assertSee('Periode Kuisioner Telah Berakhir');
+
+        // Pengiriman via Livewire ditolak
+        Livewire::actingAs($this->committeeUser)
+            ->test(QuestionnaireForm::class)
+            ->set('duty_assignment', 'Seksi Lapangan')
+            ->set('rating_overall', 5)
+            ->call('submit')
+            ->assertHasErrors(['general']);
+
+        $this->assertDatabaseMissing('questionnaire_responses', [
+            'user_id' => $this->committeeUser->id,
+            'duty_assignment' => 'Seksi Lapangan',
+        ]);
+    }
+
+    /**
+     * Memastikan responden yang sudah pernah mengisi tetap dapat melihat jawabannya saat periode ditutup
+     */
+    public function test_user_who_already_submitted_can_view_responses_in_read_only_when_closed(): void
+    {
+        QuestionnaireResponse::create([
+            'user_id' => $this->judgeUser->id,
+            'event_id' => $this->event->id,
+            'role' => 'judge',
+            'duty_assignment' => 'Juri Semaphore',
+            'rating_overall' => 4,
+            'rating_ui_ux' => 4,
+            'rating_features' => 4,
+            'rating_speed' => 4,
+            'rating_transparency' => 4,
+            'device_used' => 'iphone',
+            'efficiency_level' => 'helpful',
+            'main_obstacle' => 'none',
+            'most_useful_feature' => 'scoring_cockpit',
+            'future_readiness' => 'mandatory',
+            'recommended_features' => 'Catatan juri tersimpan aman',
+        ]);
+
+        // Tutup kuisioner
+        $this->event->update([
+            'is_questionnaire_open' => false,
+        ]);
+
+        $this->actingAs($this->judgeUser)
+            ->get(route('questionnaire.index'))
+            ->assertOk()
+            ->assertSee('Periode Kuisioner Telah Berakhir')
+            ->assertSee('Catatan juri tersimpan aman')
+            ->assertSee('Form Terkunci (Periode Kuisioner Ditutup)');
+    }
 }

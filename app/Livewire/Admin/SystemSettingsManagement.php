@@ -36,6 +36,12 @@ class SystemSettingsManagement extends Component
 
     public bool $is_registration_open = true;
 
+    public ?string $questionnaire_start_at = null;
+
+    public ?string $questionnaire_end_at = null;
+
+    public bool $is_questionnaire_open = true;
+
     public string $contact_email = '';
 
     public string $contact_phone = '';
@@ -78,6 +84,9 @@ class SystemSettingsManagement extends Component
             'registration_start_at' => 'nullable|date',
             'registration_end_at' => 'nullable|date|after_or_equal:registration_start_at',
             'is_registration_open' => 'boolean',
+            'questionnaire_start_at' => 'nullable|date',
+            'questionnaire_end_at' => 'nullable|date|after_or_equal:questionnaire_start_at',
+            'is_questionnaire_open' => 'boolean',
             'contact_email' => 'nullable|email|max:150',
             'contact_phone' => 'nullable|string|max:30',
             'is_active' => 'boolean',
@@ -103,6 +112,7 @@ class SystemSettingsManagement extends Component
         'end_date.required' => 'Tanggal selesai kegiatan wajib ditentukan.',
         'end_date.after_or_equal' => 'Tanggal selesai harus sama atau setelah tanggal mulai.',
         'registration_end_at.after_or_equal' => 'Batas akhir registrasi harus setelah waktu mulai registrasi.',
+        'questionnaire_end_at.after_or_equal' => 'Batas akhir kuisioner harus setelah waktu mulai buka kuisioner.',
         'registration_fee_per_patrol.integer' => 'Biaya pendaftaran per regu harus berupa angka bulat positif.',
         'registration_fee_per_patrol.min' => 'Biaya pendaftaran tidak boleh bernilai negatif.',
     ];
@@ -122,6 +132,9 @@ class SystemSettingsManagement extends Component
             $this->registration_start_at = $event->registration_start_at ? $event->registration_start_at->format('Y-m-d\TH:i') : null;
             $this->registration_end_at = $event->registration_end_at ? $event->registration_end_at->format('Y-m-d\TH:i') : null;
             $this->is_registration_open = (bool) $event->is_registration_open;
+            $this->questionnaire_start_at = $event->questionnaire_start_at ? $event->questionnaire_start_at->timezone('Asia/Jakarta')->format('Y-m-d\TH:i') : null;
+            $this->questionnaire_end_at = $event->questionnaire_end_at ? $event->questionnaire_end_at->timezone('Asia/Jakarta')->format('Y-m-d\TH:i') : null;
+            $this->is_questionnaire_open = (bool) ($event->is_questionnaire_open ?? true);
             $this->contact_email = $event->contact_email ?? '';
             $this->contact_phone = $event->contact_phone ?? '';
             $this->is_active = (bool) $event->is_active;
@@ -177,6 +190,9 @@ class SystemSettingsManagement extends Component
             'registration_start_at' => $validated['registration_start_at'] ?: null,
             'registration_end_at' => $validated['registration_end_at'] ?: null,
             'is_registration_open' => $validated['is_registration_open'],
+            'questionnaire_start_at' => $validated['questionnaire_start_at'] ?: null,
+            'questionnaire_end_at' => $validated['questionnaire_end_at'] ?: null,
+            'is_questionnaire_open' => $validated['is_questionnaire_open'],
             'contact_email' => $validated['contact_email'] ?: null,
             'contact_phone' => $validated['contact_phone'] ?: null,
             'is_active' => $validated['is_active'],

@@ -49,6 +49,9 @@ class Event extends Model
         'hide_patrol_identities',
         'is_certificate_published',
         'show_signatures_on_certificate',
+        'is_questionnaire_open',
+        'questionnaire_start_at',
+        'questionnaire_end_at',
     ];
 
     /**
@@ -95,6 +98,9 @@ class Event extends Model
             'hide_patrol_identities' => 'boolean',
             'is_certificate_published' => 'boolean',
             'show_signatures_on_certificate' => 'boolean',
+            'is_questionnaire_open' => 'boolean',
+            'questionnaire_start_at' => 'datetime',
+            'questionnaire_end_at' => 'datetime',
         ];
     }
 
@@ -288,6 +294,68 @@ class Event extends Model
         }
 
         return now()->gt($this->registration_end_at);
+    }
+
+    /**
+     * Memeriksa apakah pengisian kuisioner dibuka berdasarkan saklar dan jendela waktu yang diatur
+     */
+    public function isQuestionnaireOpen(): bool
+    {
+        if (! $this->is_active) {
+            return false;
+        }
+
+        if (! $this->is_questionnaire_open) {
+            return false;
+        }
+
+        $now = now();
+
+        if ($this->questionnaire_start_at && $now->lt($this->questionnaire_start_at)) {
+            return false;
+        }
+
+        if ($this->questionnaire_end_at && $now->gt($this->questionnaire_end_at)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Status deskriptif jendela waktu pengisian kuisioner
+     *
+     * @return array{status: 'not_started'|'open'|'closed'|'disabled', message: string}
+     */
+    public function questionnaireStatus(): array
+    {
+        if (! $this->is_active || ! $this->is_questionnaire_open) {
+            return [
+                'status' => 'disabled',
+                'message' => 'Pengisian kuisioner evaluasi sedang dinonaktifkan oleh administrator.',
+            ];
+        }
+
+        $now = now();
+
+        if ($this->questionnaire_start_at && $now->lt($this->questionnaire_start_at)) {
+            return [
+                'status' => 'not_started',
+                'message' => 'Kuisioner baru akan dibuka pada ' . $this->questionnaire_start_at->timezone('Asia/Jakarta')->translatedFormat('d F Y, H:i') . ' WIB.',
+            ];
+        }
+
+        if ($this->questionnaire_end_at && $now->gt($this->questionnaire_end_at)) {
+            return [
+                'status' => 'closed',
+                'message' => 'Periode pengisian kuisioner telah ditutup pada ' . $this->questionnaire_end_at->timezone('Asia/Jakarta')->translatedFormat('d F Y, H:i') . ' WIB.',
+            ];
+        }
+
+        return [
+            'status' => 'open',
+            'message' => 'Pengisian kuisioner sedang dibuka' . ($this->questionnaire_end_at ? ' hingga ' . $this->questionnaire_end_at->timezone('Asia/Jakarta')->translatedFormat('d F Y, H:i') . ' WIB.' : '.'),
+        ];
     }
 
     /**
