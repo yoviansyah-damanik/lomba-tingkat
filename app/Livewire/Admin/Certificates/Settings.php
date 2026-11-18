@@ -361,7 +361,7 @@ class Settings extends Component
             $template->save();
         }
 
-        session()->flash('status', 'Tata letak berhasil diterapkan ke seluruh peran (Peserta, Pembina, Panitia, Dewan Juri).');
+        session()->flash('status', 'Tata letak berhasil diterapkan ke seluruh peran (Peserta, Pembina, Panitia, Dewan Juri, & Regu Berprestasi).');
     }
 
     /**

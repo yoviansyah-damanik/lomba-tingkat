@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Enums\RegistrationStatusEnum;
 use App\Models\Chaperone;
+use App\Models\CompetitionScore;
 use App\Models\Event;
 use App\Models\Participant;
+use App\Models\Patrol;
 use App\Models\User;
 use App\Services\CertificateService;
+use App\Services\StandingsService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -199,6 +202,90 @@ class CertificateController extends Controller
         }
 
         if ($user->isScoutGroup() && $user->scoutGroup && $chaperone->scout_group_id === $user->scoutGroup->id) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Unduh e-sertifikat regu berprestasi kejuaraan umum
+     */
+    public function downloadPatrolGeneralWinner(Request $request, Patrol $patrol, CertificateService $certificateService, StandingsService $standingsService): Response
+    {
+        $event = Event::where('is_active', true)->first() ?? Event::first();
+        $user = $request->user();
+
+        if (!$user?->isAdmin() && !$event?->isCertificatePublished()) {
+            abort(403, 'Penerbitan e-sertifikat kegiatan belum dibuka oleh panitia pelaksana.');
+        }
+
+        if (!$this->canAccessPatrolCertificate($user, $patrol)) {
+            abort(403, 'Anda tidak berwenang mengunduh sertifikat regu ini.');
+        }
+
+        $gender = $patrol->gender_category instanceof \BackedEnum ? $patrol->gender_category->value : $patrol->gender_category;
+        $row = $standingsService->getPatrolStandings($gender, null, true)->firstWhere('id', $patrol->id);
+
+        if (!$row || empty($row['general_rank_title']) || ($row['rank'] ?? 99) > 3) {
+            abort(404, 'Regu ini belum tercatat meraih predikat Kejuaraan Umum (Tinggi, Baik, atau Cukup).');
+        }
+
+        $data = $certificateService->recipientDataForWinningPatrolGeneral($patrol, $row['general_rank_title'], (int) $row['rank'], $event);
+        $download = $request->boolean('download', true);
+
+        return $certificateService->responsePdf($event, $data['role'], $data, $download);
+    }
+
+    /**
+     * Unduh e-sertifikat regu berprestasi cabang perlombaan
+     */
+    public function downloadCompetitionWinner(Request $request, CompetitionScore $score, CertificateService $certificateService): Response
+    {
+        $event = Event::where('is_active', true)->first() ?? Event::first();
+        $user = $request->user();
+
+        if (!$user?->isAdmin() && !$event?->isCertificatePublished()) {
+            abort(403, 'Penerbitan e-sertifikat kegiatan belum dibuka oleh panitia pelaksana.');
+        }
+
+        $patrol = $score->patrol;
+        if (!$patrol || !$this->canAccessPatrolCertificate($user, $patrol)) {
+            abort(403, 'Anda tidak berwenang mengunduh sertifikat regu ini.');
+        }
+
+        if (!$score->is_locked || !in_array($score->predicate, ['prestasi_tinggi', 'prestasi_baik', 'prestasi_cukup'], true)) {
+            abort(404, 'Penilaian belum terkunci atau regu tidak berpredikat prestasi pada cabang ini.');
+        }
+
+        $data = $certificateService->recipientDataForWinningPatrolCompetition($score, $event);
+        $download = $request->boolean('download', true);
+
+        return $certificateService->responsePdf($event, $data['role'], $data, $download);
+    }
+
+    /**
+     * Validasi hak akses dokumen regu
+     */
+    protected function canAccessPatrolCertificate(?User $user, Patrol $patrol): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        if ($user->isAdmin() || $user->isSuperadmin()) {
+            return true;
+        }
+
+        if ($user->isScoutGroup() && $user->scoutGroup && $patrol->scout_group_id === $user->scoutGroup->id) {
+            return true;
+        }
+
+        if ($user->isChaperone() && $user->chaperone && $patrol->scout_group_id === $user->chaperone->scout_group_id) {
+            return true;
+        }
+
+        if ($user->isParticipant() && $user->participant && $user->participant->patrol_id === $patrol->id) {
             return true;
         }
 

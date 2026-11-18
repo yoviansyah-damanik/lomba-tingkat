@@ -198,12 +198,95 @@ class Dashboard extends Component
     {
         $user = $this->user;
 
-        return match (true) {
-            $user->isScoutGroup() => $this->scoutGroup?->patrols ?? collect(),
-            $user->isParticipant() => collect([$this->participantData?->patrol])->filter(),
-            $user->isChaperone() && $user->chaperone => Patrol::where('chaperone_id', $user->chaperone->id)->get(),
-            default => collect(),
-        };
+        if ($user->isScoutGroup()) {
+            return $this->scoutGroup?->patrols ?? collect();
+        }
+
+        if ($user->isParticipant()) {
+            return collect([$this->participantData?->patrol])->filter();
+        }
+
+        if ($user->isChaperone() && $user->chaperone) {
+            $chaperone = $user->chaperone;
+            $patrols = Patrol::where('chaperone_id', $chaperone->id)->get();
+            if ($patrols->isEmpty() && $chaperone->scout_group_id) {
+                $genderCat = ($chaperone->gender === 'male' || $chaperone->gender === 'putra' || $chaperone->gender === 'L')
+                    ? PatrolGenderEnum::Boys
+                    : PatrolGenderEnum::Girls;
+
+                $patrols = Patrol::where('scout_group_id', $chaperone->scout_group_id)
+                    ->where('gender_category', $genderCat)
+                    ->get();
+
+                if ($patrols->isEmpty()) {
+                    $patrols = Patrol::where('scout_group_id', $chaperone->scout_group_id)->get();
+                }
+            }
+
+            return $patrols;
+        }
+
+        return collect();
+    }
+
+    /**
+     * Ucapan selamat & rincian prestasi kehormatan untuk regu berprestasi (Tinggi / Baik / Cukup)
+     * Ditampilkan pada dasbor Gugus Depan, Bindamping, dan Peserta yang bersangkutan.
+     *
+     * @return array<int, array>
+     */
+    #[Computed]
+    public function congratulatoryHonors(): array
+    {
+        $event = $this->activeEvent ?? Event::first();
+        if ($event?->hide_patrol_identities) {
+            return [];
+        }
+
+        $patrols = $this->userPatrols;
+        if ($patrols->isEmpty()) {
+            return [];
+        }
+
+        $standingsService = app(StandingsService::class);
+        $allStandings = $standingsService->getPatrolStandings('all');
+        $isCertPublished = (bool) ($event?->isCertificatePublished());
+
+        $honors = [];
+
+        foreach ($patrols as $patrol) {
+            $row = $allStandings->firstWhere('id', $patrol->id);
+            if ($row && ! empty($row['general_rank_title']) && (int) ($row['rank'] ?? 99) <= 3) {
+                $rank = (int) $row['rank'];
+                $genderLabel = ($row['gender_category'] === 'boys' || $row['gender_category'] === 'putra') ? 'Putra' : 'Putri';
+                $predicate = match ($rank) {
+                    1 => 'Tinggi',
+                    2 => 'Baik',
+                    3 => 'Cukup',
+                    default => 'Penghargaan',
+                };
+
+                $honors[] = [
+                    'patrol_id' => $patrol->id,
+                    'patrol_name' => $row['real_patrol_name'] ?? $patrol->patrol_name,
+                    'npp' => $patrol->npp ?? $row['npp'] ?? '-',
+                    'gender' => $genderLabel,
+                    'rank' => $rank,
+                    'title' => $row['general_rank_title'],
+                    'predicate' => $predicate,
+                    'school_name' => $row['real_school_name'] ?? ($patrol->scoutGroup?->school_name ?? '-'),
+                    'is_highest' => $rank === 1,
+                    'total_points' => (int) ($row['total_points'] ?? 0),
+                    'gold' => (int) ($row['gold'] ?? 0),
+                    'silver' => (int) ($row['silver'] ?? 0),
+                    'bronze' => (int) ($row['bronze'] ?? 0),
+                    'is_certificate_published' => $isCertPublished,
+                    'download_url' => route('certificates.download.patrol.general', $patrol),
+                ];
+            }
+        }
+
+        return $honors;
     }
 
     /**
@@ -339,6 +422,23 @@ class Dashboard extends Component
         return $items;
     }
 
+    /**
+     * Daftar e-sertifikat regu berprestasi milik pangkalan gugus depan
+     *
+     * @return array<int, array>
+     */
+    #[Computed]
+    public function winningPatrolCertificates(): array
+    {
+        if (! $this->user?->isScoutGroup() || ! $this->scoutGroup) {
+            return [];
+        }
+
+        $certificateService = app(CertificateService::class);
+
+        return $certificateService->getWinningCertificatesForScoutGroup($this->scoutGroup, $this->activeEvent);
+    }
+
     public function render()
     {
         return view('livewire.dashboard', [
@@ -354,6 +454,8 @@ class Dashboard extends Component
             'participantData' => $this->participantData,
             'myCertificate' => $this->myCertificate,
             'contingentCertificates' => $this->contingentCertificates,
+            'winningPatrolCertificates' => $this->winningPatrolCertificates,
+            'congratulatoryHonors' => $this->congratulatoryHonors,
             'menuGroups' => Navigation::groupsFor($this->user),
         ]);
     }

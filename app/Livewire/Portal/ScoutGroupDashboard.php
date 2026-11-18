@@ -116,6 +116,50 @@ class ScoutGroupDashboard extends Component
         $group = $this->scoutGroup;
         $group->load(['patrols.participants', 'patrols.chaperone', 'chaperones']);
 
+        $certificateService = app(\App\Services\CertificateService::class);
+        $winningCertificates = $this->activeEvent?->isCertificatePublished()
+            ? $certificateService->getWinningCertificatesForScoutGroup($group, $this->activeEvent)
+            : [];
+
+        $congratulatoryHonors = [];
+        if (! ($this->activeEvent?->hide_patrol_identities)) {
+            $standingsService = app(\App\Services\StandingsService::class);
+            $allStandings = $standingsService->getPatrolStandings('all');
+            $isCertPublished = (bool) ($this->activeEvent?->isCertificatePublished());
+
+            foreach ($group->patrols as $patrol) {
+                $row = $allStandings->firstWhere('id', $patrol->id);
+                if ($row && ! empty($row['general_rank_title']) && (int) ($row['rank'] ?? 99) <= 3) {
+                    $rank = (int) $row['rank'];
+                    $genderLabel = ($row['gender_category'] === 'boys' || $row['gender_category'] === 'putra') ? 'Putra' : 'Putri';
+                    $predicate = match ($rank) {
+                        1 => 'Tinggi',
+                        2 => 'Baik',
+                        3 => 'Cukup',
+                        default => 'Penghargaan',
+                    };
+
+                    $congratulatoryHonors[] = [
+                        'patrol_id' => $patrol->id,
+                        'patrol_name' => $row['real_patrol_name'] ?? $patrol->patrol_name,
+                        'npp' => $patrol->npp ?? $row['npp'] ?? '-',
+                        'gender' => $genderLabel,
+                        'rank' => $rank,
+                        'title' => $row['general_rank_title'],
+                        'predicate' => $predicate,
+                        'school_name' => $row['real_school_name'] ?? $group->school_name,
+                        'is_highest' => $rank === 1,
+                        'total_points' => (int) ($row['total_points'] ?? 0),
+                        'gold' => (int) ($row['gold'] ?? 0),
+                        'silver' => (int) ($row['silver'] ?? 0),
+                        'bronze' => (int) ($row['bronze'] ?? 0),
+                        'is_certificate_published' => $isCertPublished,
+                        'download_url' => route('certificates.download.patrol.general', $patrol),
+                    ];
+                }
+            }
+        }
+
         return view('livewire.portal.scout-group-dashboard', [
             'scoutGroup' => $group,
             'boysPatrols' => $group->patrols->filter->isBoys()->values(),
@@ -124,6 +168,8 @@ class ScoutGroupDashboard extends Component
             'participantsTotal' => $group->patrols->sum(fn ($patrol) => $patrol->participants->count()),
             'participantsTarget' => max(1, $group->patrols->count()) * \App\Models\Patrol::REQUIRED_MEMBERS,
             'requiredChaperoneGenders' => $group->requiredChaperoneGenders(),
+            'winningCertificates' => $winningCertificates,
+            'congratulatoryHonors' => $congratulatoryHonors,
         ]);
     }
 }

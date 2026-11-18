@@ -26,6 +26,7 @@ use App\Livewire\Admin\ParticipantDetail;
 use App\Livewire\Admin\ParticipantsDirectory;
 use App\Livewire\Admin\PermissionRequests;
 use App\Livewire\Admin\PushBroadcastManagement;
+use App\Livewire\Admin\QuestionnaireRecap;
 use App\Livewire\Admin\RegistrationInvitations;
 use App\Livewire\Admin\ReportsCenter;
 use App\Livewire\Admin\SchedulesManagement;
@@ -65,6 +66,7 @@ use App\Livewire\Portal\MyAttendance;
 use App\Livewire\Portal\MyDigitalCard;
 use App\Livewire\Portal\ParticipantForm;
 use App\Livewire\Portal\PatrolsManagement;
+use App\Livewire\Portal\QuestionnaireForm;
 use App\Livewire\Portal\ReviewRegistration;
 use App\Livewire\Portal\ScoutGroupDashboard;
 use App\Livewire\Portal\TeamAssessment;
@@ -150,6 +152,8 @@ Route::middleware(['auth', 'role'])->group(function () {
     Route::get('/certificates/download/participant/{participant}', [CertificateController::class, 'downloadParticipant'])->name('certificates.download.participant');
     Route::get('/certificates/download/chaperone/{chaperone}', [CertificateController::class, 'downloadChaperone'])->name('certificates.download.chaperone');
     Route::get('/certificates/download/official/{official}/{role}', [CertificateController::class, 'downloadOfficial'])->name('certificates.download.official');
+    Route::get('/certificates/download/patrol/{patrol}/general', [CertificateController::class, 'downloadPatrolGeneralWinner'])->name('certificates.download.patrol.general');
+    Route::get('/certificates/download/competition-score/{score}', [CertificateController::class, 'downloadCompetitionWinner'])->name('certificates.download.competition-score');
 
     // Verifikasi identitas lewat scan QR: Administrator (termasuk Superadmin) dan Panitia
     Route::middleware('role:admin|committee')->prefix('admin')->name('admin.')->group(function () {
@@ -252,6 +256,9 @@ Route::middleware(['auth', 'role'])->group(function () {
     Route::middleware('role:admin|superadmin')->prefix('admin')->name('admin.')->group(function () {
         // Audit Penilaian Juri & Jejak Rekam Sistem (Livewire 4 SPA)
         Route::get('/assessments', AssessmentsAudit::class)->name('assessments.index');
+
+        // Rekapitulasi Kuisioner Evaluasi Panitia & Dewan Juri (Livewire 4 SPA)
+        Route::get('/questionnaires', QuestionnaireRecap::class)->name('questionnaires.recap');
     });
 
     // Superadmin: tata kelola pengguna & peran, konfigurasi sistem
@@ -313,6 +320,9 @@ Route::middleware(['auth', 'role'])->group(function () {
         Route::get('/dashboard', fn () => redirect()->route('judge.index'))->name('dashboard');
         Route::get('/scoring/{scheduleId}', JudgeScoring::class)->name('scoring');
     });
+
+    // Kuisioner Evaluasi Pengalaman Panitia & Dewan Juri (Livewire 4 SPA)
+    Route::middleware(['auth', 'role:committee|judge|admin'])->get('/kuisioner', QuestionnaireForm::class)->name('questionnaire.index');
 
     // Scout Group contingent management group
     Route::middleware('role:scout_group')->prefix('portal/scout-group')->name('scout-group.')->group(function () {

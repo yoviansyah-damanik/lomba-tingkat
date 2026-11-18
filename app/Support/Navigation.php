@@ -101,6 +101,7 @@ class Navigation
                 'items' => [
                     ['label' => 'Presensi Saya', 'icon' => 'clipboard-document-check', 'route' => 'my-attendance.index', 'active' => ['my-attendance.*'], 'roles' => $personal, 'description' => 'Jadwal yang Anda ikuti dan status kehadiran'],
                     ['label' => 'Kartu Digital', 'icon' => 'qr-code', 'route' => 'digital-card.index', 'active' => ['digital-card.*'], 'roles' => $personal, 'description' => 'Kartu identitas dengan QR Code'],
+                    ['label' => 'Kuisioner Aplikasi', 'icon' => 'chat-bubble-bottom-center-text', 'route' => 'questionnaire.index', 'active' => ['questionnaire.*'], 'roles' => ['committee', 'judge'], 'description' => 'Evaluasi pengalaman penggunaan aplikasi'],
                 ],
             ],
             [
@@ -166,6 +167,7 @@ class Navigation
                     ['label' => 'Pengumuman Kegiatan', 'icon' => 'megaphone', 'route' => 'admin.announcements.index', 'active' => ['admin.announcements.*'], 'roles' => ['admin'], 'description' => 'Terbitkan pengumuman resmi'],
                     ['label' => 'Pusat Laporan & Ekspor', 'icon' => 'document-text', 'route' => 'admin.reports.index', 'active' => ['admin.reports.*'], 'roles' => ['admin'], 'description' => 'Laporan dan ekspor data'],
                     ['label' => 'Pengaturan Sertifikat', 'icon' => 'academic-cap', 'route' => 'admin.certificates.settings', 'active' => ['admin.certificates.*'], 'roles' => ['admin'], 'description' => 'Konfigurasi template e-sertifikat dan penerbitan'],
+                    ['label' => 'Rekapitulasi Kuisioner', 'icon' => 'chart-bar-square', 'route' => 'admin.questionnaires.recap', 'active' => ['admin.questionnaires.*'], 'roles' => ['admin', 'superadmin'], 'description' => 'Rekap respon evaluasi Panitia & Dewan Juri'],
                 ],
             ],
             [

@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Enums\RegistrationStatusEnum;
 use App\Livewire\Admin\Certificates\Settings;
 use App\Models\Chaperone;
+use App\Models\Competition;
+use App\Models\CompetitionScore;
 use App\Models\Event;
 use App\Models\Participant;
 use App\Models\Patrol;
@@ -452,5 +454,177 @@ class CertificateManagementTest extends TestCase
         $pdfOutput = $service->renderPdf($this->event, CertificateService::ROLE_PARTICIPANT, $recipient);
 
         $this->assertNotEmpty($pdfOutput);
+    }
+
+    /**
+     * Memastikan admin dapat memilih dan mengonfigurasi template regu berprestasi tinggi, baik, dan cukup
+     */
+    public function test_admin_can_configure_and_preview_winning_patrol_certificate_roles(): void
+    {
+        $winningRoles = [
+            CertificateService::ROLE_PRESTASI_TINGGI,
+            CertificateService::ROLE_PRESTASI_BAIK,
+            CertificateService::ROLE_PRESTASI_CUKUP,
+        ];
+
+        foreach ($winningRoles as $role) {
+            Livewire::actingAs($this->admin)
+                ->test(Settings::class)
+                ->call('setRole', $role)
+                ->assertSet('activeRole', $role)
+                ->assertSee(CertificateService::ROLES[$role]);
+
+            // Pratinjau contoh PDF peran berprestasi
+            $response = $this->actingAs($this->admin)
+                ->get(route('admin.certificates.preview', ['role' => $role]));
+
+            $response->assertOk();
+            $this->assertEquals('application/pdf', $response->headers->get('Content-Type'));
+            $this->assertStringStartsWith('%PDF', $response->getContent());
+        }
+
+        // Simpan konfigurasi tata letak kustom untuk regu berprestasi tinggi
+        Livewire::actingAs($this->admin)
+            ->test(Settings::class)
+            ->call('setRole', CertificateService::ROLE_PRESTASI_TINGGI)
+            ->set('name_size', 32.0)
+            ->set('role_color', '#b45309')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $template = $this->event->certificateTemplates()
+            ->where('role', CertificateService::ROLE_PRESTASI_TINGGI)
+            ->first();
+
+        $this->assertNotNull($template);
+        $this->assertEquals(32.0, $template->layout['full_name']['font_size']);
+        $this->assertEquals('#b45309', $template->layout['role_label']['color']);
+    }
+
+    /**
+     * Memastikan dasbor pangkalan menampilkan dan dapat mengunduh e-sertifikat regu berprestasi cabang lomba
+     */
+    public function test_scout_group_dashboard_shows_and_downloads_competition_winning_certificate(): void
+    {
+        $this->event->update(['is_certificate_published' => true]);
+
+        $competition = Competition::create([
+            'title' => 'Pionering Menara Pandang',
+            'code' => 'TKK-01',
+            'category' => 'boys',
+            'scoring_formula' => 'rubric',
+            'status' => 'completed',
+        ]);
+
+        $patrol = $this->participant->patrol;
+
+        $score = CompetitionScore::create([
+            'competition_id' => $competition->id,
+            'patrol_id' => $patrol->id,
+            'final_score' => 95.50,
+            'rank' => 1,
+            'predicate' => 'prestasi_tinggi',
+            'is_locked' => true,
+        ]);
+
+        // Cek halaman dasbor pangkalan
+        $scoutGroupUser = $this->scoutGroup->user;
+        $this->actingAs($scoutGroupUser)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('E-Sertifikat Regu Berprestasi')
+            ->assertSee('Prestasi Tinggi')
+            ->assertSee($patrol->patrol_name)
+            ->assertSee('Pionering Menara Pandang');
+
+        // Unduh PDF sertifikat
+        $downloadResponse = $this->actingAs($scoutGroupUser)
+            ->get(route('certificates.download.competition-score', $score));
+
+        $downloadResponse->assertOk();
+        $this->assertEquals('application/pdf', $downloadResponse->headers->get('Content-Type'));
+        $this->assertStringStartsWith('%PDF', $downloadResponse->getContent());
+
+        // Pengguna lain yang tidak berhak ditolak (403)
+        $otherUser = User::factory()->create();
+        $this->actingAs($otherUser)
+            ->get(route('certificates.download.competition-score', $score))
+            ->assertForbidden();
+    }
+
+    /**
+     * Memastikan dasbor pangkalan menampilkan dan dapat mengunduh e-sertifikat regu berprestasi kejuaraan umum
+     */
+    public function test_scout_group_dashboard_shows_and_downloads_general_standings_winning_certificate(): void
+    {
+        $this->event->update(['is_certificate_published' => true]);
+
+        $patrol = $this->participant->patrol;
+
+        $competition = Competition::create([
+            'title' => 'Sandi & Morse',
+            'code' => 'TKK-02',
+            'category' => 'boys',
+            'scoring_formula' => 'rubric',
+            'status' => 'completed',
+        ]);
+
+        // Beri nilai agar peringkat 1 di klasemen
+        CompetitionScore::create([
+            'competition_id' => $competition->id,
+            'patrol_id' => $patrol->id,
+            'final_score' => 98.00,
+            'rank' => 1,
+            'predicate' => 'prestasi_tinggi',
+            'is_locked' => true,
+        ]);
+
+        $scoutGroupUser = $this->scoutGroup->user;
+        $this->actingAs($scoutGroupUser)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('E-Sertifikat Regu Berprestasi')
+            ->assertSee('Kejuaraan Umum LT-III')
+            ->assertSee($patrol->patrol_name);
+
+        // Unduh PDF kejuaraan umum
+        $downloadResponse = $this->actingAs($scoutGroupUser)
+            ->get(route('certificates.download.patrol.general', $patrol));
+
+        $downloadResponse->assertOk();
+        $this->assertEquals('application/pdf', $downloadResponse->headers->get('Content-Type'));
+        $this->assertStringStartsWith('%PDF', $downloadResponse->getContent());
+    }
+
+    /**
+     * Memastikan halaman publik verifikasi sertifikat dapat memverifikasi regu berprestasi
+     */
+    public function test_public_verification_verifies_winning_patrol_certificate(): void
+    {
+        $this->event->update(['is_certificate_published' => true]);
+        $patrol = $this->participant->patrol;
+
+        $competition = Competition::create([
+            'title' => 'PBB Bertongkat',
+            'code' => 'TKK-03',
+            'category' => 'boys',
+            'scoring_formula' => 'rubric',
+            'status' => 'completed',
+        ]);
+
+        $score = CompetitionScore::create([
+            'competition_id' => $competition->id,
+            'patrol_id' => $patrol->id,
+            'final_score' => 90.00,
+            'rank' => 2,
+            'predicate' => 'prestasi_baik',
+            'is_locked' => true,
+        ]);
+
+        $response = $this->get(route('certificates.verify', ['id' => "LMB-{$score->id}"]));
+        $response->assertOk()
+            ->assertSee('E-Sertifikat Sah &amp; Terverifikasi', false)
+            ->assertSee(strtoupper($patrol->patrol_name))
+            ->assertSee('Prestasi Baik');
     }
 }

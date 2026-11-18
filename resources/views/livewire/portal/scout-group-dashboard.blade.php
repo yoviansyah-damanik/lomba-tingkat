@@ -54,6 +54,15 @@
         </div>
     @endif
 
+    {{-- Ucapan Selamat Regu Berprestasi Pangkalan --}}
+    @if(!empty($congratulatoryHonors))
+        <section class="space-y-4" aria-label="Ucapan Penghargaan Regu Berprestasi">
+            @foreach($congratulatoryHonors as $honor)
+                <x-congratulations-card :honor="$honor" />
+            @endforeach
+        </section>
+    @endif
+
     {{-- Identitas pangkalan --}}
     <section class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 dark:border-zinc-800 dark:bg-zinc-900" aria-labelledby="gudep-title">
         <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -134,6 +143,67 @@
         <x-stat-card label="Bindamping" :value="$scoutGroup->chaperones->count()" :unit="'/ '.max(1, count($requiredChaperoneGenders))" description="Sesuai regu putra/putri" icon="user-circle" color="blue" />
         <x-stat-card label="Berkas Administrasi" :value="collect([$scoutGroup->mandate_letter_path, $scoutGroup->payment_proof_path])->filter()->count()" unit="/ 2" description="Surat tugas dan bukti bayar" icon="document-check" color="amber" />
     </div>
+
+    {{-- E-Sertifikat Regu Berprestasi (Tinggi / Baik / Cukup) --}}
+    @if(!empty($winningCertificates))
+        <section class="rounded-2xl border border-purple-200 bg-white p-5 shadow-sm dark:border-purple-900/50 dark:bg-zinc-900" aria-label="Sertifikat Regu Berprestasi">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-zinc-100 pb-3 dark:border-zinc-800">
+                <div class="flex items-center gap-2.5">
+                    <div class="flex size-9 items-center justify-center rounded-xl bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300">
+                        <flux:icon name="trophy" class="size-5" />
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                            E-Sertifikat Regu Berprestasi (Tinggi / Baik / Cukup)
+                        </h2>
+                        <p class="text-xs text-zinc-500 dark:text-zinc-400">
+                            Unduh berkas piagam penghargaan resmi untuk regu penggalang pangkalan Anda yang berhasil meraih predikat prestasi.
+                        </p>
+                    </div>
+                </div>
+                <span class="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-semibold text-purple-800 dark:bg-purple-950/60 dark:text-purple-300">
+                    {{ count($winningCertificates) }} Piagam Tersedia
+                </span>
+            </div>
+
+            <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach($winningCertificates as $wCert)
+                    <div class="flex flex-col justify-between gap-3 rounded-xl border border-zinc-200/80 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/40">
+                        <div class="flex items-start gap-3">
+                            <div class="flex size-9 shrink-0 items-center justify-center rounded-lg {{ $wCert['predicate'] === 'Tinggi' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300' : ($wCert['predicate'] === 'Baik' ? 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' : 'bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300') }}">
+                                <flux:icon :name="$wCert['icon'] ?? 'trophy'" class="size-4" />
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="inline-flex items-center rounded-full border px-2 py-0.2 text-[10px] font-bold {{ $wCert['badge_class'] }}">
+                                        Prestasi {{ $wCert['predicate'] }}
+                                    </span>
+                                    <span class="text-[10px] font-mono text-zinc-400">NPP: {{ $wCert['npp'] }}</span>
+                                </div>
+                                <h3 class="mt-1 text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                                    Regu {{ $wCert['patrol_name'] }}
+                                </h3>
+                                <p class="text-[11px] font-semibold text-amber-700 dark:text-amber-400 line-clamp-1">
+                                    {{ $wCert['title'] }}
+                                </p>
+                                <p class="text-[10px] text-zinc-500 dark:text-zinc-400 line-clamp-1">
+                                    {{ $wCert['detail'] }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between border-t border-zinc-200/60 pt-2.5 dark:border-zinc-700/60">
+                            <span class="text-[9px] font-mono text-zinc-400 truncate max-w-[160px]" title="{{ $wCert['certificate_number'] }}">
+                                {{ $wCert['certificate_number'] }}
+                            </span>
+                            <flux:button href="{{ $wCert['download_url'] }}" size="xs" variant="primary" icon="arrow-down-tray">
+                                Unduh
+                            </flux:button>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </section>
+    @endif
 
     {{-- Regu putra & putri --}}
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">

@@ -4,10 +4,14 @@ namespace App\Livewire\Public;
 
 use App\Enums\RegistrationStatusEnum;
 use App\Models\Chaperone;
+use App\Models\CompetitionScore;
 use App\Models\Event;
 use App\Models\Participant;
+use App\Models\Patrol;
 use App\Models\User;
 use App\Services\CertificateService;
+use App\Services\StandingsService;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -70,6 +74,44 @@ class CertificateVerification extends Component
                 $record = $certificateService->recipientDataForOfficial($official, $roleType, $event);
                 $role = $roleType;
                 $downloadUrl = route('certificates.download.official', ['official' => $official->id, 'role' => $roleType]);
+            }
+        }
+
+        // Cari di regu berprestasi kejuaraan umum
+        if (!$record) {
+            $cleanPatrolId = Str::after($this->id, 'GEN-');
+            $patrol = Patrol::with(['scoutGroup'])
+                ->where('id', $cleanPatrolId)
+                ->orWhere('id', $this->id)
+                ->orWhere('npp_code', $cleanPatrolId)
+                ->orWhere('npp_code', $this->id)
+                ->first();
+
+            if ($patrol) {
+                $standingsService = app(StandingsService::class);
+                $gender = $patrol->gender_category instanceof \BackedEnum ? $patrol->gender_category->value : $patrol->gender_category;
+                $row = $standingsService->getPatrolStandings($gender, null, true)->firstWhere('id', $patrol->id);
+
+                if ($row && !empty($row['general_rank_title']) && ($row['rank'] ?? 99) <= 3) {
+                    $record = $certificateService->recipientDataForWinningPatrolGeneral($patrol, $row['general_rank_title'], (int) $row['rank'], $event);
+                    $role = $record['role'];
+                    $downloadUrl = route('certificates.download.patrol.general', $patrol);
+                }
+            }
+        }
+
+        // Cari di regu berprestasi cabang lomba
+        if (!$record) {
+            $cleanScoreId = Str::after($this->id, 'LMB-');
+            $score = CompetitionScore::with(['competition', 'patrol.scoutGroup'])
+                ->where('id', $cleanScoreId)
+                ->orWhere('id', $this->id)
+                ->first();
+
+            if ($score && $score->is_locked && in_array($score->predicate, ['prestasi_tinggi', 'prestasi_baik', 'prestasi_cukup'], true)) {
+                $record = $certificateService->recipientDataForWinningPatrolCompetition($score, $event);
+                $role = $record['role'];
+                $downloadUrl = route('certificates.download.competition-score', $score);
             }
         }
 
